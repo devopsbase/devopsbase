@@ -1,7 +1,7 @@
 # DevOpsBase
 
-This repository contains the raw data of *DevOpsBase* (DevOps knowledge base) as structured content in different formats: JSON (`.json` files), XML (`.xml` files) and YAML (`.yaml` or `.yml` files).
-These files are organized in a nested directory structure using the following upper-level directories:
+This repository contains the raw data of *DevOpsBase* (DevOps knowledge base or metadatabase) as structured content in different formats: JSON (`.json` files), XML (`.xml` files) and YAML (`.yaml` or `.yml` files).
+These files are organized using a nested directory structure:
 
 * `/gathered` contains data, crawled and automatically gathered using *GatherBase* from existing repositories such as Chef Supermarket, Juju Charm Store and Docker Hub.
 * `/gathered/override` includes data, which is used to override specific parts of automatically gathered data, e.g. for refinement purposes.
@@ -62,7 +62,7 @@ In addition to labels, further properties can be assigned to implementations to 
 
 ### Templates
 
-TODO: `/schema/impl_properties` template.json, template.xml, template.yml
+TODO: `/schema/templates` impl.json, impl.xml, impl.yml
 
 
 
@@ -80,11 +80,11 @@ The basic properties are:
 * **info_url** `(string)`
 * **description** `(string)` short summary of the implementation
 * **readme** `(string)` more extensive information how to use the implementation
-* **maintainer**
+* **maintainer** `(object)`
   * **name** `(string)`
   * **email** `(string)`
-* **parameters**
-  * {parameter_name}
+* **parameters** `(object)`
+  * *{parameter_name}* `(object)`
     * **type** `(string)`
     * **description** `(string)`
     * **default** `(string)`
@@ -95,22 +95,22 @@ Additional properties are utilized to define links and relations between impleme
 Furthermore, requirements and capabilities can be defined.
 
 * **provides** `(array of objects)`
-  * {index}
+  * *object:*
     * **label** | **uri** `(string)`
     * **version** `(string)` specific version or version range ([semver syntax](https://github.com/npm/node-semver)) of this implementation
 * **requires** `(array of objects)`
-  * {index}
+  * *object:*
     * **kind** `"host" | "peer" | "env"`
     * **label** | **uri** `(string)`
     * **revision** | **version** `(string)` specific revision/version or revision/version range ([semver syntax](https://github.com/npm/node-semver)) of required implementation
     * **self_resolve** `(boolean)` indicates whether this requirement is resolved by the implementation itself
     * **one_of_group** `(string)` name of a specific group of requirements that are alternatives, i.e. only one of them must be satisfied
 * **recommends** `(array of objects)`
-  * {index}
+  * *object:*
     * **label** | **uri** `(string)`
     * **revision** | **version** `(string)` specific revision/version or revision/version range ([semver syntax](https://github.com/npm/node-semver)) of recommended implementation
 * **conflicts** `(array of objects)`
-  * {index}
+  * *object:*
     * **label** | **uri** `(string)`
     * **revision** | **version** `(string)` specific revision/version or revision/version range ([semver syntax](https://github.com/npm/node-semver)) of conflicting implementation
 
