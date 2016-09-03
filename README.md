@@ -74,7 +74,6 @@ The basic properties are:
 * **name** `(string)` human-readable name of the implementation
 * **revision** `(string)`
 * **latest** `(boolean)` indicates whether this is the latest revision of the implementation
-* **origin** `"gathered" | "gathered-override" | "added"`
 * **labels** `(array of strings)`
 * **uris** `(array of strings)`
 * **info_url** `(string)`
