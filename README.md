@@ -4,7 +4,7 @@ This repository contains the raw data of *DevOpsBase* (DevOps knowledge base or 
 These files are organized using a nested directory structure:
 
 * `/gathered` contains data, crawled and automatically gathered using *GatherBase* from existing repositories such as Chef Supermarket, Juju Charm Store and Docker Hub.
-* `/gathered/override` includes data, which is used to override specific parts of automatically gathered data, e.g. for refinement purposes.
+* `/gathered-refined` includes JavaScript functions, which are used to refine specific parts of automatically gathered data.
 * `/added` consists of data, manually added by experts to complement automatically gathered data.
 * `/schema` holds definitions to be used to classify and specify the structure of implementations represented by both gathered and manually added data.
 
@@ -94,22 +94,22 @@ Additional properties are utilized to define links and relations between impleme
 Furthermore, requirements and capabilities can be defined.
 
 * **provides** `(array of objects)`
-  * *object:*
+  * `(object)`
     * **label** | **uri** `(string)`
     * **version** `(string)` specific version or version range ([semver syntax](https://github.com/npm/node-semver)) of this implementation
 * **requires** `(array of objects)`
-  * *object:*
+  * `(object)`
     * **kind** `"host" | "peer" | "env"`
     * **label** | **uri** `(string)`
     * **revision** | **version** `(string)` specific revision/version or revision/version range ([semver syntax](https://github.com/npm/node-semver)) of required implementation
     * **self_resolve** `(boolean)` indicates whether this requirement is resolved by the implementation itself
     * **one_of_group** `(string)` name of a specific group of requirements that are alternatives, i.e. only one of them must be satisfied
 * **recommends** `(array of objects)`
-  * *object:*
+  * `(object)`
     * **label** | **uri** `(string)`
     * **revision** | **version** `(string)` specific revision/version or revision/version range ([semver syntax](https://github.com/npm/node-semver)) of recommended implementation
 * **conflicts** `(array of objects)`
-  * *object:*
+  * `(object)`
     * **label** | **uri** `(string)`
     * **revision** | **version** `(string)` specific revision/version or revision/version range ([semver syntax](https://github.com/npm/node-semver)) of conflicting implementation
 
@@ -132,3 +132,4 @@ In addition, label properties can be specified:
 * **alias** `(array of strings)` list of label aliases
 * **definitive_keywords** `(array of strings)` list of definitive keywords that are used to characterize a specific label
 * **shadow_keywords** `(array of strings)` list of shadow keywords that are used to characterize a specific label; a shadow keyword is only considered if no other label defines it as definitive keyword
+* **keyword_from_label** `(boolean)` derive keyword from label, `true` by default
