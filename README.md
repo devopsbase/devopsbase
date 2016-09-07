@@ -93,22 +93,22 @@ The first entry of the *uris* array represents the primary URI for an implementa
 Additional properties are utilized to define links and relations between implementations.
 Furthermore, requirements and capabilities can be defined.
 
-* **provides** `(array of objects)`
+* **provides** `(array)`
   * `(object)`
     * **label** | **uri** `(string)`
     * **version** `(string)` specific version or version range ([semver syntax](https://github.com/npm/node-semver)) of this implementation
-* **requires** `(array of objects)`
+* **requires** `(array)`
   * `(object)`
     * **kind** `"host" | "peer" | "env"`
     * **label** | **uri** `(string)`
     * **revision** | **version** `(string)` specific revision/version or revision/version range ([semver syntax](https://github.com/npm/node-semver)) of required implementation
     * **self_resolve** `(boolean)` indicates whether this requirement is resolved by the implementation itself
     * **one_of_group** `(string)` name of a specific group of requirements that are alternatives, i.e. only one of them must be satisfied
-* **recommends** `(array of objects)`
+* **recommends** `(array)`
   * `(object)`
     * **label** | **uri** `(string)`
     * **revision** | **version** `(string)` specific revision/version or revision/version range ([semver syntax](https://github.com/npm/node-semver)) of recommended implementation
-* **conflicts** `(array of objects)`
+* **conflicts** `(array)`
   * `(object)`
     * **label** | **uri** `(string)`
     * **revision** | **version** `(string)` specific revision/version or revision/version range ([semver syntax](https://github.com/npm/node-semver)) of conflicting implementation
