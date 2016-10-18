@@ -1,0 +1,165 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/msokk/rails-pg",
+    "repository_url": "https://hub.docker.com/v2/repositories/msokk/rails-pg",
+    "tags_url": "https://hub.docker.com/v2/repositories/msokk/rails-pg/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/msokk/rails-pg/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/msokk/rails-pg/autobuild",
+    "user": "msokk",
+    "name": "rails-pg",
+    "namespace": "msokk",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 103,
+    "last_updated": "2016-10-13T15:39:19.563782Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "onbuild",
+        "full_size": 70467007,
+        "id": 1717864,
+        "repository": 478752,
+        "creator": 525965,
+        "last_updater": 525965,
+        "last_updated": "2016-10-13T15:39:19.224335Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "msokk/Dockerfiles"
+  },
+  "name": "msokk/rails-pg Docker container",
+  "description": "Onbuild image for Rails 3/4.x on Ruby 2.2.4 with PostgreSQL 9.4 client library.",
+  "readme": "# rails-pg\n[![Docker Hub](https://img.shields.io/badge/docker-ready-blue.svg)](https://registry.hub.docker.com/u/msokk/rails-pg/)\n\nOnbuild image for Rails 3/4.x on Ruby 2.2.4 with PostgreSQL 9.4 client library.\nCompiles assets in the end.\n\nBased on [Alpine Linux](https://hub.docker.com/_/alpine/).\n\n\n\n#### Environment variables\n\n* `RAILS_ENV/RACK_ENV` - Environment to run in (default: `production`)",
+  "dockerfile": "FROM alpine:3.3\n\nENV DEV_PACKAGES=\"build-base postgresql-dev libxml2-dev libxslt-dev ruby-dev\" \\\n    PACKAGES=\"ca-certificates nodejs tzdata libpq libxml2 libxslt\" \\\n    RUBY_PACKAGES=\"ruby ruby-bigdecimal ruby-io-console ruby-json ruby-irb\" \\\n\n    # Set Rails to run in production\n    RAILS_ENV=production RACK_ENV=production\n\n# Skip installing gem documentation\nRUN echo \"gem: --no-rdoc --no-ri\" >> \"$HOME/.gemrc\" && \\\n    # Prepare app folder\n    mkdir -p /app && \\\n\n    # Install packages and remove RI documentation\n    apk --no-cache add --virtual build-dependencies $DEV_PACKAGES && \\\n    apk --no-cache add $PACKAGES $RUBY_PACKAGES && \\\n\n    # Install bundler\n    gem install bundler && \\\n\n    # Throw errors if Gemfile has been modified since Gemfile.lock\n    bundle config --global frozen 1 && \\\n\n    # Silence root error\n    bundle config --global silence_root_warning 1 && \\\n    \n    # Skip development and test gems\n    bundle config --global without \"development:test\" && \\\n    bundle config --global build.nokogiri  \"--use-system-libraries\" && \\\n    rm -rf /usr/lib/ruby/gems/*/cache/*\n\n\n# Install production gems using cache\nONBUILD COPY Gemfile* /tmp/\nONBUILD WORKDIR /tmp\nONBUILD RUN bundle install && rm -rf /usr/lib/ruby/gems/*/cache/*\n\n# Clean up build system\nONBUILD RUN apk del build-dependencies\n\nONBUILD WORKDIR /app\n\n# Copy the main application.\nONBUILD COPY . ./\n\n# Precompile assets\nONBUILD RUN bundle exec rake assets:precompile\n\nENTRYPOINT [\"bundle\", \"exec\"]\nCMD [\"rails\", \"server\", \"-b\", \"0.0.0.0\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "echo \"gem: --no-rdoc --no-ri\" >> \"$HOME/.gemrc\" &&     # Prepare app folder"
+    ],
+    "workdir": [],
+    "from": "alpine:3.3",
+    "env": {
+      "DEV_PACKAGES": "\"build-base",
+      "postgresql-dev": "libxml2-dev",
+      "libxslt-dev": "ruby-dev\"",
+      "": "RUBY_PACKAGES",
+      "PACKAGES": "\"ca-certificates",
+      "nodejs": "tzdata",
+      "libpq": "libxml2",
+      "libxslt\"": "",
+      "\"ruby": "ruby-bigdecimal",
+      "ruby-io-console": "ruby-json",
+      "ruby-irb\"": ""
+    },
+    "onbuild": "RUN bundle exec rake assets:precompile",
+    "entrypoint": "[\"bundle\", \"exec\"]",
+    "cmd": "[\"rails\", \"server\", \"-b\", \"0.0.0.0\"]"
+  },
+  "source_repository_url": "https://github.com/msokk/Dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/msokk/Dockerfiles",
+  "docker_repository": "msokk/rails-pg",
+  "docker_image": "msokk/rails-pg",
+  "parameters_schema": {
+    "DEV_PACKAGES": {
+      "default": "\"build-base",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "postgresql-dev": {
+      "default": "libxml2-dev",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "libxslt-dev": {
+      "default": "ruby-dev\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "RUBY_PACKAGES",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PACKAGES": {
+      "default": "\"ca-certificates",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "nodejs": {
+      "default": "tzdata",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "libpq": {
+      "default": "libxml2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "libxslt\"": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "\"ruby": {
+      "default": "ruby-bigdecimal",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ruby-io-console": {
+      "default": "ruby-json",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ruby-irb\"": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "msokk/rails-pg",
+  "revision": "onbuild",
+  "uris": [
+    "https://hub.docker.com/r/msokk/rails-pg",
+    "https://hub.docker.com/v2/repositories/msokk/rails-pg",
+    "https://github.com/msokk/Dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image",
+    "Mode/CLI",
+    "Mode/API/Toolkit",
+    "Type/Devopsware/Build",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/msokk/rails-pg",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

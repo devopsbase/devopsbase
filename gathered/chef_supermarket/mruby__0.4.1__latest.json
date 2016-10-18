@@ -1,0 +1,88 @@
+{
+  "name": "mruby Chef cookbook",
+  "chef_cookbook_name": "mruby",
+  "revision": "0.4.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/mruby",
+    "https://supermarket.chef.io/cookbooks/mruby/download",
+    "https://supermarket.chef.io/cookbooks/mruby/versions/0.4.1",
+    "https://supermarket.chef.io/cookbooks/mruby/versions/0.4.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/mruby/versions/0.4.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/mruby",
+    "https://supermarket.chef.io/api/v1/cookbooks/mruby/versions/0.4.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Programming Languages",
+    "Executable/Script/Chef Cookbook",
+    "Type/Middleware/Runtime/Ruby",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/mruby",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/mruby/versions/0.4.1/download",
+  "deprecated": false,
+  "created": "2013-09-20T10:41:01.000Z",
+  "updated": "2014-01-20T04:21:29.000Z",
+  "description": "Installs/Configures mruby",
+  "maintainer": {
+    "name": "sawanoboly",
+    "email": "sawanoboriyu@higanworks.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 10066811,
+  "downloads_count_revision": 1258486,
+  "repository_url": "https://github.com/higanworks-cookbooks/mruby",
+  "issues_url": "https://github.com/higanworks-cookbooks/mruby",
+  "chef_source_url": "https://github.com/higanworks-cookbooks/mruby",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "mruby Cookbook\n==============\n\nThis cookbook installs mruby. \n\n- /usr/local/bin/mruby\n- /usr/local/bin/mirb\n- /usr/local/bin/mrbc\n\nIncludes recipe ngx_mruby helper.\n\n[http://community.opscode.com/cookbooks/mruby](http://community.opscode.com/cookbooks/mruby)\n\nPlatform\n-------\n\nThe following platforms are supported and tested under test kitchen:\n\n* Ubuntu 12.04\n* CentOS 6.4\n\n\nTODO\n----\n\n- create LWRP\n\nRequirements\n------------\n\n- gcc  (package or source)\n- make (package or source)\n\n### Recommends\n\n- 'build-essential' (Communty)\n\n\n### Depends\n\n- 'nginx' (Communty)\n- 'apache2' (Communty)\n\n\nAttributes\n----------\n\n### default.rb\n\n- `node[:mruby][:build_dir] - directory to build`\n  -   default: `'/opt/chef_mruby'`\n- `node[:mruby][:use_chef_ruby]`           - Use ruby chef runtime.\n  -   default: `true`\n- `node[:mruby][:add_path]`  - create symlink to. If you don't need link, set nil.\n  -   default: `'/usr/local/bin'`\n-   `node[:mruby][:git_refernce]` - branch or tag of mruby repository\n  - default: `'master'`\n\n- `node[:mruby][:build_options][:bins]`     - symlink target binaries\n  - default:`%w(mruby mrbc mirb)`\n- `node[:mruby][:build_options][:user_gems]` - user mgem to install\n  - default:`[]`\n  - Add user Gem example: Arrays of methd(Stting like a symbol) and url(Stting).\n\n```\nnode[:mruby][:build_options][:user_gems] = [\n  [':git', 'https://github.com/iij/mruby-io.git']\n]\n```\n\n### depends.rb\n\n- `node[:mruby][:depend_pkgs]` - packcage dependencies(`action :upgrade`)\n  - default: `['git','rsync']`\n\n### ngx_mruby.rb\n\n- `node[:mruby][:ngx_mruby][:git_refernce]` - branch or tag of ngx_mruby repository\n  - default: `'master'`\n\n\n### mod_mruby.rb\n\n- `node[:mruby][:mod_mruby][:git_refernce]` - branch or tag of mod_mruby repository\n  - default: `'master'`\n\n- node[:apache2][:mod_mruby][:config][:by_line] = puts lines to mruby.conf\n  - default: ['AddHandler mruby-script .rb'] (Array)\n\n\nRecipes\n----\n\n### default.rb\n\nInstall mruby to `/usr/local/bin`.\n\n#### suggests cookbooks\n\n- 'build-essential' (Opscode)\n\n#### Usage\n\nadd `mruby::default` to run_list.\n\n\n### depends.rb\n\nInstall package dependencies.\n\nIt's included by default.rb. Nothing to do.\n\n\n### ruby_install(instability support)\n\ninstall `ruby-2.0.0-p247` with rbenv to system global.\n\n#### depends cookbooks\n\n- rbenv cookbook(Community)\n\n#### Usage\n\nadd `mruby::ruby_install` to run_list.\n\n### ngx_mruby\n\nRegist config option to nginx build options.\n\n#### depends cookbooks\n\n- nginx(Community)\n\n\nUsage\n-----\n\nadd `mruby::ngx_mruby,nginx::default` to run_list.\n\n### Example\n\n**Attributes(test-kitchen format)**\n\n```\n- name: ngx_mruby\n  run_list:\n    - \"recipe[build-essential::default]\"\n    - \"recipe[mruby::ngx_mruby]\"\n    - \"recipe[nginx]\"\n  attributes:\n    nginx:\n      install_method: source\n      version: 1.4.2\n      configure_flags: [\"--with-debug\"]\n      source:\n        modules:\n          - http_ssl_module\n          - http_geoip_module\n          - http_realip_module\n          - http_stub_status_module\n          - http_gzip_static_module\n    mruby:\n      force_rebuild: true\n      build_options:\n        user_gems:\n          -  [':git', 'https://github.com/iij/mruby-io.git']\n```\n\nChefClient converges below.\n\n```\n# /opt/nginx-1.4.2/sbin/nginx -V\nnginx version: nginx/1.4.2\nbuilt by gcc 4.6.3 (Ubuntu/Linaro 4.6.3-1ubuntu5) \nTLS SNI support enabled\nconfigure arguments:\n--prefix=/opt/nginx-1.4.2\n--conf-path=/etc/nginx/nginx.conf\n--sbin-path=/opt/nginx-1.4.2/sbin/nginx\n--with-debug\n--add-module=/opt/chef_mruby/ngx_mruby\n--add-module=/opt/chef_mruby/ngx_mruby/dependence/ngx_devel_kit\n--with-http_ssl_module\n--with-http_geoip_module\n--with-ld-opt='-Wl,-R,/usr/local/lib -L /usr/local/lib'\n--with-http_realip_module\n--with-http_stub_status_module\n--with-http_gzip_static_module\n```\n\n### Example (JSON style attribute)\n\n```\n{\n  \"run_list\" : [\n    \"recipe[build-essential::default]\",\n    \"recipe[mruby::ngx_mruby]\",\n    \"recipe[nginx]\"\n  ],\n  \"mruby\": {\n    \"force_rebuild\" : true,\n    \"build_options\" : {\n       \"user_gems\" : [\n          [\":git\", \"https://github.com/iij/mruby-io.git\"]\n        ]\n    }\n  },\n  \"nginx\" : {\n    \"install_method\" : \"source\",\n    \"version\" : \"1.4.2\",\n    \"configure_flags\" : [\n      \"--with-debug\"\n    ],\n    \"source\" : {\n    \"modules\" : [\n      \"http_ssl_module\",\n      \"http_geoip_module\",\n      \"http_realip_module\",\n      \"http_stub_status_module\",\n      \"http_gzip_static_module\"\n    ]\n    }\n  }\n}\n```\n\n### mod_mruby\n\nBuild mod_mruby.so and regist config to apache httpd .\n\nUsage\n-----\n\nadd `mruby::mod_mruby` to run_list.\n\n\n#### depends cookbooks\n\n- apache2(Community)\n\n\n### Example\n\n**Attributes(test-kitchen format)**\n\n```\n- name: mod_mruby\n  run_list:\n    - \"recipe[build-essential::default]\"\n    - \"recipe[mruby::mod_mruby]\"\n  attributes:\n    apache:\n    mruby:\n      build_type: debug\n      force_rebuild: true\n      git_refernce: abe6db945491105ac265884990b73af0a073d16d\n      build_options:\n        user_gems:\n          # - [':git', 'git://github.com/iij/mruby-process.git']\n          # - [':git', 'git://github.com/iij/mruby-pack.git']\n          # - [':git', 'git://github.com/iij/mruby-digest.git']\n          - [':git', 'git://github.com/mattn/mruby-json.git']\n          # - [':git', 'git://github.com/mattn/mruby-curl.git']\n          - [':git', 'git://github.com/matsumoto-r/mruby-thread.git']\n          # - [':git', 'git://github.com/matsumoto-r/mruby-redis.git']\n          - [':git', 'git://github.com/matsumoto-r/mruby-vedis.git']\n          - [':git', 'git://github.com/matsumoto-r/mruby-sleep.git']\n          - [':git', 'git://github.com/matsumoto-r/mruby-config.git']\n          - [':git', 'git://github.com/masamitsu-murase/mruby-hs-regexp.git']\n```\n\n\nChefClient converges below.\n\n```\n# httpd -M\nLoaded Modules:\n core_module (static)\n mpm_prefork_module (static)\n http_module (static)\n so_module (static)\n mruby_module (shared)\n alias_module (shared)\n auth_basic_module (shared)\n authn_file_module (shared)\n authz_default_module (shared)\n authz_groupfile_module (shared)\n authz_host_module (shared)\n authz_user_module (shared)\n autoindex_module (shared)\n deflate_module (shared)\n dir_module (shared)\n env_module (shared)\n log_config_module (shared)\n logio_module (shared)\n mime_module (shared)\n negotiation_module (shared)\n setenvif_module (shared)\n status_module (shared)\nSyntax OK\n```\n\n\nTest\n---\n\n### Install test dependencies\n\n`bundle`\n\n### test\n\n`kitchen test`\n\n#### Platforms for test-kitchen\n\n```\n $ kitchen list\nInstance               Driver   Provisioner  Last Action\ndefault-ubuntu-1204    Vagrant  ChefSolo     <Not Created>\ndefault-centos-64      Vagrant  ChefSolo     <Not Created>\nrbenv-ubuntu-1204      Vagrant  ChefSolo     <Not Created>\nrbenv-centos-64        Vagrant  ChefSolo     <Not Created>\nngx-mruby-ubuntu-1204  Vagrant  ChefSolo     <Not Created>\nngx-mruby-centos-64    Vagrant  ChefSolo     <Not Created>\nmod-mruby-ubuntu-1204  Vagrant  ChefSolo     <Not Created>\nmod-mruby-centos-64    Vagrant  ChefSolo     <Not Created>\n```\n\nYou can test specific recipe.\n\n```\nkitchen converge mod-mruby\n```\n\nContributing\n------------\n\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write you change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n\nLicense and Authors\n-------------------\nAuthors:  Yukihiko Sawanobori (HiganWorks LLC)\n\nunder MIT License\n\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": "= 12.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 6.4",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/nginx",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apache2",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "recommends": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/rbenv",
+      "revision": ">= 0.0.0"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0"
+    }
+  ]
+}

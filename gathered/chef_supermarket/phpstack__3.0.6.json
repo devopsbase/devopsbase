@@ -1,0 +1,206 @@
+{
+  "name": "phpstack Chef cookbook",
+  "chef_cookbook_name": "phpstack",
+  "revision": "3.0.6",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/phpstack",
+    "https://supermarket.chef.io/cookbooks/phpstack/download",
+    "https://supermarket.chef.io/cookbooks/phpstack/versions/3.0.6",
+    "https://supermarket.chef.io/cookbooks/phpstack/versions/3.0.6/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/phpstack/versions/3.0.6",
+    "https://supermarket.chef.io/api/v1/cookbooks/phpstack",
+    "https://supermarket.chef.io/api/v1/cookbooks/phpstack/versions/3.0.6/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Provider/HP",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Runtime/PHP"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/phpstack",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/phpstack/versions/3.0.6/download",
+  "deprecated": false,
+  "created": "2014-09-19T20:08:22.494Z",
+  "updated": "2015-03-19T11:10:58.673Z",
+  "description": "Provides a full php stack",
+  "maintainer": {
+    "name": "rackops",
+    "email": "rackspace-cookbooks@rackspace.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 2,
+  "downloads_count": 11407624,
+  "downloads_count_revision": 856889,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# phpstack\n\n## Supported Platforms\n\n- CentOS 6.5\n- Ubuntu 12.04\n- Ubuntu 14.04\n\n## Requirements\n\n### Cookbooks\n\n- `apache2`\n- `application`\n- `application_php`\n- `apt`\n- `build-essential`\n- `chef-sugar`\n- `database`\n- `git`\n- `memcached`\n- `mongodb`\n- `mysql`\n- `mysql-multi`\n- `newrelic`\n- `newrelic_meetme_plugin`\n-` nginx`\n- `openssl`\n- `pg-multi`\n- `php`\n- `php-fpm`\n- `platformstack`\n- `rabbitmq`\n- `rackspace_gluster`\n- `redis-multi`\n- `varnish`\n- `yum`\n- `yum-ius`\n- `yum-epel`\n\n## Recipes\n\n### default\n- what it does\n  - nothing\n- toggles\n  - nothing\n\n### apache\n- what it does\n  - Creates sites coming from `node['phpstack']['apache']['sites']` array\n  - Creates monitoring check for each site if `node[platformstack][cloud_monitoring]['enabled'] = true`.\n- toggles\n  - can be disabled by setting `node['phpstack']['webserver_deployment']['enabled']` to false\n\n### application_php\n- what it does\n  - installs php and some libraries\n  - includes the nginx or apache recipe if `node['phpstack']['webserver']` is either apache or nginx\n  - if glusterfs is set up via `node['rackspace_gluster']['config']['server']['glusters']` glusterfs will be set up as a client\n  - deploys your apps, from attributes, depending on what `node['phpstack']['webserver']` is set to\n    - deploys from `node['phpstack'][node['phpstack']['webserver']]['sites']`\n  - creates a `/etc/phpstack.ini` file with authentication info for the other nodes in the environment\n    - only finding mysql and rabbitmq nodes right now\n  - creates a backup job that backs up `/var/www` by default\n    - only runs if `node['phpstack']['rackspace_cloudbackup']['http_docroot']['enable']` is set\n  - tags the node with the `php_app_node` tag\n- toggles\n  - application deployment can be disabled via the `node['phpstack']['code-deployment']['enabled']` flag\n\n### gluster\n- what it does\n  - sets up glusterfs based on the `node['rackspace_gluster']['config']['server']['glusters']` attribute\n    - this may involve some manual setup, it is glusterfs afterall\n\n### memcache\n- what it does\n  - sets up memcache\n  - sets up the memcache cloud monitoring plugin if enabled\n\n### mongodb_standalone\n- what it does\n  - sets up mongodb from the 10gen repo\n\n### mysql_add_drive\n- what it does\n  - formats /dev/xvde1 and will prepare it for the mysql datadir.\n  - creates the mysql user and manages the /var/lib/mysql mountpoint\n\n### mysql_base\n- what it does\n  - sets a random root mysql password if the default password would normally be set\n  - sets up mysql\n  - sets up a holland user if `node['holland']['enabled']`\n  - sets up a monitoring mysql user and monitor if `node['platformstack']['cloud_monitoring']['enabled']`\n  - allow app nodes in the environment to attempt to connect\n  - auto-generates mysql databases and assiciated users/passwords for sites installed (can be disabled)\n  - installs phpstack specific databases (will autogenerate the user and password if needed still)\n- toggles\n  -  `node['phpstack']['db-autocreate']['enabled']` controls database autocreation at a global level\n  -  if the site has the `db_autocreate` attribute, it will control database autocreation for that site\n- info\n  - auto-generated databases are based on site name and port number the site is on, same for username\n\n### mysql_holland\n-  what it does\n  -  installs holland\n  -  will set up a backup job based on if you are running as a slave or not\n\n### mysql_master\n- what it does\n  - sets up mysql master (runs the mysql_base recipe as well)\n  - will allow slaves to connect (via iptables)\n\n### mysql_slave\n- what it does\n  - sets up the mysql slave (runs the mysql_base recipe as well)\n  - allows the master to connect (via iptables)\n\n### newrelic\n- what it does\n  - sets up newrelic and the php agent for newrelic\n  - sets up the following plugins (as needed)\n    - memcache\n    - rabbit\n    - nginx\n\n### nginx\n- what it does\n  - sets up the nginx vhosts as defined in `node['phpstack']['nginx']['sites']`\n  - sets up the monitors for the for each vhost / port combo\n- toggles\n  - `node['phpstack']['webserver_deployment']['enabled']` controls whether this recipe runs\n\n### postgresql_base\n- what it does\n  - sets up a basic postgresql server and the associated monitoring checks (if enabled)\n- toggles\n  - `node['platformstack']['cloud_monitoring']['enabled']` controls the monitoring checks\n\n### postgresql_master\n- what it does\n  - sets up postgresql as a master\n  - allows postgresql slaves to connect (via iptables)\n\n### postgresql_slave\n- what it does\n  - sets up postgresql as a slave\n  - allows the postgresql master to connect (via iptables)\n\n### rabbitmq\n- what it does\n  - allows nodes tagged as `php_app_node` to connect (via iptables)\n  - disables guest user\n  - sets up the cloud monitoring plugin\n  - sets up a monitoring user for rabbit (with password)\n  - sets up rabbitmq vhost/user/password combinations for each vhost and port combination\n\n### redis_base\n- what it does\n  - sets up redis (basic)\n  - allows nodes tagged as `php_app_node` to connect (via iptables)\n  - allows nodes tagged as `phpstack-redis` to connect (via iptables)\n\n### redis_master\n- what it does\n  - sets up redis in a master capacity\n\n### redis_sentinel\n- what it does\n  - sets up redis sentinel\n  - allows nodes tagged as `php_app_node` to connect (via iptables)\n  - allows nodes tagged as `phpstack-redis_sentinel` to connect (via iptables)\n  - allows nodes tagged as `phpstack-redis` to connect (via iptables)\n\n### redis_single\n- what it does\n  - sets up redis in a standalone capacity\n\n### redis_slave\n- what it does\n  - sets up redis in a slave capacity\n\n### varnish\n- what it does\n  - allows clients to connect to the varnish port (via iptables)\n  - enables the cloud monitoring plugin for varnish\n  - sets the default backend port to the first useful port it can find\n  - sets up varnish if for multi backend load ballancing per vhost/port combination\n- toggles\n  - `node['varnish']['multi']` controls if varnish is simple or complex (multi backend or not)\n    - it is also controled by if any backend nodes are found\n\n\n## Data_Bags\n\nNo Data_Bag configured for this cookbook\n\n## Attributes\n\n### default\n\n- `default['phpstack']['newrelic']['application_monitoring'] = ''`\n  - controls if we allow newrelic to to do application monitoring\n    - is set to `'true'` in the newrelic recipe\n- `default['phpstack']['webserver'] = 'apache'`\n  - sets the webserver want to use\n    - you can set this to anything, but for acutally running a webserver we only support nginx and apache\n    - you can set this to something like `'not_a_webserver'` and then use that namespace if you still want to deploy your application\n- `default['phpstack']['ini']['cookbook'] = 'phpstack'`\n  - sets where the `/etc/phpstack.ini` template is sourced from\n- `default['phpstack']['mysql']['databases'] = {}`\n  - contains a list of databases to set up (along with users / passwords)\n- `default['phpstack']['apache']['sites'] = {}`\n  - contains a list of ports and vhosts to set up for apache\n- `default['phpstack']['nginx']['sites'] = {}`\n  - contains a list of ports and vhosts to set up for nginx\n- `default['phpstack']['webserver_deployment']['enabled'] = true`\n  - allows apache and/or nginx recipes to run\n- `default['phpstack']['code-deployment']['enabled'] = true`\n  - allows code deployment to run\n- `default['phpstack']['db-autocreate']['enabled'] = true`\n  - controls database autocreation for each site / port combination globally\n\n### demo\n\ncontains attributes that used in a demo site, useful as an example of what to set to deploy a site\n\n### gluster\n\ncontains attributes used in setting up gluster, node the commented out section, it helps to actually hard code these IPs\n\n### monitoring\n\ncontrols how cloud_monitoring is used within phpstack\n\n### nginx\n\n- `default['nginx']['default_site_enabled'] = false`\n  - no need for the default site to be set up (as is default)\n- `set['nginx']['init_style'] = 'upstart'`\n  - useful on ubuntu...\n- `default['nginx']['listen_ports'] = %w(80)`\n  - need to set this up as a default for things like varnish\n- `default['nginx']['default_root'] = '/var/www'`\n  - we don't want sites going into `/var/www/nginx-default`\n\n### php\n\n- `default['php']['packages'] = []`\n  - list of packages needed based on platform_family\n\n### php_fpm\n\nshouldn't really be messed with\n\n### rabbitmq\n- `default['phpstack']['rabbitmq']['passwords'] = {}`\n  - sets the admin password for rabbitmq\n\n### varnish\n- `default['phpstack']['varnish']['multi'] = true`\n  - allows us to use more complex logic for the varnish configuration\n- `default['phpstack']['varnish']['backend_nodes'] = []`\n  - a list of nodes to use for backends. if empty or nil, search is the default behavior\n\n## Usage\n\n### useful datastructures\n\n- vhosts (apache here can be what you like, but to actually deploy a web server you need to set it to apache or nginx):\n```json\n{\n    \"phpstack\": {\n      \"apache\": {\n        \"user\": \"apache\",\n        \"group\": \"apache\",\n        \"sites\": {\n          80: {\n            \"example.com\": {\n              \"template\": \"apache2/sites/example.com-80.erb\",\n              \"cookbook\": \"phpstack\",\n              \"server_name\": \"example.com\",\n              \"server_aliases\": [\n                \"www.example.com\",\n                \"test.example.com\"\n              ],\n              \"docroot\": \"/var/www/example.com/80\",\n              \"errorlog\": \"/var/log/apache/example.com-error.log\",\n              \"customlog\": \"/var/log/apache/example.com-access.log combined\",\n              \"allow_override\": [\n                \"All\"\n              ],\n              \"loglevel\": \"warn\",\n              \"server_admin\": \"test@example.com\",\n              \"revision\": \"v1.0.1\",\n              \"repository\": \"https://github.com/rackops/php-test-app\",\n              \"deploy_key\": \"/root/.ssh/id_rsa\"\n            }\n          }\n        }\n      }\n    }\n}\n```\n\n- applications (combine this with the vhost to deploy a full site)\n```json\n{\n    \"phpstack\": {\n      \"apache\": {\n        \"user\": \"apache\",\n        \"group\": \"apache\",\n        \"sites\": {\n          80: {\n            \"example.com\": {\n              \"docroot\": \"/var/www/example.com/80\",\n              \"revision\": \"v1.0.1\",\n              \"repository\": \"https://github.com/rackops/php-test-app\",\n              \"deploy_key\": \"/root/.ssh/id_rsa\"\n            }\n          }\n        }\n      }\n    }\n}\n```\n\n- databases\n```json\n{\n    \"phpstack\": {\n      \"mysql\": {\n        \"example_db\": {\n          \"user\": \"exampleuser\",\n          \"password\": \"do_not_use_this_password\"\n        }\n      }\n    }\n}\n```\n\n### phpstack\n\n- single node (app and db):\n```json\n{\n    \"run_list\": [\n      \"recipe[platformstack::default]\",\n      \"recipe[rackops_rolebook::default]\",\n      \"recipe[phpstack::mysql_base]\",\n      \"recipe[phpstack::application_php]\"\n    ]\n}\n```\n- app node - standalone app:\n```json\n{\n    \"run_list\": [\n      \"recipe[platformstack::default]\",\n      \"recipe[rackops_rolebook::default]\",\n      \"recipe[phpstack::application_php]\"\n    ]\n}\n```\n- MySQL DB Single Node:\n```json\n{\n    \"run_list\": [\n      \"recipe[platformstack::default]\",\n      \"recipe[rackops_rolebook::default]\",\n      \"recipe[phpstack::mysql_base]\"\n    ]\n}\n```\n\n- MySQL DB Master Node:\n```json\n{\n    \"run_list\": [\n      \"recipe[platformstack::default]\",\n      \"recipe[rackops_rolebook::default]\",\n      \"recipe[phpstack::mysql_master]\"\n    ]\n}\n```\n\n- MySQL DB Slave Node:\n```json\n{\n    \"run_list\": [\n      \"recipe[platformstack::default]\",\n      \"recipe[rackops_rolebook::default]\",\n      \"recipe[phpstack::mysql_slave]\"\n    ]\n}\n```\n\n\n- PostgreSQL cluster for phpstack\n\nEnsure the following attributes are set within environment or wrapper cookbook\n\n```ruby\nnode['postgresql']['version'] = '9.3'\nnode['postgresql']['password'] = 'postgresdefault'\nnode['pg-multi']['replication']['password'] = 'useagudpasswd'\nnode['pg-multi']['master_ip'] = '1.2.3.4'\nnode['pg-multi']['slave_ip'] = ['5.6.7.8']\n\n# Depending on OS one of the following two must be set:\nnode['postgresql']['enable_pdgd_yum'] = true  # (Redhat Family)\nnode['postgresql']['enable_pdgd_apt'] = true  # (Debian Family)\n```\n\n- Master PostgreSQL node:\n```json\n{\n    \"run_list\": [\n      \"recipe[platformstack::default]\",\n      \"recipe[rackops_rolebook::default]\",\n      \"recipe[phpstack::postgresql_master]\"\n    ]\n}\n```\n- Slave PostgreSQL node:\n```json\n{\n    \"run_list\": [\n      \"recipe[platformstack::default]\",\n      \"recipe[rackops_rolebook::default]\",\n      \"recipe[phpstack::postgresql_slave]\"\n    ]\n}\n```\n\n## New Relic Monitoring\n\nTo configure New Relic, make sure the `node['newrelic']['license']` attribute is set and include the `platformstack` cookbook in your run_list.  You can also run the `phpstack::newrelic` recipe for some more advanced monitors.\n\n\n# Contributing\n\nhttps://github.com/rackspace-cookbooks/contributing/blob/master/CONTRIBUTING.md\n\n\n# Authors\nAuthors:: Matthew Thode <matt.thode@rackspace.com>\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apache2",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/application",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/application_php",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef-sugar",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/database",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/git",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/memcached",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/mongodb",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/mysql",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/mysql-multi",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/newrelic",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/newrelic_meetme_plugin",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/nginx",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/openssl",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/pg-multi",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/php",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/php-fpm",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/platformstack",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/rabbitmq",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/rackspace_gluster",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/redis-multi",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/varnish",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum-ius",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum-epel",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

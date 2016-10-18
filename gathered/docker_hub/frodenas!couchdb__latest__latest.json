@@ -1,0 +1,114 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/frodenas/couchdb",
+    "repository_url": "https://hub.docker.com/v2/repositories/frodenas/couchdb",
+    "tags_url": "https://hub.docker.com/v2/repositories/frodenas/couchdb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/frodenas/couchdb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/frodenas/couchdb/autobuild",
+    "user": "frodenas",
+    "name": "couchdb",
+    "namespace": "frodenas",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 17,
+    "pull_count": 1065125,
+    "last_updated": "2015-10-19T16:42:27.977406Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 228493577,
+        "id": 46541,
+        "repository": 38420,
+        "creator": 25001,
+        "last_updater": 25001,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.6",
+        "full_size": 228493632,
+        "id": 46539,
+        "repository": 38420,
+        "creator": 25001,
+        "last_updater": 25001,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "frodenas/docker-couchdb"
+  },
+  "name": "frodenas/couchdb Docker container",
+  "description": "A Docker Image for CouchDB",
+  "readme": "# CouchDB Dockerfile\n\nA Dockerfile that produces a Docker Image for [Apache CouchDB](http://couchdb.apache.org/).\n\n## CouchDB version\n\nThe `master` branch currently hosts CouchDB 1.6.\n\nDifferent versions of CouchDB are located at the github repo [branches](https://github.com/frodenas/docker-couchdb/branches).\n\n## Usage\n\n### Build the image\n\nTo create the image `frodenas/couchdb`, execute the following command on the `docker-couchdb` folder:\n\n```\n$ docker build -t frodenas/couchdb .\n```\n\n### Run the image\n\nTo run the image and bind to host port 5984:\n\n```\n$ docker run -d --name couchdb -p 5984:5984 frodenas/couchdb\n```\n\nThe first time you run your container, a new user `couchdb` with all privileges will be created with a random password.\nTo get the password, check the logs of the container by running:\n\n```\ndocker logs <CONTAINER_ID>\n```\n\nYou will see an output like the following:\n\n```\n========================================================================\nCouchDB User: \"couchdb\"\nCouchDB Password: \"jPp5fBJySeuJPTN8\n========================================================================\n```\n\n#### Credentials\n\nIf you want to preset credentials instead of a random generated ones, you can set the following environment variables:\n\n* `COUCHDB_USERNAME` to set a specific username\n* `COUCHDB_PASSWORD` to set a specific password\n\nOn this example we will preset our custom username and password:\n\n```\n$ docker run -d \\\n    --name couchdb \\\n    -p 5984:5984 \\\n    -e COUCHDB_USERNAME=myusername \\\n    -e COUCHDB_PASSWORD=mypassword \\\n    frodenas/couchdb\n```\n\n#### Databases\n\nIf you want to create a database at container's boot time, you can set the following environment variables:\n\n* `COUCHDB_DBNAME` to create a database\n\nOn this example we will preset our custom username and password and we will create a database:\n\n```\n$ docker run -d \\\n    --name couchdb \\\n    -p 5984:5984 \\\n    -e COUCHDB_USERNAME=myusername \\\n    -e COUCHDB_PASSWORD=mypassword \\\n    -e COUCHDB_DBNAME=mydb \\\n    frodenas/couchdb\n```\n\n#### Persistent data\n\nThe CouchDB server is configured to store data in the `/data` directory inside the container. You can map the\ncontainer's `/data` volume to a volume on the host so the data becomes independent of the running container:\n\n```\n$ mkdir -p /tmp/couchdb\n$ docker run -d \\\n    --name couchdb \\\n    -p 5984:5984 \\\n    -v /tmp/couchdb:/data \\\n    frodenas/couchdb\n```\n\n## Copyright\n\nCopyright (c) 2014 Ferran Rodenas. See [LICENSE](https://github.com/frodenas/docker-couchdb/blob/master/LICENSE) for details.\n",
+  "dockerfile": "FROM frodenas/ubuntu\nMAINTAINER Ferran Rodenas <frodenas@gmail.com>\n\n# Install and configure CouchDB 1.6.0\nRUN DEBIAN_FRONTEND=noninteractive && \\\n    apt-get install -y --force-yes \\\n    erlang-dev \\\n    erlang-manpages \\\n    erlang-base-hipe \\\n    erlang-eunit \\\n    erlang-nox \\\n    erlang-xmerl \\\n    erlang-inets \\\n    libmozjs185-dev \\\n    libicu-dev \\\n    libcurl4-gnutls-dev \\\n    libtool && \\\n    cd /tmp && \\\n    wget http://mirror.sdunix.com/apache/couchdb/source/1.6.0/apache-couchdb-1.6.0.tar.gz && \\\n    tar xzvf apache-couchdb-1.6.0.tar.gz && \\\n    cd apache-couchdb-1.6.0 && \\\n    ./configure && \\\n    make && \\\n    make install && \\\n    sed -e 's/^bind_address = .*$/bind_address = 0.0.0.0/' -i /usr/local/etc/couchdb/default.ini && \\\n    sed -e 's/^database_dir = .*$/database_dir = \\/data/' -i /usr/local/etc/couchdb/default.ini && \\\n    sed -e 's/^view_index_dir = .*$/view_index_dir = \\/data/' -i /usr/local/etc/couchdb/default.ini && \\\n    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n# Add scripts\nADD scripts /scripts\nRUN chmod +x /scripts/*.sh\nRUN touch /.firstrun\n\n# Command to run\nENTRYPOINT [\"/scripts/run.sh\"]\nCMD [\"\"]\n\n# Expose listen port\nEXPOSE 5984\n\n# Expose our data, logs and configuration volumes\nVOLUME [\"/data\", \"/usr/local/var/log/couchdb\", \"/usr/local/etc/couchdb\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "scripts",
+        "dest": "/scripts"
+      }
+    ],
+    "expose": [
+      5984
+    ],
+    "volume": [
+      "[\"/data\", \"/usr/local/var/log/couchdb\", \"/usr/local/etc/couchdb\"]"
+    ],
+    "run": [
+      "DEBIAN_FRONTEND=noninteractive &&     apt-get install -y --force-yes     erlang-dev     erlang-manpages     erlang-base-hipe     erlang-eunit     erlang-nox     erlang-xmerl     erlang-inets     libmozjs185-dev     libicu-dev     libcurl4-gnutls-dev     libtool &&     cd /tmp &&     wget http://mirror.sdunix.com/apache/couchdb/source/1.6.0/apache-couchdb-1.6.0.tar.gz &&     tar xzvf apache-couchdb-1.6.0.tar.gz &&     cd apache-couchdb-1.6.0 &&     ./configure &&     make &&     make install &&     sed -e 's/^bind_address = .*$/bind_address = 0.0.0.0/' -i /usr/local/etc/couchdb/default.ini &&     sed -e 's/^database_dir = .*$/database_dir = \\/data/' -i /usr/local/etc/couchdb/default.ini &&     sed -e 's/^view_index_dir = .*$/view_index_dir = \\/data/' -i /usr/local/etc/couchdb/default.ini &&     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "chmod +x /scripts/*.sh",
+      "touch /.firstrun"
+    ],
+    "workdir": [],
+    "from": "frodenas/ubuntu",
+    "maintainer": "Ferran Rodenas <frodenas@gmail.com>",
+    "entrypoint": "[\"/scripts/run.sh\"]",
+    "cmd": "[\"\"]"
+  },
+  "source_repository_url": "https://github.com/frodenas/docker-couchdb.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/frodenas/docker-couchdb",
+  "docker_repository": "frodenas/couchdb",
+  "docker_image": "frodenas/couchdb",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5984
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "frodenas/couchdb",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/frodenas/couchdb",
+    "https://hub.docker.com/v2/repositories/frodenas/couchdb",
+    "https://github.com/frodenas/docker-couchdb.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Data Store/Document-oriented/CouchDB"
+  ],
+  "info_url": "https://hub.docker.com/r/frodenas/couchdb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

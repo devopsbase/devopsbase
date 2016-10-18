@@ -1,0 +1,109 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dklein/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/dklein/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/dklein/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dklein/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dklein/owncloud/autobuild",
+    "user": "dklein",
+    "name": "owncloud",
+    "namespace": "dklein",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 42,
+    "last_updated": "2016-08-26T10:20:56.175548Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 235456925,
+        "id": 4033220,
+        "repository": 823280,
+        "creator": 499384,
+        "last_updater": 499384,
+        "last_updated": "2016-08-26T10:20:55.826195Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "dklein-net/docker-owncloud"
+  },
+  "name": "dklein/owncloud Docker container",
+  "description": "Modified version of ownCloud with cron enabled.",
+  "readme": "Example of docker run command:\n\n```docker run -d -p 80:80 --restart=always --link mysql:mysql -v /custom/data/owncloud/config:/var/www/html/config -v /custom/data/owncloud/data:/var/www/html/data --name owncloud dklein/owncloud```",
+  "dockerfile": "###\n# Automated Build for dklein/owncloud Image\n# Version 9.1.0\n# (c) 2016 Dennis Klein\n#\n# I used the image from library/owncloud before, but they don't seem to push updates regulary. I was not able to pull version\n# 9.0.4 for days and decided to do it on my own now.\n#\n\n\n### Everything below is from the original owncloud Dockerfile\n#\nFROM php:5.6-apache\n\nRUN apt-get update && apt-get install -y \\\n    bzip2 \\\n    libcurl4-openssl-dev \\\n    libfreetype6-dev \\\n    libicu-dev \\\n    libjpeg-dev \\\n    libldap2-dev \\\n    libmcrypt-dev \\\n    libmemcached-dev \\\n    libpng12-dev \\\n    libpq-dev \\\n    libxml2-dev \\\n    && rm -rf /var/lib/apt/lists/*\n\n# https://doc.owncloud.org/server/8.1/admin_manual/installation/source_installation.html#prerequisites\nRUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \\\n    && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \\\n    && docker-php-ext-install exif gd intl ldap mbstring mcrypt mysql opcache pdo_mysql pdo_pgsql pgsql zip\n\n# set recommended PHP.ini settings\n# see https://secure.php.net/manual/en/opcache.installation.php\nRUN { \\\n\techo 'opcache.memory_consumption=128'; \\\n\techo 'opcache.interned_strings_buffer=8'; \\\n\techo 'opcache.max_accelerated_files=4000'; \\\n\techo 'opcache.revalidate_freq=60'; \\\n\techo 'opcache.fast_shutdown=1'; \\\n\techo 'opcache.enable_cli=1'; \\\n    } > /usr/local/etc/php/conf.d/opcache-recommended.ini\nRUN a2enmod rewrite\n\n# PECL extensions\nRUN set -ex \\\n    && pecl install APCu-4.0.10 \\\n    && pecl install memcached-2.2.0 \\\n    && pecl install redis-2.2.8 \\\n    && docker-php-ext-enable apcu memcached redis\n\nENV OWNCLOUD_VERSION 9.1.0\n\nRUN curl -fsSL -o owncloud.tar.bz2 \\\n\t\"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2\" \\\n    && curl -fsSL -o owncloud.tar.bz2.asc \\\n\t\"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2.asc\" \\\n    && export GNUPGHOME=\"$(mktemp -d)\" \\\n# gpg key from https://owncloud.org/owncloud.asc\n    && gpg --keyserver ha.pool.sks-keyservers.net --recv-keys E3036906AD9F30807351FAC32D5D5E97F6978A26 \\\n    && gpg --batch --verify owncloud.tar.bz2.asc owncloud.tar.bz2 \\\n    && rm -r \"$GNUPGHOME\" owncloud.tar.bz2.asc \\\n    && tar -xjf owncloud.tar.bz2 -C /usr/src/ \\\n    && rm owncloud.tar.bz2\n\nENTRYPOINT [\"/entrypoint.sh\"]\nCMD [\"apache2-foreground\"]\n\n### my customization start here\nMAINTAINER Dennis Klein <dennis.klein@gmx.com>\n\n# preserve data and config\nVOLUME /var/www/html/data\nVOLUME /var/www/html/config\n\n# install cron\nRUN apt-get update && apt-get install -y cron && \\\n  rm -rf /var/lib/apt/lists/*\n\n# install modified entrypoint.sh\nCOPY entrypoint.sh /entrypoint.sh\n\n# change shell for www-data to use cron and execute the occ command\nRUN chsh -s /bin/bash www-data\n\n# activate cronjob\nRUN echo '*/15 * * * * /usr/local/bin/php -f /var/www/html/cron.php' >> /tmp/www-data.crontab && \\\n  crontab -u www-data /tmp/www-data.crontab && \\\n  rm /tmp/www-data.crontab\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "/var/www/html/data",
+      "/var/www/html/config"
+    ],
+    "run": [
+      "apt-get update && apt-get install -y     bzip2     libcurl4-openssl-dev     libfreetype6-dev     libicu-dev     libjpeg-dev     libldap2-dev     libmcrypt-dev     libmemcached-dev     libpng12-dev     libpq-dev     libxml2-dev     && rm -rf /var/lib/apt/lists/*",
+      "docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr     && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/     && docker-php-ext-install exif gd intl ldap mbstring mcrypt mysql opcache pdo_mysql pdo_pgsql pgsql zip",
+      "{ \techo 'opcache.memory_consumption=128'; \techo 'opcache.interned_strings_buffer=8'; \techo 'opcache.max_accelerated_files=4000'; \techo 'opcache.revalidate_freq=60'; \techo 'opcache.fast_shutdown=1'; \techo 'opcache.enable_cli=1';     } > /usr/local/etc/php/conf.d/opcache-recommended.ini",
+      "a2enmod rewrite",
+      "set -ex     && pecl install APCu-4.0.10     && pecl install memcached-2.2.0     && pecl install redis-2.2.8     && docker-php-ext-enable apcu memcached redis",
+      "curl -fsSL -o owncloud.tar.bz2 \t\"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2\"     && curl -fsSL -o owncloud.tar.bz2.asc \t\"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2.asc\"     && export GNUPGHOME=\"$(mktemp -d)\" # gpg key from https://owncloud.org/owncloud.asc",
+      "apt-get update && apt-get install -y cron &&   rm -rf /var/lib/apt/lists/*",
+      "chsh -s /bin/bash www-data",
+      "echo '*/15 * * * * /usr/local/bin/php -f /var/www/html/cron.php' >> /tmp/www-data.crontab &&   crontab -u www-data /tmp/www-data.crontab &&   rm /tmp/www-data.crontab"
+    ],
+    "workdir": [],
+    "from": "php:5.6-apache",
+    "env": {
+      "OWNCLOUD_VERSION": "9.1.0"
+    },
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"apache2-foreground\"]",
+    "maintainer": "Dennis Klein <dennis.klein@gmx.com>",
+    "copy": "entrypoint.sh /entrypoint.sh"
+  },
+  "source_repository_url": "https://github.com/dklein-net/docker-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/dklein-net/docker-owncloud",
+  "docker_repository": "dklein/owncloud",
+  "docker_image": "dklein/owncloud",
+  "parameters_schema": {
+    "OWNCLOUD_VERSION": {
+      "default": "9.1.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dklein/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/dklein/owncloud",
+    "https://hub.docker.com/v2/repositories/dklein/owncloud",
+    "https://github.com/dklein-net/docker-owncloud.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/dklein/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

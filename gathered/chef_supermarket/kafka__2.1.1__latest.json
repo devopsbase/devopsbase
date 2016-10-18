@@ -1,0 +1,86 @@
+{
+  "name": "kafka Chef cookbook",
+  "chef_cookbook_name": "kafka",
+  "revision": "2.1.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/kafka",
+    "https://supermarket.chef.io/cookbooks/kafka/download",
+    "https://supermarket.chef.io/cookbooks/kafka/versions/2.1.1",
+    "https://supermarket.chef.io/cookbooks/kafka/versions/2.1.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/kafka/versions/2.1.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/kafka",
+    "https://supermarket.chef.io/api/v1/cookbooks/kafka/versions/2.1.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/kafka",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/kafka/versions/2.1.1/download",
+  "deprecated": false,
+  "created": "2012-08-21T00:29:02.000Z",
+  "updated": "2016-09-22T10:13:01.986Z",
+  "description": "Installs and configures a Kafka broker",
+  "maintainer": {
+    "name": "mthssdrbrg",
+    "email": "mths@sdrbrg.se"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 19,
+  "downloads_count": 4989582,
+  "downloads_count_revision": 958,
+  "repository_url": "https://github.com/mthssdrbrg/kafka-cookbook",
+  "issues_url": "https://github.com/mthssdrbrg/kafka-cookbook/issues",
+  "chef_source_url": "https://github.com/mthssdrbrg/kafka-cookbook",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# kafka cookbook\n\n[![Build Status](https://travis-ci.org/mthssdrbrg/kafka-cookbook.svg?branch=master)](https://travis-ci.org/mthssdrbrg/kafka-cookbook)\n[![GitHub Release](https://img.shields.io/github/release/mthssdrbrg/kafka-cookbook.svg)]()\n\n> Note: if you're reading this on Supermarket, version `< 2` refers to [Webtrends/kafka](https://github.com/Webtrends/kafka)\n> while version `>= 2` refers to [mthssdrbrg/kafka-cookbook](https://github.com/mthssdrbrg/kafka-cookbook).\n\nInstalls and configures Kafka `>= v0.8.1`.\n\nInitially based on the Kafka cookbook released by Webtrends (thanks!), but with a few\nnotable differences:\n\n* does not depend on runit cookbook.\n* does not depend on zookeeper cookbook, thus it will not search for nodes with\n  a specific role or such, that is left up to you to decide.\n* intended to be used by wrapper cookbooks.\n\n## Requirements\n\nThis cookbook does not depend on any specific cookbooks, but it requires that\njava is installed on the system, thus the `java` cookbook is recommended.\n\nFurthermore, Kafka requires ZooKeeper for coordination, and this cookbook does\nnot install or manage ZooKeeper to any extent.\nA general recommendation is to not run Kafka and ZooKeeper on the same hardware.\n\nRuby 1.9.3+ and Chef 11.6.0+.\n\n### Platform\n\n* Amazon Linux\n* CentOS 6.5 and 7\n* Debian 7.4\n* Fedora 20\n* Ubuntu 14.04\n\nThe platforms / versions listed above are the ones that are included in\n`.kitchen.yml` and/or tested in the wild, so it might work on other platforms as\nwell, YMMV.\n\n## Attributes\n\nIn order to keep the README in some kind of manageable state (and thus in sync\nwith attributes), attributes are documented inline (in the `attribute` files\nthat is).\n\nAttributes concerning configuration of a Kafka broker are to be set under the\n`broker` namespace, and one can choose which ever syntax they prefer the most,\nthe following are all valid ways to define broker configuration:\n\n```ruby\nnode.default.kafka.broker[:log_dirs] = %w[/tmp/kafka-logs]\nnode.default.kafka.broker['log.dirs'] = %w[/tmp/kafka-logs]\nnode.default.kafka.broker.log.dirs = %w[/tmp/kafka-logs]\nnode.default[:kafka][:broker][:log][:dirs] = %w[/tmp/kafka-logs]\n```\n\nThe attribute names match the configuration names that Kafka uses to make it\neasier to support new and old versions of Kafka simultaneously, by avoiding\n\"hardcoded\" attribute names for configuration options, so please refer to the\nofficial documentation for the release at your hand.\n\nA warning regarding the \"dotted\" notation, it doesn't play very well when\nsetting attributes like `default.replication.factor` or\n`fetch.purgatory.purge.interval.requests` due to fairly obvious reasons\n(`default` and `fetch` are also methods).\n\nRefer to the official documentation for the version of Kafka that you're\ninstalling.\nDocumentation for the latest release can be found [over here](https://kafka.apache.org/documentation.html#brokerconfigs).\n\n## Recipes\n\nThis section describes the different recipes that are available.\n\n### default\n\nDownloads and installs Kafka from the official binary releases.\nDefaults to installing `v0.8.1.1` of Kafka.\n\n## Controlling restart of Kafka brokers in a cluster\n\nAny changes made to the broker configuration could result in a restart of the\nKafka broker, if the `kafka.automatic_restart` attribute is set to `true`.\nIf Chef runs as a daemon on all of the nodes this could result in all of the Kafka\nbrokers being brought down at the same time, resulting in unavailability of\nservice.\n\nIf unavailability is an issue, this cookbook provides an option to implement custom\nlogic to control the restart of Kafka brokers so that not all of the brokers in\na cluster are stopped at the same time.\nFor example the custom logic can be something along the lines of acquiring a lock\nin ZooKeeper and when held the broker is allowed to restart.\nBe aware that a restart might take quite some time if you're using controlled\nshutdown and have a lot of partitions, and Chef usually have some timeout for\neach resource.\n\nBy default the resources in the [`_coordinate`](https://github.com/mthssdrbrg/kafka-cookbook/blob/master/recipes/_coordinate.rb)\nrecipe performs the start/restart of the `kafka` service.\nIf custom logic needs to be implemented, this recipe can be replaced with\nanother recipe, but don't forget to update the `kafka.start_coordination.recipe`\nattribute.\n\nThe only requirement is that the new recipe has a `ruby_block` resource with\n`'coordinate-kafka-start'` as ID.\nThe following is a sample recipe that shows roughly what one can do with this\nfeature.\n\n```ruby\nruby_block 'coordinate-kafka-start' do\n  block do\n    Chef::Log.info 'Custom recipe to coordinate Kafka start/restart'\n  end\n  action :nothing\n  notifies :create, 'ruby_block[restart-coordination]', :delayed\nend\n\nruby_block 'restart-coordination' do\n  block do\n    Chef::Log.info 'Implement the process to coordinate the restart, like using ZK'\n  end\n  action :nothing\n  notifies :restart, 'service[kafka]', :delayed\n  notifies :create, 'ruby_block[restart-coordination-cleanup]', :delayed\nend\n\nservice 'kafka' do\n  provider kafka_init_opts[:provider]\n  supports start: true, stop: true, restart: true, status: true\n  action kafka_service_actions\nend\n\nruby_block 'restart-coordination-cleanup' do\n  block do\n    Chef::Log.info 'Implement any cleanup logic required after restart like releasing locks'\n  end\n  action :nothing\nend\n```\n\nPlease refer to [issue #58](https://github.com/mthssdrbrg/kafka-cookbook/issues/58) for background of this feature.\n\n## FAQ\n\n### Kafka dies for no apparent reason (ulimit)\n\nDepending on your system / infrastructure setup you might run into issues with\nKafka just sporadically dying for no obvious reason.\nOne thing you might want to look into is the file handle limit as Kafka tend to\nkeep a lot file handles open due to socket connections (depends on the number of\nbrokers, producers and consumers) and the actual data log files (depends on\nthe number of partitions and log segment and/or log roll settings).\n\nIt's possible to set a specific `ulimit` for Kafka using the `node['kafka']['ulimit_file']`\nattribute.\nIf this value is not set, Kafka will use whatever the system default is, which\nas stated previously might not be enough, so it might be wise to set a higher\nlimit.\n\n### How do I get started locally? (minimal required setup)\n\nIf you want to hit the ground running and just setup a single broker (or a\ncluster for that matter) locally, these are the necessary `broker` attributes\nthat needs to be set (assumes that you have ZooKeeper running on port 2181\nlocally):\n\n```ruby\nnode.default['kafka']['broker]['zookeeper.connect'] = 'localhost:2181'\n# This shouldn't normally be necessary, but might need to be set explicitly\n# if you're having trouble connecting to the brokers.\nnode.default['kafka']['broker']['hostname'] = '127.0.0.1' # or perhaps 'localhost'\n```\n\nIf you plan on running a cluster locally you will want to set separate\nvalues for the following configuration options:\n\n```ruby\nnode.default['kafka']['broker']['broker.id'] = <id>\nnode.default['kafka']['broker']['port'] = <port>\nnode.default['kafka']['broker']['log.dirs'] = <dir path>\n```\n\nOther than that things should work as expected, though depending on what\nplatform you're running on, you might want to change the install and config\ndirectories as well. See `attributes/default.rb` and `recipes/_defaults.rb` for\nthe default path regarding directories that Kafka will use.\n\n### Kafka killed prematurely (kill timeout)\n\nWhen using `controlled shutdown` and either `systemd` or `upstart` as init\nsystem you might run into issues with Kafka being killed before it has managed\nto shutdown completely, resulting in long recovery times.\n\nNot sure if it's possible to configure either `systemd` or `upstart` to not\nautomatically kill processes, but a workaround is to set `kafka.kill_timeout` to\na sufficiently high value.\n\n## Copyright\n\nCopyright :: 2013-2016 Mathias Söderberg and contributors\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n\n## Contributing\n\n1. Fork the repository on Github\n2. Create a named feature branch (like `add-component-x`)\n3. Write your change\n4. Check that your change works, for example with Vagrant\n5. Submit a Pull Request using Github\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ],
+  "recommends": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/java",
+      "revision": "~> 1.22"
+    }
+  ],
+  "chef_recipes": {
+    "kafka::default": "Downloads and installs Kafka from binary releases"
+  }
+}

@@ -1,0 +1,282 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/nodeintegration/rancher-haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/nodeintegration/rancher-haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/nodeintegration/rancher-haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/nodeintegration/rancher-haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/nodeintegration/rancher-haproxy/autobuild",
+    "user": "nodeintegration",
+    "name": "rancher-haproxy",
+    "namespace": "nodeintegration",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 4,
+    "pull_count": 1024,
+    "last_updated": "2016-10-11T00:47:34.868526Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 21948766,
+        "id": 3775410,
+        "repository": 791731,
+        "creator": 573099,
+        "last_updater": 573099,
+        "last_updated": "2016-10-11T00:47:34.419194Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.6",
+        "full_size": 21948786,
+        "id": 5339033,
+        "repository": 791731,
+        "creator": 573099,
+        "last_updater": 573099,
+        "last_updated": "2016-10-10T23:23:52.870394Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.5",
+        "full_size": 22322105,
+        "id": 4058091,
+        "repository": 791731,
+        "creator": 573099,
+        "last_updater": 573099,
+        "last_updated": "2016-09-13T02:58:05.210140Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "fix_error_handling",
+        "full_size": 22320198,
+        "id": 4810111,
+        "repository": 791731,
+        "creator": 573099,
+        "last_updater": 573099,
+        "last_updated": "2016-09-13T02:33:22.637423Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.4",
+        "full_size": 20685126,
+        "id": 3896708,
+        "repository": 791731,
+        "creator": 573099,
+        "last_updater": 573099,
+        "last_updated": "2016-07-19T04:24:35.875171Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.3",
+        "full_size": 20684939,
+        "id": 3830703,
+        "repository": 791731,
+        "creator": 573099,
+        "last_updater": 573099,
+        "last_updated": "2016-07-18T02:06:27.948544Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "nodeintegration/rancher-haproxy"
+  },
+  "name": "nodeintegration/rancher-haproxy Docker container",
+  "description": "HAProxy image that uses the rancher-metadata service to do service discovery for routing to stacks",
+  "readme": "# rancher-haproxy\n## Description\nThis docker image is a haproxy server that uses the rancher-metadata service to do service discovery to route requests via hostname to stacks.\n\neg this will allow you to create a stack called 'foobar' and have requests hit http://foobar.$domain/ that will route to containers that have a specified label.\nThis is useful if you for example take an N stacks approach to CI/CD. ie. deploy app build 123 to a stack called 'app-r123'\nThis will give you an immediate endpoint http://app-r123.$domain'\n\nThe label to associate and the domain are configurable\n## How to use this container\n\n### ENVIRONMENT Flags\n* STACK_DOMAIN - The domain to append to the stack names ie. if your stack was: stack123 and the STACK_DOMAIN was 'dev.tld' you would be able to access the stack via: stack123.dev.tld\n* ENABLE_SSL - Enables ssl offloading, only set this to true if you have your ssl cert/key configured as per below\n* SSL_BASE64_ENCODED - When supplying certificate/key in metadata, this flag will assume you have base64 encoded them, this is handy if you want to use compose variables for certificates\n* ENABLE_STATS - Tells haproxy to expose the stats http interface, listens on STATS_PORT with STATS_USERNAME and STATS_PASSWORD, defaults to false\n* STATS_PORT - Tells haproxy what port to use for stats, defaults to 1936\n* STATS_USERNAME - haproxy stats username, defaults to haproxy\n* STATS_PASSWORD - haproxy stats password, defaults to haproxy\n* HAPROXY_CONFIG - The default haproxy.cfg location\n* HAPROXY_SSL_CERT - Where the ssl certificate file is used (the certificate/key is combined to this), if you want to volume mount your certificate, mount it to this location\n* HAPROXY_BACKEND_CONFIG - Where the dynamic generated backend config is stored\n* HAPROXY_DOMAIN_MAP - Where the dynamic domain map generated config is stored\n* RANCHER_API_HOST - The rancher metadata service api host\n* RANCHER_API_VERSION - The rancher api version to use\n* RANCHER_LABEL - The label to filter by for services to include in the routing\n* RANCHER_PROXY_LABEL - The label to filter by for services that want proxy protocol routing\n* DISABLE_METADATA - This disables the fetching of data from metadata, more for debug use if you want to run it locally outside of rancher for testing\n\n### Examples\nCreate a stack for your load balancer\ndocker-compose.yml:\n```\nHTTP-generate-maps:\n  environment:\n    STACK_DOMAIN: MYDOMAIN.tld\n  labels:\n    io.rancher.container.pull_image: always\n  tty: true\n  command:\n  - generate-maps\n  image: nodeintegration/rancher-haproxy\n  stdin_open: true\nHTTP:\n  ports:\n  - 80:80/tcp\n  - 443:443/tcp\n  labels:\n    io.rancher.sidekicks: HTTP-generate-maps\n    io.rancher.container.pull_image: always\n  tty: true\n  image: nodeintegration/rancher-haproxy\n  stdin_open: true\n```\nThen create your web applications with the same label you used for \"RANCHER_LABEL\" above or the default (map-public-http) and the port that the container listens to http on.\ne.g. a stack called \"test-webservice-r123\"\ndocker-compose.yml:\n```\nnginx:\n  labels:\n    io.rancher.container.pull_image: always\n    map-public-http: 80\n  tty: true\n  image: nginx:stable-alpine\n  stdin_open: true\n```\nThe value of the label is the port that haproxy will balance to\n### What options do i have for ssl certificates?\n\nAdd the environment flag: ENABLE_SSL: 'true'\n\nTheres a few ways to supply your certificate and key:\n* mount a combined cert and key to $HAPROXY_SSL_CERT\n* supply the cert and key through metadata\n* supply the cert and key through metadata base64 encoded\n\nrancher-compose.yml: \nYou can use a raw certificate multiline string or you can just base64 encode the cert to a single line string to easily preserve formatting:\ncat somecert.crt | base64 -w 0 > somecert.crt.base64\n```\nHTTP:\n  metadata:\n    ssl_cert: |\n      -----BEGIN CERTIFICATE-----\n      XXX\n    ssl_key: | \n      -----BEGIN RSA PRIVATE KEY-----\n      XXX\n```\n\n## How does this work?\n* Since haproxy can use dynamic maps for host header mappings to backends we use that for $stack_name.$domain -> $stack_name....we cant however dynamically create haproxy backends without reloading haproxy.\n* So with that in mind we rely on a docker entrypoint script to achieve this:\n* The first process that starts is a python script. This script scans the rancher-metadata service api for the 'containers' path, it then looks for all containers that contain \"RANCHER_LABEL\" value, if a container has this label, then it adds it to the list with some details (the ip address and the value of the label for the port as well as the stack name)\n* The python script then generates 2 files. 1. a domain map which is a list of domains (the $stack_name appended by the $DOMAIN value) to map to a backend (the $stack_name). 2. a backend config file which contains backends ($stack_name) then a list of containers by $service_name-$uuid as the server id and the ip and port\n* The python script then writes those 2 files to a tmp file and diffs the current files against them, if they have changed then it renames the tmp file to its final destination\n* This python script is backgrounded and run at a 10 second interval\n* The entrypoint script then starts haproxy after a few seconds of grace time as a background process\n* The last step is looping inotify watching the 2 final destination files...if those files attributes change in anyway it reloads the haproxy daemon\n\n## I want aliases to my stacks!\nFor example you may want additional aliases...say www.$tld to hit app1 stack\nSimply add in the rancher-compose metadata:\n\nHTTP:\n  metadata:\n    aliases:\n      app1:\n        - www\n        - someotheralias\n\n## I want a different haproxy config, or i want to add more\nThe default haproxy.cfg contains very little (a frontend that does a domain map and a fallback backend with nothing in it)\nYou can easily add your own config by localising haproxy.cfg and adding your own additional config to it, so long as you have that domain map in your haproxy.cfg and the default fallback backend you shouldnt break any of the other logic...patches are always welcome to extend functionality\n\n## Rancher SSL Certificate store support\nCurrently the certificate store is a one way action, ie you cannot retrieve the key from the api or the metadata service for some obvious reasons.\nThe rancher lb service is a special case in which it makes a call to the api for configscripts, the rancher server prepares a payload for this special type of container which preps the certificate.\nSince this is image is essentially a normal container we dont have this luxury. So i've added handling adding ssl cert/key via metadata.\n\n# How does this differ from standard haproxy docker images?\n* Added syslog support from environment variables...ie set SYSLOG_HOST and SYSLOG_FACILITY to your docker-compose.yml to get logging!\n* Instead of executing haproxy in the foreground i background it and use inotify to trigger config tests and reloads\n\n# TODO\n* in short plenty\n* add support for http -> https redirection\n* add proxy protocol support\n\n# Changelog\nAll noteable changes from version: 0.5 will be documented here\n\n## [0.6] - 2016-10-10\n### Changed\n- Created example docker-compose.yml and rancher-compose.yml\n- Moved python map generation script to a sidekick, this is important because:\n  The motiviation for this is because we need to control multiple processes (haproxy and a python script) that if the python script dies for any reason it does not know how to restart the pythong process.\n  Something like supervisord to accomplish multiple process monitoring wont work as you cannot get haproxy to reloads in a traditional fashion\n- reshuffled docker-entrypoint.sh to handle multiple command invocations\n\n",
+  "dockerfile": "FROM alpine:3.4\n\nENV HAPROXY_MAJOR 1.6\nENV HAPROXY_VERSION 1.6.9\nENV HAPROXY_MD5 c52eee40eb66f290d6f089c339b9d2b3\n\n# see http://sources.debian.net/src/haproxy/1.5.8-1/debian/rules/ for some helpful navigation of the possible \"make\" arguments\nRUN set -x \\\n  && apk add --no-cache --virtual .build-deps \\\n    curl \\\n    gcc \\\n    libc-dev \\\n    linux-headers \\\n    make \\\n    openssl-dev \\\n    pcre-dev \\\n    zlib-dev \\\n  && curl -SL \"http://www.haproxy.org/download/${HAPROXY_MAJOR}/src/haproxy-${HAPROXY_VERSION}.tar.gz\" -o haproxy.tar.gz \\\n  && echo \"${HAPROXY_MD5}  haproxy.tar.gz\" | md5sum -c \\\n  && mkdir -p /usr/src \\\n  && tar -xzf haproxy.tar.gz -C /usr/src \\\n  && mv \"/usr/src/haproxy-$HAPROXY_VERSION\" /usr/src/haproxy \\\n  && rm haproxy.tar.gz \\\n  && make -C /usr/src/haproxy \\\n    TARGET=linux2628 \\\n    USE_PCRE=1 PCREDIR= \\\n    USE_OPENSSL=1 \\\n    USE_ZLIB=1 \\\n    all \\\n    install-bin \\\n  && mkdir -p /usr/local/etc/haproxy \\\n  && cp -R /usr/src/haproxy/examples/errorfiles /usr/local/etc/haproxy/errors \\\n  && rm -rf /usr/src/haproxy \\\n  && runDeps=\"$( \\\n    scanelf --needed --nobanner --recursive /usr/local \\\n      | awk '{ gsub(/,/, \"\\nso:\", $2); print \"so:\" $2 }' \\\n      | sort -u \\\n      | xargs -r apk info --installed \\\n      | sort -u \\\n  )\" \\\n  && apk add --virtual .haproxy-rundeps $runDeps \\\n  && apk del .build-deps\n\n# Customisation from haproxy upstream\nRUN apk add --no-cache inotify-tools curl python py-pip && \\\n    pip install requests\n\nENV STACK_DOMAIN none\nENV ENABLE_STATS false\nENV STATS_PORT 1936\nENV STATS_USERNAME haproxy\nENV STATS_PASSWORD haproxy\nENV ENABLE_SSL false\nENV SSL_BASE64_ENCODED false\nENV DISABLE_METADATA false\nENV HAPROXY_CONFIG /usr/local/etc/haproxy/haproxy.cfg\nENV HAPROXY_SSL_CERT /usr/local/etc/haproxy/server.pem\nENV HAPROXY_BACKEND_CONFIG /usr/local/etc/haproxy/haproxy-backends.cfg\nENV HAPROXY_DOMAIN_MAP /usr/local/etc/haproxy/domain.map\nENV RANCHER_API_HOST rancher-metadata.rancher.internal\nENV RANCHER_API_VERSION 2015-12-19\nENV RANCHER_LABEL map-public-http\nENV RANCHER_PROXY_LABEL send-proxy\n\nCOPY gen-haproxy-map.py /\nCOPY docker-entrypoint.sh /\nCOPY haproxy.cfg /usr/local/etc/haproxy/haproxy.cfg\nENTRYPOINT [\"/docker-entrypoint.sh\"]\nCMD [\"haproxy\"]\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "set -x   && apk add --no-cache --virtual .build-deps     curl     gcc     libc-dev     linux-headers     make     openssl-dev     pcre-dev     zlib-dev   && curl -SL \"http://www.haproxy.org/download/${HAPROXY_MAJOR}/src/haproxy-${HAPROXY_VERSION}.tar.gz\" -o haproxy.tar.gz   && echo \"${HAPROXY_MD5}  haproxy.tar.gz\" | md5sum -c   && mkdir -p /usr/src   && tar -xzf haproxy.tar.gz -C /usr/src   && mv \"/usr/src/haproxy-$HAPROXY_VERSION\" /usr/src/haproxy   && rm haproxy.tar.gz   && make -C /usr/src/haproxy     TARGET=linux2628     USE_PCRE=1 PCREDIR=     USE_OPENSSL=1     USE_ZLIB=1     all     install-bin   && mkdir -p /usr/local/etc/haproxy   && cp -R /usr/src/haproxy/examples/errorfiles /usr/local/etc/haproxy/errors   && rm -rf /usr/src/haproxy   && runDeps=\"$(     scanelf --needed --nobanner --recursive /usr/local       | awk '{ gsub(/,/, \"\\nso:\", $2); print \"so:\" $2 }'       | sort -u       | xargs -r apk info --installed       | sort -u   )\"   && apk add --virtual .haproxy-rundeps $runDeps   && apk del .build-deps",
+      "apk add --no-cache inotify-tools curl python py-pip &&     pip install requests"
+    ],
+    "workdir": [],
+    "from": "alpine:3.4",
+    "env": {
+      "HAPROXY_MAJOR": "1.6",
+      "HAPROXY_VERSION": "1.6.9",
+      "HAPROXY_MD5": "c52eee40eb66f290d6f089c339b9d2b3",
+      "STACK_DOMAIN": "none",
+      "ENABLE_STATS": "false",
+      "STATS_PORT": "1936",
+      "STATS_USERNAME": "haproxy",
+      "STATS_PASSWORD": "haproxy",
+      "ENABLE_SSL": "false",
+      "SSL_BASE64_ENCODED": "false",
+      "DISABLE_METADATA": "false",
+      "HAPROXY_CONFIG": "/usr/local/etc/haproxy/haproxy.cfg",
+      "HAPROXY_SSL_CERT": "/usr/local/etc/haproxy/server.pem",
+      "HAPROXY_BACKEND_CONFIG": "/usr/local/etc/haproxy/haproxy-backends.cfg",
+      "HAPROXY_DOMAIN_MAP": "/usr/local/etc/haproxy/domain.map",
+      "RANCHER_API_HOST": "rancher-metadata.rancher.internal",
+      "RANCHER_API_VERSION": "2015-12-19",
+      "RANCHER_LABEL": "map-public-http",
+      "RANCHER_PROXY_LABEL": "send-proxy"
+    },
+    "copy": "haproxy.cfg /usr/local/etc/haproxy/haproxy.cfg",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"haproxy\"]"
+  },
+  "source_repository_url": "https://github.com/nodeintegration/rancher-haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/nodeintegration/rancher-haproxy",
+  "docker_repository": "nodeintegration/rancher-haproxy",
+  "docker_image": "nodeintegration/rancher-haproxy",
+  "parameters_schema": {
+    "HAPROXY_MAJOR": {
+      "default": "1.6",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_VERSION": {
+      "default": "1.6.9",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_MD5": {
+      "default": "c52eee40eb66f290d6f089c339b9d2b3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "STACK_DOMAIN": {
+      "default": "none",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ENABLE_STATS": {
+      "default": "false",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "STATS_PORT": {
+      "default": "1936",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "STATS_USERNAME": {
+      "default": "haproxy",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "STATS_PASSWORD": {
+      "default": "haproxy",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ENABLE_SSL": {
+      "default": "false",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_BASE64_ENCODED": {
+      "default": "false",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DISABLE_METADATA": {
+      "default": "false",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_CONFIG": {
+      "default": "/usr/local/etc/haproxy/haproxy.cfg",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_SSL_CERT": {
+      "default": "/usr/local/etc/haproxy/server.pem",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_BACKEND_CONFIG": {
+      "default": "/usr/local/etc/haproxy/haproxy-backends.cfg",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_DOMAIN_MAP": {
+      "default": "/usr/local/etc/haproxy/domain.map",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RANCHER_API_HOST": {
+      "default": "rancher-metadata.rancher.internal",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RANCHER_API_VERSION": {
+      "default": "2015-12-19",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RANCHER_LABEL": {
+      "default": "map-public-http",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RANCHER_PROXY_LABEL": {
+      "default": "send-proxy",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "nodeintegration/rancher-haproxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/nodeintegration/rancher-haproxy",
+    "https://hub.docker.com/v2/repositories/nodeintegration/rancher-haproxy",
+    "https://github.com/nodeintegration/rancher-haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Integration",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/JavaScript/Node.js",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/nodeintegration/rancher-haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

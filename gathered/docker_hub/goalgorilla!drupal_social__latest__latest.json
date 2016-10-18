@@ -1,0 +1,132 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/goalgorilla/drupal_social",
+    "repository_url": "https://hub.docker.com/v2/repositories/goalgorilla/drupal_social",
+    "tags_url": "https://hub.docker.com/v2/repositories/goalgorilla/drupal_social/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/goalgorilla/drupal_social/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/goalgorilla/drupal_social/autobuild",
+    "user": "goalgorilla",
+    "name": "drupal_social",
+    "namespace": "goalgorilla",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 4,
+    "pull_count": 4941,
+    "last_updated": "2016-10-16T16:02:03.827830Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 461547815,
+        "id": 1826188,
+        "repository": 498432,
+        "creator": 401033,
+        "last_updater": 401033,
+        "last_updated": "2016-10-16T16:02:03.180605Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "behat-fix",
+        "full_size": 487044295,
+        "id": 4844067,
+        "repository": 498432,
+        "creator": 401033,
+        "last_updater": 401033,
+        "last_updated": "2016-09-22T15:08:33.356590Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "goalgorilla/drupal_social"
+  },
+  "name": "goalgorilla/drupal_social Docker container",
+  "description": "Open Social made by GoalGorilla - getopensocial.com",
+  "readme": "# Open Social Development #\nRepository for development of the Open Social distribution. Check [drupal.org](https://www.drupal.org/project/social) for more information about Open Social.\nFor day to day technical documentation use the [Github Wiki](https://github.com/goalgorilla/drupal_social/wiki).\n\nUseful links for developers:\n- [Roadmap]( https://www.drupal.org/node/2766871)\n- [Lo-fi prototype](http://prototype.goalgorilla.com/drupalsocial/current/)\n- [Hifi styleguide and prototype](http://styleguide.getopensocial.com/)\n- [Travis CI](https://travis-ci.org/goalgorilla/drupal_social/builds)\n- [Docker Hub](https://hub.docker.com/r/goalgorilla/drupal_social/builds/)\n- [Drupal.org project page](https://drupal.org/project/social)\n- [Open Social Distribution Github repo](https://github.com/goalgorilla/open_social)\n- [Open Social Distribution issue queue](https://www.drupal.org/project/issues/social).\n- [Composer template](https://github.com/goalgorilla/social_template)\n\n# Installation #\n\n### Install from project page on drupal.org ###\n\nVisit our drupal.org [project page](https://www.drupal.org/project/social) and head to the \"Installation instruction\" section on the middle of the page.\n\n### Install in Docker containers ###\n\nVisit our [github wiki](https://github.com/goalgorilla/drupal_social/wiki/Installing-and-updating#12-installation-with-docker) for extensive installation information\n\n### Install with Composer ###\n\nCheckout this repository for a Composer template: [goalgorilla/social_template](https://github.com/goalgorilla/social_template).\n\n# Contribute #\nContribute to Open Social? Checkout our [Contribution to Open Social](https://github.com/goalgorilla/drupal_social/wiki/Contributing-to-Open-Social) section on out github wiki\n\nDo you want to join us in this effort? We are welcoming your [feedback](http://goalgorilla.github.io/drupal_social/prototype.html), (development) time and/or financial support. For feedback we will use [Drupal.org](https://www.drupal.org/project/social) for other questions or suggestions please contact taco@goalgorilla.com.\n\nIf you find any issues feel free to file a bug report in the [issue queue](https://www.drupal.org/project/issues/social).\n\n[![Build Status Drupal Social](https://travis-ci.org/goalgorilla/drupal_social.svg?branch=master)](https://travis-ci.org/goalgorilla/drupal_social)\n[![Build Status Open Social](https://api.travis-ci.org/goalgorilla/open_social.svg?branch=8.x-1.x)](https://travis-ci.org/goalgorilla/open_social)\n\n",
+  "dockerfile": "FROM drupal:8\nMAINTAINER devel@goalgorilla.com\n\n# Install packages.\nRUN apt-get update && apt-get install -y \\\n  php-pclzip \\\n  mysql-client \\\n  git \\\n  ssmtp && \\\n  apt-get clean\n\nADD docker_build/drupal8/mailcatcher-ssmtp.conf /etc/ssmtp/ssmtp.conf\n\n# Dockerhub currently runs on docker 1.8 and does not support the ARG command.\n# Reset the logic after the dockerhub is updated.\n# https://docs.docker.com/v1.8/reference/builder/\n# ARG hostname=goalgorilla.com\n\nRUN echo \"hostname=goalgorilla.com\" >> /etc/ssmtp/ssmtp.conf\nRUN echo 'sendmail_path = \"/usr/sbin/ssmtp -t\"' > /usr/local/etc/php/conf.d/mail.ini\n\nADD docker_build/drupal8/php.ini /usr/local/etc/php/php.ini\n\nRUN docker-php-ext-install zip\n\n# Install bcmath\nRUN docker-php-ext-install bcmath\n\n# Install Composer.\nRUN curl -sS https://getcomposer.org/installer | php\nRUN mv composer.phar /usr/local/bin/composer\n\n# Install via composer.\nADD composer.json /var/www/composer.json\nWORKDIR /var/www/\nRUN composer install\n\n# Unfortunately, adding the composer vendor dir to the PATH doesn't seem to work. So:\nRUN ln -s /var/www/vendor/drush/drush/drush /usr/local/bin/drush\n\n#ADD html/ /var/www/html/\nWORKDIR /var/www/html/\nRUN chown -R www-data:www-data *\n\n#ADD vendor/ /var/www/vendor/\n\n# Install Drupal console\nRUN curl https://drupalconsole.com/installer -L -o drupal.phar\nRUN mv drupal.phar /usr/local/bin/drupal\nRUN chmod +x /usr/local/bin/drupal\n\nRUN if [ ! -f /root/.composer/vendor/drush/drush/lib/Console_Table-1.1.3/Table.php ]; then pear install Console_Table; fi\n\nRUN php -r 'opcache_reset();'\n\n# Fix shell.\nRUN echo \"export TERM=xterm\" >> ~/.bashrc\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "docker_build/drupal8/mailcatcher-ssmtp.conf",
+        "dest": "/etc/ssmtp/ssmtp.conf"
+      },
+      {
+        "source": "docker_build/drupal8/php.ini",
+        "dest": "/usr/local/etc/php/php.ini"
+      },
+      {
+        "source": "composer.json",
+        "dest": "/var/www/composer.json"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y   php-pclzip   mysql-client   git   ssmtp &&   apt-get clean",
+      "echo \"hostname=goalgorilla.com\" >> /etc/ssmtp/ssmtp.conf",
+      "echo 'sendmail_path = \"/usr/sbin/ssmtp -t\"' > /usr/local/etc/php/conf.d/mail.ini",
+      "docker-php-ext-install zip",
+      "docker-php-ext-install bcmath",
+      "curl -sS https://getcomposer.org/installer | php",
+      "mv composer.phar /usr/local/bin/composer",
+      "composer install",
+      "ln -s /var/www/vendor/drush/drush/drush /usr/local/bin/drush",
+      "chown -R www-data:www-data *",
+      "curl https://drupalconsole.com/installer -L -o drupal.phar",
+      "mv drupal.phar /usr/local/bin/drupal",
+      "chmod +x /usr/local/bin/drupal",
+      "if [ ! -f /root/.composer/vendor/drush/drush/lib/Console_Table-1.1.3/Table.php ]; then pear install Console_Table; fi",
+      "php -r 'opcache_reset();'",
+      "echo \"export TERM=xterm\" >> ~/.bashrc"
+    ],
+    "workdir": [
+      "/var/www/",
+      "/var/www/html/"
+    ],
+    "from": "drupal:8",
+    "maintainer": "devel@goalgorilla.com"
+  },
+  "source_repository_url": "https://github.com/goalgorilla/drupal_social.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/goalgorilla/drupal_social",
+  "docker_repository": "goalgorilla/drupal_social",
+  "docker_image": "goalgorilla/drupal_social",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "goalgorilla/drupal_social",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/goalgorilla/drupal_social",
+    "https://hub.docker.com/v2/repositories/goalgorilla/drupal_social",
+    "https://github.com/goalgorilla/drupal_social.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/goalgorilla/drupal_social",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,148 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dordoka/tomcat",
+    "repository_url": "https://hub.docker.com/v2/repositories/dordoka/tomcat",
+    "tags_url": "https://hub.docker.com/v2/repositories/dordoka/tomcat/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dordoka/tomcat/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dordoka/tomcat/autobuild",
+    "user": "dordoka",
+    "name": "tomcat",
+    "namespace": "dordoka",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 25,
+    "pull_count": 10640,
+    "last_updated": "2016-09-27T08:11:55.446064Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 361416673,
+        "id": 109483,
+        "repository": 98280,
+        "creator": 125450,
+        "last_updater": 125450,
+        "last_updated": "2016-09-27T08:11:55.104914Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "cmoro-deusto/docker-tomcat8"
+  },
+  "name": "dordoka/tomcat Docker container",
+  "description": "Ubuntu 14.04, Oracle JDK 8 and Tomcat 8 based docker container.",
+  "readme": "docker-tomcat\n=============\n\n\n[![](https://images.microbadger.com/badges/version/dordoka/tomcat.svg)](http://microbadger.com/images/dordoka/tomcat \"Get your own version badge on microbadger.com\")\n\n[![](https://images.microbadger.com/badges/image/dordoka/tomcat.svg)](http://microbadger.com/images/dordoka/tomcat \"Get your own image badge on microbadger.com\")\n\n\n[![dockeri.co](http://dockeri.co/image/dordoka/tomcat)](https://registry.hub.docker.com/u/dordoka/tomcat/)\n\nUbuntu 14.04, Oracle JDK 8 and Tomcat 8 based docker container.\n\n# Description\nYou should run this container on the background and mount the volume with your web app inside.\n\nIncludes:\n\n - Oracle JDK 1.8.101\n - Tomcat 8.0.37\n - Git, wget, curl, build-essential\n \n## Volumes\nExports a volume on `/opt/tomcat/webapps`.\nYou can mount the volume on run to a local directory containing your war file or exploded war directory.\nIf you need the management app, remember to have a copy on your hosts volume mount point.\n\n## Ports\nTwo ports are exposed:\n\n - 8080: default Tomcat port.\n  \n - 8009: default Tomcat debug port.\n\nRemember to map the ports to the docker host on run.\n\n\n# How to run the container\n## Using docker\nYou need docker v1.3+ installed. To get the container up and running, run:\n \n```\nsudo docker run -d -p 8080:8080 -p 8009:8009 -v /opt/tomcat/webapps:/opt/tomcat/webapps dordoka/tomcat\n```\nRemember to change `/opt/tomcat/webapps` to the directory where your app is stored.\n\n## Using docker compose\nIf you have `docker-compose` installed, you can just launch:\n\n```\nsudo docker-compose up\n```\n\n## A warning regarding admin user for tomcat management console\nPlease note that the image contains a `tomcat-users.xml` file, including an `admin` user (password `admin`). For the time being, should you wish to change that, fork this repo and modify the xml file accordingly.\n\n",
+  "dockerfile": "FROM ubuntu:14.04\n\nMAINTAINER Carlos Moro <cmoro@deusto.es>\n\nENV TOMCAT_VERSION 8.0.37\n\n# Set locales\nRUN locale-gen en_GB.UTF-8\nENV LANG en_GB.UTF-8\nENV LC_CTYPE en_GB.UTF-8\n\n# Fix sh\nRUN rm /bin/sh && ln -s /bin/bash /bin/sh\n\n# Install dependencies\nRUN apt-get update && \\\napt-get install -y git build-essential curl wget software-properties-common\n\n# Install JDK 8\nRUN \\\necho oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \\\nadd-apt-repository -y ppa:webupd8team/java && \\\napt-get update && \\\napt-get install -y oracle-java8-installer wget unzip tar && \\\nrm -rf /var/lib/apt/lists/* && \\\nrm -rf /var/cache/oracle-jdk8-installer\n\n# Define commonly used JAVA_HOME variable\nENV JAVA_HOME /usr/lib/jvm/java-8-oracle\n\n# Get Tomcat\nRUN wget --quiet --no-cookies http://apache.rediris.es/tomcat/tomcat-8/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz -O /tmp/tomcat.tgz && \\\ntar xzvf /tmp/tomcat.tgz -C /opt && \\\nmv /opt/apache-tomcat-${TOMCAT_VERSION} /opt/tomcat && \\\nrm /tmp/tomcat.tgz && \\\nrm -rf /opt/tomcat/webapps/examples && \\\nrm -rf /opt/tomcat/webapps/docs && \\\nrm -rf /opt/tomcat/webapps/ROOT\n\n# Add admin/admin user\nADD tomcat-users.xml /opt/tomcat/conf/\n\nENV CATALINA_HOME /opt/tomcat\nENV PATH $PATH:$CATALINA_HOME/bin\n\nEXPOSE 8080\nEXPOSE 8009\nVOLUME \"/opt/tomcat/webapps\"\nWORKDIR /opt/tomcat\n\n# Launch Tomcat\nCMD [\"/opt/tomcat/bin/catalina.sh\", \"run\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "tomcat-users.xml",
+        "dest": "/opt/tomcat/conf/"
+      }
+    ],
+    "expose": [
+      8080,
+      8009
+    ],
+    "volume": [
+      "\"/opt/tomcat/webapps\""
+    ],
+    "run": [
+      "locale-gen en_GB.UTF-8",
+      "rm /bin/sh && ln -s /bin/bash /bin/sh",
+      "apt-get update && apt-get install -y git build-essential curl wget software-properties-common",
+      "echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && add-apt-repository -y ppa:webupd8team/java && apt-get update && apt-get install -y oracle-java8-installer wget unzip tar && rm -rf /var/lib/apt/lists/* && rm -rf /var/cache/oracle-jdk8-installer",
+      "wget --quiet --no-cookies http://apache.rediris.es/tomcat/tomcat-8/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz -O /tmp/tomcat.tgz && tar xzvf /tmp/tomcat.tgz -C /opt && mv /opt/apache-tomcat-${TOMCAT_VERSION} /opt/tomcat && rm /tmp/tomcat.tgz && rm -rf /opt/tomcat/webapps/examples && rm -rf /opt/tomcat/webapps/docs && rm -rf /opt/tomcat/webapps/ROOT"
+    ],
+    "workdir": [
+      "/opt/tomcat"
+    ],
+    "from": "ubuntu:14.04",
+    "maintainer": "Carlos Moro <cmoro@deusto.es>",
+    "env": {
+      "TOMCAT_VERSION": "8.0.37",
+      "LANG": "en_GB.UTF-8",
+      "LC_CTYPE": "en_GB.UTF-8",
+      "JAVA_HOME": "/usr/lib/jvm/java-8-oracle",
+      "CATALINA_HOME": "/opt/tomcat",
+      "PATH": "$PATH:$CATALINA_HOME/bin"
+    },
+    "cmd": "[\"/opt/tomcat/bin/catalina.sh\", \"run\"]"
+  },
+  "source_repository_url": "https://github.com/cmoro-deusto/docker-tomcat8.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/cmoro-deusto/docker-tomcat8",
+  "docker_repository": "dordoka/tomcat",
+  "docker_image": "dordoka/tomcat",
+  "parameters_schema": {
+    "TOMCAT_VERSION": {
+      "default": "8.0.37",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "en_GB.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LC_CTYPE": {
+      "default": "en_GB.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_HOME": {
+      "default": "/usr/lib/jvm/java-8-oracle",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CATALINA_HOME": {
+      "default": "/opt/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:$CATALINA_HOME/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080,
+        8009
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dordoka/tomcat",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/dordoka/tomcat",
+    "https://hub.docker.com/v2/repositories/dordoka/tomcat",
+    "https://github.com/cmoro-deusto/docker-tomcat8.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/dordoka/tomcat",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

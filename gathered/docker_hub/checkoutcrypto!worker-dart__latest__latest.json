@@ -1,0 +1,118 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/checkoutcrypto/worker-dart",
+    "repository_url": "https://hub.docker.com/v2/repositories/checkoutcrypto/worker-dart",
+    "tags_url": "https://hub.docker.com/v2/repositories/checkoutcrypto/worker-dart/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/checkoutcrypto/worker-dart/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/checkoutcrypto/worker-dart/autobuild",
+    "user": "checkoutcrypto",
+    "name": "worker-dart",
+    "namespace": "checkoutcrypto",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 41,
+    "last_updated": "2015-11-14T09:49:42.652361Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 229657260,
+        "id": 193052,
+        "repository": 164325,
+        "creator": 245676,
+        "last_updater": 245616,
+        "last_updated": "2015-11-14T09:49:46.451437Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "hutchgrant/dart-worker"
+  },
+  "name": "checkoutcrypto/worker-dart Docker container",
+  "description": "CheckoutCrypto Dart Worker",
+  "readme": "#CheckoutCrypto Dart Worker\r\n\r\nA dart port for CheckoutCrypto's multi-cryptocurrency worker.\r\n\r\n##Git Install:\r\n```\r\nsudo add-apt-repository ppa:hachre/dart\r\nsudo apt-get update\r\nsudo apt-get install darteditor dartsdk dartium pub git mongodb robomongo\r\n\r\ngit clone https://github.com/hutchgrant/dart-worker\r\ncd ./dart-worker\r\npub get\r\n```\r\n\r\nRun:\r\n```\r\ndart main.dart \r\nnote: you can launch server standalone for a service etc with:\r\ndart main.dart -server\r\n```\r\n\r\nPost-Install\r\nYou need a CheckoutCrypto Site and your own custom client. No official, dart-worker, api, client, released yet. This port is still in early development. \r\n\r\n##Docker install \r\n\r\n###Pre-install and run MongoDB daemon container with mysql connection\r\n\r\n```\r\n sudo docker run -it -d --name mongo dockerfile/mongodb\r\n```\r\n\r\n###Add table and user (need latest docker)\r\n\r\n```\r\nsudo docker exec -it mongo /bin/bash\r\nmongo\r\ndb.createCollection(\"bitcoin\")\r\nuse bitcoin\r\ndb.createUser(\r\n  {\r\n    user: \"test\",\r\n    pwd: \"testpass\",\r\n    roles: [ { role: \"userAdmin\", db: \"bitcoin\" } ]\r\n  }\r\n)\r\n```\r\n\r\n###Run CheckoutCrypto Dart worker container with mongo\r\n\r\n```\r\ndocker run --name cc-dart -p 4042:4042 --link mongo:mongo -it -d checkoutcrypto/worker-dart\r\n```\r\n\r\n##Required Setup for a single/daemon run\r\n\r\nEdit the user and database, ip, port, etc for mongo and whatever you want your dart http server to be.\r\n\r\n```\r\nsudo docker exec -it cc-dart /bin/bash \r\nvi /worker/bin/main.dart\r\n```\r\n\r\n```\r\n  ///// HTTP Server Setup\r\n  srvConfig[\"server_ip\"] = \"127.0.0.1\";\r\n  srvConfig[\"server_port\"] = 4042;\r\n  ///// Mongo Config\r\n  srvConfig[\"mongo_ip\"] = \"127.0.0.1\";\r\n  srvConfig[\"mongo_port\"] = \"27017\";\r\n  srvConfig[\"mongo_table\"] = \"bitcoin\";\r\n  srvConfig[\"mongo_user\"] =\"test\";\r\n  srvConfig[\"mongo_pass\"] = \"testpass\";\r\n```\r\n##Required Setup, configuration and post-installation\r\n\r\n1. Add CheckoutCrypto Site Database connection \r\n2. Add Bitcoin RPC settings\r\n3. Generate a key for our client(Front end API)\r\n4. Start Server\r\n\r\n- [CheckoutCrypto Drupal Site and Database](https://registry.hub.docker.com/u/checkoutcrypto/site/) Installed and configured separately.\r\n- [Bitcoin daemon](https://bitcoin.org/en/download)\r\n\r\n## Menu Usage:\r\n\r\n```\r\n docker run -d -p 4042:4042 --link mongo:mongo checkoutcrypto/worker-dart dart /worker/bin/main.dart\r\n```\r\n## Run Server Standalone\r\n\r\n```\r\n docker run -d -it -p 4042:4042 --link mongo:mongo checkoutcrypto/worker-dart dart /worker/bin/main.dart  -server\r\n```\r\n\r\n##CheckoutCrypto Worker Dart Client Example\r\n\r\nThis is a dart client connection example, to connect to this repository's dart worker.\r\n\r\n```\r\nString url = \"http://127.0.0.1:4042\"\r\nrequest = new HttpRequest();\r\nrequest.onReadyStateChange.listen(onData);\r\nrequest.open('POST', url);\r\nrequest.send('{\"apikey\":\"$apikey\", \"coin\":\"BTC\", \"action\":\"getnewaddress\", \"params\":{\"uid\":1, \"account\":\"fee\", \"address\":\"\", \"recipient\":\"\", \"amount\":\"\"} }');\r\n```\r\n\r\n[Read more](https://github.com/hutchgrant/dart-worker)\r\n\r\n\r\n\r\nDetailed site instructions on CheckoutCrypto's site installation and configuration can be found in that repository's readme https://github.com/CheckoutCrypto/site\r\n",
+  "dockerfile": "FROM ubuntu:14.04\nMAINTAINER Grant Hutchinson <h.g.utchinson@gmail.com>\n\nADD ./bin /worker/bin\nADD ./lib /worker/lib\nADD pubspec.yaml /worker/pubspec.yaml\nADD CHANGELOG.md /worker/CHANGELOG.md\nADD README.md /worker/README.md\nADD LICENSE /worker/LICENSE\n\nRUN apt-get update && \\\n\tapt-get install -y software-properties-common python-software-properties && \\\n\tadd-apt-repository -y ppa:hachre/dart && apt-get update && \\\n\tapt-get install -y dartsdk dartium git && \\\n\tcd /worker/ && pub get && \\\n    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n\nEXPOSE 12311\n\nWORKDIR /worker\nCMD [\"/usr/bin/dart\", \"/worker/bin/main.dart\", \"-server\", \"-pass test\"]\n\n\n\n\n\n\n\n\n\n\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./bin",
+        "dest": "/worker/bin"
+      },
+      {
+        "source": "./lib",
+        "dest": "/worker/lib"
+      },
+      {
+        "source": "pubspec.yaml",
+        "dest": "/worker/pubspec.yaml"
+      },
+      {
+        "source": "CHANGELOG.md",
+        "dest": "/worker/CHANGELOG.md"
+      },
+      {
+        "source": "README.md",
+        "dest": "/worker/README.md"
+      },
+      {
+        "source": "LICENSE",
+        "dest": "/worker/LICENSE"
+      }
+    ],
+    "expose": [
+      12311
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && \tapt-get install -y software-properties-common python-software-properties && \tadd-apt-repository -y ppa:hachre/dart && apt-get update && \tapt-get install -y dartsdk dartium git && \tcd /worker/ && pub get &&     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+    ],
+    "workdir": [
+      "/worker"
+    ],
+    "from": "ubuntu:14.04",
+    "maintainer": "Grant Hutchinson <h.g.utchinson@gmail.com>",
+    "cmd": "[\"/usr/bin/dart\", \"/worker/bin/main.dart\", \"-server\", \"-pass test\"]"
+  },
+  "source_repository_url": "https://github.com/hutchgrant/dart-worker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/hutchgrant/dart-worker",
+  "docker_repository": "checkoutcrypto/worker-dart",
+  "docker_image": "checkoutcrypto/worker-dart",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        12311
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "checkoutcrypto/worker-dart",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/checkoutcrypto/worker-dart",
+    "https://hub.docker.com/v2/repositories/checkoutcrypto/worker-dart",
+    "https://github.com/hutchgrant/dart-worker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Dart"
+  ],
+  "info_url": "https://hub.docker.com/r/checkoutcrypto/worker-dart",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

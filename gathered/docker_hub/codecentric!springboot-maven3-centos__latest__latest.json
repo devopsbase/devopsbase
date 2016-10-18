@@ -1,0 +1,151 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/codecentric/springboot-maven3-centos",
+    "repository_url": "https://hub.docker.com/v2/repositories/codecentric/springboot-maven3-centos",
+    "tags_url": "https://hub.docker.com/v2/repositories/codecentric/springboot-maven3-centos/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/codecentric/springboot-maven3-centos/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/codecentric/springboot-maven3-centos/autobuild",
+    "user": "codecentric",
+    "name": "springboot-maven3-centos",
+    "namespace": "codecentric",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 1744,
+    "last_updated": "2016-10-14T17:29:55.324817Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 235274394,
+        "id": 2174046,
+        "repository": 557382,
+        "creator": 649016,
+        "last_updater": 649016,
+        "last_updated": "2016-10-14T17:29:54.874674Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.1",
+        "full_size": 216715615,
+        "id": 2402184,
+        "repository": 557382,
+        "creator": 649016,
+        "last_updater": 649016,
+        "last_updated": "2016-03-23T14:05:39.350299Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.0",
+        "full_size": 216715685,
+        "id": 2389765,
+        "repository": 557382,
+        "creator": 649016,
+        "last_updater": 649016,
+        "last_updated": "2016-03-22T16:32:11.071457Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "codecentric/springboot-maven3-centos"
+  },
+  "name": "codecentric/springboot-maven3-centos Docker container",
+  "description": "STI builder image for building and running maven based Spring Boot applications",
+  "readme": "# Spring Boot - Maven 3 - CentOS Docker image\n\n[![Build Status](https://travis-ci.org/codecentric/springboot-maven3-centos.svg?branch=master)](https://travis-ci.org/codecentric/springboot-maven3-centos)\n\nThis repository contains the sources and [Dockerfile](https://github.com/codecentric/springboot-maven3-centos/blob/master/Dockerfile) of the base image for deploying Spring Boot applications as reproducible Docker images. The resulting images can be run either by [Docker](http://docker.io) or using [S2I](https://github.com/openshift/source-to-image).\n\nThis image is heavily inspired by the awesome [openshift/sti-ruby](https://github.com/openshift/sti-ruby/) builder images.\n\n## Usage\n\nTo build a simple springboot-sample-app application using standalone S2I and then run the resulting image with Docker execute:\n\n```\n$ s2i build git://github.com/codecentric/springboot-sample-app codecentric/springboot-maven3-centos springboot-sample-app\n$ docker run -p 8080:8080 springboot-sample-app\n```\n\n**Accessing the application:**\n\n```\n$ curl 127.0.0.1:8080\n```\n\n## Repository organization\n\n* **`s2i/bin/`**\n\n  This folder contains scripts that are run by [S2I](https://github.com/openshift/source-to-image):\n\n  *   **assemble**\n\n      Is used to restore the build artifacts from the previous built (in case of\n      'incremental build'), to install the sources into location from where the\n      application will be run and prepare the application for deployment (eg.\n      using maven to build the application etc..)\n\n  *   **run**\n\n      This script is responsible for running a Spring Boot fat jar using `java -jar`.\n      The image exposes port 8080, so it expects application to listen on port\n      8080 for incoming request.\n\n  *   **save-artifacts**\n\n      In order to do an *incremental build* (iow. re-use the build artifacts\n      from an already built image in a new image), this script is responsible for\n      archiving those. In this image, this script will archive the\n      `/opt/java/.m2` directory.\n\n## Environment variables\n\n*  **APP_ROOT** (default: '.')\n\n    This variable specifies a relative location to your application inside the\n    application GIT repository. In case your application is located in a\n    sub-folder, you can set this variable to a *./myapplication*.\n\n*  **APP_TARGET** (default: '')\n\n    This variable specifies a relative location to your application binary inside the\n    container.\n\n*  **MVN_ARGS** (default: '')\n\n    This variable specifies the arguments for Maven inside the container.\n\n\n## Contributing\n\nIn order to test your changes to this STI image or to the STI scripts, you can use the `test/run` script. Before that, you have to build the 'candidate' image:\n\n```\n$ docker build -t codecentric/springboot-maven3-centos-candidate .\n```\n\nAfter that you can execute `./test/run`. You can also use `make test` to automate this.\n\n## Copyright\n\nReleased under the Apache License 2.0. See the [LICENSE](https://github.com/codecentric/springboot-maven3-centos/blob/master/LICENSE) file.\n",
+  "dockerfile": "# springboot-maven3-centos\n#\n# This image provide a base for running Spring Boot based applications. It\n# provides a base Java 8 installation and Maven 3.\n\nFROM openshift/base-centos7\n\nEXPOSE 8080\n\nENV JAVA_VERSON 1.8.0\nENV MAVEN_VERSION 3.3.9\n\nLABEL io.k8s.description=\"Platform for building and running Spring Boot applications\" \\\n      io.k8s.display-name=\"Spring Boot Maven 3\" \\\n      io.openshift.expose-services=\"8080:http\" \\\n      io.openshift.tags=\"builder,java,java8,maven,maven3,springboot\"\n\nRUN yum update -y && \\\n  yum install -y curl && \\\n  yum install -y java-$JAVA_VERSON-openjdk java-$JAVA_VERSON-openjdk-devel && \\\n  yum clean all\n\nRUN curl -fsSL https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - -C /usr/share \\\n  && mv /usr/share/apache-maven-$MAVEN_VERSION /usr/share/maven \\\n  && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn\n\nENV JAVA_HOME /usr/lib/jvm/java\nENV MAVEN_HOME /usr/share/maven\n\n# Add configuration files, bashrc and other tweaks\nCOPY ./s2i/bin/ $STI_SCRIPTS_PATH\n\nRUN chown -R 1001:0 /opt/app-root\nUSER 1001\n\n# Set the default CMD to print the usage of the language image\nCMD $STI_SCRIPTS_PATH/usage\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "yum update -y &&   yum install -y curl &&   yum install -y java-$JAVA_VERSON-openjdk java-$JAVA_VERSON-openjdk-devel &&   yum clean all",
+      "curl -fsSL https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - -C /usr/share   && mv /usr/share/apache-maven-$MAVEN_VERSION /usr/share/maven   && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn",
+      "chown -R 1001:0 /opt/app-root"
+    ],
+    "workdir": [],
+    "from": "openshift/base-centos7",
+    "env": {
+      "JAVA_VERSON": "1.8.0",
+      "MAVEN_VERSION": "3.3.9",
+      "JAVA_HOME": "/usr/lib/jvm/java",
+      "MAVEN_HOME": "/usr/share/maven"
+    },
+    "label": "io.k8s.description=\"Platform for building and running Spring Boot applications\"       io.k8s.display-name=\"Spring Boot Maven 3\"       io.openshift.expose-services=\"8080:http\"       io.openshift.tags=\"builder,java,java8,maven,maven3,springboot\"",
+    "copy": "./s2i/bin/ $STI_SCRIPTS_PATH",
+    "user": "1001",
+    "cmd": "$STI_SCRIPTS_PATH/usage"
+  },
+  "source_repository_url": "https://github.com/codecentric/springboot-maven3-centos.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/codecentric/springboot-maven3-centos",
+  "docker_repository": "codecentric/springboot-maven3-centos",
+  "docker_image": "codecentric/springboot-maven3-centos",
+  "parameters_schema": {
+    "JAVA_VERSON": {
+      "default": "1.8.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_VERSION": {
+      "default": "3.3.9",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_HOME": {
+      "default": "/usr/lib/jvm/java",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_HOME": {
+      "default": "/usr/share/maven",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "codecentric/springboot-maven3-centos",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/codecentric/springboot-maven3-centos",
+    "https://hub.docker.com/v2/repositories/codecentric/springboot-maven3-centos",
+    "https://github.com/codecentric/springboot-maven3-centos.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Mode/Executable/Image",
+    "Style/Virtualization Level/Application",
+    "Type/Devopsware/Build/Java/Maven",
+    "Type/Infrastructure/Operating System/Linux/CentOS"
+  ],
+  "info_url": "https://hub.docker.com/r/codecentric/springboot-maven3-centos",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

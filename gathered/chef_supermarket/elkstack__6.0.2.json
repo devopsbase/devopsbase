@@ -1,0 +1,153 @@
+{
+  "name": "elkstack Chef cookbook",
+  "chef_cookbook_name": "elkstack",
+  "revision": "6.0.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/elkstack",
+    "https://supermarket.chef.io/cookbooks/elkstack/download",
+    "https://supermarket.chef.io/cookbooks/elkstack/versions/6.0.2",
+    "https://supermarket.chef.io/cookbooks/elkstack/versions/6.0.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/elkstack/versions/6.0.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/elkstack",
+    "https://supermarket.chef.io/api/v1/cookbooks/elkstack/versions/6.0.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/elkstack",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/elkstack/versions/6.0.2/download",
+  "deprecated": false,
+  "created": "2014-09-04T18:04:56.268Z",
+  "updated": "2016-05-27T13:31:30.883Z",
+  "description": "Installs/Configures elkstack",
+  "maintainer": {
+    "name": "rackops",
+    "email": "rackspace-cookbooks@rackspace.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 34,
+  "downloads_count": 14509901,
+  "downloads_count_revision": 59462,
+  "repository_url": "https://github.com/rackspace-cookbooks/elkstack",
+  "issues_url": "https://github.com/rackspace-cookbooks/elkstack/issues",
+  "chef_source_url": "https://github.com/rackspace-cookbooks/elkstack",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# elkstack\n\nElasticsearch, Logstash, and Kibana stack. Due to the recommendations of the\ncommunity, we are not using the embedded elasticsearch functionality of logstash\nat this point. This cookbook provides recipes for all three components, along\nwith wrapper recipes such as `single` or `cluster` to facilitate different use\ncases.\n\nThis stack's design is intended for one or many standalone nodes, with a full\nstack of elasticsearch, logstash, and kibana. The only difference between one\nand many nodes is that elasticsearch is clustered together. Data dispatched to\nLogstash on a particular node will use the local elasticsearch transport\ninterface to index those logs to the node (and thus, the cluster). HTTP traffic\ndispatched to Kibana on port 80 on any node will also use the local\nelasticsearch HTTP interface to fetch and manipulate data.\n\nPlease read the individual recipe summaries to understand what each recipe does,\nas well as what each wrapper recipe is actually wrapping. As much as possible,\nupstream attributes have been exposed/overriden for our needs.\n\n## Things you should know\n\n- This cookbook requires java. Because not everyone has the same desires for\njava versions, concurrently installed versions, or particular vendor versions,\nthis cookbook simply assumes you have already satisfied this requirement. This\ncookbook _does_ ship with default attributes to make the community cookbook use\nJava 7 over the default of Java 6.\n\n- You must update your Berksfile to use this cookbook. Due to the upstream\nchanges constantly occuring, you should consult the `Berksfile` in this cookbook\nand use its sources for `kibana`, `logstash`, and `elasticsearch` cookbooks.\nEventually, as PRs get merged, this may no longer be a hard requirement. But the\nhardest thing will be that kibana in supermarket is currently a different\nactual cookbook.\n\n- You should probably disable the nginx virtualhost that comes with the `kibana`\ncookbook and create your own configuration, securing it as appropriate for your\nown requirements. See the `kibana_web` LWRP documentation for more on what\nattributes should be set to accomplish this.\n\n- If you'd like to disable backups using cloud files, set\n`node['elkstack']['config']['backups']['enabled'] = false` (it defaults to\ntrue). If you'd like to override the backup schedule/behavior for ES, simply\ndisable the backup crontab entry by setting\n`node['elkstack']['config']['backups']['cron']=false`. This cookbook will still\nconfigure everything except the cronjob, and then you may create another one\nwith your own schedule using the `cron_d` LWRP.\n\n- Please note that this cookbook does not restart elasticsearch automatically,\nin order to avoid causing an outage of the cluster. It does restart nginx and\nlogstash, however. You will have to restart elasticsearch after the initial\nbootstrap. You may also need to bounce logstash if it seems confused about\nlosing a connection to eleasticsearch (unusual, but happens).\n\n- You may want to consider adjusting `node['elasticsearch']['discovery']['search_query']`\nif you are sharing one cluster among multiple environments. Just put a chef\nsearch in that attribute and this will use that search instead of one scoped to\nchef environments.\n\n- You may want to consider adjusting `node['elasticsearch']['allocated_memory']`\nif you are seeing an initial convergence failure (see [#50](https://github.com/rackspace-cookbooks/elkstack/issues/50)).\nThe chef client has been known to take up to 500mb or more on initial\nconvergence. Combined with an initial allocation of 40% memory for ES, and 20%\nfor logstash, that only leaves about 40% for the OS and chef. On a 2gb server,\nthat ends up being 800mb for ES, about 400mb for logstash, leaving 800mb for\nthe OS and the initial chef client run. After the initial run, memory footprint\nfor the chef-client tends to be much, much lower, and ES is able to start.\n\n- The agent and logstash recipes requires a pre-generated SSL key and\ncertificate due to the requirements of the lumberjack protocol. This cookbook\nwill consult `node['elkstack']['config']['lumberjack_data_bag']` in order to\nlocate and load a database that stores this key. It will first try an encrypted\ndata bag, and if that doesn't work, will try an unencrypted data bag of the same\nname. If no data bag is found, it will autogenerate one and save it as an\nencrypted data bag. This means you must already have a 'secret file' on the node\nfor an encryption key, as this is a require to use any encrypted data bags.\nTo generate a key of your own, use something like:\n```\nopenssl req -x509 -newkey rsa:2048 -keyout lumberjack.key -out lumberjack.crt -nodes -days 1000\n```\nThis key and certificate data should be placed in data bag with name\n`node['elkstack']['config']['lumberjack_data_bag']` under `key` and\n`certificate` keys, and base64 encoded into a single line string. You may also\nsupply these secrets with some other method and populate the appropriate\n`node.run_state` values (see `_secrets.rb` for more details). Note that this is\nnot a PKI trust model, but an [explicit trust model](https://spaces.internet2.edu/display/InCFederation/Metadata+Trust+Models#MetadataTrustModels-ExplicitKeyTrustModel). You may also set the data bag key to false to disable lumberjack entirely.\n\nThere exists a make-lumberjack-key.sh to help you make this. For Go 1.3+, you may be required\nby the standard libraries to create a SAN cert [as described here](https://github.com/elastic/logstash-forwarder/issues/221#issuecomment-48823952).\n\n## [Changelog](CHANGELOG.md)\n\nSee CHANGELOG.md for additional information about changes to this stack over time.\n\n## Supported Platforms\n\nUbuntu 12.04\n\nUbuntu 14.04\n\nCentOS 6.5\n\n## Attributes\n\n<table>\n  <tr>\n    <th>Key</th>\n    <th>Type</th>\n    <th>Description</th>\n    <th>Default</th>\n  </tr>\n  <tr>\n    <td><tt>['elkstack']['config']['logstash']['instance_name']</tt></td>\n    <td>String</td>\n    <td>Default logstash instance name</td>\n    <td><tt>server</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['elasticsearch']['discovery']['search_query']</tt></td>\n    <td>String</td>\n    <td>A query to search for and connect Elasticsearch to cluster nodes</td>\n    <td>(see `attributes/elasticsearch.rb`)</td>\n  </tr>\n  <tr>\n    <td><tt>['logstash_forwarder']['config']['files']</tt></td>\n    <td>Hash</td>\n    <td>See customizing the stack section below.</td>\n    <td>Most logs in `/var/log`</td>\n  </tr>\n  <tr>\n    <td><tt>['elkstack']['config']['data_disk']['disk_config_type']</tt></td>\n    <td>Boolean or String</td>\n    <td>See customizing the stack section below.</td>\n    <td><tt>false</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['elkstack']['config']['agent']['enabled']</tt></td>\n    <td>Boolean</td>\n    <td>Enable/Disable agent functionality</td>\n    <td><tt>true</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['elkstack']['config']['cloud_monitoring']['enabled']</tt></td>\n    <td>Boolean</td>\n    <td>Enable/Disable cloud_monitoring functionality</td>\n    <td><tt>true</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['elkstack']['config']['iptables']['enabled']</tt></td>\n    <td>Boolean</td>\n    <td>Enable/Disable iptables functionality</td>\n    <td><tt>true</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['elkstack']['config']['site_name']</tt></td>\n    <td>String</td>\n    <td>Control the name of the self-signed SSL key and cert in /etc/nginx/ssl</td>\n    <td><tt>kibana</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['elkstack']['config']['kibana']['redirect']</tt></td>\n    <td>Boolean</td>\n    <td>Enable/Disable nginx redirect for kibana from port 80 to port 443</td>\n    <td><tt>true</tt></td>\n  </tr>\n  <tr>\n    <td><tt>node.run_state['elkstack_kibana_username']</tt> and <tt>['elkstack']['config']['kibana']['username']</tt></td>\n    <td>String</td>\n    <td>Default username for basic auth for kibana, run_state used first</td>\n    <td><tt>kibana</tt></td>\n  </tr>\n  <tr>\n    <td><tt>node.run_state['elkstack_kibana_password']</tt></td>\n    <td>String</td>\n    <td>Password for basic auth for kibana</td>\n    <td>random from <tt>Opscode::OpenSSL::Password</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['elkstack']['config']['lumberjack_data_bag']</tt></td>\n    <td>String</td>\n    <td>Data bag name for lumberjack key and certificate</td>\n    <td><tt>lumberjack</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['elkstack']['config']['custom_logstash']['name']</tt></td>\n    <td>Array of strings</td>\n    <td>See `attributes/logstash.rb` for an explanation of how to use this attribute to populate additional logstash configuration file templates</td>\n    <td><tt>[]</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['elkstack']['config']['restart_logstash_service']</tt></td>\n    <td>Boolean</td>\n    <td>Restart logstash if we deploy a custom config file</td>\n    <td><tt>true</tt></td>\n  </tr>\n</table>\n\n## Customizing the stack\n\nTo override local storage for elasticsearch nodes (the stack will format and mount, as well as configure elasticsearch), set `['elkstack']['config']['data_disk']['disk_config_type']` to `custom` and provide each storage device and mount point in the following way:\n```ruby\ndisk_config = {\n  'file_system' => 'ext4',\n  'mount_options' => 'rw,user',\n  'mount_path' => '/usr/local/var/data/elasticsearch/disk1',\n  'format_command' => 'mkfs -t ext4 ',\n  'fs_check_command' => 'dumpe2fs'\n}\n\nnode.override['elasticsearch']['data']['devices']['/dev/xvde1'] = disk_config\nnode.override['elasticsearch']['path']['data'] = disk_config['mount_path']\n```\n\nTo add additional logstash configuration to this stack, simply add additional\ntemplates in your wrapper cookbook. They should be placed in\n`\"#{@basedir}/#{@instance}/etc/conf.d\"` (see the config provider in the logstash\ncookbook). If you choose to use logstash-forwarder instead of the regular agent,\nplease see the hash structure in `attributes/forwarder.rb` for adding additional\nfiles for the forwarder to watch and forward, `node['logstash_forwarder']['config']['files']`.\n\nTo override the nginx configuration, simply supply a new template and specify\nyour cookbook using `['kibana']['nginx']['template_cookbook']` and\n`['kibana']['nginx']['template']`. You can also override just the password for\nthe reverse proxy using `node.run_state['elkstack_kibana_password']`.\n\nTo override anything else, set the appropriate node hash (`logstash`, `kibana`, or `elasticsearch`).\n\n## Usage\n\n### elkstack::default\n\nA simple wrapper recipe that sets up Elasticsearch, Logstash, and Kibana. Also\nconfigures an rsyslog sink into logstash on the local box. Everything except\nLogstash and Kibana is locked down to listen only on localhost.\n\n### elkstack::agent\n\nA simple wrapper recipe that sets up a logstash agent on the local box. Also\nconfigures an rsyslog sink into logstash on the local box.\nYou need `node['elkstack']['config']['agent']['enabled']` set to `true` if you want to use this recipe (default to true).\n\n### elkstack::forwarder\n\nA [go-based alternative](https://github.com/elastic/logstash-forwarder) to the normal\nagent, configured simply to watch logs forward them directly on to the cluster. This\nproject is in heavy development, and is not publishing releases very often, so the\npackaged versions may be quite old or buggy. As of the addition of the recipe, the\npackage was almost a year behind current development, but only because there also\nhad been no releases either.\n\n### elkstack::elasticsearch\n\nLeans on the upstream `elasticsearch/cookbook-elasticsearch` cookbook for much\nof its work. We do override the default set of plugins to be installed, as well\nas the amount of JVM heap. See `attributes/default.rb` for those settings.\n\nThis recipe also tags the node so that other nodes that run this recipe can\ndiscover it, and configure Elasticsearch appropriately to join their cluster.\nIt uses a tag, the current chef environment, and the cluster name as the default\nsearch criteria.\n\nMost of this is configurable using the upstream Elasticsearch cookbook's\nattributes, including the chef search itself. There is not an easy toggle to\nturn off the search, however.\nEnables iptables rules if `node['elkstack']['config']['iptables']['enabled']` is not `nil`.\n\n### elkstack::logstash\n\nLeans on the upstream `lusis/chef-logstash` cookbook for much\nof its work. We do override the default set of plugins to be installed, as well\nas the amount of JVM heap. See `attributes/default.rb` for those settings.\n\n### elkstack::kibana\n\nLeans on the upstream `lusis/chef-kibana` cookbook for most of its work. Sets up\nan nginx site for kibana by default. By default, it also does not pass through\nmost of the http paths directly to elasticsearch (whitelist).\n\n### elkstack::newrelic\n\nValidates if there is a newrelic license set and based on that, see if the node\nis tagged as 'elkstack' and creates a file with elasticsearch details. Installs\npython, pip and setuptools packages in order to support newrelic_meetme_plugin\n\n## elkstack::acl\n\nAdds cluster node basic iptables rules and cluster iptables rules if appropriate attributes\nare set.\n\n## elkstack::agent_acl\n\nAdds agent node basic iptables rules.\n\n## elkstack::disk_setup\n\nLook for `node['elkstack']['config']['data_disk']['disk_config_type']` to be truthy, and configure the upstream elasticsearch cookbook to format, mount, and use devices appropriately.\n\n## elkstack::\\*\\_monitoring\n\nThese correspond with the recipes above, and just provide a way to pull out the\nmonitoring work to make the original recipes cleaner.\n\n### Miscellaneous\n\nThe wrapper recipes are `single` and `cluster`. These change attributes and then\ninvoke `elasticsearch`, `logstash`, `kibana`, and `rsyslog`. Finally, there are\nutility recipes like `java` and `newrelic` (not invoked otherwise), as well as\n`acl` which is called by `_base` if `node['elkstack']['config']['iptables']['enabled']`.\n\n## Contributing\n\nSee [CONTRIBUTING](https://github.com/AutomationSupport/elkstack/blob/master/CONTRIBUTING.md).\n\n## Authors\n\nAuthor:: Rackspace (devops-chef@rackspace.com)\n\n## License\n```\n# Copyright 2014, Rackspace Hosting\n#\n# Licensed under the Apache License, Version 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions and\n# limitations under the License.\n#\n```\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef-sugar",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/cron",
+      "revision": "~> 1.4.3",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/elasticsearch",
+      "revision": "~> 0.3",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/firewall",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/htpasswd",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/kibana_lwrp",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/line",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/logstash",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/openssl",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/newrelic_meetme_plugin",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/nginx",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/python",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/rackspace_monitoring",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/rsyslog",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/runit",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

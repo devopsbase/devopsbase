@@ -1,0 +1,156 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/budddddddha/depotica-django",
+    "repository_url": "https://hub.docker.com/v2/repositories/budddddddha/depotica-django",
+    "tags_url": "https://hub.docker.com/v2/repositories/budddddddha/depotica-django/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/budddddddha/depotica-django/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/budddddddha/depotica-django/autobuild",
+    "user": "budddddddha",
+    "name": "depotica-django",
+    "namespace": "budddddddha",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 4653,
+    "last_updated": "2016-08-31T07:11:12.385626Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 471561071,
+        "id": 2031415,
+        "repository": 336727,
+        "creator": 412579,
+        "last_updater": 412579,
+        "last_updated": "2016-08-31T07:11:12.035599Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.0",
+        "full_size": 439245861,
+        "id": 2031023,
+        "repository": 336727,
+        "creator": 412579,
+        "last_updater": 412579,
+        "last_updated": "2016-02-19T13:04:23.888972Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "budddddddha/depotica"
+  },
+  "name": "budddddddha/depotica-django Docker container",
+  "description": "depotica django",
+  "readme": "Name\n====\ndepotica\n\n## Description\n位置情報メディアプラットホームサービス  \n位置(駅 or 路線)で記事を分類\n\n主な機能\n+ 記事ブックマーク\n+ URLから記事の情報と位置情報の解析\n+ 駅名 or 路線名 or 現在位置の最寄り駅からの記事検索\n\n## Demo\n\n## VS.\n\n## Requirement\n+ django  \n+ python3系  \n+ PostgreSQL\n\nライブラリ\n+ BeautifulSoup4\n+ autocomplete_light\n+ endless_pagination\n+ mecab\n\n上記に挙げたものは配布用のGitレポジトリとDockerImageにインストール済み\n\n## Getting Started\n\n### Install\n##### Git Clone\n```\n$ git clone https://budddddddha@bitbucket.org/budddddddha/depotica.git\n```\n##### docker pull(django)\n```\n$ docker pull budddddddha/depotica-django\n```\n#### docker pull(postges)\n```\n$ docker pull budddddddha/depotica-postgres\n```\n\n### Usage\ndocker run する時の< IP>はdockerで使っているIPを入れてください\n***\n#### コンテナでPostgreSQLを起動する場合(開発環境)\n#### docker run(postges)\n```\n$ docker run -it -p  <IP>:5432:5432 -d  --name depotica-postgres1 budddddddha/depotica-postgres\n```\n#### docker run(django)\n```\n$ docker run -it -p  <IP>:8000:8000 --link depotica-postgres1:depotica-postgres1 -v <yourpath>/depotica/src:/home/src/ budddddddha/depotica-django /bin/bash\n```\n***\n#### migrate\n```\n$ python manage.py migrate\n```\n#### スーパーユーザ作成\n```\n$ python manage.py python manage.py createsuperuser\n```\n#### runserver\n```\n$ python manage.py runserver [::]:8000\n```\n位置情報データimport\n\n\n## Contribution\n\n## Licence\n\n## Author\nbudddddddha\n\n[github](https://github.com/budddddddha)\n",
+  "dockerfile": "FROM django\n\nMAINTAINER budddddddha\n\nRUN apt-get update -y\nRUN apt-get upgrade -y\nRUN apt-get install -y apt-utils\nRUN apt-get install -y vim\nRUN apt-get install -y gcc\nRUN apt-get install -y wget\nRUN apt-get install -y libxslt-dev\nRUN apt-get install -y python-dev\nRUN apt-get install -y mecab\nRUN apt-get install -y libmecab-dev\nRUN apt-get install -y mecab-ipadic\nRUN apt-get install -y aptitude\nRUN aptitude install -y mecab-ipadic-utf8\nRUN apt-get install -y python-mecab\nRUN apt-get install -y build-essential\nRUN apt-get install -y openssl\nRUN apt-get install -y curl\nRUN apt-get install -y git\n\n# depoticaディレクトリ作成\nWORKDIR /home\nRUN mkdir depotica\n\n# dataディレクトリをコピー\nADD data /home/depotica/data\n\n# pip(パッケージ)\nWORKDIR /home/depotica/data/buildfiles\nRUN pip install --upgrade pip\nRUN pip install -r requirements.txt\nRUN pip install --upgrade django-storages\n\n# mecabインストール\nWORKDIR /home/depotica/data/buildfiles/mecab-0.996\nRUN ./configure --enable-utf8-only\nRUN make\nRUN make install\n\nWORKDIR ~\nRUN echo -e 'include ld.so.conf.d/*.conf\\n/usr/local/lib' > /etc/ld.so.conf\nRUN ldconfig\n\n# 辞書の登録\n## ipadicのインストール\n#WORKDIR /var/tmp\n#RUN curl -O https://mecab.googlecode.com/files/mecab-ipadic-2.7.0-20070801.tar.gz\n#RUN tar zxfv mecab-ipadic-2.7.0-20070801.tar.gz\nRUN cp -R /home/depotica/data/buildfiles/mecab-ipadic-2.7.0-20070801 /var/tmp/mecab-ipadic-2.7.0-20070801\nWORKDIR /var/tmp/mecab-ipadic-2.7.0-20070801\nRUN ./configure --with-charset=utf8\nRUN make\nRUN make install\n\nWORKDIR /var/tmp\nRUN cp -R /home/depotica/data/buildfiles/mecab-python-0.996 /var/tmp/mecab-python-0.996\n#RUN curl -O https://mecab.googlecode.com/files/mecab-python-0.996.tar.gz\n#RUN tar zxfv mecab-python-0.996.tar.gz\nWORKDIR /var/tmp/mecab-python-0.996\nRUN rm setup.py\nRUN cp /home/depotica/data/buildfiles/mecab-python-0.996/setup.py .\n# ADD /home/ec2-user/depotica/data/mecab/mecab-python-0.996/setup.py ./setup.py\nWORKDIR /var/tmp\n# ADD /data/mecab/Station-Line-2015-04-15.csv ./Station-Line-2015-04-15.csv\nRUN cp /home/depotica/data/buildfiles/Station-Line-2015-04-15.csv .\nRUN /usr/local/libexec/mecab/mecab-dict-index -d /usr/local/lib/mecab/dic/ipadic -u station-line.dic -f utf-8 -t utf-8 Station-Line-2015-04-15.csv\n\nRUN rm /usr/local/lib/python3.4/site-packages/storages/backends/s3boto.py\nRUN cp /home/depotica/data/buildfiles/s3boto.py /usr/local/lib/python3.4/site-packages/storages/backends/s3boto.py\n\n#VOLUME\n\nEXPOSE 80 5432\n\nWORKDIR /home/depotica\n\n#ENTRYPOINT [\"/home/depotica/src/\"]\n\n#CMD [\"python\", \"manage.py\", \"runserver\", \"[::]:80\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "data",
+        "dest": "/home/depotica/data"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update -y",
+      "apt-get upgrade -y",
+      "apt-get install -y apt-utils",
+      "apt-get install -y vim",
+      "apt-get install -y gcc",
+      "apt-get install -y wget",
+      "apt-get install -y libxslt-dev",
+      "apt-get install -y python-dev",
+      "apt-get install -y mecab",
+      "apt-get install -y libmecab-dev",
+      "apt-get install -y mecab-ipadic",
+      "apt-get install -y aptitude",
+      "aptitude install -y mecab-ipadic-utf8",
+      "apt-get install -y python-mecab",
+      "apt-get install -y build-essential",
+      "apt-get install -y openssl",
+      "apt-get install -y curl",
+      "apt-get install -y git",
+      "mkdir depotica",
+      "pip install --upgrade pip",
+      "pip install -r requirements.txt",
+      "pip install --upgrade django-storages",
+      "./configure --enable-utf8-only",
+      "make",
+      "make install",
+      "echo -e 'include ld.so.conf.d/*.conf\\n/usr/local/lib' > /etc/ld.so.conf",
+      "ldconfig",
+      "cp -R /home/depotica/data/buildfiles/mecab-ipadic-2.7.0-20070801 /var/tmp/mecab-ipadic-2.7.0-20070801",
+      "./configure --with-charset=utf8",
+      "make",
+      "make install",
+      "cp -R /home/depotica/data/buildfiles/mecab-python-0.996 /var/tmp/mecab-python-0.996",
+      "rm setup.py",
+      "cp /home/depotica/data/buildfiles/mecab-python-0.996/setup.py .",
+      "cp /home/depotica/data/buildfiles/Station-Line-2015-04-15.csv .",
+      "/usr/local/libexec/mecab/mecab-dict-index -d /usr/local/lib/mecab/dic/ipadic -u station-line.dic -f utf-8 -t utf-8 Station-Line-2015-04-15.csv",
+      "rm /usr/local/lib/python3.4/site-packages/storages/backends/s3boto.py",
+      "cp /home/depotica/data/buildfiles/s3boto.py /usr/local/lib/python3.4/site-packages/storages/backends/s3boto.py"
+    ],
+    "workdir": [
+      "/home",
+      "/home/depotica/data/buildfiles",
+      "/home/depotica/data/buildfiles/mecab-0.996",
+      "~",
+      "/var/tmp/mecab-ipadic-2.7.0-20070801",
+      "/var/tmp",
+      "/var/tmp/mecab-python-0.996",
+      "/var/tmp",
+      "/home/depotica"
+    ],
+    "from": "django",
+    "maintainer": "budddddddha"
+  },
+  "source_repository_url": "git@bitbucket.org:budddddddha/depotica.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/budddddddha/depotica",
+  "docker_repository": "budddddddha/depotica-django",
+  "docker_image": "budddddddha/depotica-django",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "budddddddha/depotica-django",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/budddddddha/depotica-django",
+    "https://hub.docker.com/v2/repositories/budddddddha/depotica-django",
+    "git@bitbucket.org:budddddddha/depotica.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python"
+  ],
+  "info_url": "https://hub.docker.com/r/budddddddha/depotica-django",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

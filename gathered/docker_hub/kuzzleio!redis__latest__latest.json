@@ -1,0 +1,132 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kuzzleio/redis",
+    "repository_url": "https://hub.docker.com/v2/repositories/kuzzleio/redis",
+    "tags_url": "https://hub.docker.com/v2/repositories/kuzzleio/redis/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kuzzleio/redis/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kuzzleio/redis/autobuild",
+    "user": "kuzzleio",
+    "name": "redis",
+    "namespace": "kuzzleio",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 112,
+    "last_updated": "2016-10-05T09:59:56.301188Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 54364899,
+        "id": 2738640,
+        "repository": 647283,
+        "creator": 341336,
+        "last_updater": 341336,
+        "last_updated": "2016-10-05T09:59:55.251085Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "kuzzleio/kuzzle-containers"
+  },
+  "name": "kuzzleio/redis Docker container",
+  "description": "Alpine image with redis and everything we need for clustering.",
+  "readme": "# kuzzle-containers\n\nThis repository contains all containers for running [Kuzzle](https://github.com/kuzzleio/kuzzle).\n\n# Documentation\n\nPlease, refer to main project [Kuzzle](https://github.com/kuzzleio/kuzzle) for more information.\n",
+  "dockerfile": "FROM ruby:2.3.0-alpine\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\nRUN addgroup -S redis && adduser -S -G redis redis\n\n# grab gosu for easy step-down from root\nENV GOSU_VERSION 1.7\nRUN set -x \\\n\t&& apk add --no-cache --virtual .gosu-deps \\\n\t\tdpkg \\\n    vim \\\n\t\tgnupg \\\n\t\topenssl \\\n\t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \\\n\t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \\\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n\t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\n\t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu \\\n\t&& gosu nobody true \\\n\t&& apk del .gosu-deps\n\nENV REDIS_VERSION 3.0.7\nENV REDIS_DOWNLOAD_URL http://download.redis.io/releases/redis-3.0.7.tar.gz\nENV REDIS_DOWNLOAD_SHA1 e56b4b7e033ae8dbf311f9191cf6fdf3ae974d1c\n\n# for redis-sentinel see: http://redis.io/topics/sentinel\nRUN set -x \\\n\t&& apk add --no-cache --virtual .build-deps \\\n\t\tgcc \\\n\t\tlinux-headers \\\n\t\tmake \\\n\t\tmusl-dev \\\n\t&& wget -O redis.tar.gz \"$REDIS_DOWNLOAD_URL\" \\\n\t&& echo \"$REDIS_DOWNLOAD_SHA1 *redis.tar.gz\" | sha1sum -c - \\\n\t&& mkdir -p /usr/src \\\n\t&& tar -xzf redis.tar.gz -C /usr/src \\\n\t&& mv \"/usr/src/redis-$REDIS_VERSION\" /usr/src/redis \\\n\t&& rm redis.tar.gz \\\n\t&& make -C /usr/src/redis \\\n\t&& make -C /usr/src/redis install \\\n\t&& apk del .build-deps\n\nRUN gem install redis\n\nRUN mkdir /data && chown redis:redis /data\nVOLUME /data\nWORKDIR /data\n\nCOPY docker-entrypoint.sh /entrypoint.sh\nRUN chmod 755 /entrypoint.sh\nENTRYPOINT [\"/entrypoint.sh\"]\n\nEXPOSE 6379\nCMD [ \"redis-server\" ]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      6379
+    ],
+    "volume": [
+      "/data"
+    ],
+    "run": [
+      "addgroup -S redis && adduser -S -G redis redis",
+      "set -x \t&& apk add --no-cache --virtual .gosu-deps \t\tdpkg     vim \t\tgnupg \t\topenssl \t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \t&& export GNUPGHOME=\"$(mktemp -d)\" \t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu \t&& gosu nobody true \t&& apk del .gosu-deps",
+      "set -x \t&& apk add --no-cache --virtual .build-deps \t\tgcc \t\tlinux-headers \t\tmake \t\tmusl-dev \t&& wget -O redis.tar.gz \"$REDIS_DOWNLOAD_URL\" \t&& echo \"$REDIS_DOWNLOAD_SHA1 *redis.tar.gz\" | sha1sum -c - \t&& mkdir -p /usr/src \t&& tar -xzf redis.tar.gz -C /usr/src \t&& mv \"/usr/src/redis-$REDIS_VERSION\" /usr/src/redis \t&& rm redis.tar.gz \t&& make -C /usr/src/redis \t&& make -C /usr/src/redis install \t&& apk del .build-deps",
+      "gem install redis",
+      "mkdir /data && chown redis:redis /data",
+      "chmod 755 /entrypoint.sh"
+    ],
+    "workdir": [
+      "/data"
+    ],
+    "from": "ruby:2.3.0-alpine",
+    "env": {
+      "GOSU_VERSION": "1.7",
+      "REDIS_VERSION": "3.0.7",
+      "REDIS_DOWNLOAD_URL": "http://download.redis.io/releases/redis-3.0.7.tar.gz",
+      "REDIS_DOWNLOAD_SHA1": "e56b4b7e033ae8dbf311f9191cf6fdf3ae974d1c"
+    },
+    "copy": "docker-entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[ \"redis-server\" ]"
+  },
+  "source_repository_url": "https://github.com/kuzzleio/kuzzle-containers.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/kuzzleio/kuzzle-containers",
+  "docker_repository": "kuzzleio/redis",
+  "docker_image": "kuzzleio/redis",
+  "parameters_schema": {
+    "GOSU_VERSION": {
+      "default": "1.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REDIS_VERSION": {
+      "default": "3.0.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REDIS_DOWNLOAD_URL": {
+      "default": "http://download.redis.io/releases/redis-3.0.7.tar.gz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REDIS_DOWNLOAD_SHA1": {
+      "default": "e56b4b7e033ae8dbf311f9191cf6fdf3ae974d1c",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        6379
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kuzzleio/redis",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/kuzzleio/redis",
+    "https://hub.docker.com/v2/repositories/kuzzleio/redis",
+    "https://github.com/kuzzleio/kuzzle-containers.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Middleware/Data Store/Key-Value/Redis"
+  ],
+  "info_url": "https://hub.docker.com/r/kuzzleio/redis",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

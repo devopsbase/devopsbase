@@ -1,0 +1,120 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/xetusoss/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/xetusoss/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/xetusoss/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/xetusoss/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/xetusoss/owncloud/autobuild",
+    "user": "xetusoss",
+    "name": "owncloud",
+    "namespace": "xetusoss",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 54,
+    "last_updated": "2015-11-11T20:37:04.466020Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 253599260,
+        "id": 197886,
+        "repository": 182559,
+        "creator": 271882,
+        "last_updater": 275850,
+        "last_updated": "2015-11-11T20:37:07.858695Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "xetus-oss/docker-owncloud"
+  },
+  "name": "xetusoss/owncloud Docker container",
+  "description": "Owncloud container with externalized data/configuration and optional HTTPS support",
+  "readme": "# owncloud\n\nAn owncloud 8.0.2 container designed for a simple standalone deployment. Key features are:\n\n1. The configuration/data is truly externalized, allowing container replacement/upgrading (`/owncloud-data`)\n2. Configurable SSL support is included, with the ability to add custom CA's at the OS level\n3. Linked container support for postgres and mysql/mariadb using the `ocdb` alias\n\nThe configuration of the container was created following the support guide suggested by [owncloud's manual installation guide](https://doc.owncloud.org/server/8.0/admin_manual/).\n\n## Quick Start\n\nThe command below will setup a running owncloud container with externalized data/configuration\n\n```\n docker run -d --name owncloud -h owncloud -d -p 80:80 -v /owncloud_mnt:/owncloud-data xetusoss/owncloud\n```\n\n## Available Configuration Parameters\n\n### Container parameters\n\nThe following parameters are used every time the container is replaced, regardless of the externalized configurations.\n\n* __SSL_ENABLED__: Configure HTTPS support. Default is `true` if `SSL_CERT` and `SSL_KEY` are defined, otherwise `false`.\n* __SSL_CERT__: The certificate path for the SSL certificate to use, must be in the PEM format. Default is `/owncloud-data/ssl/crt.pem`.\n* __SSL_KEY__: The SSL key path to use, must be in the PEM format and have no password. Default is `/owncloud-data/ssl/key.pem`.\n* __SSL_CA__: The CA cert path to us, must be in the PEM format. This cert will be added to the systems certificates, which are used by owncloud. No default value.\n* __CA_CERTS_DIR__: A directory of CA certificates in the PEM format. These certificates will be installed into the container on host boot, useful for trusting non-standard CA's for various SSL tasks. No default.\n\n### Initialization parameters\n\nThe following parameters are only used to setup the initial configuration. Once the configuration has been established, theses are not used. All the parameters here map to configuration values in the owncloud config.php.\n\nSee the [owncloud documentation](https://doc.owncloud.org/server/8.1/admin_manual/configuration_server/config_sample_php_parameters.html) for what each parameter does. The goal here is not to support every parameter, just those parameters\nthat you really would like to have in place before you get the the UI.\n\n* __DB_TYPE__ --> dbtype\n    * default: sqlite\n* __DB_NAME__ --> dbname\n    * default: owncloud\n* __DB_TABLE_PREFIX__ --> dbtableprefix\n    * default:\n* __DB_USER__ --> dbuser\n    * default:\n* __DB_PASS__ --> dbpass\n    * default:\n* __DB_HOST__ --> dbhost\n    * default:\n* __ADMIN_LOGIN__ --> adminlogin\n    * default: admin\n* __ADMIN_PASS__ --> adminpass\n    * default: (randomly generated, printed to stdout)\n* __LANGUAGE__ --> default_language\n    * default:\n* __PROXY__ --> proxy\n    * default:\n* __PROXY_USER_PASSWORD__ --> proxyuserpwd\n    * default:\n\n## Examples\n\n#### (1) HTTPS Support (generated certificate)\nMake sure /somepath/owncloud_mnt exists\n\n```\n docker run --name owncloud -h owncloud -d -p 443:443\\\n  -e SSL_ENABLED=true -v /somepath/owncloud_mnt:/owncloud-data xetusoss/owncloud\n```\n#### (2) HTTPS Support (custom certificate included)\n\n\nCreate a public/private key pair and place them in data mount under `ssl/crt.pem` and `ssl/key.pem`. The locations can be changed using the __SSL_CERT__ and __SSL_KEY__ environment variables.\n\n```\n docker run --name owncloud -h owncloud -d -p 443:443\\\n  -e SSL_ENABLED=true -v /somepath/owncloud_mnt:/owncloud-data xetusoss/owncloud\n```\n\n#### (3) Use a MYSQL db, with a linked container\n\nThe example below creates a owncloud container with the linked mysql db\n\n```\ndocker run --name owncloud -h owncloud -p 443:443\\\n  -v /somepath/owncloud_mnt:/owncloud-data --link mysql:ocdb -e DB_TYPE=\"mysql\"\\\n  -e DB_USER=\"SOMEUSER\" -e DB_PASS=\"SOMEPASS\" -e SSL_ENABLED=true xetusoss/owncloud\n```\n\n#### (4) Use a MYSQL db, with an external host\n\nThe example below creates a owncloud container using an external db\n\n```\ndocker run --name owncloud -h owncloud -p 443:443\\\n  -v /somepath/owncloud_mnt:/owncloud-data -e DB_TYPE=\"mysql\"\\\n  -e DB_HOST=\"db.example.com:3306\"-e DB_USER=\"SOMEUSER\"\\\n  -e DB_PASS=\"SOMEPASS\" -e SSL_ENABLED=true xetusoss/owncloud\n```\n\n## The owncloud-data volume\n\nThe externalized data directory contains 4 directories: `data`, `config`, `apps`, and `dotfiles`\n\n The `data`, `config`, and `apps` directory are all standard in an owncloud installation, so reference the owncloud documentation for those. `dotfiles` is a custom directory because owncloud stores certain configuration settings in the `.htaccess` and `.user.ini` files that should persist between container replacements.\n\n## Caveats / Gotchas\n\n#### The volume directory must be executable by `other`\n\nIn order for the apache processes in the container to properly read the files in the dotfiles directory (.htaccess, etc), the executable bit must be set on the volume folder in the host.\n\n## Why another owncloud container?\n\nWe went through each of the 130+ owncloud containers available on docker hub, and we (amazingly) couldn't find a container that both properly externalized the data/configuration and supported SSL with custom CA certificates. Since this is such a pleasantly simple task, we decided to just our own.\n\nPull requests/code copying is welcome.",
+  "dockerfile": "FROM phusion/baseimage\nMAINTAINER Terence Kent <tkent@xetus.com>\n\n#\n# Install all the pre-reqs for owncloud, according to their documentation\n#\nRUN apt-get update &&\\\n  apt-get install -y apache2 apache2-utils libapache2-mod-fcgid\\\n  libapache2-mod-php5 php5-apcu php5-ldap php5-mysql php5-pgsql\\\n  php5-sqlite php5-imagick php5-curl php5-intl php5-json php5-gd\\\n  php-net-ftp smbclient php5-mcrypt openssl &&\\\n  php5enmod mcrypt && sudo a2enmod ssl && a2enmod rewrite\n\n#\n# Go get the owncloud version we'll installing\n#\nRUN OWNCLOUD_VERSION=\"8.1.4\" &&\\\n  cd /tmp &&\\\n  curl -O https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2 &&\\\n  cd /opt && tar xjf /tmp/owncloud-${OWNCLOUD_VERSION}.tar.bz2\n\nADD autoconfig.php /opt/owncloud/config/autoconfig.php\nADD apache-owncloud.conf /etc/apache2/conf-enabled/owncloud.conf\n\n#\n# Adjust ownership and do the baseline perms for security\n#\nRUN cd /opt && chown -R www-data:www-data owncloud &&\\\n  find owncloud -type d -exec chmod 750 {} \\; &&\\\n  find owncloud -type f -exec chmod 640 {} \\;\n#\n# Do system level configuration tweaks\n#\nRUN echo 'default_charset = UTF-8' >> /etc/php5/apache2/conf.d/charset.ini\n\n#\n# Perform the data directory initialization\n#\nADD data_dirs.env /data_dirs.env\nADD init.bash /init.bash\n# Sync calls are due to https://github.com/docker/docker/issues/9547\nRUN cd / && chmod 755 /init.bash &&\\\n  sync && /init.bash &&\\\n  sync && rm /init.bash\n\n#\n# Add the bootstrap cmd\n#\nADD run.bash /run.bash\nRUN chmod 755 /run.bash\n\n#\n# All data is stored on the root data volume. The expected directories are: config, data, apps, dotfiles\n#\nVOLUME [\"/owncloud-data\"]\n\n# Standard web ports exposted\nEXPOSE 80/tcp 443/tcp\n\nENTRYPOINT [\"/run.bash\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "autoconfig.php",
+        "dest": "/opt/owncloud/config/autoconfig.php"
+      },
+      {
+        "source": "apache-owncloud.conf",
+        "dest": "/etc/apache2/conf-enabled/owncloud.conf"
+      },
+      {
+        "source": "data_dirs.env",
+        "dest": "/data_dirs.env"
+      },
+      {
+        "source": "init.bash",
+        "dest": "/init.bash"
+      },
+      {
+        "source": "run.bash",
+        "dest": "/run.bash"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/owncloud-data\"]"
+    ],
+    "run": [
+      "apt-get update &&  apt-get install -y apache2 apache2-utils libapache2-mod-fcgid  libapache2-mod-php5 php5-apcu php5-ldap php5-mysql php5-pgsql  php5-sqlite php5-imagick php5-curl php5-intl php5-json php5-gd  php-net-ftp smbclient php5-mcrypt openssl &&  php5enmod mcrypt && sudo a2enmod ssl && a2enmod rewrite",
+      "OWNCLOUD_VERSION=\"8.1.4\" &&  cd /tmp &&  curl -O https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2 &&  cd /opt && tar xjf /tmp/owncloud-${OWNCLOUD_VERSION}.tar.bz2",
+      "cd /opt && chown -R www-data:www-data owncloud &&  find owncloud -type d -exec chmod 750 {} \\; &&  find owncloud -type f -exec chmod 640 {} \\;",
+      "echo 'default_charset = UTF-8' >> /etc/php5/apache2/conf.d/charset.ini",
+      "cd / && chmod 755 /init.bash &&  sync && /init.bash &&  sync && rm /init.bash",
+      "chmod 755 /run.bash"
+    ],
+    "workdir": [],
+    "from": "phusion/baseimage",
+    "maintainer": "Terence Kent <tkent@xetus.com>",
+    "entrypoint": "[\"/run.bash\"]"
+  },
+  "source_repository_url": "https://github.com/xetus-oss/docker-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/xetus-oss/docker-owncloud",
+  "docker_repository": "xetusoss/owncloud",
+  "docker_image": "xetusoss/owncloud",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "xetusoss/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/xetusoss/owncloud",
+    "https://hub.docker.com/v2/repositories/xetusoss/owncloud",
+    "https://github.com/xetus-oss/docker-owncloud.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/xetusoss/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,76 @@
+{
+  "name": "imply-platform Chef cookbook",
+  "chef_cookbook_name": "imply-platform",
+  "revision": "1.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/imply-platform",
+    "https://supermarket.chef.io/cookbooks/imply-platform/download",
+    "https://supermarket.chef.io/cookbooks/imply-platform/versions/1.0.0",
+    "https://supermarket.chef.io/cookbooks/imply-platform/versions/1.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/imply-platform/versions/1.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/imply-platform",
+    "https://supermarket.chef.io/api/v1/cookbooks/imply-platform/versions/1.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Databases",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/imply-platform",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/imply-platform/versions/1.0.0/download",
+  "deprecated": false,
+  "created": "2016-08-30T13:33:28.886Z",
+  "updated": "2016-08-30T13:33:28.875Z",
+  "description": "Install and configure Imply/druid",
+  "maintainer": {
+    "name": "samuel_bernard",
+    "email": "dps.team@s4m.io"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 34,
+  "downloads_count_revision": 34,
+  "repository_url": "https://gitlab.com/s4m-chef-repositories/imply-platform",
+  "issues_url": "https://gitlab.com/s4m-chef-repositories/imply-platform/issues",
+  "chef_source_url": "https://gitlab.com/s4m-chef-repositories/imply-platform",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Exploratory Analytics, Scalable to Petabytes\n=============\n\nDescription\n-----------\n\n[Druid](http://druid.io/) is an open source, high-performance, column-oriented,\ndistributed data store.\n\n[Imply](https://imply.io/) is an open event analytics platform, powered by\nDruid. Explore your events through interactive visualizations, SQL, or your own\ncustom applications.\n\nThis cookbook is designed to install and configure Druid using Imply\ndistribution.\n\nRequirements\n------------\n\n### Cookbooks and gems\n\nDeclared in [metadata.rb](metadata.rb) and in [Gemfile](Gemfile).\n\n### Platforms\n\nA *systemd* managed distribution:\n- RHEL Family 7, tested on Centos\n\nUsage\n-----\n\nDruid need a lot of different nodes but Imply distribution sorts them in\nthree main roles:\n\n- Master, everything about coordination\n- Data, all about data\n- Query, responsible for user requests\n\nTo setup an Imply cluster, you need to define which nodes you want to affect\nto each role (a node may have multiple roles). This is done by the help of\n[Cluster Search][cluster-search] cookbook.\n\n### Search\n\nThe recommended way to use this cookbook is through the creation of three\nChef roles per **imply** cluster, each mapping an Imply role.\n\nThis enables the search by role feature, allowing a simple service discovery.\nThe search should be parametrized in attributes:\n\n- `node['imply-platform']['master']`\n- `node['imply-platform']['data']`\n- `node['imply-platform']['query']`\n\nIn fact, for each there are two ways to configure the search:\n\n1. with a static configuration through a list of hostnames (attributes `hosts`\n   that is `node['imply-platform']['master']['hosts']` for the master role)\n2. with a real search, performed on a role (attributes `role` and `size`\n   like in `node['imply-platform']['master']['role']`). The role should be in\n   the run-list of all nodes of the cluster. The size is a safety and should be\n   the number of nodes of this role.\n\nIf hosts is configured, `role` and `size` are ignored\n\nSee [roles](test/integration/roles) for some examples and\n[Cluster Search][cluster-search] documentation for more information.\n\n### Zookeeper HA Cluster\n\nTo install properly a HA **imply** cluster, you need a **Zookeeper** cluster.\nThis is not in the scope of this cookbook but if you need one, you should\nconsider using [Zookeeper Platform][zookeeper-platform].\n\nThe configuration of Zookeeper hosts use search and is done similarly as for\n**imply** hosts, _ie_ with a static list of hostnames or by using a search on\na role. The attribute to configure is `node['imply-platform']['zookeeper']`.\n\n### Metadata HA Cluster\n\nSimilarly, you need also a SQL server (MariaDB or PostgreSQL) to hold Druid\nmetadata.\n\nThis is not in the scope of this cookbook but if you need one, you should\nconsider using [Galera Platform][galera-platform]. Galera is master-master\nreplication system which can be applied to both MariaDB or PostgreSQL. This\nassures a truly fault-tolerant setting for Druid.\n\nThe configuration of database hosts use search and is done similarly as for\n**imply** hosts, _ie_ with a static list of hostnames or by using a search on\na role. The attribute to configure is `node['imply-platform']['database']`.\n\n### Java\n\nBy default, this cookbook installs *openjdk* from the official repositories\n*(openjdk-headless 8 on centos 7)* just before starting the service. You can\nchange this behavior by setting `node['imply-platform']['java']` to `\"\"`, or\nchoose your package by setting the package name in\n`node['imply-platform']['java'][node[:platform]]`.\n\n### Test\n\nThis cookbook is fully tested through the installation of the full platform\nin docker hosts. This uses kitchen, docker and some monkey-patching.\n\nIf you run `kitchen list`, you will see many suites:\n\n- zookeeper-imply-centos-7\n- galera-imply-centos-7\n- master-imply-1-centos-7\n- master-imply-2-centos-7\n- data-imply-1-centos-7\n- data-imply-2-centos-7\n- query-imply-1-centos-7\n- query-imply-2-centos-7\n- pivot-imply-centos-7\n\nEach corresponds to a different node in the cluster. They are connected through\na bridge network named *kitchen*, which is created if necessary.\n\nFor more information, see [.kitchen.yml](.kitchen.yml) and [test](test)\ndirectory.\n\nAttributes\n----------\n\nConfiguration is done by overriding default attributes. All configuration keys\nhave a default defined in [attributes/default.rb](attributes/default.rb).\nPlease read it to have a comprehensive view of what and how you can configure\nthis cookbook behavior.\n\nRecipes\n-------\n\n### default\n\nInclude search, user, nodejs (only for query nodes), install, database, config,\nsystemd and service recipes (in that order).\n\n### search\n\nPerforms all the required searches and store the results in\n`node.run_state['imply-platform']`. For instance, it defines a boolean for each\nimply role so they can be used by other recipes.\n\n### user\n\nCreate necessary user and group which will run imply services.\n\n### nodejs\n\nInstall nodejs through NodeJS official repository.\n\n### install\n\nInstall Imply distribution from official tar.gz archive.\n\n### database\n\nConfigure the database needed by the metadata service.\n\n### config\n\nConfigure all Imply services.\n\n### systemd\n\nInstall and configure Systemd services.\n\n### service\n\nConfigure services (enable, start and restart).\n\n### pivot\n\nInstall and configure Pivot in stand-alone mode.\n\nResources/Providers\n-------------------\n\nNone.\n\nChangelog\n---------\n\nAvailable in [CHANGELOG.md](CHANGELOG.md).\n\nContributing\n------------\n\nPlease read carefully [CONTRIBUTING.md](CONTRIBUTING.md) before making a merge\nrequest.\n\nLicense and Author\n------------------\n\n- Author:: Samuel Bernard (<samuel.bernard@s4m.io>)\n- Author:: Florian Philippon (<florian.philippon@s4m.io>)\n\n```text\nCopyright (c) 2016 Sam4Mobile\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 7.1",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ark",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/cluster-search",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/database",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

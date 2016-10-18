@@ -1,0 +1,59 @@
+{
+  "name": "eos Chef cookbook",
+  "chef_cookbook_name": "eos",
+  "revision": "1.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/eos",
+    "https://supermarket.chef.io/cookbooks/eos/download",
+    "https://supermarket.chef.io/cookbooks/eos/versions/1.0.1",
+    "https://supermarket.chef.io/cookbooks/eos/versions/1.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/eos/versions/1.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/eos",
+    "https://supermarket.chef.io/api/v1/cookbooks/eos/versions/1.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Networking",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/eos",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/eos/versions/1.0.1/download",
+  "deprecated": false,
+  "created": "2013-07-02T02:35:42.000Z",
+  "updated": "2016-10-14T18:58:43.083Z",
+  "description": "Manage Arista EOS device running-config",
+  "maintainer": {
+    "name": "arista",
+    "email": "eosplus-dev@arista.com"
+  },
+  "license": "Proprietary - All Rights Reserved",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 4,
+  "downloads_count": 3794176,
+  "downloads_count_revision": 2,
+  "repository_url": "https://github.com/aristanetworks/chef-eos",
+  "issues_url": "https://github.com/aristanetworks/chef-eos/issues",
+  "chef_source_url": "https://github.com/aristanetworks/chef-eos",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# eos Cookbook for Arista EOS\n\nThe eos cookbook simplifies management of [Arista](https://www.arista.com/) EOS\nnetwork devices.  Arista EOS uses the standard el6 32-bit Chef client.  By\nincluding the eos::default recipe in your runlist, it will perform the\nfollowing actions needed on EOS:\n- Relocate /etc/chef to /persist/sys/chef with a symlink back to /etc/chef\n- Enable eAPI (‘management api http-commands’) with unix-sockets as the\n  transport in the running-config\n- Add/enhances several ohai plugins\n\n# Requirements\n\nThis cookbook is designed and tested with Chef 12 and EOS 4.15 and 4.16. Other\nversions are likely to work but are not fully tested at this time.\n\n  - Arista EOS 4.15 or greater\n  - Chef client 32-bit RPM for RedHat/CentOS/el\n  - Arista Ruby client for eAPI (rbeapi) rubygem and dependencies:\n    - rbeapi 1.0 or greater which requires:\n      - netaddr\n      - net_http_unix\n      - inifile\n\n# Installing\n\nInstalling Chef on an Arista switch requires the steps below. While the\nmanual steps are displayed, below, for reference, it is suggested to use a tool\nsuch as Arista’s CloudVision or ZTP Server to take advantage of the zero-touch\nprovisioning capability of Arista devices to load a desired EOS version,\nadditional packages, and a base config, automatically.\n\n- [Download the Chef client](https://downloads.chef.io/chef-client/redhat/)\n  for RedHat/CentOS (32-bit)\n- Copy the rpm to the switch.\n\n    ```\n    Arista#copy http://my_server/path/chef-12.6.0-1.el6.i386.rpm extension:\n    ```\n\n- Install the RPM:\n\n    ```\n    Arista#extension chef-12.6.0-1.el6.i386.rpm\n    ```\n\n- Configure EOS to install the chef-client after a reload\n\n    ```\n    Arista#copy installed-extensions boot-extensions\n    ```\n\n- Ensure `recipe[‘eos’]` is in the default runlist for any EOS devices\n\n## Installing behind a firewall\n\nBy default, the chef_gem resource will reach out to rubygems.org to find the\nnecessary rubygems.  When installing on devices without access to the Internet,\nadditional steps are required.  These, too, should be automated whenever\npossible.\n\nOne solution is to download the rubygem binaries to the Chef server, then use a\nrecipe to install those on devices.  Example:\n\nDownload the rubygem binaries:\n\n```\ngem fetch inifile\ngem fetch netaddr\ngem fetch net_http_unix\ngem fetch rbeapi\n```\n\nThen, create a recipe to copy these files to nodes and install the packages:\n\n```\ncookbook_file “#{Chef::Config[:file_cache_path]}/rbeapi.gem” do\n  source ‘rbeapi-1.0.gem’\nend\nresources(:cookbook_file => “#{Chef::Config[:file_cache_path]}/rbeapi.gem”).run_action(:create)\n\nchef_gem ‘rbeapi’ do\n  source “#{Chef::Config[:file_cache_path]}/rbeapi.gem”\n  version ‘1.0’\n  compile_time false\n  action :upgrade\nend\n```\n\nNOTE: the chef_gem resource requires the `version` to be specified when\ninstalling from a local file.\n\nFinally, include that recipe in the EOS device’s default runlist.\n`recipe[eos::rbeapi_local]`\n\n# Using\n\nThere are 2 general methods to use this cookbook to manage an Arista switch:\nManaging the entire config as a whole or using discrete resources. The\neos_switchconfig resource manages the running-config from a template or file.\nDiscrete resources, such as eos_vlan, provide selective, granular management of\nindividual components. Eos_switchconfig is the recommended method for most\nnetwork teams. However, eos_vlan is provided to serve as an example for\nadditional discrete resources to be managed, if desired.\n\n## eos_switchconfig\n\n```ruby\neos_switchconfig 'running-config' do\n  action :create\n  source 'eos_config.erb'\n  variables({\n    hostname: 'veos01',\n    domainname: 'example.com',\n    nameservers: ['10.0.2.3'],\n    ntp_server: '10.0.2.3',\n    ntp_source_intf: 'Management1',\n    static_routes: {\n      '0.0.0.0/0' => '10.0.2.2'\n    },\n    l3ports: [\n      Ethernet1: {\n        ip_addr: '192.168.8.2/24'\n      }\n    ],\n    l2ports: [\n      Ethernet2: {},\n      Ethernet3: {},\n      Ethernet4: {}\n    ]\n  })\nend\n```\n\nFor more examples, see the [test recipes](test/cookbooks/eos_test/recipes).\n\n# Contributing\n\nCommunity contributions are welcome.  Please ensure all pull-requests include\nspec tests. See [CONTRIBUTING](CONTRIBUTING.md) for more detail.\n\n# Authors & Support\n\nFor support, please open a GitHub issue.  This module is maintained by Arista\n[EOS+ Consulting Services](mailto://eosplus-dev@arista.com). Commercial support\noptions are available upon request.\n\n# License\n\nAll files in this package are covered by the included BSD 3-clause\n[license](LICENSE) unless otherwise noted.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "arista_eos",
+      "revision": ">= 4.15.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ohai",
+      "revision": "~> 4.0.0",
+      "self_resolve": true
+    }
+  ]
+}

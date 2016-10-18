@@ -1,0 +1,111 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/tapir/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/tapir/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/tapir/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/tapir/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/tapir/owncloud/autobuild",
+    "user": "tapir",
+    "name": "owncloud",
+    "namespace": "tapir",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 44,
+    "last_updated": "2015-09-02T06:02:54.214970Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 219972820,
+        "id": 825343,
+        "repository": 307100,
+        "creator": 423534,
+        "last_updater": 423534,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "tapir/owncloud"
+  },
+  "name": "tapir/owncloud Docker container",
+  "description": "ownCloud image based on Ubuntu 15.04, nginx and php5-fpm. It's configured for speed and security. ",
+  "readme": "### What is it?\nThis is an **ownCloud** image based on **Ubuntu 15.04**, **nginx** and **php5-fpm**.  It's configured for speed and security. \n### Usage\n```bash\nmkdir /path/to/my/owncloud_data && chown www-data:www-data /path/to/my/owncloud_data\nmkdir /path/to/my/mysql_data\n```\nCreate data folders for permanent storage\n\n```bash\ndocker run --name db_container_name -e MYSQL_ROOT_PASSWORD=some_password \\\n-v /path/to/my/mysql_data:/var/lib/mysql -d mariadb\n```\nRun a MySQL/MariaDB container\n\n```bash\ndocker run --name oc_container_name -i -p 80:80 -p 443:443 \\\n-e OC_ADMIN_USER=username \\\n-e OC_ADMIN_PASS=password \\\n-e OC_DB_NAME=dbname \\\n-e OC_TZ=timezone \\\n-e OC_SERVER_NAME=somename.com \\\n-v /path/to/ssl/crt:/etc/ssl/nginx \\\n-v /path/to/my/owncloud_data:/var/lib/owncloud \\\n--link db_container_name:mariadb -d tapir/owncloud\n```\nRun the ownCloud container\n### Variables\n* ` MYSQL_ROOT_PASSWORD ` is admin password for MySQL/MariaDB.\n* ` OC_ADMIN_USER ` is ownCloud admin user.\n* ` OC_ADMIN_PASS ` is ownCloud admin password.\n* ` OC_DB_NAME ` is ownCloud database name. It will be created automatically if it doesn't exist.\n* ` OC_TZ ` timezone file as in `/usr/share/zoneinfo`. For example `-e OC_TZ=Europe/Istanbul` will set the container time to Istanbul. This is optional and can be omitted.\n* ` OC_SERVER_NAME ` is the domain name of your server. If omitted ` localhost ` will be used.\n* ` /path/to/ssl/crt ` is where you put your SSL key and certificate. If you don't mount this volume, a key and a certificate will be automatically generated. The file names should be ` nginx.crt ` and ` nginx.key `.",
+  "dockerfile": "FROM ubuntu:vivid\n\nMAINTAINER Cosku Bas <cosku.bas@gmail.com>\n\nCMD [\"/start.sh\"]\n\n# Install necessary packages (php5-apcu from Trusty repos doesn't work)\nRUN apt-get update -y && apt-get install -y \\\nsupervisor cron sudo bzip2 nginx wget php5-apcu php5-ldap php5-cli \\\nphp5-fpm php5-mysql php5-gd php5-mcrypt php5-json php5-curl php5-intl \\\nphp5-imagick php5-imap php5-gmp\n\n# Copy configs and scripts\nCOPY configs/php.ini.fpm /etc/php5/fpm/php.ini\nCOPY configs/php.ini.cli /etc/php5/cli/php.ini\nCOPY configs/default /etc/nginx/sites-available/default\nCOPY configs/nginx.conf /etc/nginx/nginx.conf\nCOPY configs/www.conf /etc/php5/fpm/pool.d/www.conf\nCOPY configs/owncloud.cron /owncloud\nCOPY configs/supervisord.conf /etc/supervisor/conf.d/supervisord.conf\nCOPY scripts/configure_owncloud.php /settings.php\nCOPY scripts/install.sh /install.sh\nCOPY scripts/fix_perms.sh /fix_perms.sh\nCOPY scripts/start.sh /start.sh\nRUN chmod +x /start.sh\n\n# Configure cron\nRUN crontab -u www-data /owncloud\nRUN rm -f /owncloud\n\n# Deploy ownCloud files\nRUN wget https://download.owncloud.org/community/owncloud-8.1.1.tar.bz2\nRUN tar -jxvf owncloud-8.1.1.tar.bz2 -C /usr/share/nginx/html/\nRUN rm -f owncloud-8.1.1.tar.bz2\nRUN rm -Rf /usr/share/nginx/html/owncloud/core/skeleton/*\nRUN mkdir /usr/share/nginx/html/owncloud/assets\nRUN mkdir /usr/share/nginx/html/owncloud/logs\nRUN mkdir /var/lib/owncloud\nRUN chown -Rf www-data:www-data /var/lib/owncloud\nRUN chown -Rf www-data:www-data /usr/share/nginx/html/owncloud\nCOPY configs/htaccess /usr/share/nginx/html/owncloud/.htaccess\n\n# Clean up APT when done.\nRUN apt-get remove --purge -y wget bzip2\nRUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nEXPOSE 80 443\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update -y && apt-get install -y supervisor cron sudo bzip2 nginx wget php5-apcu php5-ldap php5-cli php5-fpm php5-mysql php5-gd php5-mcrypt php5-json php5-curl php5-intl php5-imagick php5-imap php5-gmp",
+      "chmod +x /start.sh",
+      "crontab -u www-data /owncloud",
+      "rm -f /owncloud",
+      "wget https://download.owncloud.org/community/owncloud-8.1.1.tar.bz2",
+      "tar -jxvf owncloud-8.1.1.tar.bz2 -C /usr/share/nginx/html/",
+      "rm -f owncloud-8.1.1.tar.bz2",
+      "rm -Rf /usr/share/nginx/html/owncloud/core/skeleton/*",
+      "mkdir /usr/share/nginx/html/owncloud/assets",
+      "mkdir /usr/share/nginx/html/owncloud/logs",
+      "mkdir /var/lib/owncloud",
+      "chown -Rf www-data:www-data /var/lib/owncloud",
+      "chown -Rf www-data:www-data /usr/share/nginx/html/owncloud",
+      "apt-get remove --purge -y wget bzip2",
+      "apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+    ],
+    "workdir": [],
+    "from": "ubuntu:vivid",
+    "maintainer": "Cosku Bas <cosku.bas@gmail.com>",
+    "cmd": "[\"/start.sh\"]",
+    "copy": "configs/htaccess /usr/share/nginx/html/owncloud/.htaccess"
+  },
+  "source_repository_url": "https://github.com/tapir/owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/tapir/owncloud",
+  "docker_repository": "tapir/owncloud",
+  "docker_image": "tapir/owncloud",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "tapir/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/tapir/owncloud",
+    "https://hub.docker.com/v2/repositories/tapir/owncloud",
+    "https://github.com/tapir/owncloud.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image",
+    "Mode/API",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/tapir/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

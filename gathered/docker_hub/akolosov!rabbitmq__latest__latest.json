@@ -1,0 +1,138 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/akolosov/rabbitmq",
+    "repository_url": "https://hub.docker.com/v2/repositories/akolosov/rabbitmq",
+    "tags_url": "https://hub.docker.com/v2/repositories/akolosov/rabbitmq/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/akolosov/rabbitmq/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/akolosov/rabbitmq/autobuild",
+    "user": "akolosov",
+    "name": "rabbitmq",
+    "namespace": "akolosov",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 196,
+    "last_updated": "2016-09-14T04:42:08.461278Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 201761391,
+        "id": 75200,
+        "repository": 83422,
+        "creator": 82953,
+        "last_updater": 82953,
+        "last_updated": "2016-09-14T04:42:08.131690Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "akolosov/docker-rabbitmq"
+  },
+  "name": "akolosov/rabbitmq Docker container",
+  "description": "",
+  "readme": "Introduction\n============\n\nDocker container for RabbitMQ 3.x.x with ability to form cluster\n\n\nUsage\n=====\n\nUses the ability in recent Docker versions to set up hosts entries to locate a node to cluster with. For\nconvenience sake, the node is named master.\n\n\nMaster\n------\n\n`docker run -d -h rmq-master --name rmq --add-host master:<IP-FOR-NODES> \\\n\t\t\t\t-v <log-dir>:/data/log -v <data-dir>:/data/mnesia \\\n\t\t\t\t-p 5672:5672 -p 15672:15672 -p 25672:25672 -p 4369:4369 akolosov/rabbitmq`\n\n\nAdditional nodes\n----------------\n\n`docker run -d -h rmq-slaveXX --name rmq -e \"MASTER_HOSTNAME=master\" --add-host master:<MASTER-NODE-IP> \\\n\t\t\t\t-v <log-dir>:/data/log -v <data-dir>:/data/mnesia \\\n\t\t\t\t-p 5672:5672 -p 15672:15672 -p 25672:25672 -p 4369:4369 akolosov/rabbitmq`\n",
+  "dockerfile": "FROM akolosov/ubuntu\n\nMAINTAINER Alexey Kolosov <alexey.kolosov@gmail.com>\n\nRUN wget -qO - https://www.rabbitmq.com/rabbitmq-signing-key-public.asc | apt-key add - \nRUN echo \"deb http://www.rabbitmq.com/debian/ testing main\" > /etc/apt/sources.list.d/rabbitmq.list\nRUN apt-get update\nRUN DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes rabbitmq-server\nRUN rm -rf /var/lib/apt/lists/*\n\nRUN rabbitmq-plugins enable rabbitmq_management\nRUN rabbitmq-plugins enable rabbitmq_federation\nRUN rabbitmq-plugins enable rabbitmq_federation_management\nRUN rabbitmq-plugins enable rabbitmq_shovel\nRUN rabbitmq-plugins enable rabbitmq_shovel_management\n\nENV RABBITMQ_LOG_BASE /data/log\nENV RABBITMQ_MNESIA_BASE /data/mnesia\n\n# Define mount points.\nVOLUME [\"/data/log\", \"/data/mnesia\"]\n\n# Define working directory.\nWORKDIR /data\n\nRUN mkdir -p /data/mnesia\nRUN mkdir -p /data/logs\n\nADD rabbitmq-startup.sh /usr/local/sbin/rabbitmq-startup.sh\nADD rabbitmq.config /etc/rabbitmq/rabbitmq.config\nADD erlang-cookie /var/lib/rabbitmq/.erlang.cookie\nRUN chown rabbitmq /var/lib/rabbitmq/.erlang.cookie\nRUN chmod 700 /usr/local/sbin/rabbitmq-startup.sh /var/lib/rabbitmq/.erlang.cookie\n\nENTRYPOINT [\"/bin/bash\", \"/usr/local/sbin/rabbitmq-startup.sh\"]\n\nEXPOSE 5672 15672 25672 4369\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "rabbitmq-startup.sh",
+        "dest": "/usr/local/sbin/rabbitmq-startup.sh"
+      },
+      {
+        "source": "rabbitmq.config",
+        "dest": "/etc/rabbitmq/rabbitmq.config"
+      },
+      {
+        "source": "erlang-cookie",
+        "dest": "/var/lib/rabbitmq/.erlang.cookie"
+      }
+    ],
+    "expose": [
+      5672
+    ],
+    "volume": [
+      "[\"/data/log\", \"/data/mnesia\"]"
+    ],
+    "run": [
+      "wget -qO - https://www.rabbitmq.com/rabbitmq-signing-key-public.asc | apt-key add - ",
+      "echo \"deb http://www.rabbitmq.com/debian/ testing main\" > /etc/apt/sources.list.d/rabbitmq.list",
+      "apt-get update",
+      "DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes rabbitmq-server",
+      "rm -rf /var/lib/apt/lists/*",
+      "rabbitmq-plugins enable rabbitmq_management",
+      "rabbitmq-plugins enable rabbitmq_federation",
+      "rabbitmq-plugins enable rabbitmq_federation_management",
+      "rabbitmq-plugins enable rabbitmq_shovel",
+      "rabbitmq-plugins enable rabbitmq_shovel_management",
+      "mkdir -p /data/mnesia",
+      "mkdir -p /data/logs",
+      "chown rabbitmq /var/lib/rabbitmq/.erlang.cookie",
+      "chmod 700 /usr/local/sbin/rabbitmq-startup.sh /var/lib/rabbitmq/.erlang.cookie"
+    ],
+    "workdir": [
+      "/data"
+    ],
+    "from": "akolosov/ubuntu",
+    "maintainer": "Alexey Kolosov <alexey.kolosov@gmail.com>",
+    "env": {
+      "RABBITMQ_LOG_BASE": "/data/log",
+      "RABBITMQ_MNESIA_BASE": "/data/mnesia"
+    },
+    "entrypoint": "[\"/bin/bash\", \"/usr/local/sbin/rabbitmq-startup.sh\"]"
+  },
+  "source_repository_url": "https://github.com/akolosov/docker-rabbitmq.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/akolosov/docker-rabbitmq",
+  "docker_repository": "akolosov/rabbitmq",
+  "docker_image": "akolosov/rabbitmq",
+  "parameters_schema": {
+    "RABBITMQ_LOG_BASE": {
+      "default": "/data/log",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_MNESIA_BASE": {
+      "default": "/data/mnesia",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5672
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "akolosov/rabbitmq",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/akolosov/rabbitmq",
+    "https://hub.docker.com/v2/repositories/akolosov/rabbitmq",
+    "https://github.com/akolosov/docker-rabbitmq.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/akolosov/rabbitmq",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

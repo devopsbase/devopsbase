@@ -1,0 +1,138 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/bradjonesllc/docker-haproxy-letsencrypt",
+    "repository_url": "https://hub.docker.com/v2/repositories/bradjonesllc/docker-haproxy-letsencrypt",
+    "tags_url": "https://hub.docker.com/v2/repositories/bradjonesllc/docker-haproxy-letsencrypt/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/bradjonesllc/docker-haproxy-letsencrypt/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/bradjonesllc/docker-haproxy-letsencrypt/autobuild",
+    "user": "bradjonesllc",
+    "name": "docker-haproxy-letsencrypt",
+    "namespace": "bradjonesllc",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 657,
+    "last_updated": "2016-09-23T21:15:10.707229Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 124455482,
+        "id": 3288727,
+        "repository": 724879,
+        "creator": 743735,
+        "last_updater": 743735,
+        "last_updated": "2016-09-23T21:15:10.295928Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "BradJonesLLC/docker-haproxy-letsencrypt"
+  },
+  "name": "bradjonesllc/docker-haproxy-letsencrypt Docker container",
+  "description": "Dockerized HAProxy with automatic Let's Encrypt cert creation and updating.",
+  "readme": "# Dockerized HAProxy with Let's Encrypt\n\nThis container provides a HAProxy 1.6 application with Let's Encrypt certificates\ngenerated at startup, as well as renewed (if necessary) once a week.\n\n## Usage\n\n```\ndocker run \\\n    -e CERTS=my.domain,my.other.domain \\\n    -e EMAIL=my.email@my.domain \\\n    -v /etc/letsencrypt:/etc/letsencrypt \\\n    -p 80:80 -p 443:443 \\\n    bradjonesllc/docker-haproxy-letsencrypt\n```\n\nYou will almost certainly want to create an image `FROM` this image or\nmount your `haproxy.cfg` at `/usr/local/etc/haproxy/haproxy.cfg`.\n\n### Alternatives\n\nHAProxy is powerful, but notoriously difficult to configure. If you don't require\nHAProxy's functionality per se, consider [this similar image for Nginx](https://github.com/BradJonesLLC/docker-nginx-letsencrypt).\n\n### License and Copyright\n\n&copy; Brad Jones LLC, Licensed under GPL-2. Some components MIT license.\n",
+  "dockerfile": "# Much of this stolen from haproxy:1.6 dockerfile, with Lua support\nFROM debian:jessie\n\nRUN echo \"deb http://ftp.debian.org/debian jessie-backports main\" > /etc/apt/sources.list.d/jessie.backports.list\n\nENV SUPERVISOR_VERSION 3.3.0\n\nRUN buildDeps='curl gcc libc6-dev libpcre3-dev libssl-dev make libreadline-dev' \\\n    && set -x \\\n    && apt-get update && apt-get install --no-install-recommends -yqq $buildDeps \\\n    cron \\\n    wget \\\n    ca-certificates \\\n    curl \\\n    patch \\\n    python-setuptools \\\n    dnsmasq \\\n    libssl1.0.0 libpcre3 \\\n    && apt-get install --no-install-recommends -yqq certbot -t jessie-backports \\\n    && wget https://github.com/Supervisor/supervisor/archive/${SUPERVISOR_VERSION}.tar.gz \\\n    && tar -xvf ${SUPERVISOR_VERSION}.tar.gz \\\n    && cd supervisor-${SUPERVISOR_VERSION} && python setup.py install \\\n    && apt-get clean autoclean && apt-get autoremove -y \\\n    && rm -rf /var/lib/apt/lists/*\n\nENV LUA_VERSION 5.3.0\nENV LUA_VERSION_SHORT 53\n\nRUN cd /usr/src \\\n    && curl -R -O http://www.lua.org/ftp/lua-${LUA_VERSION}.tar.gz \\\n    && tar zxf lua-${LUA_VERSION}.tar.gz \\\n    && rm lua-${LUA_VERSION}.tar.gz \\\n    && cd lua-${LUA_VERSION} \\\n    && make linux \\\n    && make INSTALL_TOP=/opt/lua${LUA_VERSION_SHORT} install\n\nENV HAPROXY_MAJOR 1.6\nENV HAPROXY_VERSION 1.6.5\nENV HAPROXY_MD5 5290f278c04e682e42ab71fed26fc082\n\n# see http://discourse.haproxy.org/t/dynamic-dns-resolution-does-not-work-for-me-after-1-6-4-to-1-6-5-upgrade/310/2\nCOPY haproxy-dns.patch /tmp\n\nRUN cd / && curl -SL \"http://www.haproxy.org/download/${HAPROXY_MAJOR}/src/haproxy-${HAPROXY_VERSION}.tar.gz\" -o haproxy.tar.gz \\\n\t&& echo \"${HAPROXY_MD5}  haproxy.tar.gz\" | md5sum -c \\\n\t&& mkdir -p /usr/src/haproxy \\\n\t&& tar -xzf haproxy.tar.gz -C /usr/src/haproxy --strip-components=1 \\\n\t&& rm haproxy.tar.gz \\\n\t&& patch -d /usr/src/haproxy -p1 < /tmp/haproxy-dns.patch \\\n\t&& rm /tmp/haproxy-*.patch \\\n\t&& make -C /usr/src/haproxy \\\n\t\tTARGET=linux2628 \\\n\t\tUSE_PCRE=1 PCREDIR= \\\n\t\tUSE_OPENSSL=1 \\\n\t\tUSE_ZLIB=1 \\\n\t\tUSE_LUA=yes LUA_LIB=/opt/lua53/lib/ \\\n        LUA_INC=/opt/lua53/include/ LDFLAGS=-ldl \\\n\t\tall \\\n\t\tinstall-bin \\\n\t&& mkdir -p /usr/local/etc/haproxy \\\n\t&& cp -R /usr/src/haproxy/examples/errorfiles /usr/local/etc/haproxy/errors \\\n\t&& rm -rf /usr/src/haproxy\n\nCOPY docker-entrypoint.sh /\n\n# See https://github.com/janeczku/haproxy-acme-validation-plugin\nCOPY haproxy-acme-validation-plugin/acme-http01-webroot.lua /usr/local/etc/haproxy\nCOPY haproxy-acme-validation-plugin/cert-renewal-haproxy.sh /\n\nCOPY crontab.txt /var/crontab.txt\nRUN crontab /var/crontab.txt && chmod 600 /etc/crontab\n\nCOPY supervisord.conf /etc/supervisord.conf\nCOPY certs.sh /\nCOPY bootstrap.sh /\n\nRUN mkdir /jail\n\nEXPOSE 80 443\n\nVOLUME /etc/letsencrypt\n\nCOPY haproxy.cfg /usr/local/etc/haproxy/haproxy.cfg\n\nENTRYPOINT [\"/bootstrap.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "/etc/letsencrypt"
+    ],
+    "run": [
+      "echo \"deb http://ftp.debian.org/debian jessie-backports main\" > /etc/apt/sources.list.d/jessie.backports.list",
+      "buildDeps='curl gcc libc6-dev libpcre3-dev libssl-dev make libreadline-dev'     && set -x     && apt-get update && apt-get install --no-install-recommends -yqq $buildDeps     cron     wget     ca-certificates     curl     patch     python-setuptools     dnsmasq     libssl1.0.0 libpcre3     && apt-get install --no-install-recommends -yqq certbot -t jessie-backports     && wget https://github.com/Supervisor/supervisor/archive/${SUPERVISOR_VERSION}.tar.gz     && tar -xvf ${SUPERVISOR_VERSION}.tar.gz     && cd supervisor-${SUPERVISOR_VERSION} && python setup.py install     && apt-get clean autoclean && apt-get autoremove -y     && rm -rf /var/lib/apt/lists/*",
+      "cd /usr/src     && curl -R -O http://www.lua.org/ftp/lua-${LUA_VERSION}.tar.gz     && tar zxf lua-${LUA_VERSION}.tar.gz     && rm lua-${LUA_VERSION}.tar.gz     && cd lua-${LUA_VERSION}     && make linux     && make INSTALL_TOP=/opt/lua${LUA_VERSION_SHORT} install",
+      "cd / && curl -SL \"http://www.haproxy.org/download/${HAPROXY_MAJOR}/src/haproxy-${HAPROXY_VERSION}.tar.gz\" -o haproxy.tar.gz \t&& echo \"${HAPROXY_MD5}  haproxy.tar.gz\" | md5sum -c \t&& mkdir -p /usr/src/haproxy \t&& tar -xzf haproxy.tar.gz -C /usr/src/haproxy --strip-components=1 \t&& rm haproxy.tar.gz \t&& patch -d /usr/src/haproxy -p1 < /tmp/haproxy-dns.patch \t&& rm /tmp/haproxy-*.patch \t&& make -C /usr/src/haproxy \t\tTARGET=linux2628 \t\tUSE_PCRE=1 PCREDIR= \t\tUSE_OPENSSL=1 \t\tUSE_ZLIB=1 \t\tUSE_LUA=yes LUA_LIB=/opt/lua53/lib/         LUA_INC=/opt/lua53/include/ LDFLAGS=-ldl \t\tall \t\tinstall-bin \t&& mkdir -p /usr/local/etc/haproxy \t&& cp -R /usr/src/haproxy/examples/errorfiles /usr/local/etc/haproxy/errors \t&& rm -rf /usr/src/haproxy",
+      "crontab /var/crontab.txt && chmod 600 /etc/crontab",
+      "mkdir /jail"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "env": {
+      "SUPERVISOR_VERSION": "3.3.0",
+      "LUA_VERSION": "5.3.0",
+      "LUA_VERSION_SHORT": "53",
+      "HAPROXY_MAJOR": "1.6",
+      "HAPROXY_VERSION": "1.6.5",
+      "HAPROXY_MD5": "5290f278c04e682e42ab71fed26fc082"
+    },
+    "copy": "haproxy.cfg /usr/local/etc/haproxy/haproxy.cfg",
+    "entrypoint": "[\"/bootstrap.sh\"]"
+  },
+  "source_repository_url": "https://github.com/BradJonesLLC/docker-haproxy-letsencrypt.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/BradJonesLLC/docker-haproxy-letsencrypt",
+  "docker_repository": "bradjonesllc/docker-haproxy-letsencrypt",
+  "docker_image": "bradjonesllc/docker-haproxy-letsencrypt",
+  "parameters_schema": {
+    "SUPERVISOR_VERSION": {
+      "default": "3.3.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LUA_VERSION": {
+      "default": "5.3.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LUA_VERSION_SHORT": {
+      "default": "53",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_MAJOR": {
+      "default": "1.6",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_VERSION": {
+      "default": "1.6.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_MD5": {
+      "default": "5290f278c04e682e42ab71fed26fc082",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "bradjonesllc/docker-haproxy-letsencrypt",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/bradjonesllc/docker-haproxy-letsencrypt",
+    "https://hub.docker.com/v2/repositories/bradjonesllc/docker-haproxy-letsencrypt",
+    "https://github.com/BradJonesLLC/docker-haproxy-letsencrypt.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/bradjonesllc/docker-haproxy-letsencrypt",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

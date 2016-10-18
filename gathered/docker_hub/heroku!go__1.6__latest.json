@@ -1,0 +1,147 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/heroku/go",
+    "repository_url": "https://hub.docker.com/v2/repositories/heroku/go",
+    "tags_url": "https://hub.docker.com/v2/repositories/heroku/go/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/heroku/go/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/heroku/go/autobuild",
+    "user": "heroku",
+    "name": "go",
+    "namespace": "heroku",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 6,
+    "pull_count": 177321,
+    "last_updated": "2016-09-28T20:18:57.557227Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1.6",
+        "full_size": 613417797,
+        "id": 1803934,
+        "repository": 287381,
+        "creator": 177,
+        "last_updater": 177,
+        "last_updated": "2016-09-28T20:18:56.548334Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 613418038,
+        "id": 1803951,
+        "repository": 287381,
+        "creator": 177,
+        "last_updater": 177,
+        "last_updated": "2016-09-28T20:18:15.977428Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.5",
+        "full_size": 623700864,
+        "id": 1804050,
+        "repository": 287381,
+        "creator": 177,
+        "last_updater": 177,
+        "last_updated": "2016-09-28T20:16:39.101885Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.4",
+        "full_size": 604379365,
+        "id": 1803940,
+        "repository": 287381,
+        "creator": 177,
+        "last_updater": 177,
+        "last_updated": "2016-09-28T20:16:08.778531Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "heroku/docker-go"
+  },
+  "name": "heroku/go Docker container",
+  "description": "Heroku Docker Go Image",
+  "readme": "# [Heroku Go Docker image](https://hub.docker.com/r/heroku/go)\n\nFor use with the [heroku docker plugin](https://github.com/heroku/heroku-docker).\n\n## Image tags\n\nYou can see all of the tags [here](https://hub.docker.com/r/heroku/go/tags/).\n\nThe `latest` tag will generally refer to the latest, possibly unsupported,\nrelease of [Go](https://golang.org/dl), including betas and release candidates.\n\nOnce a final version is cut a separate tag will be used and updated.\n\n## App.json\n\n**Note: Please read the official documentation [here](https://devcenter.heroku.com/articles/docker)**.\n\nTo use this image with the heroku docker plugin add the following fields to your\napplication's `app.json` file:\n\n```json\n{\n  \"image\": \"heroku/go:<go version or latest>\",\n  \"mount_dir\": \"src/<go package name; eg github.com/heroku-examples/go-websocket-chat-demo>\",\n}\n```\n\nThen run `heroku docker:init` in your application's directory. This will create\nboth  `Dockerfile` and `docker-compose.yml` files.\n\n**Note on `mount_dir`**:  The go tooling requires that files be located inside\nof `$GOPATH`. The heroku docker plugin and this docker image sets up a `$GOPATH`\n for you, but requires a little help from the developer to determine where to\n place your application. The correct value of mount_dir can be determined with\n the following command (requires [jq](https://stedolan.github.io/jq/)):\n\n```term\n$ jq -r '\"src/\" +.ImportPath' < ./Godeps/Godeps.json\n```\n\n### Example app.json\n\nSource can be found [here](https://github.com/heroku-examples/go-websocket-chat-demo/blob/master/app.json).\n\n```json\n{\n  \"name\": \"Go Websocket Chat Demo\",\n  \"description\": \"Go websocket chat demo application.\",\n  \"keywords\": [\n    \"streaming\",\n    \"redis\",\n    \"go\"\n  ],\n  \"image\": \"heroku/go:1.5\",\n  \"mount_dir\": \"src/github.com/heroku-examples/go-websocket-chat-demo\",\n  \"website\": \"http://github.com/heroku-examples/go-websocket-chat-demo\",\n  \"repository\": \"http://github.com/heroku-examples/go-websocket-chat-demol\",\n  \"scripts\": {},\n  \"addons\": [\n    \"heroku-redis\"\n  ]\n}\n```\n\n## Slug Size\n\nThe images are large but the slugs created by `heroku docker:release` only\ninclude your application's code, dependencies & compiled binaries so should be\nrelatively small.\n",
+  "dockerfile": "FROM heroku/go-base:1.6\n\nRUN mkdir -p /app/.cache/gotools /app/.profile.d\n\nENV GOPATH /app/.cache/gotools\nENV PATH $GOPATH/bin:$PATH\n\nRUN go get -u -v github.com/tools/godep\nRUN curl -s --retry 3 -L https://github.com/stedolan/jq/releases/download/jq-1.4/jq-linux-x86_64 -o $GOPATH/bin/jq && \\\n    chmod a+x $GOPATH/bin/jq\n\nENV GOPATH /app/user\nENV PATH $GOPATH/bin:$PATH\n\nCOPY ./compile /app/.cache/gotools/bin/compile\n\nONBUILD COPY . /app/.temp\nONBUILD RUN /app/.cache/gotools/bin/compile\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "mkdir -p /app/.cache/gotools /app/.profile.d",
+      "go get -u -v github.com/tools/godep",
+      "curl -s --retry 3 -L https://github.com/stedolan/jq/releases/download/jq-1.4/jq-linux-x86_64 -o $GOPATH/bin/jq &&     chmod a+x $GOPATH/bin/jq"
+    ],
+    "workdir": [],
+    "from": "heroku/go-base:1.6",
+    "env": {
+      "GOPATH": "/app/user",
+      "PATH": "$GOPATH/bin:$PATH"
+    },
+    "copy": "./compile /app/.cache/gotools/bin/compile",
+    "onbuild": "RUN /app/.cache/gotools/bin/compile"
+  },
+  "source_repository_url": "https://github.com/heroku/docker-go.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/heroku/docker-go",
+  "docker_repository": "heroku/go",
+  "docker_image": "heroku/go",
+  "parameters_schema": {
+    "GOPATH": {
+      "default": "/app/user",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$GOPATH/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "heroku/go",
+  "revision": "1.6",
+  "uris": [
+    "https://hub.docker.com/r/heroku/go",
+    "https://hub.docker.com/v2/repositories/heroku/go",
+    "https://github.com/heroku/docker-go.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image"
+  ],
+  "info_url": "https://hub.docker.com/r/heroku/go",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

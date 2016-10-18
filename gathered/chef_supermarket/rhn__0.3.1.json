@@ -1,0 +1,62 @@
+{
+  "name": "rhn Chef cookbook",
+  "chef_cookbook_name": "rhn",
+  "revision": "0.3.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/rhn",
+    "https://supermarket.chef.io/cookbooks/rhn/download",
+    "https://supermarket.chef.io/cookbooks/rhn/versions/0.3.1",
+    "https://supermarket.chef.io/cookbooks/rhn/versions/0.3.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/rhn/versions/0.3.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/rhn",
+    "https://supermarket.chef.io/api/v1/cookbooks/rhn/versions/0.3.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Package Management",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/rhn",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/rhn/versions/0.3.1/download",
+  "deprecated": false,
+  "created": "2014-02-02T21:39:10.000Z",
+  "updated": "2016-03-09T21:15:35.618Z",
+  "description": "Registers node with RHN",
+  "maintainer": {
+    "name": "bflad",
+    "email": "bflad417@gmail.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 1253438,
+  "downloads_count_revision": 336,
+  "repository_url": "https://github.com/bflad/chef-rhn",
+  "issues_url": "https://github.com/bflad/chef-rhn",
+  "chef_source_url": "https://github.com/bflad/chef-rhn",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# chef-rhn [![Build Status](https://secure.travis-ci.org/bflad/chef-rhn.png?branch=master)](http://travis-ci.org/bflad/chef-rhn)\n\n## Description\n\nRegisters node with Red Hat Network (rhn.redhat.com or RHN Satellite) and configures client.\n\n## Requirements\n\nActive RHN system entitlement for node.\n\n### Platforms\n\n* RHEL 5\n* RHEL 6\n\n### Cookbooks\n\n* None\n\n## Usage\n\n### Register Node with Hosted RHN (rhn.redhat.com)\n\nSecurely with encrypted data bag:\n* Create wrapper cookbook which:\n  * Sets `node['rhn']['register']` to false\n  * Reads encrypted data bag\n  * Calls default recipe (or customize)\n  * Calls `rhn_system` LWRP\n\nLess securely with attributes:\n* Set `node['rhn']['username']` and `node['rhn']['password']`\n* Add `recipe[rhn]` to your run_list\n\n### Register Node with RHN Satellite (satellite.example.com)\n\n* Add at least one activation key to `node['rhn']['activation_keys']`\n* Set your RHN Satellite FQDN in `node['rhn']['hostname']`\n* Add `recipe[rhn]` to your run_list\n\n## Attributes\n\nThese attributes are under the `node['rhn']` namespace.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\nactivation_keys | Comma-separated activation keys for Satellite registration | String | nil\ncmd_timeout | Timeout in seconds for remote RHN commands | Fixnum | 300\nhostname | Hosted RHN XMLRPC hostname or your RHN Satellite hostname | String | xmlrpc.rhn.redhat.com\npassword | RHN password for hosted RHN operations | String | changeme\nregister | Register system with RHN | Boolean | true\nretries | Network retries for package commands | Fixnum | 1\nssl | Enable SSL | Boolean | true\nusername | RHN username for hosted RHN operations | String | rhnuser\n\n### Actions Attributes\n\nThese attributes are under the `node['rhn']['actions']` namespace.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\ndisabled | RHN allowed system actions to be disabled | Array of Strings | []\nenabled | RHN allowed system actions to be enabled | Array of Strings | []\n\n### Organization CA Certificate Attributes\n\nThese attributes are under the `node['rhn']['org_ca_cert']` namespace.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\naction | Only install or upgrade CA certificate | String | install\nname | Filename of certificate | String | RHNS-CA-CERT\nurl | URL to certificate file or RPM for CA certificate | String | `https://#{node['rhn']['hostname']}/pub/#{node['rhn']['org_ca_cert']['name']}`\n\n### Organization GPG Key Attributes\n\nThese attributes are under the `node['rhn']['org_gpg_key']` namespace.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\nname | Filename of GPG key | String | ORG-GPG-KEY\npub | GPG public key signature | String | nil\nurl | URL for GPG key | String | nil\n\n### Proxy Attributes\n\nThese attributes are under the `node['rhn']['proxy']` namespace.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\npassword | Password for authenticated RHN HTTP proxying | String | nil\nurl | hostname:port for RHN HTTP proxy | String | nil\nusername | Username for authenticated RHN HTTP proxying | String | nil\n\n### RHN Config Client Attributes\n\nThese attributes are under the `node['rhn']['rhncfg-client']` namespace.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\nserver_url | Custom URL for config client | String | https://%(server_name)s%(server_handler)s\nscript_log_file_enable | Enable action logging | Boolean | false\n\n### RHN Sync Daemon Attributes\n\nThese attributes are under the `node['rhn']['rhnsd']` namespace.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\nenabled | Enable sync daemon | Boolean | false\ninterval | Sync interval in minutes (must be above 60) | Fixnum | 240\n\n## LWRPs\n\n* system: Register node with RHN\n* system_action: Enable/disable RHN system action on node\n\n### rhn_system\n\nBelow are the available actions for the LWRP, default being `register`.\n\nThese attributes are associated with all LWRP actions.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\ncmd_timeout | Timeout for remote RHN commands (catchable exception: `Chef::Provider::RhnSystem::CommandTimeout`)| Fixnum | `node['rhn']['cmd_timeout']`\n\n#### rhn_system action :register\n\nThese attributes are associated with this LWRP action. The name attribute will set the RHN profile name on registration.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\nactivation_keys | Activation keys for RHN Satellite registration | String | `node['rhn']['activation_keys']`\nhostname | Hostname passthrough to determine hosted versus RHN Satellite registration | String | `node['rhn']['hostname']`\npassword | Password for hosted RHN | String | `node['rhn']['password']`\nusername | Username for hosted RHN | String | `node['rhn']['username']`\n\nRegister with hosted RHN with hostname as profile name and possibly username/password from an encrypted data bag:\n\n```\nrhn_system node['hostname'] do\n  password 'myPasswordFromDataBag'\n  username 'myUsernameFromDataBag'\nend\n```\n\nRegister with hosted RHN or Satellite with custom profile name:\n\n```\nrhn_system 'special-snowflake'\n```\n\n### rhn_system_action\n\nBelow are the available actions for the LWRP, default being `enable`.\n\n#### rhn_system_action action :disable\n\nThe name attribute is the RHN system action name.\n\nDisable run action from node:\n\n```\nrhn_system_action 'run' do\n  action :disable\nend\n```\n\n#### rhn_system_action action :enable\n\nThe name attribute is the RHN system action name.\n\nEnable run action on node:\n\n```\nrhn_system_action 'run'\n```\n\nEnable all actions on node:\n\n```\nrhn_system_action 'all'\n```\n\n## Recipes\n\n* `recipe[rhn]` - RHN client configuration and system registration\n* `recipe[rhn::actions]` - configures RHN system actions on client\n* `recipe[rhn::org_ca_cert]` - installs organization CA certificate\n* `recipe[rhn::org_gpg_key]` - installs organization GPG key\n* `recipe[rhn::register]` - registers node with hosted RHN or Satellite\n* `recipe[rhn::rhncfg]` - configures RHN client configuration\n* `recipe[rhn::rhnsd]` - configures RHN sync daemon\n* `recipe[rhn::up2date]` - configures up2date\n\n## Testing and Development\n\n* Quickly testing with Vagrant: [VAGRANT.md](VAGRANT.md)\n* Full development and testing workflow with Test Kitchen and friends: [TESTING.md](TESTING.md)\n\n## Contributing\n\nPlease see contributing information in: [CONTRIBUTING.md](CONTRIBUTING.md)\n\n## Maintainers\n\n* Brian Flad (<bflad417@gmail.com>)\n\n## License\n\nPlease see licensing information in: [LICENSE](LICENSE)\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 5.0",
+      "one_of_group": "os"
+    }
+  ],
+  "chef_recipes": {
+    "rhn": "RHN client configuration and system registration",
+    "rhn::actions": "Configures RHN system actions on client",
+    "rhn::org_ca_cert": "Installs organization CA certificate",
+    "rhn::org_gpg_key": "Installs organization GPG key",
+    "rhn::register": "Registers node with hosted RHN or Satellite",
+    "rhn::rhncfg": "Configures RHN client configuration",
+    "rhn::rhnsd": "Configures RHN sync daemon",
+    "rhn::up2date": "Configures up2date"
+  }
+}

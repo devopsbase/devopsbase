@@ -1,0 +1,161 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/appliedis/tomcat",
+    "repository_url": "https://hub.docker.com/v2/repositories/appliedis/tomcat",
+    "tags_url": "https://hub.docker.com/v2/repositories/appliedis/tomcat/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/appliedis/tomcat/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/appliedis/tomcat/autobuild",
+    "user": "appliedis",
+    "name": "tomcat",
+    "namespace": "appliedis",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 66,
+    "last_updated": "2016-08-16T14:08:08.987752Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "8-alpine",
+        "full_size": 58362151,
+        "id": 4112725,
+        "repository": 694913,
+        "creator": 179209,
+        "last_updater": 778669,
+        "last_updated": "2016-08-16T14:08:08.567105Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "8",
+        "full_size": 138835517,
+        "id": 3070804,
+        "repository": 694913,
+        "creator": 778669,
+        "last_updater": 778669,
+        "last_updated": "2016-08-16T14:06:35.698305Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "AppliedIS/dockerfiles"
+  },
+  "name": "appliedis/tomcat Docker container",
+  "description": "Apache Tomcat based off gosu-entrypoint AppliedIS base images",
+  "readme": "# Applied Information Sciences Dockerfiles\n\nThis repository contains a reference of base images for use by AIS developers. The steps to build and use these images are outlined below.\n\n## Build\n\nAll images should be built with appropriate tags. Fully qualified domain names should also be used to identify the Docker Registry being used to ensure successful pull operations from remote networks. To create a 2.7 tagged Python base image the following command should be used (note trailing period):\n\n```\nsudo docker build -t appliedis/python:2.7 .\n```\n\n## Test\n\nOnce an image is built, it should be tested prior to publishing it to the registry. This can be done using the docker run command. If the Dockerfile contains a CMD statement, verify that the executable defined there is launched. If there is no CMD statement a trailing command can be given to prevent an immediate, silent container shutdown on run. The following two commands demonstrate testing a default CMD, as well as an override.\n\n```\nsudo docker run -it appliedis/python:2.7\nsudo docker run -it appliedis/python:2.7 echo \"Docker CMD override successful\"\n```\n\n## Tagging\n\nIt is worth noting that you can use a more convenient name for testing and then tag the image to the appropriate hostname prior to a push. See docker tag --help for more details on this.\n\nConsistency is key - all directories should track with the image names. All images should be named use lower case letters and dashes, version tags should be set for most specific version we care about. For example, if we wanted to pin to Python 2.7, but wanted flexibility to update to the newest patch release 2.7.10, etc., we would tag as \"python:2.7\". If we didn't care about the minor version we could just tag as \"python:2\". We recommend avoiding the use of the latest tag and always specifying an explicit version tag. Docker defaults to use of latest in all cases where a tag is omitted, which can be problematic when it is desirable to pin to specific release versions.\n\n## Publish / \"push\"\n\nThe only way to publish to a remote registry, other than the official Docker Hub, is to use the hostname of your registry as the first portion of the image name. In our case that hostname is *appliedis*. Since we have already tagged our image during the docker build step, we can just issue the push command against the existing image name.\n\n```\nsudo docker push appliedis/python:2.7\n```\n\n## Usage\n\nOnce an image is pushed to the Docker Registry it can be used from any machine with registry connectivity. You can use the image directly as described in the Test section or extend / override it within a Dockerfile:\n\n```\nFROM appliedis/python:2.7\n\n... your Dockerfile configuration\nCMD [\"python\", \"my-python-script.py\"]\n```\n",
+  "dockerfile": "FROM appliedis/java:8-alpine\nMAINTAINER Jonathan Meyer <jon@gisjedi.com>\n\nLABEL name=\"Tomcat 8\" \\\n    vendor=\"Applied Information Sciences\" \\\n    license=\"Apache v2.0\"\n\nENV CATALINA_HOME /usr/local/tomcat\nENV PATH $CATALINA_HOME/bin:$PATH\nRUN mkdir -p \"$CATALINA_HOME\"\nWORKDIR $CATALINA_HOME\n\n# let \"Tomcat Native\" live somewhere isolated\nENV TOMCAT_NATIVE_LIBDIR $CATALINA_HOME/native-jni-lib\nENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR\n\nRUN apk add --no-cache gnupg\n\n# see https://www.apache.org/dist/tomcat/tomcat-8/KEYS\nRUN set -ex \\\n\t&& for key in \\\n\t\t05AB33110949707C93A279E3D3EFE6B686867BA6 \\\n\t\t07E48665A34DCAFAE522E5E6266191C37C037D42 \\\n\t\t47309207D818FFD8DCD3F83F1931D684307A10A5 \\\n\t\t541FBE7D8F78B25E055DDEE13C370389288584E7 \\\n\t\t61B832AC2F1C5A90F0F9B00A1C506407564C17A3 \\\n\t\t713DA88BE50911535FE716F5208B0AB1D63011C7 \\\n\t\t79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED \\\n\t\t9BA44C2621385CB966EBA586F72C284D731FABEE \\\n\t\tA27677289986DB50844682F8ACB77FC2E86E29AC \\\n\t\tA9C5DF4D22E99998D9875A5110C01C5A2F6059E7 \\\n\t\tDCFD35E0BF8CA7344752DE8B6FB21E8933C60243 \\\n\t\tF3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE \\\n\t\tF7DA48BB64BCB84ECBA7EE6935CD23C10D498E23 \\\n\t; do \\\n\t\tgpg --keyserver ha.pool.sks-keyservers.net --recv-keys \"$key\"; \\\n\tdone\n\nENV TOMCAT_MAJOR 8\nENV TOMCAT_VERSION 8.0.36\nENV TOMCAT_TGZ_URL https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz\n\nRUN set -x \\\n\t\\\n\t&& apk add --no-cache --virtual .fetch-deps \\\n\t\tca-certificates \\\n\t\ttar \\\n\t\topenssl \\\n\t&& wget -O tomcat.tar.gz \"$TOMCAT_TGZ_URL\" \\\n\t&& wget -O tomcat.tar.gz.asc \"$TOMCAT_TGZ_URL.asc\" \\\n\t&& gpg --batch --verify tomcat.tar.gz.asc tomcat.tar.gz \\\n\t&& tar -xvf tomcat.tar.gz --strip-components=1 \\\n\t&& rm bin/*.bat \\\n\t&& rm tomcat.tar.gz* \\\n\t\\\n\t&& nativeBuildDir=\"$(mktemp -d)\" \\\n\t&& tar -xvf bin/tomcat-native.tar.gz -C \"$nativeBuildDir\" --strip-components=1 \\\n\t&& apk add --no-cache --virtual .native-build-deps \\\n\t\tapr-dev \\\n\t\tgcc \\\n\t\tlibc-dev \\\n\t\tmake \\\n\t\t\"openjdk${JAVA_VERSION%%[-~bu]*}\"=\"$JAVA_ALPINE_VERSION\" \\\n\t\topenssl-dev \\\n\t&& ( \\\n\t\texport CATALINA_HOME=\"$PWD\" \\\n\t\t&& cd \"$nativeBuildDir/native\" \\\n\t\t&& ./configure \\\n\t\t\t--libdir=\"$TOMCAT_NATIVE_LIBDIR\" \\\n\t\t\t--prefix=\"$CATALINA_HOME\" \\\n\t\t\t--with-apr=\"$(which apr-1-config)\" \\\n\t\t\t--with-java-home=\"$(docker-java-home)\" \\\n\t\t\t--with-ssl=yes \\\n\t\t&& make -j$(getconf _NPROCESSORS_ONLN) \\\n\t\t&& make install \\\n\t) \\\n\t&& runDeps=\"$( \\\n\t\tscanelf --needed --nobanner --recursive \"$TOMCAT_NATIVE_LIBDIR\" \\\n\t\t\t| awk '{ gsub(/,/, \"\\nso:\", $2); print \"so:\" $2 }' \\\n\t\t\t| sort -u \\\n\t\t\t| xargs -r apk info --installed \\\n\t\t\t| sort -u \\\n\t)\" \\\n\t&& apk add --virtual .tomcat-native-rundeps $runDeps \\\n\t&& apk del .fetch-deps .native-build-deps \\\n\t&& rm -rf \"$nativeBuildDir\" \\\n\t&& rm bin/tomcat-native.tar.gz\n\n# verify Tomcat Native is working properly\nRUN set -e \\\n\t&& nativeLines=\"$(catalina.sh configtest 2>&1)\" \\\n\t&& nativeLines=\"$(echo \"$nativeLines\" | grep 'Apache Tomcat Native')\" \\\n\t&& nativeLines=\"$(echo \"$nativeLines\" | sort -u)\" \\\n\t&& if ! echo \"$nativeLines\" | grep 'INFO: Loaded APR based Apache Tomcat Native library' >&2; then \\\n\t\techo >&2 \"$nativeLines\"; \\\n\t\texit 1; \\\n\tfi\n\nEXPOSE 8080\nCMD [\"catalina.sh\", \"run\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "mkdir -p \"$CATALINA_HOME\"",
+      "apk add --no-cache gnupg",
+      "set -ex \t&& for key in \t\t05AB33110949707C93A279E3D3EFE6B686867BA6 \t\t07E48665A34DCAFAE522E5E6266191C37C037D42 \t\t47309207D818FFD8DCD3F83F1931D684307A10A5 \t\t541FBE7D8F78B25E055DDEE13C370389288584E7 \t\t61B832AC2F1C5A90F0F9B00A1C506407564C17A3 \t\t713DA88BE50911535FE716F5208B0AB1D63011C7 \t\t79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED \t\t9BA44C2621385CB966EBA586F72C284D731FABEE \t\tA27677289986DB50844682F8ACB77FC2E86E29AC \t\tA9C5DF4D22E99998D9875A5110C01C5A2F6059E7 \t\tDCFD35E0BF8CA7344752DE8B6FB21E8933C60243 \t\tF3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE \t\tF7DA48BB64BCB84ECBA7EE6935CD23C10D498E23 \t; do \t\tgpg --keyserver ha.pool.sks-keyservers.net --recv-keys \"$key\"; \tdone",
+      "set -x \t\t&& apk add --no-cache --virtual .fetch-deps \t\tca-certificates \t\ttar \t\topenssl \t&& wget -O tomcat.tar.gz \"$TOMCAT_TGZ_URL\" \t&& wget -O tomcat.tar.gz.asc \"$TOMCAT_TGZ_URL.asc\" \t&& gpg --batch --verify tomcat.tar.gz.asc tomcat.tar.gz \t&& tar -xvf tomcat.tar.gz --strip-components=1 \t&& rm bin/*.bat \t&& rm tomcat.tar.gz* \t\t&& nativeBuildDir=\"$(mktemp -d)\" \t&& tar -xvf bin/tomcat-native.tar.gz -C \"$nativeBuildDir\" --strip-components=1 \t&& apk add --no-cache --virtual .native-build-deps \t\tapr-dev \t\tgcc \t\tlibc-dev \t\tmake \t\t\"openjdk${JAVA_VERSION%%[-~bu]*}\"=\"$JAVA_ALPINE_VERSION\" \t\topenssl-dev \t&& ( \t\texport CATALINA_HOME=\"$PWD\" \t\t&& cd \"$nativeBuildDir/native\" \t\t&& ./configure \t\t\t--libdir=\"$TOMCAT_NATIVE_LIBDIR\" \t\t\t--prefix=\"$CATALINA_HOME\" \t\t\t--with-apr=\"$(which apr-1-config)\" \t\t\t--with-java-home=\"$(docker-java-home)\" \t\t\t--with-ssl=yes \t\t&& make -j$(getconf _NPROCESSORS_ONLN) \t\t&& make install \t) \t&& runDeps=\"$( \t\tscanelf --needed --nobanner --recursive \"$TOMCAT_NATIVE_LIBDIR\" \t\t\t| awk '{ gsub(/,/, \"\\nso:\", $2); print \"so:\" $2 }' \t\t\t| sort -u \t\t\t| xargs -r apk info --installed \t\t\t| sort -u \t)\" \t&& apk add --virtual .tomcat-native-rundeps $runDeps \t&& apk del .fetch-deps .native-build-deps \t&& rm -rf \"$nativeBuildDir\" \t&& rm bin/tomcat-native.tar.gz",
+      "set -e \t&& nativeLines=\"$(catalina.sh configtest 2>&1)\" \t&& nativeLines=\"$(echo \"$nativeLines\" | grep 'Apache Tomcat Native')\" \t&& nativeLines=\"$(echo \"$nativeLines\" | sort -u)\" \t&& if ! echo \"$nativeLines\" | grep 'INFO: Loaded APR based Apache Tomcat Native library' >&2; then \t\techo >&2 \"$nativeLines\"; \t\texit 1; \tfi"
+    ],
+    "workdir": [
+      "$CATALINA_HOME"
+    ],
+    "from": "appliedis/java:8-alpine",
+    "maintainer": "Jonathan Meyer <jon@gisjedi.com>",
+    "label": "name=\"Tomcat 8\"     vendor=\"Applied Information Sciences\"     license=\"Apache v2.0\"",
+    "env": {
+      "CATALINA_HOME": "/usr/local/tomcat",
+      "PATH": "$CATALINA_HOME/bin:$PATH",
+      "TOMCAT_NATIVE_LIBDIR": "$CATALINA_HOME/native-jni-lib",
+      "LD_LIBRARY_PATH": "${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR",
+      "TOMCAT_MAJOR": "8",
+      "TOMCAT_VERSION": "8.0.36",
+      "TOMCAT_TGZ_URL": "https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz"
+    },
+    "cmd": "[\"catalina.sh\", \"run\"]"
+  },
+  "source_repository_url": "https://github.com/AppliedIS/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/AppliedIS/dockerfiles",
+  "docker_repository": "appliedis/tomcat",
+  "docker_image": "appliedis/tomcat",
+  "parameters_schema": {
+    "CATALINA_HOME": {
+      "default": "/usr/local/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$CATALINA_HOME/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_NATIVE_LIBDIR": {
+      "default": "$CATALINA_HOME/native-jni-lib",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LD_LIBRARY_PATH": {
+      "default": "${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_MAJOR": {
+      "default": "8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_VERSION": {
+      "default": "8.0.36",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_TGZ_URL": {
+      "default": "https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "appliedis/tomcat",
+  "revision": "8-alpine",
+  "uris": [
+    "https://hub.docker.com/r/appliedis/tomcat",
+    "https://hub.docker.com/v2/repositories/appliedis/tomcat",
+    "https://github.com/AppliedIS/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/appliedis/tomcat",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

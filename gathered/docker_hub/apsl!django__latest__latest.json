@@ -1,0 +1,175 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/apsl/django",
+    "repository_url": "https://hub.docker.com/v2/repositories/apsl/django",
+    "tags_url": "https://hub.docker.com/v2/repositories/apsl/django/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/apsl/django/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/apsl/django/autobuild",
+    "user": "apsl",
+    "name": "django",
+    "namespace": "apsl",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 6,
+    "pull_count": 1239,
+    "last_updated": "2015-11-13T13:08:04.356062Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 280374221,
+        "id": 38311,
+        "repository": 35653,
+        "creator": 56282,
+        "last_updater": 162429,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "v0.1",
+        "full_size": 280374240,
+        "id": 38302,
+        "repository": 35653,
+        "creator": 56282,
+        "last_updater": 162429,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "APSL/docker-django"
+  },
+  "name": "apsl/django Docker container",
+  "description": "Django base image. Process managed by circus. Config with envtpl. Based on apsl/circusbase.",
+  "readme": "========================\nDocker django base image\n========================\n\nDocker base image for python (currently 2.7) django projects.\nMulti-process container, managed by circusd. \nDjango config managed with env vars.\n\n\nOther configuration managed with envtpl (nginx, circusd).\n\nDescription\n===========\n\nDocker image intended for use as a base image for django apps\n\n* See parent image https://registry.hub.docker.com/u/apsl/circusbase\n* circus to control processes. http://circus.readthedocs.org/\n* envtpl to setup config files on start time, based on environ vars. https://github.com/andreasjansson/envtpl\n* Runs django via chaussette wsgi server (see `circus.d/django.ini.tpl`) https://github.com/APSL/docker-django/blob/master/circus.d/django.ini.tpl\n* Runs celery worker if `-e RUN_CELERY=True` (see `circus.d/celery_worker.ini.tpl`) https://github.com/APSL/docker-django/blob/master/circus.d/celery_worker.ini.tpl\n* Runs flower if `-e RUN_FLOWER=True` (see `circus.d/flower.ini.tpl`) https://github.com/APSL/docker-django/blob/master/circus.d/flower.ini.tpl\n\nPorts\n=====\n\n* 80: nginx django app, serving static\n* 8000: chaussette wsgi server direct\n* 8084: flower\n* 8888: circus httpd web if `-e CIRCUS_HTTP=True` (see https://registry.hub.docker.com/u/apsl/circusbase/)\n\n\nEnv vars:\n=========\n\nRun web worker  (default True)::\n\n    -e RUN_WEB=True    \n\nRun celery worker (default False)::\n\n    -e RUN_CELERY=false    \n\nCelery worker concurrency. If not defined, uses num of cpus.\n\n    -e CELERY_WORKER_CONCURRENCY=4\n\nCelery beat\n\n    -e RUN_CELERYBEAT=False\n    \nCelery beat scheduler type: file or class (default file)::\n\n    -e CELERYBEAT_SCHEDULE_TYPE=file\n    \nCelery beat scheduler file. (default /code/src/celerybeat-schedule)::\n\n    -e CELERYBEAT_SCHEDULE_FILE=/code/src/celerybeat-schedule\n    \nCelery beat scheduler class. (default djcelery.schedulers.DatabaseScheduler)::\n\n    -e CELERYBEAT_SCHEDULE_CLASS=djcelery.schedulers.DatabaseScheduler\n\nCelery Flower.\n\n    -e RUN_FLOWER=False\n\nFlower basic auth. If not defined, no auth\n\n    -e FLOWER_BASIC_AUTH=myuser:mypasswd\n\nFlower Oauth. If defined:\n\n    -e FLOWER_AUTH=.*@apsl.net\n\n\n... And all your django standar settings.\n\n\nExample django Dockerfile based on apsl/django: \n===============================================\n\n    FROM apsl/django\n\n    # requirements\n    ADD requirements.txt /tmp/requirements.txt\n    RUN su -c \"pew-in env pip install -r /tmp/requirements.txt\" django\n\n    # add code\n    ADD src /code/src\n    RUN chown django.django /code/src -R\n\n    # collectstatic\n    RUN su -c \"pew-in env python manage.py collectstatic --noinput\" django\n",
+  "dockerfile": "FROM apsl/circusbase\nMAINTAINER Bernardo Cabezas <bcabezas@apsl.net>\n\n#nginx\nRUN \\\n    add-apt-repository -y ppa:nginx/stable && \\\n    apt-get update && \\\n    apt-get install nginx-full && \\\n    apt-get clean\n\nADD circus.d/nginx.ini.tpl /etc/circus.d/\nADD setup.d/nginx /etc/setup.d/30-nginx\nADD conf/nginx.conf /etc/nginx/nginx.conf\n#RUN chown www-data /logs\nVOLUME /logs\n\n# Things required for a python/pip environment\nRUN  \\\n    apt-get update && \\\n    apt-get -y -q install git mercurial curl build-essential && \\\n    apt-get -y -q install python python-dev python-distribute python-pip && \\\n    apt-get -y -q install inetutils-ping dnsutils && \\\n    apt-get -y -q install libpq-dev libmysqlclient-dev libxml2-dev libxslt1-dev libssl-dev && \\\n    apt-get clean\n\n# nodejs\nRUN \\\n    apt-get install nodejs npm && apt-get clean && \\\n    npm install -g less && \\\n    ln -s /usr/bin/nodejs /usr/bin/node\n\n# django user and dirs\nRUN \\\n    addgroup --system --gid 500 django;\\\n    adduser --system --shell /bin/bash --gecos 'Django app user' --uid 500 --gid 500 --disabled-password --home /code django ;\\\n    mkdir -p /data/media; mkdir -p /data/static ;\\                             \n    chown django.django /data -R \n# django conf\nADD setup.d/django /etc/setup.d/40-django\nADD circus.d/celery_worker.ini.tpl /etc/circus.d/\nADD circus.d/celery_beat.ini.tpl /etc/circus.d/\nADD circus.d/flower.ini.tpl /etc/circus.d/\nADD conf/bashrc /code/.bashrc\nRUN chown django.django /code -R\nADD conf/manage /usr/local/bin/\n\n# django celery\n\n# virtualenv\nRUN \\\n    pip --no-input install virtualenv==1.11.6 && \\\n    pip --no-input install pew==0.1.14 && \\\n    pip --no-input install chaussette==1.2 && \\\n    pip --no-input install PyYAML==3.11 # needed for install_crons\n\n# create Virtualenv\nENV HOME /code\nENV SHELL bash\nENV WORKON_HOME /code\nWORKDIR /code/src\nRUN su -c \"pew-new env -i ipython\" django\n\nADD circus.d/django.ini.tpl  /etc/circus.d/\n\n# nginx django flower circusd\nEXPOSE 8000 80 8084 8888\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "circus.d/nginx.ini.tpl",
+        "dest": "/etc/circus.d/"
+      },
+      {
+        "source": "setup.d/nginx",
+        "dest": "/etc/setup.d/30-nginx"
+      },
+      {
+        "source": "conf/nginx.conf",
+        "dest": "/etc/nginx/nginx.conf"
+      },
+      {
+        "source": "setup.d/django",
+        "dest": "/etc/setup.d/40-django"
+      },
+      {
+        "source": "circus.d/celery_worker.ini.tpl",
+        "dest": "/etc/circus.d/"
+      },
+      {
+        "source": "circus.d/celery_beat.ini.tpl",
+        "dest": "/etc/circus.d/"
+      },
+      {
+        "source": "circus.d/flower.ini.tpl",
+        "dest": "/etc/circus.d/"
+      },
+      {
+        "source": "conf/bashrc",
+        "dest": "/code/.bashrc"
+      },
+      {
+        "source": "conf/manage",
+        "dest": "/usr/local/bin/"
+      },
+      {
+        "source": "circus.d/django.ini.tpl",
+        "dest": ""
+      }
+    ],
+    "expose": [
+      8000
+    ],
+    "volume": [
+      "/logs"
+    ],
+    "run": [
+      "    add-apt-repository -y ppa:nginx/stable &&     apt-get update &&     apt-get install nginx-full &&     apt-get clean",
+      "     apt-get update &&     apt-get -y -q install git mercurial curl build-essential &&     apt-get -y -q install python python-dev python-distribute python-pip &&     apt-get -y -q install inetutils-ping dnsutils &&     apt-get -y -q install libpq-dev libmysqlclient-dev libxml2-dev libxslt1-dev libssl-dev &&     apt-get clean",
+      "    apt-get install nodejs npm && apt-get clean &&     npm install -g less &&     ln -s /usr/bin/nodejs /usr/bin/node",
+      "    addgroup --system --gid 500 django;    adduser --system --shell /bin/bash --gecos 'Django app user' --uid 500 --gid 500 --disabled-password --home /code django ;    mkdir -p /data/media; mkdir -p /data/static ;\\                             ",
+      "chown django.django /code -R",
+      "    pip --no-input install virtualenv==1.11.6 &&     pip --no-input install pew==0.1.14 &&     pip --no-input install chaussette==1.2 &&     pip --no-input install PyYAML==3.11 # needed for install_crons",
+      "su -c \"pew-new env -i ipython\" django"
+    ],
+    "workdir": [
+      "/code/src"
+    ],
+    "from": "apsl/circusbase",
+    "maintainer": "Bernardo Cabezas <bcabezas@apsl.net>",
+    "env": {
+      "HOME": "/code",
+      "SHELL": "bash",
+      "WORKON_HOME": "/code"
+    }
+  },
+  "source_repository_url": "https://github.com/APSL/docker-django.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/APSL/docker-django",
+  "docker_repository": "apsl/django",
+  "docker_image": "apsl/django",
+  "parameters_schema": {
+    "HOME": {
+      "default": "/code",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SHELL": {
+      "default": "bash",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WORKON_HOME": {
+      "default": "/code",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "apsl/django",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/apsl/django",
+    "https://hub.docker.com/v2/repositories/apsl/django",
+    "https://github.com/APSL/docker-django.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image"
+  ],
+  "info_url": "https://hub.docker.com/r/apsl/django",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

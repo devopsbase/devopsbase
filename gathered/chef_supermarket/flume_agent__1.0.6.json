@@ -1,0 +1,45 @@
+{
+  "name": "flume_agent Chef cookbook",
+  "chef_cookbook_name": "flume_agent",
+  "revision": "1.0.6",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/flume_agent",
+    "https://supermarket.chef.io/cookbooks/flume_agent/download",
+    "https://supermarket.chef.io/cookbooks/flume_agent/versions/1.0.6",
+    "https://supermarket.chef.io/cookbooks/flume_agent/versions/1.0.6/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/flume_agent/versions/1.0.6",
+    "https://supermarket.chef.io/api/v1/cookbooks/flume_agent",
+    "https://supermarket.chef.io/api/v1/cookbooks/flume_agent/versions/1.0.6/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/flume_agent",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/flume_agent/versions/1.0.6/download",
+  "deprecated": false,
+  "created": "2014-01-12T03:19:07.000Z",
+  "updated": "2016-04-03T03:28:08.557Z",
+  "description": "A cookbook used to set up a Flume agent.",
+  "maintainer": {
+    "name": "jrh3k5",
+    "email": "jrh3k5@gmail.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 2,
+  "downloads_count": 10111626,
+  "downloads_count_revision": 1263990,
+  "repository_url": "https://github.com/jrh3k5/flume-agent-cookbook/",
+  "issues_url": "https://github.com/jrh3k5/flume-agent-cookbook/issues",
+  "chef_source_url": "https://github.com/jrh3k5/flume-agent-cookbook/",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Description\nProvides a mechanism for installing a Flume agent.\n\n# Requirements\nThis requires an installation of Java 6 or higher.\n\n# Providers\n\nThe following are a list of provided actions supplied by this cookbook.\n\n## Create\n\nThis provider is enabled using the _:create_ action. It will install a Flume agent of your choosing. An example invocation might look like:\n\n<pre>\n# Install the Flume agent\nflume_agent \"my-agent\" do\n  action :create\n  userName \"flume\"\n  userGroup \"flume\"\n  agentName \"my-agent\"\n\n  loggingProperties do\n    cookbook_filename \"flume.log4j.properties.erb\"\n  end\n\n  configFile do\n    cookbook_filename \"flume.properties.erb\"\n    variables(:my-arg => \"a\", :my-arg2 => \"b\")\n  end\n\n  flumePlugin \"my-flume-plugin\" do\n    file \"/usr/share/flume/my-flume-plugin.tar.gz\"\n  end\n\n  flumeEnv do\n    cookbook_filename \"my-flume-env.sh.erb\"\n  end\n\n  jmx do\n    port 1234\n  end\nend\n</pre>\n\nThis takes, at a minimum, four parameters:\n\n* **userName**: The name of the user under which this installation is to occur\n* **userGroup**: The group to which the installation is to be long\n* **agentName**: The name of the agent to be installed\n* **configFile**: The configuration file to be used to direct the behavior of the Flume agent. This is described in further detail below.\n\n### Configuration Providers\n\nNested within the provider are configuration elements that contain their own parameters.\n\n#### configFile\n\nThis is a required element of your provider configuration. It tells Flume how to configure the agent it is going to install and start. It accepts the following parameters:\n\n* **cookbook_filename**:  The name of the file stored in the cookbook to be copied (as a template)\n* **cookbook**: _(optional)_ The name of the cookbook from which the file is to be copied; defaults to the cookbook calling the provider\n* **variables**: _(optional)_ A hash of variables to be provided to the copied agent configuration file.\n\n#### loggingProperties\n\nFlume provides its own default logging configuration, but, if you so choose, you can provide your own log configuration. This should be a log4j configuration file. It accepts the following parameters:\n\n* **cookbook_filename**: The name of the file stored in the cookbook to be copied (as a template)\n* **cookbook**: _(optional)_ The name of the cookbook from which the file is to be copied; defaults to the cookbook calling the provider\n* **variables**: _(optional)_ A hash of variables to be provided to the copied logging properties file.\n\n#### flumePlugin\n\nFlume supports a style of packaging up libraries to be provided as \"plugins\" to the Flume installation. Refer to the [Flume documentation](http://flume.apache.org/FlumeUserGuide.html#installing-third-party-plugins) for more details on the exact packaging contents. This cookbook expects all plugins to be packaged as a .tar.gz file.\n\nAt minimum, one of the following sources must be provided:\n\n* **url**: A URL from which the .tar.gz file will be downloaded.\n* **file**: A location on the local disk from which the .tar.gz file will be copied\n* **cookbook_filename**: The name of a cookbook file that will be copied as the .tar.gz file.\n    * Optionally, the **cookbook** parameter can be specified here to identify which cookbook the file should be copied. If not specified, it will be the name of the cookbook calling the provider.\n\nThe expected format of the provided Flume plugin bundle follows:\n\n    my-project-1.0-my-plugin-flume-plugin.tar.gz\n      |\n      +- name-of-my-plugin\n          |\n          +- lib/\n          |   |\n          |   +- my-lib.jar\n          +- libext/\n              |\n              +- a.jar\n              +- b.jar\n\n### flumeEnv\n\nUse this element to provide a <tt>flume-env.sh</tt> file template to be copied into the Flume installation. It takes the following parameters:\n\n* **cookbook_filename**: The name of the file stored in the cookbook to be copied (as a template)\n* **cookbook**: _(optional)_ The name of the cookbook from which the file is to be copied; defaults to the cookbook calling the provider\n* **variables**: _(optional)_ A hash of variables to be provided to the copied logging properties file.\n\n### jmx\n\nThis block enables JMX reporting of the behavior of the agent. It takes the following parameter:\n\n* **port**: The port on which the agent will publish its JMX statistics.\n\n### Registered service\n\nWith this command, the agent will also install an _/etc/init.d/_ script following the pattern of \"/etc/init.d/flume\\_&lt;agentName&gt;\". It supports the following commands:\n\n* start\n* stop\n* restart\n* status\n\n# Building the Project\n\nThis project uses Rake (with a minimum of Ruby 2.0) to build the archive that contains the cookbook for distribution. In order to build this cookbook's archive, you must have the following gems installed:\n\n* chef\n\nAdditionally, this requires command-line capabilities of building GZipped TAR files. This implies a Linux or Linux-like environment.\n\nTo build this using rake, use the following command:\n\n    rake package"
+}

@@ -1,0 +1,190 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mwaeckerlin/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/mwaeckerlin/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/mwaeckerlin/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mwaeckerlin/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mwaeckerlin/owncloud/autobuild",
+    "user": "mwaeckerlin",
+    "name": "owncloud",
+    "namespace": "mwaeckerlin",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 117,
+    "last_updated": "2016-08-20T12:17:15.643326Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 290591108,
+        "id": 1344297,
+        "repository": 402932,
+        "creator": 310548,
+        "last_updater": 310548,
+        "last_updated": "2016-08-20T12:17:15.221098Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "mwaeckerlin/owncloud"
+  },
+  "name": "mwaeckerlin/owncloud Docker container",
+  "description": "Docker Instance for OwnCloud with MySQL Database Through Link.",
+  "readme": "# owncloud\nDocker Image for OwnCloud\n\n\nAvailable Apps:\n```\nroot@1fe4286762a5:/var/www/owncloud# sudo -u www-data ./occ app:list        \n  - activity: 2.2.1\n  - announcementcenter: 1.1.1\n  - calendar: 1.0\n  - comments: 0.2\n  - contacts: 1.0.0.0\n  - dav: 0.1.5\n  - documents: 0.12.0\n  - encryption: 1.2.0\n  - external: 1.2\n  - federatedfilesharing: 0.1.0\n  - federation: 0.0.4\n  - files: 1.4.4\n  - files_antivirus: 0.8.0.1\n  - files_external: 0.5.2\n  - files_pdfviewer: 0.8\n  - files_sharing: 0.9.1\n  - files_texteditor: 2.1\n  - files_trashbin: 0.8.0\n  - files_versions: 1.2.0\n  - files_videoplayer: 0.9.8\n  - files_w2g: 0.8.2.6\n  - firstrunwizard: 1.1\n  - gallery: 14.5.0\n  - mail: 0.4.0\n  - music: 0.3.10\n  - news: 7.1.2\n  - notes: 2.0.0\n  - notifications: 0.2.3\n  - ojsxc: 3.0.0\n  - ownbackup: 0.3.8\n  - ownnote: 1.07\n  - provisioning_api: 0.4.1\n  - shorten: 0.0.15\n  - systemtags: 0.2\n  - templateeditor: 0.1\n  - updatenotification: 0.1.0\n  - user_external: 0.4\n  - pdflintview\n  - user_ldap\nroot@1fe4286762a5:/var/www/owncloud#\n```",
+  "dockerfile": "# Example use with volumes and MySQL database behind a reverse proxy:\n# docker run -d --name owncloud-mysql-volume mysql sleep infinity\n# docker run -d --name owncloud-volume mwaeckerlin/owncloud sleep infinity\n# docker run -d --name owncloud-mysql -e MYSQL_ROOT_PASSWORD=$(pwgen 20 1) -e MYSQL_DATABASE=owncloud -e MYSQL_USER=owncloud -e MYSQL_PASSWORD=$(pwgen 20 1) --volumes-from owncloud-mysql-volume mysql\n# docker run -d --name owncloud -e URL=\"example.com\" -e UPLOAD_MAX_FILESIZE=16G -e MAX_INPUT_TIME=7200 -e BASEPATH=/owncloud --volumes-from owncloud-volume --link owncloud-mysql:mysql mwaeckerlin/owncloud\n# docker run -d -p 80:80 -p 443:443 [...] --link owncloud:dev.marc.waeckerlin.org%2fowncloud mwaeckerlin/reverse-proxy\nFROM ubuntu:trusty\nMAINTAINER mwaeckerlin\nENV TERM=\"xterm\"\n\nEXPOSE 80\nENV UPLOAD_MAX_FILESIZE \"8G\"\nENV MAX_INPUT_TIME \"3600\"\nENV BASEPATH \"\"\nENV WEBROOT \"\"\nENV ADMIN_USER \"\"\nENV ADMIN_PWD \"\"\nENV URL \"\"\nENV APPS \"\"\n#ENV APPS \"calendar contacts documents music news notes ownnote\"\n#ENV APPS \"announcementcenter calendar contacts documents encryption external files_antivirus files_external files_w2g mail music news notes ojsxc ownbackup ownnote shorten user_external\"\n#ENV APPS \"announcementcenter calendar contacts documents files_w2g music news notes ojsxc ownbackup ownnote\"\n\n# compile time variables\nENV INSTDIR \"/var/www/owncloud\"\nENV DATADIR \"/var/www/owncloud/data\"\nENV CONFDIR \"/var/www/owncloud/config\"\nENV SOURCE \"download.owncloud.org/download/repositories/stable/Ubuntu_\"\nRUN apt-get update\nRUN apt-get install -y wget lsb-release\nRUN wget -nv https://${SOURCE}$(lsb_release -rs)/Release.key -O- | apt-key add -\nRUN echo \"deb http://${SOURCE}$(lsb_release -rs)/ /\" > /etc/apt/sources.list.d/oc.list\nRUN apt-get update\nRUN cat  /etc/apt/sources.list.d/oc.list\nRUN apt-get install -y --no-install-recommends owncloud libreoffice-writer apache2 php5 php5-gd php5-curl php5-json php5-common php5-intl php-pear php-apc php-xml-parser libapache2-mod-php5 php5-ldap php5-mysqlnd mysql-client pwgen emacs24-nox\nRUN test -f /etc/apache2/conf-available/owncloud.conf || apt-get install -y --no-install-recommends owncloud-config-apache\n\nVOLUME $DATADIR\nVOLUME $CONFDIR\nWORKDIR $INSTDIR\nADD start.sh /start.sh\nCMD /start.sh\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "start.sh",
+        "dest": "/start.sh"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "$DATADIR",
+      "$CONFDIR"
+    ],
+    "run": [
+      "apt-get update",
+      "apt-get install -y wget lsb-release",
+      "wget -nv https://${SOURCE}$(lsb_release -rs)/Release.key -O- | apt-key add -",
+      "echo \"deb http://${SOURCE}$(lsb_release -rs)/ /\" > /etc/apt/sources.list.d/oc.list",
+      "apt-get update",
+      "cat  /etc/apt/sources.list.d/oc.list",
+      "apt-get install -y --no-install-recommends owncloud libreoffice-writer apache2 php5 php5-gd php5-curl php5-json php5-common php5-intl php-pear php-apc php-xml-parser libapache2-mod-php5 php5-ldap php5-mysqlnd mysql-client pwgen emacs24-nox",
+      "test -f /etc/apache2/conf-available/owncloud.conf || apt-get install -y --no-install-recommends owncloud-config-apache"
+    ],
+    "workdir": [
+      "$INSTDIR"
+    ],
+    "from": "ubuntu:trusty",
+    "maintainer": "mwaeckerlin",
+    "env": {
+      "TERM": "\"xterm\"",
+      "UPLOAD_MAX_FILESIZE": "\"8G\"",
+      "MAX_INPUT_TIME": "\"3600\"",
+      "BASEPATH": "\"\"",
+      "WEBROOT": "\"\"",
+      "ADMIN_USER": "\"\"",
+      "ADMIN_PWD": "\"\"",
+      "URL": "\"\"",
+      "APPS": "\"\"",
+      "INSTDIR": "\"/var/www/owncloud\"",
+      "DATADIR": "\"/var/www/owncloud/data\"",
+      "CONFDIR": "\"/var/www/owncloud/config\"",
+      "SOURCE": "\"download.owncloud.org/download/repositories/stable/Ubuntu_\""
+    },
+    "cmd": "/start.sh"
+  },
+  "source_repository_url": "https://github.com/mwaeckerlin/owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mwaeckerlin/owncloud",
+  "docker_repository": "mwaeckerlin/owncloud",
+  "docker_image": "mwaeckerlin/owncloud",
+  "parameters_schema": {
+    "TERM": {
+      "default": "\"xterm\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "UPLOAD_MAX_FILESIZE": {
+      "default": "\"8G\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAX_INPUT_TIME": {
+      "default": "\"3600\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BASEPATH": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WEBROOT": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ADMIN_USER": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ADMIN_PWD": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "URL": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APPS": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "INSTDIR": {
+      "default": "\"/var/www/owncloud\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DATADIR": {
+      "default": "\"/var/www/owncloud/data\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CONFDIR": {
+      "default": "\"/var/www/owncloud/config\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SOURCE": {
+      "default": "\"download.owncloud.org/download/repositories/stable/Ubuntu_\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mwaeckerlin/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/mwaeckerlin/owncloud",
+    "https://hub.docker.com/v2/repositories/mwaeckerlin/owncloud",
+    "https://github.com/mwaeckerlin/owncloud.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/mwaeckerlin/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,155 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/miko2u/rabbitmq",
+    "repository_url": "https://hub.docker.com/v2/repositories/miko2u/rabbitmq",
+    "tags_url": "https://hub.docker.com/v2/repositories/miko2u/rabbitmq/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/miko2u/rabbitmq/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/miko2u/rabbitmq/autobuild",
+    "user": "miko2u",
+    "name": "rabbitmq",
+    "namespace": "miko2u",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 262,
+    "last_updated": "2016-09-06T22:21:57.987124Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 106991667,
+        "id": 135439,
+        "repository": 148565,
+        "creator": 95506,
+        "last_updater": 95506,
+        "last_updated": "2016-09-06T22:21:57.602685Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "alpine",
+        "full_size": 23101880,
+        "id": 3278783,
+        "repository": 148565,
+        "creator": 95506,
+        "last_updater": 95506,
+        "last_updated": "2016-08-03T17:17:28.283264Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "miko2u/docker-rabbitmq"
+  },
+  "name": "miko2u/rabbitmq Docker container",
+  "description": "RabbitMQ",
+  "readme": "docker-rabbitmq\n===============\n\nRabbitMQ のコンテナです。\n\n## 使用方法\n\n### docker-composeの場合\n\ndocker-composeの場合、以下のように使用しています。\n\n```\n# RabbitMQ\nmq1:\n  hostname: mq1\n  image: miko2u/rabbitmq\n  volumes:\n    - /var/lib/rabbitmq:/var/lib/rabbitmq\n    - /var/log/rabbitmq:/var/log/rabbitmq\n  environment:\n    - REDIRECT_IP=172.17.56.72\n```\n\n## ひとりごと\n\n- コンテナ内の ulimit -n の分だけメモリを食うので要注意  \n  (どこかのブログで /etc/sysconfig/docker に `ulimit -n 1048576` なんて設定してハマった)  \n  Docker 1.6+ より ulimit 設定ができるので、Docker 1.6+ を使用することを推奨\n",
+  "dockerfile": "FROM miko2u/alpine\nENV RABBITMQ_VERSION=3.6.2 ERLANG_VERSION=18.3.2-r0 \\\n    RABBITMQ_MNESIA_BASE=/var/lib/rabbitmq/mnesia \\\n    RABBITMQ_LOG_BASE=/var/log/rabbitmq \\\n    RABBITMQ_CONFIG_FILE=/etc/rabbitmq/rabbitmq \\\n    RABBITMQ_ENABLED_PLUGINS_FILE=/etc/rabbitmq/enabled_plugins\n\nCOPY rabbitmqctl /usr/sbin/\n\nRUN cd /tmp \\\n && apk add curl tar xz shadow  \\\n    erlang=${ERLANG_VERSION} erlang-mnesia=${ERLANG_VERSION} \\\n    erlang-public-key=${ERLANG_VERSION} erlang-crypto=${ERLANG_VERSION} \\\n    erlang-ssl=${ERLANG_VERSION} erlang-sasl=${ERLANG_VERSION} \\\n    erlang-asn1=${ERLANG_VERSION} erlang-inets=${ERLANG_VERSION} \\\n    erlang-os-mon=${ERLANG_VERSION} erlang-xmerl=${ERLANG_VERSION} \\\n    erlang-eldap=${ERLANG_VERSION} erlang-syntax-tools=${ERLANG_VERSION} \\\n    --update-cache --allow-untrusted \\\n    --repository http://dl-cdn.alpinelinux.org/alpine/edge/main/ \\\n    --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/ \\\n && mkdir -p /usr/lib/rabbitmq/lib/rabbitmq_server-${RABBITMQ_VERSION} \\\n && curl -sSL https://www.rabbitmq.com/releases/rabbitmq-server/v${RABBITMQ_VERSION}/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.xz | tar -xJ -C /usr/lib/rabbitmq/lib/rabbitmq_server-${RABBITMQ_VERSION}/ --strip-components 1 \\\n && chown -R root:root /usr/lib/rabbitmq/lib/rabbitmq_server-${RABBITMQ_VERSION} \\\n && rm -rf /usr/lib/rabbitmq/lib/rabbitmq_server-${RABBITMQ_VERSION}/share \\\n && rm -rf /usr/lib/rabbitmq/lib/rabbitmq_server-${RABBITMQ_VERSION}/etc \\\n && mkdir -p /etc/rabbitmq \\\n && mkdir -p /usr/lib/rabbitmq/bin \\\n && cd /usr/lib/rabbitmq/bin \\\n && ln -sf ../lib/rabbitmq_server-${RABBITMQ_VERSION}/sbin/rabbitmq-defaults \\\n && ln -sf ../lib/rabbitmq_server-${RABBITMQ_VERSION}/sbin/rabbitmq-env \\\n && ln -sf ../lib/rabbitmq_server-${RABBITMQ_VERSION}/sbin/rabbitmq-plugins \\\n && ln -sf ../lib/rabbitmq_server-${RABBITMQ_VERSION}/sbin/rabbitmq-server \\\n && ln -sf ../lib/rabbitmq_server-${RABBITMQ_VERSION}/sbin/rabbitmqctl \\\n && cp /usr/sbin/rabbitmqctl /usr/sbin/rabbitmq-plugins \\\n && cp /usr/sbin/rabbitmqctl /usr/sbin/rabbitmq-server \\\n && apk del curl tar xz shadow \\\n && addgroup -S -g 472 rabbitmq \\\n && adduser -DS -u 472 -g \"RabbitMQ messaging server\" -G rabbitmq -s /bin/bash -h /var/lib/rabbitmq rabbitmq \\\n && mkdir /var/log/rabbitmq \\\n && chown rabbitmq:rabbitmq /var/log/rabbitmq \\\n && rm -rf /var/cache/apk/*\n\n# volume\nWORKDIR /var/lib/rabbitmq\nVOLUME /var/lib/rabbitmq\n\n# expose\nEXPOSE 4369/tcp 5672/tcp 15672/tcp 25672/tcp\n\n# entry\nCOPY init prepare /boot/\nSTOPSIGNAL INT\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      4369
+    ],
+    "volume": [
+      "/var/lib/rabbitmq"
+    ],
+    "run": [
+      "cd /tmp  && apk add curl tar xz shadow      erlang=${ERLANG_VERSION} erlang-mnesia=${ERLANG_VERSION}     erlang-public-key=${ERLANG_VERSION} erlang-crypto=${ERLANG_VERSION}     erlang-ssl=${ERLANG_VERSION} erlang-sasl=${ERLANG_VERSION}     erlang-asn1=${ERLANG_VERSION} erlang-inets=${ERLANG_VERSION}     erlang-os-mon=${ERLANG_VERSION} erlang-xmerl=${ERLANG_VERSION}     erlang-eldap=${ERLANG_VERSION} erlang-syntax-tools=${ERLANG_VERSION}     --update-cache --allow-untrusted     --repository http://dl-cdn.alpinelinux.org/alpine/edge/main/     --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/  && mkdir -p /usr/lib/rabbitmq/lib/rabbitmq_server-${RABBITMQ_VERSION}  && curl -sSL https://www.rabbitmq.com/releases/rabbitmq-server/v${RABBITMQ_VERSION}/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.xz | tar -xJ -C /usr/lib/rabbitmq/lib/rabbitmq_server-${RABBITMQ_VERSION}/ --strip-components 1  && chown -R root:root /usr/lib/rabbitmq/lib/rabbitmq_server-${RABBITMQ_VERSION}  && rm -rf /usr/lib/rabbitmq/lib/rabbitmq_server-${RABBITMQ_VERSION}/share  && rm -rf /usr/lib/rabbitmq/lib/rabbitmq_server-${RABBITMQ_VERSION}/etc  && mkdir -p /etc/rabbitmq  && mkdir -p /usr/lib/rabbitmq/bin  && cd /usr/lib/rabbitmq/bin  && ln -sf ../lib/rabbitmq_server-${RABBITMQ_VERSION}/sbin/rabbitmq-defaults  && ln -sf ../lib/rabbitmq_server-${RABBITMQ_VERSION}/sbin/rabbitmq-env  && ln -sf ../lib/rabbitmq_server-${RABBITMQ_VERSION}/sbin/rabbitmq-plugins  && ln -sf ../lib/rabbitmq_server-${RABBITMQ_VERSION}/sbin/rabbitmq-server  && ln -sf ../lib/rabbitmq_server-${RABBITMQ_VERSION}/sbin/rabbitmqctl  && cp /usr/sbin/rabbitmqctl /usr/sbin/rabbitmq-plugins  && cp /usr/sbin/rabbitmqctl /usr/sbin/rabbitmq-server  && apk del curl tar xz shadow  && addgroup -S -g 472 rabbitmq  && adduser -DS -u 472 -g \"RabbitMQ messaging server\" -G rabbitmq -s /bin/bash -h /var/lib/rabbitmq rabbitmq  && mkdir /var/log/rabbitmq  && chown rabbitmq:rabbitmq /var/log/rabbitmq  && rm -rf /var/cache/apk/*"
+    ],
+    "workdir": [
+      "/var/lib/rabbitmq"
+    ],
+    "from": "miko2u/alpine",
+    "env": {
+      "RABBITMQ_VERSION": "3.6.2",
+      "ERLANG_VERSION": "18.3.2-r0",
+      "": "",
+      "RABBITMQ_MNESIA_BASE": "/var/lib/rabbitmq/mnesia",
+      "RABBITMQ_LOG_BASE": "/var/log/rabbitmq",
+      "RABBITMQ_CONFIG_FILE": "/etc/rabbitmq/rabbitmq",
+      "RABBITMQ_ENABLED_PLUGINS_FILE": "/etc/rabbitmq/enabled_plugins"
+    },
+    "copy": "init prepare /boot/",
+    "stopsignal": "INT"
+  },
+  "source_repository_url": "git@bitbucket.org:miko2u/docker-rabbitmq.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/miko2u/docker-rabbitmq",
+  "docker_repository": "miko2u/rabbitmq",
+  "docker_image": "miko2u/rabbitmq",
+  "parameters_schema": {
+    "RABBITMQ_VERSION": {
+      "default": "3.6.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ERLANG_VERSION": {
+      "default": "18.3.2-r0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_MNESIA_BASE": {
+      "default": "/var/lib/rabbitmq/mnesia",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_LOG_BASE": {
+      "default": "/var/log/rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_CONFIG_FILE": {
+      "default": "/etc/rabbitmq/rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_ENABLED_PLUGINS_FILE": {
+      "default": "/etc/rabbitmq/enabled_plugins",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        4369
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "miko2u/rabbitmq",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/miko2u/rabbitmq",
+    "https://hub.docker.com/v2/repositories/miko2u/rabbitmq",
+    "git@bitbucket.org:miko2u/docker-rabbitmq.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/miko2u/rabbitmq",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,106 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dylanlindgren/docker-couchpotato",
+    "repository_url": "https://hub.docker.com/v2/repositories/dylanlindgren/docker-couchpotato",
+    "tags_url": "https://hub.docker.com/v2/repositories/dylanlindgren/docker-couchpotato/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dylanlindgren/docker-couchpotato/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dylanlindgren/docker-couchpotato/autobuild",
+    "user": "dylanlindgren",
+    "name": "docker-couchpotato",
+    "namespace": "dylanlindgren",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 246,
+    "last_updated": "2016-09-05T11:02:40.255390Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 125368716,
+        "id": 40764,
+        "repository": 46531,
+        "creator": 61293,
+        "last_updater": 61293,
+        "last_updated": "2016-09-05T11:02:39.872680Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "dylanlindgren/docker-couchpotato"
+  },
+  "name": "dylanlindgren/docker-couchpotato Docker container",
+  "description": "Ubuntu-based container which runs CouchPotatoServer.",
+  "readme": "# Docker: CouchPotatoServer\n\n![CouchPotatoServer](https://cloud.githubusercontent.com/assets/6241518/4803713/4724682c-5e5c-11e4-8865-8f148b055574.png)\n\nThis is a lightweight Debian Wheezy-based [Docker](http://docker.com) image which runs [CouchPotatoServer](https://github.com/RuudBurger/CouchPotatoServer)!\n\n## Getting the image\nThis image is published in the [Docker Hub](https://registry.hub.docker.com/). Simply run the below command to get it on your machine:\n\n```bash\ndocker pull dylanlindgren/docker-couchpotato\n```\nAlternatively you can build it from source by cloning this repo and using the Dockerfile with the `docker build` command.\n## Creating and running the container\nThe CouchPotatoServer daemon listens on port 5050 within the container, so we need to publish that. You can change the first `5050` to be whatever port you want the service to be published at on your host.\n\nYou will also need to map the `/data/couchpotato` directory in the container to a directory on your host. Replace the `/my/host/couchpotato/directory` with the path to your chosen directory. This will allow us to completely trash the container after it exits (with the `--rm` switch), without worrying about losing data. The benefit of doing this is that as long as we have the latest image from the Docker Hub, CouchPotato should also be the latest version.\n\n```bash\ndocker run --rm --name couchpotato -p 5050:5050 -v /my/host/couchpotato/directory:/data/couchpotato:rw dylanlindgren/docker-couchpotato\n```\n\n### Running as a Systemd service\nTo run this container as a service on a [Systemd](http://www.freedesktop.org/wiki/Software/systemd/) based distro (e.g. CentOS 7), create a unit file under `/etc/systemd/system` called `couchpotato.service` with the below contents (making sure you update the command in the line starting with `ExecStart` to the one you used above).\n\n```bash\n[Unit]\nDescription=CouchPotatoServer docker container (dylanlindgren/docker-couchpotato)\nAfter=docker.service\nRequires=docker.service\n\n[Service]\nTimeoutStartSec=0\nExecStartPre=-/usr/bin/docker stop couchpotato\nExecStartPre=-/usr/bin/docker rm couchpotato\nExecStartPre=-/usr/bin/docker pull dylanlindgren/docker-couchpotato\nExecStart=docker run --rm --name couchpotato -p 5050:5050 -v /my/host/couchpotato/directory:/data/couchpotato:rw dylanlindgren/docker-couchpotato\nExecStop=/usr/bin/docker stop couchpotato\n\n[Install]\nWantedBy=multi-user.target\n```\n\nThen you can start/stop/restart the container with the regular Systemd commands e.g. `systemctl start couchpotato.service`.\n\nTo automatically start the container when you restart enable the unit file with the command `systemctl enable couchpotato.service`\n",
+  "dockerfile": "FROM debian:wheezy\n\nMAINTAINER “Dylan Lindgren” <dylan.lindgren@gmail.com>\n\nWORKDIR /var/lib\n\n# Install CouchPotatoServer prerequisites\nRUN apt-get update -y && \\\n    apt-get install -y \\\n    git \\\n    python2.7 && \\\n    rm -rf /var/lib/apt/lists/*\n\n# Install CouchPotatoServer\nRUN git clone https://github.com/RuudBurger/CouchPotatoServer.git\n\n# Add the startup scripts\nADD config/cp-start.sh /opt/bin/cp-start.sh\nRUN adduser -c \"CouchPotato User\" couchpotato && \\\n    mkdir -p /data/couchpotato && \\\n    chmod u=rwx /opt/bin/cp-start.sh && \\\n    chown -R couchpotato:couchpotato /var/lib/CouchPotatoServer /data/couchpotato /opt/bin/cp-start.sh\nVOLUME [\"/data/couchpotato\"]\n\nEXPOSE 5050\n\nUSER couchpotato\n\nENTRYPOINT [\"/opt/bin/cp-start.sh\"]",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "config/cp-start.sh",
+        "dest": "/opt/bin/cp-start.sh"
+      }
+    ],
+    "expose": [
+      5050
+    ],
+    "volume": [
+      "[\"/data/couchpotato\"]"
+    ],
+    "run": [
+      "apt-get update -y &&     apt-get install -y     git     python2.7 &&     rm -rf /var/lib/apt/lists/*",
+      "git clone https://github.com/RuudBurger/CouchPotatoServer.git",
+      "adduser -c \"CouchPotato User\" couchpotato &&     mkdir -p /data/couchpotato &&     chmod u=rwx /opt/bin/cp-start.sh &&     chown -R couchpotato:couchpotato /var/lib/CouchPotatoServer /data/couchpotato /opt/bin/cp-start.sh"
+    ],
+    "workdir": [
+      "/var/lib"
+    ],
+    "from": "debian:wheezy",
+    "maintainer": "“Dylan Lindgren” <dylan.lindgren@gmail.com>",
+    "user": "couchpotato",
+    "entrypoint": "[\"/opt/bin/cp-start.sh\"]"
+  },
+  "source_repository_url": "https://github.com/dylanlindgren/docker-couchpotato.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/dylanlindgren/docker-couchpotato",
+  "docker_repository": "dylanlindgren/docker-couchpotato",
+  "docker_image": "dylanlindgren/docker-couchpotato",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5050
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dylanlindgren/docker-couchpotato",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/dylanlindgren/docker-couchpotato",
+    "https://hub.docker.com/v2/repositories/dylanlindgren/docker-couchpotato",
+    "https://github.com/dylanlindgren/docker-couchpotato.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu"
+  ],
+  "info_url": "https://hub.docker.com/r/dylanlindgren/docker-couchpotato",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,103 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/wger/devel-fedora",
+    "repository_url": "https://hub.docker.com/v2/repositories/wger/devel-fedora",
+    "tags_url": "https://hub.docker.com/v2/repositories/wger/devel-fedora/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/wger/devel-fedora/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/wger/devel-fedora/autobuild",
+    "user": "wger",
+    "name": "devel-fedora",
+    "namespace": "wger",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 31,
+    "last_updated": "2016-09-18T14:59:52.522254Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 485535149,
+        "id": 2985825,
+        "repository": 682793,
+        "creator": 421030,
+        "last_updater": 421030,
+        "last_updated": "2016-09-18T14:59:51.691951Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "rolandgeider/wger"
+  },
+  "name": "wger/devel-fedora Docker container",
+  "description": "Development image for wger, fedora based",
+  "readme": "Development image for wger - Fedora based\n=========================================\nThank you for downloading wger Workout Manager. wger (ˈvɛɡɐ) is a free, open\nsource web application that manages your exercises and personal workouts, weight\nand diet plans. It can also be used as a simple gym management utility, providing\ndifferent administrative roles (trainer, manager, etc.). It offers a REST API\nas well, for easy integration with other projects and tools.\n\nIt is written with python/django and uses jQuery and some D3js for charts.\n\nInstallation\n------------\n\nThis docker image contains an instance of the application running with django's\ndevelopment server using a sqlite database. It can be used to quickly setup a\ndevelopment instance (vim and tmux are already installed):\n\n```docker run -ti --name wger.devel-fedora --publish 8000:8000 wger/devel-fedora```\n\nThen, *within the docker image*, activate the virtualenv\n\n```source ~/venv/bin/activate```\n\nand start the development server\n\n```python manage.py runserver 0.0.0.0:8000```\n\nThen just open http://localhost:8000 and log in as: **admin**, password **admin**\n\n\nContact\n-------\n\nFeel free to contact us if you found this useful or if there was something that\ndidn't behave as you expected. We can't fix what we don't know about, so please\nreport liberally. If you're not sure if something is a bug or not, feel free to\nfile a bug anyway.\n\n* twitter: https://twitter.com/wger_de\n* mailing list: https://groups.google.com/group/wger / wger@googlegroups.com, no registration needed\n* IRC: channel #wger on freenode.net, webchat: http://webchat.freenode.net/?channels=wger\n* issue tracker: https://github.com/wger-project/wger/issues\n\nSources\n-------\n\nAll the code and the content is freely available:\n\n* Main repository: https://github.com/wger-project/wger\n* Mirror: https://bitbucket.org/rolandgeider/wger\n\nLicence\n-------\n\nThe application is licenced under the Affero GNU General Public License 3 or\nlater (AGPL 3+).\n\nThe initial exercise and ingredient data is licensed additionally under one of\nthe Creative Commons licenses, see the individual exercises for more details.\n\nThe documentation is released under a CC-BY-SA either version 4 of the License,\nor (at your option) any later version.\n\nSome images where taken from Wikipedia, see the SOURCES file in their respective\nfolders for more details.\n",
+  "dockerfile": "#\n# Docker image for wger development on a fedora base image\n#\n# Please consult the documentation for usage\n# docker build -t wger/devel-fedora .\n# docker run -ti --name wger.devel-fedora --publish 8000:8000 wger/devel-fedora\n# (in docker) source ~/venv/bin/activate\n# (in docker) python manage.py runserver 0.0.0.0:8000\n#\n#\nFROM fedora:24\nMAINTAINER Roland Geider <roland@geider.net>\n\n# Install dependencies\nRUN dnf update;\\\n    dnf install -y python3-devel python-virtualenv \\\n    nodejs npm libjpeg-turbo-devel zlib-devel git \\\n    tmux sudo redhat-rpm-config gcc python-imaging\n\n# Add wger user\nRUN adduser wger\nRUN echo \"wger ALL=(ALL) NOPASSWD:ALL\" > /etc/sudoers.d/wger\nEXPOSE 8000\n\n\n# Set up the application\nUSER wger\nRUN git clone https://github.com/wger-project/wger.git /home/wger/src\n\nWORKDIR /home/wger/src\nRUN virtualenv --python python3 /home/wger/venv\nRUN . /home/wger/venv/bin/activate \\\n    && pip install --upgrade pip \\\n    && pip install -r requirements_devel.txt \\\n    && invoke create_settings \\\n        --settings-path /home/wger/src/settings.py \\\n        --database-path /home/wger/db/database.sqlite \\\n    && invoke bootstrap_wger \\\n        --settings-path /home/wger/src/settings.py \\\n        --no-start-server\n\n# Install node modules for JS linting and download the exercise images\n#\n# Note: it seems there are problems with node and docker, so it's necessary\n#       to delete the node_modules folder and install everything again\n#       -> https://github.com/npm/npm/issues/9863\n#       -> https://github.com/npm/npm/issues/13306\nRUN rm -r node_modules \\\n    && npm install bower \\\n    && npm install \\\n    && mkdir ~/media \\\n    && sed -i \"/^MEDIA_ROOT/c\\MEDIA_ROOT='\\/home\\/wger\\/media'\" settings.py \\\n    && . /home/wger/venv/bin/activate \\\n    && python manage.py download-exercise-images\n\n\nCMD [\"/bin/bash\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8000
+    ],
+    "volume": [],
+    "run": [
+      "dnf update;    dnf install -y python3-devel python-virtualenv     nodejs npm libjpeg-turbo-devel zlib-devel git     tmux sudo redhat-rpm-config gcc python-imaging",
+      "adduser wger",
+      "echo \"wger ALL=(ALL) NOPASSWD:ALL\" > /etc/sudoers.d/wger",
+      "git clone https://github.com/wger-project/wger.git /home/wger/src",
+      "virtualenv --python python3 /home/wger/venv",
+      ". /home/wger/venv/bin/activate     && pip install --upgrade pip     && pip install -r requirements_devel.txt     && invoke create_settings         --settings-path /home/wger/src/settings.py         --database-path /home/wger/db/database.sqlite     && invoke bootstrap_wger         --settings-path /home/wger/src/settings.py         --no-start-server",
+      "rm -r node_modules     && npm install bower     && npm install     && mkdir ~/media     && sed -i \"/^MEDIA_ROOT/c\\MEDIA_ROOT='\\/home\\/wger\\/media'\" settings.py     && . /home/wger/venv/bin/activate     && python manage.py download-exercise-images"
+    ],
+    "workdir": [
+      "/home/wger/src"
+    ],
+    "from": "fedora:24",
+    "maintainer": "Roland Geider <roland@geider.net>",
+    "user": "wger",
+    "cmd": "[\"/bin/bash\"]"
+  },
+  "source_repository_url": "https://github.com/rolandgeider/wger.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/rolandgeider/wger",
+  "docker_repository": "wger/devel-fedora",
+  "docker_image": "wger/devel-fedora",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        8000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "wger/devel-fedora",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/wger/devel-fedora",
+    "https://hub.docker.com/v2/repositories/wger/devel-fedora",
+    "https://github.com/rolandgeider/wger.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/wger/devel-fedora",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

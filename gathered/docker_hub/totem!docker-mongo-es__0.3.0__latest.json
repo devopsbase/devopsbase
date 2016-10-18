@@ -1,0 +1,169 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/totem/docker-mongo-es",
+    "repository_url": "https://hub.docker.com/v2/repositories/totem/docker-mongo-es",
+    "tags_url": "https://hub.docker.com/v2/repositories/totem/docker-mongo-es/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/totem/docker-mongo-es/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/totem/docker-mongo-es/autobuild",
+    "user": "totem",
+    "name": "docker-mongo-es",
+    "namespace": "totem",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 119631,
+    "last_updated": "2016-04-26T16:24:57.276295Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "0.3.0",
+        "full_size": 34789798,
+        "id": 2796483,
+        "repository": 264885,
+        "creator": 2665,
+        "last_updater": 2665,
+        "last_updated": "2016-04-26T16:24:55.796542Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "develop",
+        "full_size": 34789959,
+        "id": 2596995,
+        "repository": 264885,
+        "creator": 2665,
+        "last_updater": 2665,
+        "last_updated": "2016-04-26T16:22:32.862750Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 34789904,
+        "id": 613794,
+        "repository": 264885,
+        "creator": 2665,
+        "last_updater": 2665,
+        "last_updated": "2016-04-26T16:21:53.875478Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "feature_mongo-discovery",
+        "full_size": 34789906,
+        "id": 2762036,
+        "repository": 264885,
+        "creator": 2665,
+        "last_updater": 2665,
+        "last_updated": "2016-04-22T23:34:35.282744Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "0.1.0",
+        "full_size": 196546906,
+        "id": 2600812,
+        "repository": 264885,
+        "creator": 2665,
+        "last_updater": 2665,
+        "last_updated": "2016-04-10T03:40:35.967542Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "totem/docker-mongo-es"
+  },
+  "name": "totem/docker-mongo-es Docker container",
+  "description": "Docker based wrapper for mongo connector to send data to elasticsearch.",
+  "readme": "# docker-mongo-es\nDocker based wrapper for [mongo connector](https://github.com/10gen-labs/mongo-connector) to send data to elasticsearch.\n\n## Status\nIn Development\n\n## Issues\n[https://github.com/totem/docker-mongo-es/issues](https://github.com/totem/docker-mongo-es/issues)\n\n## Requirements\n- Docker 1.6.2+\n- MongoDB Replica Set (1 or more nodes)\n- Admin access to replicaset\n- ElasticSearch Instance\n\n## Running\n```\ndocker run --rm -it -e MONGO_URL=172.17.42.1:27017 -e ES_URL=172.17.42.1:9200 totem/docker-mongo-es\n```\n\n## Environment Variables\n\n### MONGO_URL\nSpecifies the mongo replicaset url. (e.g.: 172.17.42.1:27017)\n\n### ES_URL\nSpecified the elastic search url (e.g.: 172.17.42.1:9200)\n\n### MONGO_USERNAME\nAdmin username for mongodb. If blank, no credentials are used. (Defaults to blank)\n\n### MONGO_PASSWORD\nAdmin password for mongodb.(Default to blank)\n\n### MONGO_INCLUDES\nList of database.collection separated by comma that needs to be included for indexing. e.g.: ```totem.events,totem.deployments``` to \ninclude database collections events and deployments from totem database.\n\n### CONFIG_LOCATION\nOptional config file location. (Defaults to blank). e.g.:  file:///tmp/config.yml  or https://my-config-server/config.yml.\nExample config file:  \n```\ndefaults:\n  index-defaults: &index-defaults\n    mappings:\n      _default_:\n        _all:\n          enabled: true\n        dynamic_templates:\n          - string_fields:\n              mapping:\n                index: not_analyzed\n                type: string\n              match: '*'\n              match_mapping_type: string\nes:\n  indexes:\n    totem:\n      <<: *index-defaults\nmongo-connector:\n  logging:\n    type: stream\n```\n\nNote:  List of complete mongo-connector settings can be found in [mongo-connector wiki](https://github.com/10gen-labs/mongo-connector/wiki/Configuration-Options)\n\n### LOG_VERBOSITY\nVerbosity for logging (between 0 - 3,  where 0 is ERROR,  3 is DEBUG)",
+  "dockerfile": "FROM python:3.5.1-alpine\n\nENV ETCDCTL_VERSION v2.2.5\nENV DUMB_INIT_VERSION 1.0.1\nENV CONFD_VERSION 0.12.0-alpha3\n\n# Native dependencies\nRUN \\\n    apk add --no-cache --update --virtual build-dependencies \\\n      wget \\\n      openssl \\\n\n    # Etcdctl\n    && wget --no-check-certificate -O /tmp/etcd-$ETCDCTL_VERSION-linux-amd64.tar.gz https://github.com/coreos/etcd/releases/download/$ETCDCTL_VERSION/etcd-$ETCDCTL_VERSION-linux-amd64.tar.gz \\\n    && cd /tmp && gzip -dc etcd-$ETCDCTL_VERSION-linux-amd64.tar.gz | tar -xof -  \\\n    && cp -f /tmp/etcd-$ETCDCTL_VERSION-linux-amd64/etcdctl /usr/local/bin \\\n\n    # Dumb Init\n    && wget --no-check-certificate  -O /usr/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_amd64 \\\n    && chmod +x /usr/bin/dumb-init \\\n\n    # Cleanup\n    && apk del build-dependencies \\\n    && rm -rf ~/.cache /tmp/*\n\n# Application dependencies\nADD requirements.txt /opt/mongo-connector/requirements.txt\nRUN \\\n    # Python dependencies\n    pip3 install --ignore-installed  --no-cache-dir \\\n      -r /opt/mongo-connector/requirements.txt \\\n\n    # Cleanup\n    && find /usr/local \\\n        \\( -type d -a -name test -o -name tests \\) -exec echo rm -rf '{}' + \\\n        -o \\( -type f -a -name '*.pyc' -o -name '*.pyo' \\) -exec echo rm -f '{}' + \\\n    && rm -rf /usr/src/python ~/.cache /tmp/*\n\n\nADD . /opt/mongo-connector/\nRUN chmod +x /opt/mongo-connector/run.sh\n\nWORKDIR /opt/mongo-connector\n\nCMD [\"/usr/bin/dumb-init\", \"/opt/mongo-connector/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "requirements.txt",
+        "dest": "/opt/mongo-connector/requirements.txt"
+      },
+      {
+        "source": ".",
+        "dest": "/opt/mongo-connector/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "    apk add --no-cache --update --virtual build-dependencies       wget       openssl ",
+      "    # Python dependencies",
+      "chmod +x /opt/mongo-connector/run.sh"
+    ],
+    "workdir": [
+      "/opt/mongo-connector"
+    ],
+    "from": "python:3.5.1-alpine",
+    "env": {
+      "ETCDCTL_VERSION": "v2.2.5",
+      "DUMB_INIT_VERSION": "1.0.1",
+      "CONFD_VERSION": "0.12.0-alpha3"
+    },
+    "cmd": "[\"/usr/bin/dumb-init\", \"/opt/mongo-connector/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/totem/docker-mongo-es.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/totem/docker-mongo-es",
+  "docker_repository": "totem/docker-mongo-es",
+  "docker_image": "totem/docker-mongo-es",
+  "parameters_schema": {
+    "ETCDCTL_VERSION": {
+      "default": "v2.2.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DUMB_INIT_VERSION": {
+      "default": "1.0.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CONFD_VERSION": {
+      "default": "0.12.0-alpha3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "totem/docker-mongo-es",
+  "revision": "0.3.0",
+  "uris": [
+    "https://hub.docker.com/r/totem/docker-mongo-es",
+    "https://hub.docker.com/v2/repositories/totem/docker-mongo-es",
+    "https://github.com/totem/docker-mongo-es.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/totem/docker-mongo-es",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

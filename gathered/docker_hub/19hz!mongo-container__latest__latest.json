@@ -1,0 +1,127 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/19hz/mongo-container",
+    "repository_url": "https://hub.docker.com/v2/repositories/19hz/mongo-container",
+    "tags_url": "https://hub.docker.com/v2/repositories/19hz/mongo-container/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/19hz/mongo-container/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/19hz/mongo-container/autobuild",
+    "user": "19hz",
+    "name": "mongo-container",
+    "namespace": "19hz",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 242682,
+    "last_updated": "2015-11-14T07:09:17.285159Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 177104563,
+        "id": 110492,
+        "repository": 124338,
+        "creator": 180030,
+        "last_updater": 180033,
+        "last_updated": "2015-11-14T07:09:20.740041Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "master",
+        "full_size": 177088555,
+        "id": 110486,
+        "repository": 124338,
+        "creator": 180030,
+        "last_updater": 180033,
+        "last_updated": "2015-11-14T07:06:16.841459Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "19hz/coreos-mongodb-cluster"
+  },
+  "name": "19hz/mongo-container Docker container",
+  "description": "Mongodb replicaset for coreos",
+  "readme": "[![Docker Repository on Quay.io](https://quay.io/repository/jaigouk/mongo-container/status \"Docker Repository on Quay.io\")](https://quay.io/repository/jaigouk/mongo-container)\r\n\r\nDeploy a replicaset to coreos like a boss.<br/>\r\n<br/>\r\nAuto-discover new members via etcd. this repo is little bit different from auth0/coreos-mongodb repo. I use data volume container. <br/>\r\n<br/>\r\nsimple steps to setup replica and nginx loadbalancer altogether, please visit [zero-to-dockerized-meteor-cluster](https://github.com/jaigouk/zero-to-dockerized-meteor-cluster/)\r\n\r\n## Setup\r\n\r\n### STEP1) Add these to your shell rc file (~/.zsh_aliases)\r\n\r\n```\r\nfleetctl-switch(){\r\n  ssh-add ~/.docker/certs/key.pem\r\n  DOCKER_HOST=tcp://$1:2376\r\n  export FLEETCTL_TUNNEL=$1:22\r\n  #alias etcdctl=\"ssh -A core@$1 'etcdctl'\"\r\n  alias fleetctl-ssh=\"fleetctl ssh $(fleetctl list-machines | cut -c1-8 | sed -n 2p)\"\r\n  RPROMPT=\"%{$fg[magenta]%}[fleetctl:$1]%{$reset_color%}\"\r\n}\r\n\r\nsetup_fleet_ui(){\r\n  do_droplets=($1 $2 $3)\r\n\r\n  for droplet in ${do_droplets[@]}\r\n  do\r\n    ssh -A core@$droplet 'rm -rf ~/.ssh/id_rsa'\r\n    scp /Users/jaigouk/.docker/certs/key.pem core@$droplet:.ssh/id_rsa\r\n    ssh -A core@$droplet 'chown -R core:core /home/core/.ssh; chmod 700 /home/core/.ssh; chmod 600 /home/core/.ssh/authorized_keys'\r\n  done\r\n  FLEETCTL_TUNNEL=$droplet:22 fleetctl destroy fleet-ui@{1..3}.service\r\n  FLEETCTL_TUNNEL=$droplet:22 fleetctl destroy fleet-ui@.service\r\n  FLEETCTL_TUNNEL=$droplet:22 fleetctl submit  /Users/user_name/path_to_templates/fleet-ui@.service\r\n  FLEETCTL_TUNNEL=$droplet:22 fleetctl start /Users/user_name/path_to_templates/fleet-ui@{1..3}.service\r\n}\r\n\r\n\r\nstart_mongo_replica(){\r\n  CONTROL_IP=$1\r\n  export FLEETCTL_TUNNEL=$CONTROL_IP:22\r\n  ssh -A core@$CONTROL_IP 'etcdctl set /mongo/replica/name myreplica'\r\n  FLEETCTL_TUNNEL=$1:22 fleetctl submit mongo-data@.service  mongo@.service mongo-replica-config.service\r\n  FLEETCTL_TUNNEL=$1:22 fleetctl start mongo-data@{1..3}.service\r\n  FLEETCTL_TUNNEL=$1:22 fleetctl start mongo@{1..3}.service\r\n  FLEETCTL_TUNNEL=$1:22 fleetctl start mongo-replica-config.service\r\n}\r\ndestroy_mongo_replica() {\r\n  CONTROL_IP=$1\r\n  export FLEETCTL_TUNNEL=$CONTROL_IP:22\r\n  alias etcdctl=\"ssh -A core@$CONTROL_IP 'etcdctl'\"\r\n  FLEETCTL_TUNNEL=$1:22 fleetctl destroy mongo-data@{1..3}.service\r\n  FLEETCTL_TUNNEL=$1:22 fleetctl destroy mongo@{1..3}.service\r\n  FLEETCTL_TUNNEL=$1:22 fleetctl destroy mongo-data@.service\r\n  FLEETCTL_TUNNEL=$1:22 fleetctl destroy mongo@.service\r\n  FLEETCTL_TUNNEL=$1:22 fleetctl destroy mongo-replica-config.service\r\n  ssh -A core@$CONTROL_IP 'etcdctl rm /mongo/replica/url'\r\n  ssh -A core@$CONTROL_IP 'etcdctl rm /mongo/replica/siteRootAdmin --recursive'\r\n  ssh -A core@$CONTROL_IP 'etcdctl rm /mongo/replica/siteUserAdmin --recursive'\r\n  ssh -A core@$CONTROL_IP 'etcdctl rm /mongo/replica --recursive'\r\n  ssh -A core@$CONTROL_IP 'etcdctl set /mongo/replica/name myreplica'\r\n}\r\n\r\n```\r\n\r\nSince we need dockercfg file to pull private / public repos from hub.docker.com, \r\n`docker login`\r\n\r\n### STEP2) Setup data volume container and mongodb replica set\r\n\r\nI use fleet-ui to see which services are running on the cluster. And then setup mongo repilca set. Once you launched fleet-ui, you might notice that it takes some time to configure replica set. Please be patient.\r\n\r\n```\r\nsource ~/.zsh_aliases\r\nfleetctl-switch <do-ip-1>\r\nsetup_fleet_ui <do-ip-1> <do-ip-2> <do-ip-3>\r\ncd ./fleet/coreos-mongodb-cluster\r\nstart_mongo_replica <do-ip-1>\r\n```\r\n\r\n## Connect\r\n\r\nYou can test connecting to your replica from one of your nodes as follows:\r\n\r\n```\r\nfleetctl-ssh\r\n\r\nCOREOS_PRIVATE_IPV4=xx.xx.xx.xxx; echo $COREOS_PRIVATE_IPV4\r\n\r\nSITE_ROOT_PWD=$(etcdctl get /mongo/replica/siteRootAdmin/pwd); echo $SITE_ROOT_PWD\r\n\r\ndocker run -i -t  --volumes-from mongo-data1 19hz/mongo-container:latest mongo $COREOS_PRIVATE_IPV4/admin -u siteRootAdmin -p $SITE_ROOT_PWD\r\n\r\n\r\n$ Welcome to the MongoDB shell.\r\n```\r\n\r\n## Backup : docker-volumes\r\n\r\nIf you destroy mongo-data{1..3}.service, your data is going to be lost. Use [docker-volumes tool](https://github.com/cpuguy83/docker-volumes) to backup your data. \r\n\r\nYou need to setup your server with docker-tcp.socket as mentioned in [this coreos document](https://coreos.com/docs/launching-containers/building/customizing-docker/) to use [docker-volumes](https://github.com/cpuguy83/docker-volumes). You can use https://coreos.com/validate/ to validate your cloud-init file.\r\n\r\n\r\n```\r\n$ brew install go; cd ~/\r\n$ mkdir -p go/{src,bin,pkg}\r\n```\r\n\r\nadd following lines to zshrc or bashrc and source it.\r\n```\r\nexport GOPATH=$HOME/go\r\nexport PATH=$PATH:$GOPATH/bin\r\nexport PATH=\"$PATH:/usr/local/opt/go/libexec/bin\"\r\n```\r\n\r\n```\r\ngit clone git@github.com:cpuguy83/docker-volumes.git ~/go/src/docker-volumes\r\ncd ~/go/src/docker-volumes\r\ngo get\r\ngo build\r\n```\r\n\r\n### Trouble shooting\r\n\r\nTo see what's going on with a service,\r\n```\r\nfleetctl journal -f mongo@1.service\r\n```\r\n\r\nTo delete all mongodb files,\r\n```\r\ndestroy_mongo_replica <cluser ip 1> <cluser ip 2> <cluser ip 3>\r\n```\r\n\r\n## How it works?\r\n\r\nThe units follow the process explained in this [tutorial](http://docs.mongodb.org/manual/tutorial/deploy-replica-set-with-auth/).\r\n\r\nI've split the process in 3 different phases.\r\n\r\n### Phase 1\r\n\r\nDuring the initial phase, mongo needs to be run without the authentication option and without the keyFile.\r\n\r\nWe just run the first node of the replicaset while the other are waiting the key file in etcd.\r\n\r\n-  The `siteUserAdmin` and `siteRootAdmin` are created on the first node with random passwords stored in etcd.\r\n-  The keyfile is generated and added to etcd.\r\n-  All mongodb are started.\r\n\r\n### Phase 2\r\n\r\nDuring the second phase, we have all the nodes of the replica running and ready to bind each other.\r\n\r\n-  `rs.initiate` is run in the first node.\r\n-  `rs.add` is run for every node except the fisrt one which is automatically added.\r\n\r\n### Phase 3\r\n\r\nThe third phase is the final state, we keep watching etcd for new nodes and these new nodes.\r\n\r\n## Destroy and revert everything\r\n\r\n```\r\n# remove all units\r\n$ fleetctl destroy mongo@{1..3}.service\r\n$ fleetctl destroy mongo-replica-config.service\r\n# or\r\n$ fleetctl list-units --no-legend | awk '{print $1}' | xargs -I{} fleetctl destroy {}\r\n\r\n# clean directories\r\n$ fleetctl list-machines --fields=\"machine\" --full --no-legend | xargs -I{} fleetctl ssh {} \"sudo rm -rf /var/mongo/*\"\r\n\r\n(from inside one of the nodes)\r\n$ etcdctl rm /mongo/replica/key\r\n$ etcdctl rm --recursive /mongo/replica/siteRootAdmin\r\n$ etcdctl rm --recursive /mongo/replica/siteUserAdmin\r\n$ etcdctl rm --recursive /mongo/replica/nodes\r\n```\r\n\r\n## License\r\n\r\nMIT - Copyright (c) 2014 AUTH0 INC.",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER \"Jaigouk Kim\" <ping@jaigouk.kim>\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\nRUN groupadd -r mongodb && useradd -r -g mongodb mongodb\n\nRUN apt-get update \\\n  && apt-get install -y curl numactl \\\n  && rm -rf /var/lib/apt/lists/*\n\n# grab gosu for easy step-down from root\nRUN gpg --keyserver pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4\nRUN curl -o /usr/local/bin/gosu -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture)\" \\\n  && curl -o /usr/local/bin/gosu.asc -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture).asc\" \\\n  && gpg --verify /usr/local/bin/gosu.asc \\\n  && rm /usr/local/bin/gosu.asc \\\n  && chmod +x /usr/local/bin/gosu\n\nENV MONGO_RELEASE_FINGERPRINT DFFA3DCF326E302C4787673A01C4E7FAAAB2461C\nRUN gpg --keyserver pool.sks-keyservers.net --recv-keys $MONGO_RELEASE_FINGERPRINT\n\nENV MONGO_VERSION 2.6.7\n\nRUN curl -SL \"https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-$MONGO_VERSION.tgz\" -o mongo.tgz \\\n  && curl -SL \"https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-$MONGO_VERSION.tgz.sig\" -o mongo.tgz.sig \\\n  && tar -xvf mongo.tgz -C /usr/local --strip-components=1 \\\n  && rm mongo.tgz*\n\nCOPY mongo-entrypoint.sh /entrypoint.sh\nENTRYPOINT [\"/entrypoint.sh\"]\n\n# Expose ports.\n#   - 27017: process\n#   - 28017: http\nEXPOSE 27017\nEXPOSE 28017\nCMD [\"mongod\", \"-f\", \"/data/db/mongodb.conf\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      27017,
+      28017
+    ],
+    "volume": [],
+    "run": [
+      "groupadd -r mongodb && useradd -r -g mongodb mongodb",
+      "apt-get update   && apt-get install -y curl numactl   && rm -rf /var/lib/apt/lists/*",
+      "gpg --keyserver pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4",
+      "curl -o /usr/local/bin/gosu -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture)\"   && curl -o /usr/local/bin/gosu.asc -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture).asc\"   && gpg --verify /usr/local/bin/gosu.asc   && rm /usr/local/bin/gosu.asc   && chmod +x /usr/local/bin/gosu",
+      "gpg --keyserver pool.sks-keyservers.net --recv-keys $MONGO_RELEASE_FINGERPRINT",
+      "curl -SL \"https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-$MONGO_VERSION.tgz\" -o mongo.tgz   && curl -SL \"https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-$MONGO_VERSION.tgz.sig\" -o mongo.tgz.sig   && tar -xvf mongo.tgz -C /usr/local --strip-components=1   && rm mongo.tgz*"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "\"Jaigouk Kim\" <ping@jaigouk.kim>",
+    "env": {
+      "MONGO_RELEASE_FINGERPRINT": "DFFA3DCF326E302C4787673A01C4E7FAAAB2461C",
+      "MONGO_VERSION": "2.6.7"
+    },
+    "copy": "mongo-entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"mongod\", \"-f\", \"/data/db/mongodb.conf\"]"
+  },
+  "source_repository_url": "https://github.com/19hz/coreos-mongodb-cluster.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/19hz/coreos-mongodb-cluster",
+  "docker_repository": "19hz/mongo-container",
+  "docker_image": "19hz/mongo-container",
+  "parameters_schema": {
+    "MONGO_RELEASE_FINGERPRINT": {
+      "default": "DFFA3DCF326E302C4787673A01C4E7FAAAB2461C",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGO_VERSION": {
+      "default": "2.6.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        27017,
+        28017
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "19hz/mongo-container",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/19hz/mongo-container",
+    "https://hub.docker.com/v2/repositories/19hz/mongo-container",
+    "https://github.com/19hz/coreos-mongodb-cluster.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/CoreOS",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB"
+  ],
+  "info_url": "https://hub.docker.com/r/19hz/mongo-container",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,98 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/audris/cassandra",
+    "repository_url": "https://hub.docker.com/v2/repositories/audris/cassandra",
+    "tags_url": "https://hub.docker.com/v2/repositories/audris/cassandra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/audris/cassandra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/audris/cassandra/autobuild",
+    "user": "audris",
+    "name": "cassandra",
+    "namespace": "audris",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 30,
+    "last_updated": "2016-07-05T15:20:14.644594Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 329789723,
+        "id": 3706055,
+        "repository": 782765,
+        "creator": 385372,
+        "last_updater": 385372,
+        "last_updated": "2016-07-05T15:20:14.026103Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "eveng/cassandra"
+  },
+  "name": "audris/cassandra Docker container",
+  "description": "Inherited from cassandra with python api",
+  "readme": "Progress so far\n=====================\n\n* Experience with cloud and big data technologies\n    1. Docker containers\n    1. Virtual cloud (composed of docker swarm over hybrid cloud)\n    1. Text analysis: doc2vec, LSI\n    1. Spark\n    1. Shell (e.g., options for very large sort, keep data compressed, ...)\n    1. Hashtables for lookup\n    1. Processing large graphs\n         - Divide and conquer (subdivide into connected subgraphs)\n         - Collapse bi-partite graphs\n    1. Identify noise in Graphs\n    1. Causes problems for identity matching\n    1. Digital signature and false positives\n        - Content of a file\n        - File path\n        - Commit hash\n    1. True negatives or copied, but...\n        - a license\n\t    - an IDE template\n\t    - a formatting template (.css)\n\t    - a programming template (internationalization: .po)\n* Progress towards application\n    1. Developer communities for expertise finding\n    1. Statistics on individual developers created\n    1. project-to-developer mapping created\n    1. Individual identity matching\n        1. Based on commit messages (w2v works, evaluation via LSI\n           pending)\n        1. Based on redit comments (LSI does not work, evaluation\n\t\t via w2v pending)\n        1. Based on shared files: all.idx.XX.CF.gz contains file\n           equivalence classes, replacing hash by developer name is\n           pending \n    1. Risks in the supply chain\n        1. left-pad: tiny but widely deployed. Why connected\n        1. Heartbleed, CodeRed, Blaster, .....\n        1. Truck factor: what if a developer leaves?\n        1. Orphanage\n\n\n* Proposed Plans and Work Breakdown *\n===================================\n\n## Potentially useful tools\n\n[The community detection code](https://sites.google.com/site/findcommunities/)\n\n### Aim: Activity Profile[^1] based Identification and Classification/Rating\n\nConstruct Activity Profile\n==========================\n\n-   Using data from different sources\n-   Potentially useful in identifying individuals or their properties\n-   Score each individual in some pre-defined socio-technical categories. \n    -   e.g., role, skill,\n        [ *Big 5 personality traits in Psychology*](https://en.wikipedia.org/wiki/Big_Five_personality_traits)) \n    -   e.g., project recruiting context in OSS\n        -   domain knowledge\n        -   Language Preference, \n        -   Coding style, Coding efficiency, \n        -   Communication style/expertise, work culture, available time etc. \n    -   Do better than no. of Github Followers or StackOverflow reputation\n-   Extend profiles to Projects or even particular pieces of code.\n\n#### Top level Tasks:\n\n-   Determining what characteristics to consider for profiling\n-   Determining socio-technical (and other) categories\n-   Determining scoring criteria\n\n#### Granular Level Tasks:\n\n-   Integrating the concept of profiling with the current Identity matching project\n-   Using text mining on Github commit messages, Reddit messages, tweets to extract relevant social information\n\n### Aim: Intelligent Inventory management and Risk mitigation based on Truckfactor analysis (Risk assessment) primarily in an Open Source ecosystem\n\n### **Idea:**\n\n-   Identifying **bottlenecks** in a **Supply chain** based on **risk assessment** for the whole chain. Having an inventory of possible choices selected to fit the design and expertise of the developers\n-   A working prototype for a selected number of choices in the high risk areas of the project to test what works and to be prepared for any sudden breakdown of that link in the chain -&gt; proposal\n\n### **Tasks:**\n\n-   Risk assessment across projects for a whole supply chain\n-   Extend the concept of OSSFinder project to accommodate the concept of risk\n-   Coming up with more sophisticated criteria for inventory design (profile + network)\n-   Adding provisions for periodical reassessment to update and manage the inventory.\n\nInitial two-week projects\n=========================\n\nObjective 1: Investigate the possibility of using written text to profile (and match) individuals\n-------------------------------------------------------------------------------------------------\n\n### Experiment 1: \n\nUse commit message from approximately 40B commits:\n\n***Data Set 1:***\n\n**da3:/data/delta/delta.idx.\\*.gz**\n```\nID: 256501;\nlength: 39;\ncommit hash: e2fe85c236736c866481de288f636ab06ef49787;\nname: Dmitry Kasatkin\nemail: [*dmitry.kasatkin@intel.com*](mailto:dmitry.kasatkin@intel.com);\ntimestamp: 1327598002;\nfile: yank555-lu\\_slimlp\\_5.1.x\\_kernel\\_motorola\\_shamu\nsource: gitBBnew.2.deltaall.gz\n```\n**da3:/data/delta/delta.id2content**\n```\nid: 256501\nmessage: lib/mpi: checks for zero divisor length\n```\n\nMethod 1: Doc2Vec:\n\nda3\n---\n\nhttps://github.com/piskvorky/gensim/blob/develop/docs/notebooks/doc2vec-IMDB.ipynb\n\n\n  Selected 41 auth with 1K+ messages each\n       tagged by message content id\n  Result so far: Most similar messages typically not from the same author\n  Expanding to full set of authors\n  Combining messages of each author as paragraph tags\nMethod 2:\n\nLSI: https://radimrehurek.com/gensim/tut3.html  \n### Experiment 2:\n\nda0\n---\n\nDo the above on 844291111 redit comments:\n   - 4M of redit but it crashes\n   Find a sample of users (with at least 1post with 200+ chars) \n   Find all comments associated with user and compare models among models\n\n**Data Set 2: **\n\nMongoDB: da1.eecs.utk.edu\n\nDatabase.Collection: foreseer-reddit.comments\n\nObjective 2: Investigate the possibility of using files modified to identify individuals\n----------------------------------------------------------------------------------------\n\n**Use Data Set 1**\n\nda1\n---\n\nInvestigate developer profile similarity function defined in, for\nexample:\n\nMockus, A. (2009, May). Succession: Measuring transfer of code and\ndeveloper productivity. In Proceedings of the 31st International\nConference on Software Engineering (pp. 67-77). IEEE Computer Society.\n\n - individual to project name on a subset two idx files\n   /home/yli118/identifying/*java - reads delta.idx.*.gz -> top ten ids for any given id\n   plan: distance based on individual to file:\n         \n   \n\nObjective 3: Summarize individuals in a scorecard\n=================================================\n\n**Use Data Set 1**\n\n\n\n\nda2\n---\n\n- Progress:\n 1. what statisics are collected: (duration, #changes, all commit time stamps)\n 1. what portion of data is processed: the entire delta.idx.*\n 1. how/where te results are stored: \n   /home/lwan1/{intervals,changes}.out\n   scorecard.py \n 1. still working on sentiment\n\n\n-   Duration of activity (time from first to last change)\n\n-   Number of changes, files, other people changing the same files,\n    > number of projects\n\n-   Skill: changes to files in different languages\n\n-   Productivity growth\n\n-   Uniformity of activity over time\n\n-   Tone in text messages\n\n-   LDA of text messages\n\nObjective 4: Giant graph: get connected components\n==================================================\n\n**Experiment 1: get connected components using version history and\ncontent id**\n\n**Use Data Set 1**\n\nAlso\n\n**Data Set 3:** **da3:/data/bkp/All.new.idx.\\*.gz**\n\n**content id: 283056503**\n\n**Size: 18147**\n\n**File/version:\nNewNewNew34.0/github.com\\_Velek\\_k-9.git/AndroidManifest.xml/4b9f21897ddb057fa94ee7b57d85985f2f2dad5f\\\nMatch to Data Set 1 using File/version**\n\n   da3:\n   ---\n   - takes content id and project and removes content ids associated \n      with a single project \n      progress: of the 16 files 11 are done\n      output: /data/bkp/*.filtered\n      Once done: create connected components\n\n**Experiment 2: get connected components using version history, content\nid, and authorship**\n\nda[0-2]: cluster\n---\nhash+author: da3:/data/play/Graphic_authorship/hash.author.gz\n\ncontent id + hash + author\n\n[^1]: the use of personal characteristics or behaviour patterns to make\n    generalizations",
+  "dockerfile": "FROM cassandra:latest\n\nMAINTAINER Audris Mockus <audris@utk.edu>\n\nRUN apt-get update && apt-get install -y \\\n        curl \\\n        pkg-config \\\n        python3 \\\n        python3-pip \\\n\t\tvim \\\n\t\tsssd \\\n\t\topenssh-server \\\n\t\topenssh-client \\\n\t\tlibpam-sss \\\n\t\tsssd-tools \\\n        && \\\n    apt-get clean && \\\n    rm -rf /var/lib/apt/lists/*\n\n\n#install ldap authentication to use utk's ldap\nCOPY eecsCA_v3.crt /etc/ssl/\nCOPY sssd.conf /etc/sssd/\nCOPY common* /etc/pam.d/\nRUN chmod 0600 /etc/sssd/sssd.conf /etc/pam.d/common* \nRUN mkdir -p /var/run/sshd \nRUN chmod 0755 /var/run/sshd\nRUN mkdir -p /var/run/sshd\nRUN chmod 0755 /var/run/sshd\n\nRUN pip3 install cassandra-driver\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y         curl         pkg-config         python3         python3-pip \t\tvim \t\tsssd \t\topenssh-server \t\topenssh-client \t\tlibpam-sss \t\tsssd-tools         &&     apt-get clean &&     rm -rf /var/lib/apt/lists/*",
+      "chmod 0600 /etc/sssd/sssd.conf /etc/pam.d/common* ",
+      "mkdir -p /var/run/sshd ",
+      "chmod 0755 /var/run/sshd",
+      "mkdir -p /var/run/sshd",
+      "chmod 0755 /var/run/sshd",
+      "pip3 install cassandra-driver"
+    ],
+    "workdir": [],
+    "from": "cassandra:latest",
+    "maintainer": "Audris Mockus <audris@utk.edu>",
+    "copy": "common* /etc/pam.d/"
+  },
+  "source_repository_url": "git@bitbucket.org:eveng/cassandra.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/eveng/cassandra",
+  "docker_repository": "audris/cassandra",
+  "docker_image": "audris/cassandra",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "audris/cassandra",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/audris/cassandra",
+    "https://hub.docker.com/v2/repositories/audris/cassandra",
+    "git@bitbucket.org:eveng/cassandra.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Binding/Provider/HP",
+    "Mode/API",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/audris/cassandra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,119 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/deardooley/wordpress",
+    "repository_url": "https://hub.docker.com/v2/repositories/deardooley/wordpress",
+    "tags_url": "https://hub.docker.com/v2/repositories/deardooley/wordpress/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/deardooley/wordpress/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/deardooley/wordpress/autobuild",
+    "user": "deardooley",
+    "name": "wordpress",
+    "namespace": "deardooley",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 663,
+    "last_updated": "2016-10-06T23:28:57.255584Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "bedrock",
+        "full_size": 53865767,
+        "id": 1703265,
+        "repository": 476108,
+        "creator": 113545,
+        "last_updater": 113545,
+        "last_updated": "2016-10-06T23:28:56.343492Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "vanilla",
+        "full_size": 44130322,
+        "id": 1703262,
+        "repository": 476108,
+        "creator": 113545,
+        "last_updater": 113545,
+        "last_updated": "2016-09-26T08:25:14.029037Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "deardooley/base-images"
+  },
+  "name": "deardooley/wordpress Docker container",
+  "description": "Production-ready minimal Wordpress images.",
+  "readme": "[![](https://badge.imagelayers.io/deardooley/wordpress:bedrock.svg)](https://imagelayers.io/?images=deardooley/wordpress:bedrock 'Get your own badge on imagelayers.io')\n\n# Bedrock Wordpress\n\nThis is a minimal wordpress image built off apache2 and composer. The installation can be managed via the\ninstalled [wp-cli](https://github.com/wp-cli/wp-cli/). This image is sufficient to run for development or behind a proxy for production. Both SSL is bundled by default along with forced https redirect for `/wp-admin/`.\n\n## Developing with this image\n\nIf you are developing with this image, mount your themes, plugins, and uploads folders into the `/var/www/html/web/app` directory in the container. Your local changes will be reflected instantly when you refresh your page.\n\n```\ndocker run -h docker.example.com\n           -p 80:80 \\\n           --name wordpress \\\n           --link mysql:mysql\n           -v `pwd`/wp-content:/var/www/html/wp-content \\\n           wordpress:bedrock\n```\n\nYou may also update several wordpress settings to easier development environments. A list of supported parameters are listed in the following table.\n\nVariable | Type | Description\n----------|----------|----------\nDB_PREFIX | string | The prefix to the tables in your database\nFORCE_SSL_ADMIN | boolean | Whether to force SSL for all access to the wordpress admin area. default: true\nDISALLOW_FILE_EDIT | boolean | Whether the wordpress admin area allows you to edit plugin and theme files. default: true\n\n### WP-CLI\nYou may use the [wp-cli](https://github.com/wp-cli/wp-cli/) in the standard way to import images, manage content, etc. A good article on using the `wp-cli` is available from [Smashing Magazine](https://www.smashingmagazine.com/2015/09/wordpress-management-with-wp-cli/).\n\n### Composer\nFor all other management of themes, plugins, content, and updates, composer is the appropriate approach.\n\n### Extending this image\n\nTo extend this image, add a `composer.json` to `/var/www/html`. Using this image, all your dependencies can and should be handled through composer.\n\n## Running in production\n\nWhen running in production, both the access and error logs will stream to standard out so they can be access via the Docker logs facility by default.\n\n### Backup and media\n\nWe recommend using a plugin to mirror your uploaded media to a commercial cloud storage provider and using an external task to back up your database. The `docker-compose.yml` file included with this repository has an example backup solution.\n\n```\ndocker run -h docker.example.com \\\n           -p 80:80 \\\n           -p 443:443 \\\n           --name wordpress \\\n           --link mysql:db \\\n           deardooley/wordpress:bedrock\n```\n\n### WP-Cron and scheduled tasks\n\nThere is no unix cron daemon available in the container. In order to ensure your Wordpress cron tasks run on schedule, you should make use of an external cron solution. There are plenty of web-based cron services available. Alternatively, you can use the `deardooley/cron` Docker image to query your site. The `docker-compose.yml` file included with this repository has an example cron solution.  \n\n### SSL support\n\nTo add custom ssl keys for your domain, volume mount your ssl cert, key, ca cert file, and ca chain file and specify the files using the environment variables described in the table below.\n\nVariable | Description\n----------|----------|------------\nSSL_CERT | Your server SSL certificate\nSSL_KEY | Your server SSL private key\nSSL_CA_CERT | Your server CA certificate\n\nIn the following example, a folder containing the necessary files is volume mounted to `/ssl` in the container.\n\n```\ndocker run -h docker.example.com \\\n           -p 80:80 \\\n           -p 443:443 \\\n           --name wordpress \\\n           --link mysql:db \\\n           -v `pwd`/ssl:/ssl:ro \\\n           -e SSL_CERT=/ssl/docker_example_com_cert.cer \\\n           -e SSL_KEY=/ssl/docker.example.com.key \\\n           -e SSL_CA_CERT=/ssl/docker_example_com.cer \\\n           deardooley/wordpress:bedrock\n```\n\n### Email configuration\n\nThere is no embedded mail server in this image. In order for Wordpress to send emails, you will need to install a mail plugin, such as [SendGrid](https://wordpress.org/plugins/sendgrid-email-delivery-simplified/) or configure a SMTP relay server through your environment. You can do this through the following environment variables.\n\nVariable | Description\n----------|----------|------------\nSMTP_HUB | Hostname and port of the SMTP relay server. ex. `\"smtp.sendgrid.net:587\"`\nSMTP_USER | Account username used to authenticate to the SMTP relay\nSMTP_PASSWORD | Account password used to authenticate to the SMTP relay\nSMTP_FROM_ADDRESS | Email address used in the ***from*** field ex. `noreply@example.com`\nSMTP_TLS | `1` if TLS should be used, `0` otherwise. Default is `1`\n\nAn example command is shown below.\n\n```\ndocker run -h docker.example.com \\\n           -p 80:80 \\\n           -p 443:443 \\\n           --name wordpress \\\n           --link mysql:db \\\n           -v `pwd`/ssl:/ssl:ro \\\n           -e SMTP_HUB=\"smtp.example.com:25\" \\\n           -e SMTP_USER=username \\\n           -e SMTP_PASSWORD=password \\\n           -e SMTP_FROM_ADDRESS=\"noreply@example.com\" \\\n           -e SMTP_TLS=1 \\\n           -e SSL_CERT=/ssl/docker_example_com_cert.cer \\\n           -e SSL_KEY=/ssl/docker.example.com.key \\\n           -e SSL_CA_CERT=/ssl/docker_example_com.cer \\\n           deardooley/wordpress:bedrock\n```\n",
+  "dockerfile": "######################################################\n#\n# Bedrock install of PHP 5.6 + wordpress\n# Tag: deardooley/wordpress\n#\n# This is a minimal alpine-based php 5.6 image with\n# apache2 and Wordpress installed via the Bedrock\n# setup.\n#\n######################################################\n\nFROM deardooley/php-composer:5.6\nMAINTAINER Rion Dooley <dooley@tacc.utexas.edu\n\nRUN echo \"Installing opcache...\" && \\\n    apk --update add php5-opcache php5-mysqli git && \\\n        rm -f /var/cache/apk/* && \\\n        { \\\n        echo 'opcache.memory_consumption=128'; \\\n        echo 'opcache.interned_strings_buffer=8'; \\\n        echo 'opcache.max_accelerated_files=4000'; \\\n        echo 'opcache.revalidate_freq=60'; \\\n        echo 'opcache.fast_shutdown=1'; \\\n        echo 'opcache.enable_cli=1'; \\\n        } > /etc/php5/conf.d/opcache-recommended.ini && \\\n    \n    echo \"Updating document root for bedrock...\" && \\\n    sed -i 's#%DOCUMENT_ROOT%#/var/www/html/web#g' /etc/apache2/httpd.conf && \\\n    sed -i 's#%DOCUMENT_ROOT%#/var/www/html/web#g' /etc/apache2/conf.d/ssl.conf && \\\n    rm -rf /var/www/html && \\\n\n    echo \"Installing the latest bedrock framework...\" && \\\n    cd / && \\\n    git clone https://github.com/roots/bedrock.git /var/www/html && \\\n    cd /var/www/html && \\\n    composer install && \\\n    chown -R apache:apache /var/www/html/* && \\\n\n    echo \"Customizing wordpress install for bedrock...\" && \\\n    rm -f web/wp/license.txt web/wp/readme.txt && \\\n    curl -sS -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \\\n    chmod +x /usr/local/bin/wp && \\\n\n    echo \"Checking wordpress cli install...\" && \\\n    cp -r web/wp/wp-content/themes/twentytwelve web/app/themes/twentytwelve && \\\n    rm -rf .git web/wp/wp-content/themes/*\n\nADD bedrock/config/environments/production.php /var/www/html/config/environments/production.php\nADD bedrock/web/.htaccess /var/www/html/web/.htaccess\nADD bedrock/env.php /var/www/html/.env\nADD docker_entrypoint.sh /docker_entrypoint.sh\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "bedrock/config/environments/production.php",
+        "dest": "/var/www/html/config/environments/production.php"
+      },
+      {
+        "source": "bedrock/web/.htaccess",
+        "dest": "/var/www/html/web/.htaccess"
+      },
+      {
+        "source": "bedrock/env.php",
+        "dest": "/var/www/html/.env"
+      },
+      {
+        "source": "docker_entrypoint.sh",
+        "dest": "/docker_entrypoint.sh"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "echo \"Installing opcache...\" &&     apk --update add php5-opcache php5-mysqli git &&         rm -f /var/cache/apk/* &&         {         echo 'opcache.memory_consumption=128';         echo 'opcache.interned_strings_buffer=8';         echo 'opcache.max_accelerated_files=4000';         echo 'opcache.revalidate_freq=60';         echo 'opcache.fast_shutdown=1';         echo 'opcache.enable_cli=1';         } > /etc/php5/conf.d/opcache-recommended.ini &&     "
+    ],
+    "workdir": [],
+    "from": "deardooley/php-composer:5.6",
+    "maintainer": "Rion Dooley <dooley@tacc.utexas.edu"
+  },
+  "source_repository_url": "https://github.com/deardooley/base-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/deardooley/base-images",
+  "docker_repository": "deardooley/wordpress",
+  "docker_image": "deardooley/wordpress",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "deardooley/wordpress",
+  "revision": "bedrock",
+  "uris": [
+    "https://hub.docker.com/r/deardooley/wordpress",
+    "https://hub.docker.com/v2/repositories/deardooley/wordpress",
+    "https://github.com/deardooley/base-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image"
+  ],
+  "info_url": "https://hub.docker.com/r/deardooley/wordpress",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

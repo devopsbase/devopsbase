@@ -1,0 +1,47 @@
+{
+  "name": "aws_volume Chef cookbook",
+  "chef_cookbook_name": "aws_volume",
+  "revision": "0.1.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/aws_volume",
+    "https://supermarket.chef.io/cookbooks/aws_volume/download",
+    "https://supermarket.chef.io/cookbooks/aws_volume/versions/0.1.2",
+    "https://supermarket.chef.io/cookbooks/aws_volume/versions/0.1.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/aws_volume/versions/0.1.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/aws_volume",
+    "https://supermarket.chef.io/api/v1/cookbooks/aws_volume/versions/0.1.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Provider/Amazon",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/aws_volume",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/aws_volume/versions/0.1.2/download",
+  "deprecated": false,
+  "created": "2014-11-15T15:24:42.350Z",
+  "updated": "2014-11-23T08:07:30.302Z",
+  "description": "Managing AWS ebs resources",
+  "maintainer": {
+    "name": "pradeep_mishra",
+    "email": "unixworld88@gmail.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 3,
+  "downloads_count": 3441879,
+  "downloads_count_revision": 693188,
+  "repository_url": "https://github.com/unixworld/chef-aws-volume",
+  "issues_url": "https://github.com/unixworld/chef-aws-volume/issues",
+  "chef_source_url": "https://github.com/unixworld/chef-aws-volume",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\r\n===========\r\n\r\nThis cookbook provides libraries, resources and providers to configure\r\nand manage Amazon Web Services components and offerings with the EC2\r\nAPI. Currently supported resources:\r\n\r\n* EBS Volumes (`ebs_volume`)\r\n\r\nRequirements\r\n============\r\n\r\nRequires Chef 10.X or higher for Lightweight Resource and Provider\r\nsupport. Chef 11+ is recommended. While this cookbook can be used in\r\n`chef-client` with a Chef Server.\r\n\r\nAn Amazon Web Services account is required. The Access Key and Secret\r\nAccess Key are used to authenticate with EC2 or an instance with IAM role recommended.\r\n\r\nAWS Credentials\r\n===============\r\n\r\nIn order to manage AWS components, authentication credentials need to\r\nbe available to the node. There are 2 way to handle this:\r\n* Load credentials from data bag (only support encrypted databag)\r\n* explicitly pass credentials parameter to the resource\r\n* or let the resource pick up credentials from the IAM role assigned to the instance\r\n\r\n\r\nRecipes\r\n=======\r\n\r\ndefault.rb\r\n----------\r\n\r\nThe default recipe installs the `aws_sdk` RubyGem, which this\r\ncookbook requires in order to work with the aws API. Make sure that\r\nthe aws recipe is in the node or role `run_list` before any resources\r\nfrom this cookbook are used.\r\n\r\n    \"run_list\": [\r\n      \"recipe[aws_volume]\"\r\n    ]\r\n\r\nThe `gem_package` is created as a Ruby Object and thus installed\r\nduring the Compile Phase of the Chef run.\r\n\r\nLibraries\r\n=========\r\n\r\nThe cookbook has a library module, `AWS::Ec2`, which can be\r\nincluded where necessary:\r\n\r\n    include Aws::Ec2\r\n\r\nThis is needed in any providers in the cookbook. Along with some\r\nhelper methods used in the providers, it sets up a class variable,\r\n`ec2` that is used along with the access and secret access keys\r\n\r\nResources and Providers\r\n=======================\r\n\r\nThis cookbook provides one resources and corresponding providers.\r\n\r\n## ebs_volume.rb\r\n\r\nManage Elastic Block Store (EBS) volumes with this resource.\r\n\r\nActions:\r\n\r\n* `create` - create a new volume.\r\n* `attach` - attach the specified volume.\r\n\r\nAttribute Parameters For Action Create:\r\n\r\n* `aws_secret_key`, `aws_access_key` (optional) - passed to\r\n  `AWS:Ec2` to authenticate required, unless using IAM roles for authentication.\r\n* `size` - size of the volume in gigabytes.\r\n* `snapshot_id` (optional) - snapshot to build EBS volume from.\r\n* `device` (optional) - local block device to attach the volume to, e.g.\r\n  `/dev/sdi` but no default value, required. used when both create and attach action called in same recipe.\r\n* `volume_type` (optional) - \"standard\" or \"io1\" (io1 is the type for IOPS volume). Default was set to standard.\r\n* `iops` - number of Provisioned IOPS to provision, must be >= 100. Default was set to 0\r\n* `data_bag` (optional) - provide data bag and key details to load AWS credentials. eg: data_bag[\"NAME\", \"Key\"] \r\n\r\n* Example of Volume create recipe\r\n\r\nThe below recipe will create a new volume from snapshot_id 'snap-XXXX' and attached to the instance as '/dev/sdb'\r\n\r\n\taws_volume_ebs_volume \"db_ebs_volume\" do\r\n \t\tsnapshot_id \"snap-XXXX\"\r\n \t\tdevice \"/dev/sdb\"\r\n \t\taction [ :create, :attach ]\r\n\tend \r\n\r\nThe below recipe will create a new volume with size 1G and attached to the instance as '/dev/sda'\r\n\r\n\taws_volume_ebs_volume \"db_ebs_volume\" do\r\n\t\tsize 1\r\n\t\tdevice \"/dev/sda\"\r\n \t\taction [ :create, :attach ]\r\n\tend\r\n\r\nThe below recipe will create a new volume with size 1G\r\n\r\n\taws_volume_ebs_volume \"db_ebs_volume\" do\r\n\t\tsize 1\r\n \t\taction [ :create ]\r\n\tend\r\n\r\nThe below recipe will only attach the the given vloume id \r\n\t\r\n\taws_volume_ebs_volume \"db_ebs_volume\" do\r\n\t\tvolume_id \"vol-d6af1dd3\"\r\n\t\tdevice \"/dev/sdb\"\r\n\t\taction [ :attach ]\r\n\tend\r\n\r\nThe below recipe will take AWS access and secret key from data bag\r\n\t\r\n\taws_volume_ebs_volume \"db_ebs_volume\" do\r\n\t\tsize 1\r\n\t\tdevice \"/dev/sda\"\r\n\t\tdata_bag [ \"EC2\", \"key\" ]\r\n \t\taction [ :create, :attach ]\r\n\tend\r\n\t\r\n\r\nAttribute Parameters For Action Attach:\r\n\r\n* `aws_secret_key`, `aws_access_key` (optional) - passed to\r\n  `AWS:Ec2` to authenticate required, unless using IAM roles for authentication\r\n* `device` - local block device to attach the volume to, e.g. `/dev/sdi`\r\n* `volume_id` - ID of the volume which need to be attached.\r\n\r\nTo Do:\r\n\r\nIntegrate below action\r\n\r\n* `detach` - detach the specified volume.\r\n* `snapshot` - create a snapshot of the volume.\r\n* `prune` - prune snapshots.\r\n\r\n",
+  "chef_recipes": {
+    "aws": "Installs the aws-sdk gem during compile time"
+  }
+}

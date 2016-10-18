@@ -1,0 +1,68 @@
+{
+  "name": "backup_lwrp Chef cookbook",
+  "chef_cookbook_name": "backup_lwrp",
+  "revision": "0.0.4",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/backup_lwrp",
+    "https://supermarket.chef.io/cookbooks/backup_lwrp/download",
+    "https://supermarket.chef.io/cookbooks/backup_lwrp/versions/0.0.4",
+    "https://supermarket.chef.io/cookbooks/backup_lwrp/versions/0.0.4/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/backup_lwrp/versions/0.0.4",
+    "https://supermarket.chef.io/api/v1/cookbooks/backup_lwrp",
+    "https://supermarket.chef.io/api/v1/cookbooks/backup_lwrp/versions/0.0.4/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/backup_lwrp",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/backup_lwrp/versions/0.0.4/download",
+  "deprecated": false,
+  "created": "2012-11-01T04:14:59.000Z",
+  "updated": "2015-09-20T01:29:16.584Z",
+  "description": "Installs/Configures backup",
+  "maintainer": {
+    "name": "scottmlikens",
+    "email": "scott@likens.us"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 5,
+  "downloads_count": 7307996,
+  "downloads_count_revision": 1217421,
+  "repository_url": "https://github.com/damm/backup",
+  "issues_url": "https://github.com/damm/backup/issues",
+  "chef_source_url": "https://github.com/damm/backup",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nThis cookbook aims to provide a foundation for you to **backup** your infrastructure.  This cookbook helps you deploy the [backup](https://github.com/meskyanichi/backup) gem and generate the models to back up.\n\nRequirements\n============\n\nRuby installed either in the system or via omnibus\n\nResources and Providers\n=======================\n\nThis cookbook provides three resources and corresponding providers.\n\n`install.rb`\n-------------\n\nInstall or Remove the backup gem with this resource.\n\nActions:\n\n* `install` - installs the backup gem\n* `remove` - removes the backup gem\n\nAttribute Parameters:\n\n* `version` - specify the version of the backup gem to install\n\n`generate_config.rb`\n-------------\n\nGenerate a configuration file for the backup gem with this resource.\n\nActions: \n\n* `setup` - sets up a basic config.rb for the backup gem\n* `remove` - **removes the base directory for the backup gem** and everything underneath it.\n\nAttribute Parameters:\n\n* `base_dir` - String - default to `/opt/backup`\n* `encryption_password` - String - Provide a passphrase for [Encryption](https://github.com/meskyanichi/backup/wiki/Encryptors) - default of `nil`\n\n`generate_model.rb`\n-------------\n\nGenerates a model file for the backup gem and creates a crontab entry.\n\nActions:\n\n* `backup` - Generate a model file \n* `disable` - Disable the scheduled cron for the model\n* `remove` - Remove the model from the system and the scheduled cron.\n\n\nAttribute Parameters:\n\n* `base_dir` - String - default to `/opt/backup`   \n* `split_into_chunks_of` - Fixnum - defaults to 250  \n* `description` - String - Description of backup   \n* `backup_type` - String - Type of backup to perform.  Current options supported are `{database|archive}`  \n* `store_with` - Hash - Specifies how to store the backups  \n* `database_type` - String - If backing up a database, what [Type](https://github.com/meskyanichi/backup/wiki/Databases) of database is being backed up.    \n* `hour` - String - Hour to run the scheduled backup - default - `1`  \n* `minute` - String - Minute to run the scheduled backup - default - `*`  \n* `day` - String - Day to run the scheduled backup - default - `*`  \n* `weekday` - String - Weekday to run the scheduled backup - default - `*`  \n* `mailto` - String - Enables the cron resource to mail the output of the backup output.  \n\n\nUsage\n=====\n\nThere is an ininite ways you can implement this cookbook into your environment in theory.  An working example might be,\n\n* Backing up MongoDB to S3\n  1. Ensure your mongodb cookbook depends on the backup cookbook\n  2. Add the following to your mongodb cookbook\n\n        backup_install node.name  \n        backup_generate_config node.name  \n        package \"libxml2-dev\"  \n        package \"libxslt1-dev\"  \n        gem_package \"fog\" do  \n          version \"~> 1.4.0\"  \n        end  \n        backup_generate_model \"mongodb\" do  \n          description \"Our shard\"  \n          backup_type \"database\"  \n          database_type \"MongoDB\"  \n          split_into_chunks_of 2048  \n          store_with({\"engine\" => \"S3\", \"settings\" => { \"s3.access_key_id\" => \"example\", \"s3.secret_access_key\" => \"sample\", \"s3.region\" => \"us-east-1\", \"s3.bucket\" => \"sample\", \"s3.path\" => \"/\", \"s3.keep\" => 10 } } )  \n          options({\"db.host\" => \"\\\"localhost\\\"\", \"db.lock\" => true})  \n          mailto \"some@example.com\"  \n          action :backup  \n        end  \n      \n\n* Backing up PostgreSQL to S3\n  1. Ensure your postgresql cookbook depends on the backup cookbook\n  2. Add the following to your postgresql cookbook\n  \n        backup_install node.name  \n        backup_generate_config node.name  \n        package \"libxml2-dev\"  \n        package \"libxslt1-dev\"  \n        gem_package \"fog\" do  \n          version \"~> 1.4.0\"  \n        end  \n        backup_generate_model \"pg\" do  \n          description \"backup of postgres\"  \n          backup_type \"database\"  \n          database_type \"PostgreSQL\"  \n          split_into_chunks_of 2048  \n          store_with({\"engine\" => \"S3\", \"settings\" => { \"s3.access_key_id\" => \"sample\", \"s3.secret_access_key\" => \"sample\", \"s3.region\" => \"us-east-1\", \"s3.bucket\" => \"sample\", \"s3.path\" => \"/\", \"s3.keep\" => 10 } } )\n  options({\"db.name\" => \"\\\"postgres\\\"\", \"db.username\" => \"\\\"postgres\\\"\", \"db.password\" => \"\\\"somepassword\\\"\", \"db.host\" => \"\\\"localhost\\\"\" })  \n          mailto \"sample@example.com\"  \n          action :backup  \n        end\n\n* Backing up Files to S3\n  1. Ensure the cookbook are updating depends on the backup cookbook.\n  2. Add the following to that cookbook\n  \n        backup_install node.name   \n        backup_generate_config node.name  \n        package \"libxml2-dev\"  \n        package \"libxslt1-dev\"  \n        gem_package \"fog\" do  \n          version \"~> 1.4.0\"  \n        end  \n        backup_generate_model \"home\" do  \n          description \"backup of /home\"  \n          backup_type \"archive\"  \n          split_into_chunks_of 250  \n          store_with({\"engine\" => \"S3\", \"settings\" => { \"s3.access_key_id\" => \"sample\", \"s3.secret_access_key\" => \"sample\", \"s3.region\" => \"us-east-1\", \"s3.bucket\" => \"sample\", \"s3.path\" => \"/\", \"s3.keep\" => 10 } } )  \n          options({\"add\" => [\"/home/\",\"/root/\"], \"exclude\" => [\"/home/tmp\"], \"tar_options\" => \"-p\"})  \n          mailto \"sample@example.com\"  \n          action :backup  \n        end  \n\n* There is no technical reason you cannot load more of this code in via an `role` or an `data bag` instead.\n\nLicense and Author\n==================\n\nAuthor:: Scott Likens (<scott@likens.us>)\n\nCopyright 2012, Scott M. Likens, Inc.\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n    \nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n    \n    \nSpecial Credit and Thanks\n==================\n\nThank You [Heavy Water](hw-ops.com) for contributing the original [backup](https://github.com/hw-cookbooks/backup) cookbook.  \n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "recommends": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ruby_installer",
+      "revision": ">= 0.0.0"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/bag_config",
+      "revision": ">= 0.0.0"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/discovery",
+      "revision": ">= 0.0.0"
+    }
+  ]
+}

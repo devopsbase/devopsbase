@@ -1,0 +1,129 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jgkamat/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/jgkamat/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/jgkamat/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jgkamat/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jgkamat/owncloud/autobuild",
+    "user": "jgkamat",
+    "name": "owncloud",
+    "namespace": "jgkamat",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 65,
+    "last_updated": "2016-04-19T23:26:43.031370Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 227477478,
+        "id": 806089,
+        "repository": 302218,
+        "creator": 65281,
+        "last_updater": 65281,
+        "last_updated": "2016-04-19T23:26:33.477287Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "jgkamat/dockerfiles"
+  },
+  "name": "jgkamat/owncloud Docker container",
+  "description": "A small owncloud repostiory",
+  "readme": "Docker  [![Build Status](https://circleci.com/gh/jgkamat/dockerfiles.svg?&style=svg)](https://circleci.com/gh/jgkamat/dockerfiles)\n======\n\nThis is a public repository where all of my current docker work will be.\n\nThis repository will be a conglomorate of everything that I will be working on, docker related. Everything is organized into subfolders.\n\nThese projects are on the [docker hub](https://hub.docker.com/u/jgkamat/)\n\nIf you find somthing useful, feel free to use it as long as you follow the GPL V3!\n",
+  "dockerfile": "FROM ubuntu:14.04\n\n# This is a dockerfile that builds an owncloud service and sets it up as much as possible!\n# to build: 'docker build -t jgkamat/owncloud .'\n\n# Lets see if we can use this instead later!\n#FROM phusion/baseimage:latest\n\n# The base image changes policy-rc.d to stop services from being configured by apt. We change this to mirror stock Ubuntu.\nRUN rm /usr/sbin/policy-rc.d\nADD setupScripts/init-fake.conf /etc/init/fake-container-events.conf\n\n# Setup apt to be happy with no console input\nENV DEBIAN_FRONTEND noninteractive\n\n# setup apt tools and other goodies we want\nRUN apt-get update && apt-get -y install apt-utils wget curl htop iputils-ping vim-nox less debconf-utils w3m ssh\n\n# add owncloud repository and install\nRUN sh -c \"echo 'deb http://download.opensuse.org/repositories/isv:/ownCloud:/community/xUbuntu_14.04/ /' >> /etc/apt/sources.list.d/owncloud.list\"\n\n# Fix authentication issues\nRUN wget http://download.opensuse.org/repositories/isv:ownCloud:community/xUbuntu_14.04/Release.key\nRUN sudo apt-key add - < Release.key\nRUN apt-get update --fix-missing\nRUN apt-get -y upgrade\n\n# Assuming sqlite is used, not mysql or postgresql\n\n# Install owncloud\nRUN apt-get install -y owncloud\n\n# Get Upstart binary working. We remove a fake symlink to initctl and restore the original.\nRUN rm /sbin/initctl; dpkg-divert --rename --remove /sbin/initctl\n\n# generate a nice UTF-8 locale for our use\n# RUN locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8\n\n# Remove some services that don't make sense in containers.\nRUN /usr/sbin/update-rc.d -f ondemand remove; \\\n        for f in \\\n        /etc/init/u*.conf \\\n        /etc/init/mounted-dev.conf \\\n        /etc/init/mounted-proc.conf \\\n        /etc/init/mounted-run.conf \\\n        /etc/init/mounted-tmp.conf \\\n        /etc/init/mounted-var.conf \\\n        /etc/init/hostname.conf \\\n        /etc/init/tty*.conf \\\n        /etc/init/plymouth*.conf \\\n        /etc/init/hwclock*.conf \\\n        /etc/init/module*.conf\\\n        ; do \\\n        dpkg-divert --local --rename --add \"$f\"; \\\n        done; \\\n        echo '# /lib/init/fstab: cleared out for bare-bones Docker' > /lib/init/fstab\n\n# allow login with password\nRUN sed -ri 's/^PermitRootLogin\\s+.*/PermitRootLogin yes/' /etc/ssh/sshd_config\n\n# let Upstart know it's in a container\nENV container docker\n\n# set an INSECURE password\nRUN echo 'root:toor' | chpasswd\n\n# Startup Scripts\nADD setupScripts/rc.local /etc/rc.local\nRUN chmod 755 /etc/rc.local\n\n# ports 80 and 443 should be published in the command to the host!\nEXPOSE 22\nEXPOSE 80\nEXPOSE 443\n\n# Set up init\nCMD [\"/sbin/init\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "setupScripts/init-fake.conf",
+        "dest": "/etc/init/fake-container-events.conf"
+      },
+      {
+        "source": "setupScripts/rc.local",
+        "dest": "/etc/rc.local"
+      }
+    ],
+    "expose": [
+      22,
+      80,
+      443
+    ],
+    "volume": [],
+    "run": [
+      "rm /usr/sbin/policy-rc.d",
+      "apt-get update && apt-get -y install apt-utils wget curl htop iputils-ping vim-nox less debconf-utils w3m ssh",
+      "sh -c \"echo 'deb http://download.opensuse.org/repositories/isv:/ownCloud:/community/xUbuntu_14.04/ /' >> /etc/apt/sources.list.d/owncloud.list\"",
+      "wget http://download.opensuse.org/repositories/isv:ownCloud:community/xUbuntu_14.04/Release.key",
+      "sudo apt-key add - < Release.key",
+      "apt-get update --fix-missing",
+      "apt-get -y upgrade",
+      "apt-get install -y owncloud",
+      "rm /sbin/initctl; dpkg-divert --rename --remove /sbin/initctl",
+      "/usr/sbin/update-rc.d -f ondemand remove;         for f in         /etc/init/u*.conf         /etc/init/mounted-dev.conf         /etc/init/mounted-proc.conf         /etc/init/mounted-run.conf         /etc/init/mounted-tmp.conf         /etc/init/mounted-var.conf         /etc/init/hostname.conf         /etc/init/tty*.conf         /etc/init/plymouth*.conf         /etc/init/hwclock*.conf         /etc/init/module*.conf        ; do         dpkg-divert --local --rename --add \"$f\";         done;         echo '# /lib/init/fstab: cleared out for bare-bones Docker' > /lib/init/fstab",
+      "sed -ri 's/^PermitRootLogin\\s+.*/PermitRootLogin yes/' /etc/ssh/sshd_config",
+      "echo 'root:toor' | chpasswd",
+      "chmod 755 /etc/rc.local"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "container": "docker"
+    },
+    "cmd": "[\"/sbin/init\"]"
+  },
+  "source_repository_url": "https://github.com/jgkamat/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/jgkamat/dockerfiles",
+  "docker_repository": "jgkamat/owncloud",
+  "docker_image": "jgkamat/owncloud",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "container": {
+      "default": "docker",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        22,
+        80,
+        443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jgkamat/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jgkamat/owncloud",
+    "https://hub.docker.com/v2/repositories/jgkamat/owncloud",
+    "https://github.com/jgkamat/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/jgkamat/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,104 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/greg0ire/memcached",
+    "repository_url": "https://hub.docker.com/v2/repositories/greg0ire/memcached",
+    "tags_url": "https://hub.docker.com/v2/repositories/greg0ire/memcached/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/greg0ire/memcached/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/greg0ire/memcached/autobuild",
+    "user": "greg0ire",
+    "name": "memcached",
+    "namespace": "greg0ire",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 95,
+    "last_updated": "2016-08-05T18:00:16.329559Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 66332660,
+        "id": 781635,
+        "repository": 295249,
+        "creator": 112907,
+        "last_updater": 112907,
+        "last_updated": "2016-08-05T18:00:15.979413Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "greg0ire/dockerony"
+  },
+  "name": "greg0ire/memcached Docker container",
+  "description": "Ubuntu-trusty-based image with memcached",
+  "readme": "# Symfony development docker images\n\nLeverage the power of docker to make development initialization easy. The goal\nis to have the members of your team ready to code very quickly :\n\n1. Installing Docker\n2. Installing Docker Compose\n3. Running `docker-compose up`\n\nFor the moment there is :\n\n- an nginx image\n- a php-fpm image\n- a php-console image\n- a postgres image\n- a memcached image\n- a mailcatcher image\n- an elasticsearch image\n\nAll images are based on the same docker image : `ubuntu:trusty`, so that disk\nusage is not too high.\n\n## Setup inside a Symfony2 application\n\nThe project contains a sample Symfony2 application. You can do the same thing\nin your app.\n\n1. Create a docker directory, in order to have a clean separation from the rest\nof the project.\n2. Create any configuration file needed by the containers you intend to use.\nConfiguration files could be part of the image rather than mounted on it, that is\ntrue, but having them as part of your application is great, because it makes explicit\nwhat will be needed when deploying the application.\n3. Create a `docker-compose.yml` file and map the volume with paths on your host.\n\n## The containers\n\n### The nginx container\n\nBy default, defines a `monitoring.*` virtualhost. Try it, it displays nginx and\nphp-fpm status pages. There also is a `coverage.*` virtualhost, for phpunit users.\nIt will serve files from `/srv/build/coverage`.\n\n### The php containers\n\nThere are three php images. The first one serves as a base for the two others\nand you shouldn't use it. The two other are a php-fpm image, and a php-console\nimage. The php-console was named like this because there are other things than\nthe `php-fpm` package on it : there also is nodejs, ruby-sass and other\ndevelopment-related things, like composer or php-cs-fixer.\n\nBoth images come with XDebug remote debugging ready to use!\nXDebug will try to reach your DBGP client on `172.17.42.1:9000`, please ensure\nthat your client is not only listening on `localhost`.\nYou will also need to configure remote path mappings in your debugging client\nso that the remote `/srv` folder is mapped to where your application is on your\nsystem.\n\nIf you are using vim with [vdebug](https://github.com/joonty/vdebug), the\nconfiguration will look like this:\n\n```viml\nlet g:vdebug_options= {\n\\    \"server\": '172.17.0.1',\n\\    \"path_maps\": {\"/srv\": \"/home/username/path/to/code\"}\n\\}\n```\n\nBy default, XDebug is disabled on the console container for performance\nreasons. It can be enabled by using php's `-d` flag, like this :\n\n```shell\nphp -dzend_extension=xdebug.so <your_command_goes_here>\n```\n\nThe recommended way to login to the console container is to exec the login\ncommand on it, like this:\n\n```shell\ndocker exec --user=$(whoami) --interactive --tty samplesymfonyapp_console_1 /bin/zsh\n```\n\nOf course, you may use `/bin/bash` if you prefer.\n\nTo run Composer, you might need to be able to authenticate against private\nrepositories. To deal with that, log into the console container, and then\ngenerate a new pair of keys (`ssh-keygen`). Finally, associate the public key\nwith your account.\n\n### The mailcatcher container\n\nExposes an administration interface on port 80, and an SMTP service listening\non port 25.\n\n## DNS\n\n### Prerequisites\n\nTo use the DNS functionality, you have to run `bin/docker-init`. This script\nwill run a dns server and map it to your localhost. You might need to have a\nlook at the documentation of\n[dnsdock](https://github.com/tonistiigi/dnsdock/blob/master/readme.md) if it\ndoes not work.\n\n```\nbin/docker-init\n```\n\n### Configuration\n\nIn your docker-compose.yml file you can set `DNSDOCK_NAME` and `DNSDOCK_IMAGE`\nfor each image that you want to subscribe in DNS. Additionaly, you can set the\n`DNSDOCK_ALIAS` to completely bypass the basic naming scheme.\n\n```\nwebserver:\n    image: greg0ire/nginx\n    ports:\n        - '80'\n    environment:\n        - DNSDOCK_IMAGE=web\n        - DNSDOCK_NAME=my_project\n        - DNSDOCK_ALIAS=my_app.dev\n```\n\nWith that configuration you can access to your image with `my_project.web.docker`\n*and* `my_app.dev`\n\nNo need to add any host in your hosts file.\n",
+  "dockerfile": "FROM ubuntu:trusty\n\nENV DEBIAN_FRONTEND noninteractive\n\nRUN apt-get update && \\\n    apt-get install --yes memcached && \\\n    rm --recursive --force /var/lib/apt/lists/*\n\nEXPOSE 11211\n\nUSER memcache\n\nENTRYPOINT [\"memcached\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      11211
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update &&     apt-get install --yes memcached &&     rm --recursive --force /var/lib/apt/lists/*"
+    ],
+    "workdir": [],
+    "from": "ubuntu:trusty",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "user": "memcache",
+    "entrypoint": "[\"memcached\"]"
+  },
+  "source_repository_url": "https://github.com/greg0ire/dockerony.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/greg0ire/dockerony",
+  "docker_repository": "greg0ire/memcached",
+  "docker_image": "greg0ire/memcached",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        11211
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "greg0ire/memcached",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/greg0ire/memcached",
+    "https://hub.docker.com/v2/repositories/greg0ire/memcached",
+    "https://github.com/greg0ire/dockerony.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Type/Middleware/Cache/Memcached"
+  ],
+  "info_url": "https://hub.docker.com/r/greg0ire/memcached",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

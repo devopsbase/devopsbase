@@ -1,0 +1,185 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/galactros/tomcat-8.0-itec",
+    "repository_url": "https://hub.docker.com/v2/repositories/galactros/tomcat-8.0-itec",
+    "tags_url": "https://hub.docker.com/v2/repositories/galactros/tomcat-8.0-itec/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/galactros/tomcat-8.0-itec/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/galactros/tomcat-8.0-itec/autobuild",
+    "user": "galactros",
+    "name": "tomcat-8.0-itec",
+    "namespace": "galactros",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 97,
+    "last_updated": "2016-08-18T17:51:46.442607Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "jtds-jdk-7",
+        "full_size": 89648681,
+        "id": 3562119,
+        "repository": 737633,
+        "creator": 776322,
+        "last_updater": 776322,
+        "last_updated": "2016-08-18T17:51:46.113587Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "postgresql",
+        "full_size": 168777336,
+        "id": 3477994,
+        "repository": 737633,
+        "creator": 776322,
+        "last_updater": 776322,
+        "last_updated": "2016-06-30T18:48:57.184033Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "jtds-jdk-8",
+        "full_size": 264064776,
+        "id": 3561474,
+        "repository": 737633,
+        "creator": 776322,
+        "last_updater": 776322,
+        "last_updated": "2016-06-23T18:59:02.119229Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "sqldriver",
+        "full_size": 145307369,
+        "id": 3434646,
+        "repository": 737633,
+        "creator": 776322,
+        "last_updater": 776322,
+        "last_updated": "2016-06-21T18:48:43.264539Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Admin-Itecbrazil/tomcat-itec"
+  },
+  "name": "galactros/tomcat-8.0-itec Docker container",
+  "description": "Tomcat para aplicações Itec",
+  "readme": null,
+  "dockerfile": "FROM openjdk:7-jre-alpine\n\nENV CATALINA_HOME /usr/local/tomcat\nENV PATH $CATALINA_HOME/bin:$PATH\nRUN mkdir -p \"$CATALINA_HOME\"\nWORKDIR $CATALINA_HOME\n\n# let \"Tomcat Native\" live somewhere isolated\nENV TOMCAT_NATIVE_LIBDIR $CATALINA_HOME/native-jni-lib\nENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR\n\nRUN apk add --no-cache gnupg\n\n# see https://www.apache.org/dist/tomcat/tomcat-8/KEYS\nRUN set -ex \\\n\t&& for key in \\\n\t\t05AB33110949707C93A279E3D3EFE6B686867BA6 \\\n\t\t07E48665A34DCAFAE522E5E6266191C37C037D42 \\\n\t\t47309207D818FFD8DCD3F83F1931D684307A10A5 \\\n\t\t541FBE7D8F78B25E055DDEE13C370389288584E7 \\\n\t\t61B832AC2F1C5A90F0F9B00A1C506407564C17A3 \\\n\t\t713DA88BE50911535FE716F5208B0AB1D63011C7 \\\n\t\t79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED \\\n\t\t9BA44C2621385CB966EBA586F72C284D731FABEE \\\n\t\tA27677289986DB50844682F8ACB77FC2E86E29AC \\\n\t\tA9C5DF4D22E99998D9875A5110C01C5A2F6059E7 \\\n\t\tDCFD35E0BF8CA7344752DE8B6FB21E8933C60243 \\\n\t\tF3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE \\\n\t\tF7DA48BB64BCB84ECBA7EE6935CD23C10D498E23 \\\n\t; do \\\n\t\tgpg --keyserver ha.pool.sks-keyservers.net --recv-keys \"$key\"; \\\n\tdone\n\nENV TOMCAT_MAJOR 8\nENV TOMCAT_VERSION 8.0.36\nENV TOMCAT_TGZ_URL https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz\n\nRUN set -x \\\n\t\\\n\t&& apk add --no-cache --virtual .fetch-deps \\\n\t\tca-certificates \\\n\t\ttar \\\n\t\topenssl \\\n\t&& wget -O tomcat.tar.gz \"$TOMCAT_TGZ_URL\" \\\n\t&& wget -O tomcat.tar.gz.asc \"$TOMCAT_TGZ_URL.asc\" \\\n\t&& gpg --batch --verify tomcat.tar.gz.asc tomcat.tar.gz \\\n\t&& tar -xvf tomcat.tar.gz --strip-components=1 \\\n\t&& rm bin/*.bat \\\n\t&& rm tomcat.tar.gz* \\\n\t\\\n\t&& nativeBuildDir=\"$(mktemp -d)\" \\\n\t&& tar -xvf bin/tomcat-native.tar.gz -C \"$nativeBuildDir\" --strip-components=1 \\\n\t&& apk add --no-cache --virtual .native-build-deps \\\n\t\tapr-dev \\\n\t\tgcc \\\n\t\tlibc-dev \\\n\t\tmake \\\n\t\t\"openjdk${JAVA_VERSION%%[-~bu]*}\"=\"$JAVA_ALPINE_VERSION\" \\\n\t\topenssl-dev \\\n\t&& ( \\\n\t\texport CATALINA_HOME=\"$PWD\" \\\n\t\t&& cd \"$nativeBuildDir/native\" \\\n\t\t&& ./configure \\\n\t\t\t--libdir=\"$TOMCAT_NATIVE_LIBDIR\" \\\n\t\t\t--prefix=\"$CATALINA_HOME\" \\\n\t\t\t--with-apr=\"$(which apr-1-config)\" \\\n\t\t\t--with-java-home=\"$(docker-java-home)\" \\\n\t\t\t--with-ssl=yes \\\n\t\t&& make -j$(getconf _NPROCESSORS_ONLN) \\\n\t\t&& make install \\\n\t) \\\n\t&& runDeps=\"$( \\\n\t\tscanelf --needed --nobanner --recursive \"$TOMCAT_NATIVE_LIBDIR\" \\\n\t\t\t| awk '{ gsub(/,/, \"\\nso:\", $2); print \"so:\" $2 }' \\\n\t\t\t| sort -u \\\n\t\t\t| xargs -r apk info --installed \\\n\t\t\t| sort -u \\\n\t)\" \\\n\t&& apk add --virtual .tomcat-native-rundeps $runDeps \\\n\t&& apk del .fetch-deps .native-build-deps \\\n\t&& rm -rf \"$nativeBuildDir\" \\\n\t&& rm bin/tomcat-native.tar.gz\n\n\t# add context.xml and tomcat-users.xml to connect with Itec Database\n\tADD context.xml /usr/local/tomcat/conf\n\tADD setenv.sh /usr/local/tomcat/bin\n\tADD web.xml /usr/local/tomcat/webapps/manager/WEB-INF\n\tADD tomcat-users.xml /usr/local/tomcat/conf\n\tADD jtds-1.2.8.jar /usr/local/tomcat/lib\n\tADD jsf-api-2.1.9.jar /usr/local/tomcat/lib\n\tADD jsf-impl-2.1.9.jar /usr/local/tomcat/lib\n\tRUN chmod 777 -R /usr/local/tomcat/lib\n\n# verify Tomcat Native is working properly\nRUN set -e \\\n\t&& nativeLines=\"$(catalina.sh configtest 2>&1)\" \\\n\t&& nativeLines=\"$(echo \"$nativeLines\" | grep 'Apache Tomcat Native')\" \\\n\t&& nativeLines=\"$(echo \"$nativeLines\" | sort -u)\" \\\n\t&& if ! echo \"$nativeLines\" | grep 'INFO: Loaded APR based Apache Tomcat Native library' >&2; then \\\n\t\techo >&2 \"$nativeLines\"; \\\n\t\texit 1; \\\n\tfi\n\nEXPOSE 8080\nCMD [\"catalina.sh\", \"run\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "mkdir -p \"$CATALINA_HOME\"",
+      "apk add --no-cache gnupg",
+      "set -ex \t&& for key in \t\t05AB33110949707C93A279E3D3EFE6B686867BA6 \t\t07E48665A34DCAFAE522E5E6266191C37C037D42 \t\t47309207D818FFD8DCD3F83F1931D684307A10A5 \t\t541FBE7D8F78B25E055DDEE13C370389288584E7 \t\t61B832AC2F1C5A90F0F9B00A1C506407564C17A3 \t\t713DA88BE50911535FE716F5208B0AB1D63011C7 \t\t79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED \t\t9BA44C2621385CB966EBA586F72C284D731FABEE \t\tA27677289986DB50844682F8ACB77FC2E86E29AC \t\tA9C5DF4D22E99998D9875A5110C01C5A2F6059E7 \t\tDCFD35E0BF8CA7344752DE8B6FB21E8933C60243 \t\tF3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE \t\tF7DA48BB64BCB84ECBA7EE6935CD23C10D498E23 \t; do \t\tgpg --keyserver ha.pool.sks-keyservers.net --recv-keys \"$key\"; \tdone",
+      "set -x \t\t&& apk add --no-cache --virtual .fetch-deps \t\tca-certificates \t\ttar \t\topenssl \t&& wget -O tomcat.tar.gz \"$TOMCAT_TGZ_URL\" \t&& wget -O tomcat.tar.gz.asc \"$TOMCAT_TGZ_URL.asc\" \t&& gpg --batch --verify tomcat.tar.gz.asc tomcat.tar.gz \t&& tar -xvf tomcat.tar.gz --strip-components=1 \t&& rm bin/*.bat \t&& rm tomcat.tar.gz* \t\t&& nativeBuildDir=\"$(mktemp -d)\" \t&& tar -xvf bin/tomcat-native.tar.gz -C \"$nativeBuildDir\" --strip-components=1 \t&& apk add --no-cache --virtual .native-build-deps \t\tapr-dev \t\tgcc \t\tlibc-dev \t\tmake \t\t\"openjdk${JAVA_VERSION%%[-~bu]*}\"=\"$JAVA_ALPINE_VERSION\" \t\topenssl-dev \t&& ( \t\texport CATALINA_HOME=\"$PWD\" \t\t&& cd \"$nativeBuildDir/native\" \t\t&& ./configure \t\t\t--libdir=\"$TOMCAT_NATIVE_LIBDIR\" \t\t\t--prefix=\"$CATALINA_HOME\" \t\t\t--with-apr=\"$(which apr-1-config)\" \t\t\t--with-java-home=\"$(docker-java-home)\" \t\t\t--with-ssl=yes \t\t&& make -j$(getconf _NPROCESSORS_ONLN) \t\t&& make install \t) \t&& runDeps=\"$( \t\tscanelf --needed --nobanner --recursive \"$TOMCAT_NATIVE_LIBDIR\" \t\t\t| awk '{ gsub(/,/, \"\\nso:\", $2); print \"so:\" $2 }' \t\t\t| sort -u \t\t\t| xargs -r apk info --installed \t\t\t| sort -u \t)\" \t&& apk add --virtual .tomcat-native-rundeps $runDeps \t&& apk del .fetch-deps .native-build-deps \t&& rm -rf \"$nativeBuildDir\" \t&& rm bin/tomcat-native.tar.gz",
+      "set -e \t&& nativeLines=\"$(catalina.sh configtest 2>&1)\" \t&& nativeLines=\"$(echo \"$nativeLines\" | grep 'Apache Tomcat Native')\" \t&& nativeLines=\"$(echo \"$nativeLines\" | sort -u)\" \t&& if ! echo \"$nativeLines\" | grep 'INFO: Loaded APR based Apache Tomcat Native library' >&2; then \t\techo >&2 \"$nativeLines\"; \t\texit 1; \tfi"
+    ],
+    "workdir": [
+      "$CATALINA_HOME"
+    ],
+    "from": "openjdk:7-jre-alpine",
+    "env": {
+      "CATALINA_HOME": "/usr/local/tomcat",
+      "PATH": "$CATALINA_HOME/bin:$PATH",
+      "TOMCAT_NATIVE_LIBDIR": "$CATALINA_HOME/native-jni-lib",
+      "LD_LIBRARY_PATH": "${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR",
+      "TOMCAT_MAJOR": "8",
+      "TOMCAT_VERSION": "8.0.36",
+      "TOMCAT_TGZ_URL": "https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz"
+    },
+    "cmd": "[\"catalina.sh\", \"run\"]"
+  },
+  "source_repository_url": "https://github.com/Admin-Itecbrazil/tomcat-itec.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Admin-Itecbrazil/tomcat-itec",
+  "docker_repository": "galactros/tomcat-8.0-itec",
+  "docker_image": "galactros/tomcat-8.0-itec",
+  "parameters_schema": {
+    "CATALINA_HOME": {
+      "default": "/usr/local/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$CATALINA_HOME/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_NATIVE_LIBDIR": {
+      "default": "$CATALINA_HOME/native-jni-lib",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LD_LIBRARY_PATH": {
+      "default": "${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_MAJOR": {
+      "default": "8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_VERSION": {
+      "default": "8.0.36",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_TGZ_URL": {
+      "default": "https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "galactros/tomcat-8.0-itec",
+  "revision": "jtds-jdk-7",
+  "uris": [
+    "https://hub.docker.com/r/galactros/tomcat-8.0-itec",
+    "https://hub.docker.com/v2/repositories/galactros/tomcat-8.0-itec",
+    "https://github.com/Admin-Itecbrazil/tomcat-itec.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/galactros/tomcat-8.0-itec",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

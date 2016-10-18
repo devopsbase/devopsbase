@@ -1,0 +1,127 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/pires/elasticsearch",
+    "repository_url": "https://hub.docker.com/v2/repositories/pires/elasticsearch",
+    "tags_url": "https://hub.docker.com/v2/repositories/pires/elasticsearch/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/pires/elasticsearch/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/pires/elasticsearch/autobuild",
+    "user": "pires",
+    "name": "elasticsearch",
+    "namespace": "pires",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 64192,
+    "last_updated": "2015-07-22T13:49:23.679618Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "master",
+        "full_size": 101978749,
+        "id": 93732,
+        "repository": 132055,
+        "creator": 8076,
+        "last_updater": 8076,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "lb",
+        "full_size": 101978785,
+        "id": 93682,
+        "repository": 132055,
+        "creator": 8076,
+        "last_updater": 8076,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "data",
+        "full_size": 101978758,
+        "id": 93632,
+        "repository": 132055,
+        "creator": 8076,
+        "last_updater": 8076,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "base",
+        "full_size": 101978302,
+        "id": 93578,
+        "repository": 132055,
+        "creator": 8076,
+        "last_updater": 8076,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "pires/kubernetes-elasticsearch-cluster"
+  },
+  "name": "pires/elasticsearch Docker container",
+  "description": "Elasticsearch (1.7.0) cluster on top of Kubernetes made easy.",
+  "readme": "# kubernetes-elasticsearch-cluster\nElasticsearch (1.7.1) cluster on top of Kubernetes made easy.\n\nElasticsearch best-practices recommend to separate nodes in three roles:\n* `Master` nodes - intended for clustering management only, no data, no HTTP API\n* `Load-balancer` nodes - intended for client usage, no data, with HTTP API\n* `Data` nodes - intended for storing and indexing your data, no HTTP API\n\nGiven this, I'm hereby making possible for you to scale as needed. For instance, a good strong scenario could be 3 Masters, 3 Load-balancers, 5 data-nodes.\n\n*Attention:* As of the moment, Kubernetes pod descriptors use an `emptyDir` for storing data in each data node container. This is meant to be for the sake of simplicity and should be adapted according to your storage needs.\n\n## Pre-requisites\n\n* Docker 1.5+\n* Kubernetes cluster (tested with v1.0.1 on top of [Vagrant + CoreOS](https://github.com/pires/kubernetes-vagrant-coreos-cluster))\n* `kubectl` configured to access your cluster master API Server\n\n## Build images (optional)\n\nProviding your own version of [the images automatically built from this repository](https://registry.hub.docker.com/u/pires/elasticsearch) will not be supported. This is an *optional* step. You have been warned.\n\n## Test\n\n### Deploy\n\n```\nkubectl create -f service-account.yaml\nkubectl create -f elasticsearch-discovery-service.yaml\nkubectl create -f elasticsearch-service.yaml\nkubectl create -f elasticsearch-master-controller.yaml\n```\n\nWait until `elasticsearch-master-controller` is provisioned, and\n```\nkubectl create -f elasticsearch-lb-controller.yaml\n```\n\nWait until `elasticsearch-data-controller` is provisioned, and\n```\nkubectl create -f elasticsearch-data-controller.yaml\n```\n\n### Validate\n\nI leave to you the steps to validate the provisioned pods, but first step is to wait for containers to be in ```RUNNING``` state and check the logs of the master (as in Elasticsearch):\n\n```\nkubectl get pods\n```\n\nYou should see something like this:\n\n```\n$ kubectl get pods\nNAME                         READY     STATUS    RESTARTS   AGE\nelasticsearch-data-881wf     1/1       Running   0          47s\nelasticsearch-lb-tujlb       1/1       Running   0          1m\nelasticsearch-master-hh4gw   1/1       Running   0          2m\n```\n\nCopy master pod identifier and check the logs:\n\n```\nkubectl logs elasticsearch-master-hh4gw\nlog4j:WARN No such property [maxBackupIndex] in org.apache.log4j.DailyRollingFileAppender.\nlog4j:WARN No such property [maxBackupIndex] in org.apache.log4j.DailyRollingFileAppender.\nlog4j:WARN No such property [maxBackupIndex] in org.apache.log4j.DailyRollingFileAppender.\n[2015-07-22 13:53:12,234][WARN ][bootstrap                ] Unable to lock JVM memory (ENOMEM). This can result in part of the JVM being swapped out. Increase RLIMIT_MEMLOCK (ulimit).\n[2015-07-22 13:53:12,375][INFO ][node                     ] [American Samurai] version[1.7.0], pid[1], build[929b973/2015-07-16T14:31:07Z]\n[2015-07-22 13:53:12,377][INFO ][node                     ] [American Samurai] initializing ...\n[2015-07-22 13:53:12,513][INFO ][plugins                  ] [American Samurai] loaded [cloud-kubernetes], sites []\n[2015-07-22 13:53:12,551][INFO ][env                      ] [American Samurai] using [1] data paths, mounts [[/data (/dev/sda9)]], net usable_space [14.4gb], net total_space [15.5gb], types [ext4]\n[2015-07-22 13:53:16,445][INFO ][node                     ] [American Samurai] initialized\n[2015-07-22 13:53:16,446][INFO ][node                     ] [American Samurai] starting ...\n[2015-07-22 13:53:16,676][INFO ][transport                ] [American Samurai] bound_address {inet[/0:0:0:0:0:0:0:0:9300]}, publish_address {inet[/10.244.78.4:9300]}\n[2015-07-22 13:53:16,709][INFO ][discovery                ] [American Samurai] elasticsearch-k8s/dlkCkOJaQ4SkfUPfAPNubQ\n[2015-07-22 13:53:22,631][INFO ][cluster.service          ] [American Samurai] new_master [American Samurai][dlkCkOJaQ4SkfUPfAPNubQ][elasticsearch-master-hh4gw][inet[/10.244.78.4:9300]]{data=false, master=true}, reason: zen-disco-join (elected_as_master)\n[2015-07-22 13:53:22,666][INFO ][node                     ] [American Samurai] started\n[2015-07-22 13:53:22,704][INFO ][gateway                  ] [American Samurai] recovered [0] indices into cluster_state\n[2015-07-22 13:54:24,682][INFO ][cluster.service          ] [American Samurai] added {[Warlock][zvGs3UQ8QE-uxBaqXF5Prw][elasticsearch-lb-tujlb][inet[/10.244.78.5:9300]]{data=false, master=false},}, reason: zen-disco-receive(join from node[[Warlock][zvGs3UQ8QE-uxBaqXF5Prw][elasticsearch-lb-tujlb][inet[/10.244.78.5:9300]]{data=false, master=false}])\n[2015-07-22 13:54:54,744][INFO ][cluster.service          ] [American Samurai] added {[Mastermind of the UK][fpkffLbzTTy0P4ox10xJxg][elasticsearch-data-881wf][inet[/10.244.78.6:9300]]{master=false},}, reason: zen-disco-receive(join from node[[Mastermind of the UK][fpkffLbzTTy0P4ox10xJxg][elasticsearch-data-881wf][inet[/10.244.78.6:9300]]{master=false}])\n```\n\nAs you can assert, the cluster is up and running. Easy, wasn't it?\n\n### Scale\n\nScaling each type of node to handle your cluster is as easy as:\n\n```\nkubectl scale --replicas=3 rc elasticsearch-master\nkubectl scale --replicas=2 rc elasticsearch-lb\nkubectl scale --replicas=5 rc elasticsearch-data\n```\n\n### Access the service\n\n*Don't forget* that services in Kubernetes are only acessible from containers in the cluster. For different behavior you should configure the creation of an external-loadbalancer, in your service. That's out of scope of this document, for now.\n\n```\nkubectl get service elasticsearch\n```\n\nYou should see something like this:\n\n```\n$ kubectl get service elasticsearch\nNAME            LABELS                                       SELECTOR                                     IP(S)           PORT(S)\nelasticsearch   component=elasticsearch,role=load-balancer   component=elasticsearch,role=load-balancer   10.100.251.16   9200/TCP\n```\n\nFrom any host on your cluster (that's running `kube-proxy`):\n\n```\ncurl http://10.100.251.16:9200\n```\n\nThis should be what you see:\n\n```json\n{\n  \"status\" : 200,\n  \"name\" : \"Warlock\",\n  \"cluster_name\" : \"elasticsearch-k8s\",\n  \"version\" : {\n    \"number\" : \"1.7.0\",\n    \"build_hash\" : \"929b9739cae115e73c346cb5f9a6f24ba735a743\",\n    \"build_timestamp\" : \"2015-07-16T14:31:07Z\",\n    \"build_snapshot\" : false,\n    \"lucene_version\" : \"4.10.4\"\n  },\n  \"tagline\" : \"You Know, for Search\"\n}\n```\n\nOr if you want to see cluster information:\n\n```\ncurl http://10.100.251.16:9200/_cluster/health?pretty\n```\n\nThis should be what you see:\n\n```json\n{\n  \"cluster_name\" : \"elasticsearch-k8s\",\n  \"status\" : \"green\",\n  \"timed_out\" : false,\n  \"number_of_nodes\" : 3,\n  \"number_of_data_nodes\" : 1,\n  \"active_primary_shards\" : 0,\n  \"active_shards\" : 0,\n  \"relocating_shards\" : 0,\n  \"initializing_shards\" : 0,\n  \"unassigned_shards\" : 0,\n  \"delayed_unassigned_shards\" : 0,\n  \"number_of_pending_tasks\" : 0,\n  \"number_of_in_flight_fetch\" : 0\n}\n```\n",
+  "dockerfile": "FROM pires/elasticsearch:base\n\nMAINTAINER pjpires@gmail.com\n\n# Override elasticsearch.yml config\nADD elasticsearch.yml /elasticsearch/config/elasticsearch.yml\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "elasticsearch.yml",
+        "dest": "/elasticsearch/config/elasticsearch.yml"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [],
+    "workdir": [],
+    "from": "pires/elasticsearch:base",
+    "maintainer": "pjpires@gmail.com"
+  },
+  "source_repository_url": "https://github.com/pires/kubernetes-elasticsearch-cluster.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/pires/kubernetes-elasticsearch-cluster",
+  "docker_repository": "pires/elasticsearch",
+  "docker_image": "pires/elasticsearch",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "pires/elasticsearch",
+  "revision": "master",
+  "uris": [
+    "https://hub.docker.com/r/pires/elasticsearch",
+    "https://hub.docker.com/v2/repositories/pires/elasticsearch",
+    "https://github.com/pires/kubernetes-elasticsearch-cluster.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Orchestration/Cluster-based/Kubernetes",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/pires/elasticsearch",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

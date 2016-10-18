@@ -1,0 +1,101 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/eeacms/glossary-apache",
+    "repository_url": "https://hub.docker.com/v2/repositories/eeacms/glossary-apache",
+    "tags_url": "https://hub.docker.com/v2/repositories/eeacms/glossary-apache/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/eeacms/glossary-apache/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/eeacms/glossary-apache/autobuild",
+    "user": "eeacms",
+    "name": "glossary-apache",
+    "namespace": "eeacms",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 120,
+    "last_updated": "2016-09-26T16:59:18.460116Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 71976213,
+        "id": 1526391,
+        "repository": 401901,
+        "creator": 305026,
+        "last_updater": 170105,
+        "last_updated": "2016-09-26T16:59:17.663436Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "eea/eea.docker.glossary"
+  },
+  "name": "eeacms/glossary-apache Docker container",
+  "description": "Apache for Glossary",
+  "readme": "## EEA Glossary application docker setup\n\nDocker images created for EEA Glossary, including images for **ZEO server**, **ZEO client**, **Varnish** and a dedicated data container.\n\n**ZEO server** and **ZEO client** have the same base image, you can find it on [Docker Hub](https://registry.hub.docker.com/u/eeacms/zope/) or you can inspect the [Github repository](https://github.com/eea/eea.docker.zope) to see the Dockerfile.\n\n\n### Installation\n1. Install [Docker](https://www.docker.com/).\n2. Install [Docker Compose](https://docs.docker.com/compose/).\n\n### Usage\n\nProduction environment:\n\n    $ git clone https://github.com/eea/eea.docker.glossary\n    $ cd eea.docker.glossary\n    $ docker-compose up -d\n\nAfter all containers are started, you can access the application on **http://\\<IP\\>**, where **IP** is address of your machine.\n\n### Upgrade\n\n    $ cd eea.docker.glossary\n    $ git pull\n    $ docker-compose pull\n\n    $ docker-compose stop\n    $ docker-compose rm -v apache varnish zclient1 zclient2 zclient3 zeo\n    $ docker-compose up -d --no-recreate\n\n### Restore application data\n\n1. Start **rsync client** on host where do you want to migrate eggrepo data (DESTINATION HOST):\n\n  ```\n    $ docker-compose up data\n    $ docker run -it --rm --name=r-client --volumes-from=eeadockerglossary_data_1 eeacms/rsync sh\n  ```\n\n2. Start **rsync server** on host from where do you want to migrate eggrepo data (SOURCE HOST):\n\n  ```\n    $ docker run -it --rm --name=r-server -p 2224:22 --volumes-from=eeadockerglossary_data_1 \\\n                 -e SSH_AUTH_KEY=\"<SSH-KEY-FROM-R-CLIENT-ABOVE>\" \\\n             eeacms/rsync server\n  ```\n\n3. Within **rsync client** container from step 1 run:\n\n  ```\n    $ rsync -e 'ssh -p 2224' -avz root@<SOURCE HOST IP>:/var/local/zeostorage/var/ /var/local/zeostorage/var/\n  ```\n\n\n\n",
+  "dockerfile": "FROM httpd:2.4\nMAINTAINER \"Alin Voinea\" <alin.voinea@eaudeweb.ro>\n\nRUN echo \"Include conf/extra/virtual.conf\" >> /usr/local/apache2/conf/httpd.conf\n\nRUN sed -i 's|#LoadModule deflate_module|LoadModule deflate_module|' /usr/local/apache2/conf/httpd.conf\nRUN sed -i 's|#LoadModule expires_module|LoadModule expires_module|' /usr/local/apache2/conf/httpd.conf\nRUN sed -i 's|#LoadModule rewrite_module|LoadModule rewrite_module|' /usr/local/apache2/conf/httpd.conf\nRUN sed -i 's|#LoadModule proxy_module|LoadModule proxy_module|' /usr/local/apache2/conf/httpd.conf\nRUN sed -i 's|#LoadModule proxy_http_module|LoadModule proxy_http_module|' /usr/local/apache2/conf/httpd.conf\n\nADD vh-glossary.conf /usr/local/apache2/conf/extra/virtual.conf\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "vh-glossary.conf",
+        "dest": "/usr/local/apache2/conf/extra/virtual.conf"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "echo \"Include conf/extra/virtual.conf\" >> /usr/local/apache2/conf/httpd.conf",
+      "sed -i 's|#LoadModule deflate_module|LoadModule deflate_module|' /usr/local/apache2/conf/httpd.conf",
+      "sed -i 's|#LoadModule expires_module|LoadModule expires_module|' /usr/local/apache2/conf/httpd.conf",
+      "sed -i 's|#LoadModule rewrite_module|LoadModule rewrite_module|' /usr/local/apache2/conf/httpd.conf",
+      "sed -i 's|#LoadModule proxy_module|LoadModule proxy_module|' /usr/local/apache2/conf/httpd.conf",
+      "sed -i 's|#LoadModule proxy_http_module|LoadModule proxy_http_module|' /usr/local/apache2/conf/httpd.conf"
+    ],
+    "workdir": [],
+    "from": "httpd:2.4",
+    "maintainer": "\"Alin Voinea\" <alin.voinea@eaudeweb.ro>"
+  },
+  "source_repository_url": "https://github.com/eea/eea.docker.glossary.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/eea/eea.docker.glossary",
+  "docker_repository": "eeacms/glossary-apache",
+  "docker_image": "eeacms/glossary-apache",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "eeacms/glossary-apache",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/eeacms/glossary-apache",
+    "https://hub.docker.com/v2/repositories/eeacms/glossary-apache",
+    "https://github.com/eea/eea.docker.glossary.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Deployment/Chef",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Content Management"
+  ],
+  "info_url": "https://hub.docker.com/r/eeacms/glossary-apache",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

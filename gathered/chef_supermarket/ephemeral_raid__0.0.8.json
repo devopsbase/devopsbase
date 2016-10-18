@@ -1,0 +1,89 @@
+{
+  "name": "ephemeral_raid Chef cookbook",
+  "chef_cookbook_name": "ephemeral_raid",
+  "revision": "0.0.8",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/ephemeral_raid",
+    "https://supermarket.chef.io/cookbooks/ephemeral_raid/download",
+    "https://supermarket.chef.io/cookbooks/ephemeral_raid/versions/0.0.8",
+    "https://supermarket.chef.io/cookbooks/ephemeral_raid/versions/0.0.8/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/ephemeral_raid/versions/0.0.8",
+    "https://supermarket.chef.io/api/v1/cookbooks/ephemeral_raid",
+    "https://supermarket.chef.io/api/v1/cookbooks/ephemeral_raid/versions/0.0.8/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Provider/Amazon/EC2",
+    "Mode/Executable/Image/VM Image/AMI",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/ephemeral_raid",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/ephemeral_raid/versions/0.0.8/download",
+  "deprecated": false,
+  "created": "2013-10-28T17:59:07.000Z",
+  "updated": "2015-05-14T22:15:13.086Z",
+  "description": "Creates Dynamic Ephemeral Raids on EC2",
+  "maintainer": {
+    "name": "atrull",
+    "email": "cookbooks.alex@trull.org"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 4178849,
+  "downloads_count_revision": 224274,
+  "repository_url": "https://github.com/atrull/ephemeral_raid_cookbook",
+  "issues_url": "https://github.com/atrull/ephemeral_raid_cookbook",
+  "chef_source_url": "https://github.com/atrull/ephemeral_raid_cookbook",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nThis cookbook exists to automatically make a RAID array using all the Ephemeral block devices (aka \"disks\", but we cannot know for sure what they are) it can find present to the system it runs on.\n\nThe cookbook's default RAID level is 0 - maximum performance with absolutely no redundancy. You must change the attribute to something else if you are worried about dataloss.\n\nThe Ephemeral block devices typically have higher performance than other volumes and due to their Ephemeral nature are ideal for high-IO throw-away work or clustered loads that run with sufficient levels of distributed data redundancy: i.e. multi-AZ or multi-region data replication.\n\nThese block devices are also typically included with the instance you choose - at no extra cost.\n\nCloud providers may be sneaky however, since only one of these block devices are available by default when you launch an instance without requisite block device mappings.\n\nSee the Usage section for further info on how to get the drives to show up in one example.\n\nThis cookbook does not create filesystems, but there is a cookbook out there that does just that : the filesystem cookbook.\n\nUse Case\n========\n\nFor EC2: See http://aws.amazon.com/ec2/instance-types/ for an up to date list of how many ephemeral block devices/disks there are for each instance type - these devices/disks are otherwise referred to as 'Instance Storage'.\n\nThis recipe is only really worth using if there is more than one block device available. At the time of writing the instances that this cookbook suits being run upon are:\n\n* `m1.large` 2 x 420 HDD\n* `m1.xlarge` 4 x 420 HDD\n* `c1.xlarge` 4 x 420 HDD\n* `cc2.8xlarge` 4 x 840 HDD\n* `m2.4xlarge` 2 x 840 HDD\n* `cr1.8xlarge` 2 x 120 SSD\n* `hi1.4xlarge` 2 x 1,024 SSD\n* `hs1.8xlarge` 24 x 2,048 HDD\n* `cg1.4xlarge` 2 x 840 HDD\n\nDefault Behaviour\n=================\n\nBy default this cookbook grabs all the ephemeral block devices it finds, cleans them up and then creates a raid level 0 array out of them with mdraid.\n\nSuggested Use Pattern\n=====================\n\nThis cookbook should be used with the [filesystem] cookbook. \n\nRequirements\n============\n\n* A relatively recent common Linux distribution. This recipe is linux-only.\n\n* A cloud provider that Ohai recognises.\n\n* Two or more mapped Ephemeral block devices.\n\n* `mdadm` - This is needed for forming the raid device. We use it via the chef provider.\n\nRecipes\n=======\n\n* `default.rb` : A dummy recipe pointing to install.rb\n* `install.rb` : Installs everything by calling the rest of the recipes in the right order i.e. once packages have been installed.\n* `cleanup.rb` : Unmounts devices and clears partition tables.\n* `makeraid.rb` : Creates the raid device, using the mdadm provider.\n\nAttributes\n==========\n\nSee the contents of `attributes/default.rb` where there are accurate comments and self-explanatory attribute names.\n\nUsage\n=====\n\nWhen you run your instances or create your autoscaling configuration, in the following case for EC2 `m1.xlarge` instances, you must specify the four free emphemeral devices like so:\n\n`--block-device-mapping \"/dev/xvdb=ephemeral0,/dev/xvdc=ephemeral1,/dev/xvdd=ephemeral2,/dev/xvde=ephemeral3\"`\n\nWhile we recommend you retain most of the default behaviour, your needs may differ so consider the following example, which includes filesystem creation:\n\n`run_list` ephemeral_raid, filesystem\n\n````JSON\n{\n  \"ephemeral\": {\n    \"raid\": {\n      \"level\": \"10\",\n    }\n  },\n  \"filesystems\": { \n    \"raidfs\": {\n      \"device\": \"/dev/md0\",\n      \"mount\": \"/mnt\",\n      \"fstype\": \"xfs\",\n      \"optons\": \"noatime,nobarrier\",\n      \"mkfs_options\": \"-d sunit=128,swidth=2048\"\n    }\n  }\n}\n````\n\nDevelopment\n===========\n\nSee the [Github page][https://github.com/mdsol/ephemeral_raid_cookbook]\n\nAuthors\n=======\n\n* Author: Alex Trull <atrull@mdsol.com> with plenty of ideas bouncing around with Benton Roberts <broberts@mdsol.com>\n\nSpecial Thanks\n==============\n\n* This cookbook was built on the shoulders of giants such as Mike Heffner <mike@librato.com> who originated the original recipe provided significant suggestions for improvement.\n* The ephemeral devices helper was taken from Apache 2.0 licensed work by RightScale. Their quality is awesome.\n\nCopyright: 2013–2013 Medidata Solutions, Inc.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ]
+}

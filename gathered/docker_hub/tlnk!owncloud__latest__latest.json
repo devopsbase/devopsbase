@@ -1,0 +1,165 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/tlnk/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/tlnk/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/tlnk/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/tlnk/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/tlnk/owncloud/autobuild",
+    "user": "tlnk",
+    "name": "owncloud",
+    "namespace": "tlnk",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 39,
+    "last_updated": "2016-09-03T15:28:49.760973Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 269444109,
+        "id": 4660855,
+        "repository": 887866,
+        "creator": 687162,
+        "last_updater": 687162,
+        "last_updated": "2016-09-03T15:28:49.438877Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "dev-9.1.0",
+        "full_size": 269445728,
+        "id": 4660822,
+        "repository": 887866,
+        "creator": 687162,
+        "last_updater": 687162,
+        "last_updated": "2016-09-03T15:15:22.117678Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9.1.0",
+        "full_size": 269449012,
+        "id": 4632257,
+        "repository": 887866,
+        "creator": 687162,
+        "last_updater": 687162,
+        "last_updated": "2016-09-03T14:49:47.337896Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "tle06/owncloud"
+  },
+  "name": "tlnk/owncloud Docker container",
+  "description": "owncloud",
+  "readme": "[logo]: https://raw.githubusercontent.com/docker-library/docs/9d36b4ed7cabc35dbd3849272ba2bd7abe482172/owncloud/logo.png \"Image\"\n# Supported tags and respective\n\n*    latest [apache/Dockerfile](https://github.com/tle06/owncloud/blob/master/Dockerfile)\n*    9.1.0 [apache/Dockerfile](https://github.com/tle06/owncloud/blob/master/Dockerfile)\n\nThis image is updated via pull requests to the tle06/owncloud GitHub repo.\n\n# What is owncloud\nownCloud is a self-hosted file sync and share server. It provides access to your data through a web interface, sync clients or WebDAV while providing a platform to view, sync and share across devices easily—all under your control. ownCloud’s open architecture is extensible via a simple but powerful API for applications and plugins and it works with any storage.\n\n> [owncloud.org](https://owncloud.org/)\n\n![alt text][logo]\n\n# Image configuration\n\n* apache2\n* redis-2.2.8\n* php-ldap\n\n# Available ENV variable\n\n* __ENV OWNCLOUD_VERSION__ 9.1.0 -> version to use\n* __ENV PHP_UPLOAD_MAX_FILESIZE__ 100M -> config /etc/php5/apache2/php.ini\n* __ENV PHP_POST_MAX_SIZE__ 100M -> config /etc/php5/apache2/php.ini\n* __ENV PHP_MAX_EXCUTION_TIME__ 200 -> config /etc/php5/apache2/php.ini\n* __ENV PHP_MEMORY_LIMIT__ 256M -> config /etc/php5/apache2/php.ini\n\n# How to use this image\n## Start ownCloud\n\nStarting the ownCloud 8.1 instance listening on port 80 is as easy as the following:\n``` Docker\n\n$ docker run -d -p 80:80 owncloud:9.1.0\n\n```\nThen go to http://localhost/ and go through the wizard. By default this container uses SQLite for data storage, but the wizard should allow for connecting to an existing database.\n\nFor a MySQL database you can link an database container, e.g. --link my-mysql:mysql, and then use mysql as the database host on setup.\n## Persistent data\n\nAll data beyond what lives in the database (file uploads, etc) is stored within the default volume /var/www/owncloud. With this volume, ownCloud will only be updated when the file version.php is not present.\n\n*    -v /<mydatalocation>:/var/www/owncloud\n\nFor fine grained data persistence, you can use 3 volumes, as shown below.\n\n*    -v /<mydatalocation>/apps:/var/www/owncloud/apps installed / modified apps\n*    -v /<mydatalocation>/config:/var/www/owncloud/config local configuration\n*    -v /<mydatalocation>/data:/var/www/owncloud/data the actual data of your ownCloud\n\n## Caveat\n\nYou need to map the host port to the container port that apache listens on when going through the installation wizard. By default, this is port 80.\n\n### via docker-compose\n\nExample docker-compose.yml for owncloud:\n\n``` Docker\n#ownCloud with MariaDB/MySQL\n\n#Access via \"http://localhost:8080\" (or \"http://$(docker-machine ip):8080\" if using docker-machine)\n\n#During initial ownCloud setup, select \"Storage & database\" --> \"Configure the database\" --> \"MySQL/MariaDB\" Database user: root\n#Database password: example\n#Database name: pick any name\n#Database host: replace \"localhost\" with \"mysql\"\n\nversion: '2'\n\nservices:\n\n  owncloud:\n    image: owncloud\n    ports:\n      - 8080:80\n\n  mysql:\n    image: mariadb\n    environment:\n      MYSQL_ROOT_PASSWORD: example\n```",
+  "dockerfile": "#Dockerfile ownloud\nFROM ubuntu:14.04\nMAINTAINER tlnk <support@tlnk.fr>\n\nENV APP_NAME owncloud\nENV OWNCLOUD_VERSION 9.1.0\nENV PHP_UPLOAD_MAX_FILESIZE 100M\nENV PHP_POST_MAX_SIZE 100M\nENV PHP_MAX_EXCUTION_TIME 200\nENV PHP_MEMORY_LIMIT 256M\n\n#Install packages\nRUN apt-get update && apt-get upgrade -y && \\\n apt-get install -y nano wget unzip && \\\n apt-get install -y \\\n apache2 \\\n libapache2-mod-php5 \\\n php5-gd \\\n php5-json \\\n php5-mysql \\\n php5-curl \\\n php5-intl \\\n php5-mcrypt \\\n php5-imagick \\\n php5-ldap \\\n php-pear \\\n php5-dev && \\\n pecl install redis-2.2.8\n \n#Download owncloud\nRUN wget https://download.owncloud.org/community/owncloud-$OWNCLOUD_VERSION.zip && \\\n unzip owncloud-${OWNCLOUD_VERSION}.zip -d /var/www/ && \\\n mkdir /var/www/${APP_NAME}/data && \\\n chown -R www-data:www-data /var/www/${APP_NAME}/\n \n#Setup site.conf\nCOPY ${APP_NAME}.conf /etc/apache2/sites-available/${APP_NAME}.conf\n\n#Load apache module\nRUN a2enmod rewrite && \\\n a2enmod headers && \\\n echo 'extension=redis.so' > /etc/php5/mods-available/redis.ini && \\\n php5enmod redis && \\\n ln -s /etc/apache2/sites-available/${APP_NAME}.conf /etc/apache2/sites-enabled/${APP_NAME}.conf\n\n#Configure php.ini and .htaccess\nRUN sed -i -e \"s/upload_max_filesize\\s*=\\s*2M/upload_max_filesize = $PHP_UPLOAD_MAX_FILESIZE/g\" /etc/php5/apache2/php.ini && \\\nsed -i -e \"s/post_max_size\\s*=\\s*8M/post_max_size = $PHP_POST_MAX_SIZE/g\" /etc/php5/apache2/php.ini && \\\nsed -i -e \"s/max_execution_time\\s*=\\s*30/max_execution_time = $PHP_MAX_EXCUTION_TIME/g\" /etc/php5/apache2/php.ini && \\\nsed -i -e \"s/memory_limit\\s*=\\s*128M/memory_limit = $PHP_MEMORY_LIMIT/g\" /etc/php5/apache2/php.ini\n\n#Cleaning\nRUN rm /etc/apache2/sites-enabled/000-default.conf && \\\nrm -rf /App && \\\nrm owncloud-$OWNCLOUD_VERSION.zip &&\\\nrm -rf /var/www/html && \\\napt-get clean && \\\nservice apache2 restart\n\n\nWORKDIR /var/www/${APP_NAME}\nEXPOSE 80\n\nENTRYPOINT [\"/usr/sbin/apache2ctl\", \"-D\", \"FOREGROUND\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get upgrade -y &&  apt-get install -y nano wget unzip &&  apt-get install -y  apache2  libapache2-mod-php5  php5-gd  php5-json  php5-mysql  php5-curl  php5-intl  php5-mcrypt  php5-imagick  php5-ldap  php-pear  php5-dev &&  pecl install redis-2.2.8",
+      "wget https://download.owncloud.org/community/owncloud-$OWNCLOUD_VERSION.zip &&  unzip owncloud-${OWNCLOUD_VERSION}.zip -d /var/www/ &&  mkdir /var/www/${APP_NAME}/data &&  chown -R www-data:www-data /var/www/${APP_NAME}/",
+      "a2enmod rewrite &&  a2enmod headers &&  echo 'extension=redis.so' > /etc/php5/mods-available/redis.ini &&  php5enmod redis &&  ln -s /etc/apache2/sites-available/${APP_NAME}.conf /etc/apache2/sites-enabled/${APP_NAME}.conf",
+      "sed -i -e \"s/upload_max_filesize\\s*=\\s*2M/upload_max_filesize = $PHP_UPLOAD_MAX_FILESIZE/g\" /etc/php5/apache2/php.ini && sed -i -e \"s/post_max_size\\s*=\\s*8M/post_max_size = $PHP_POST_MAX_SIZE/g\" /etc/php5/apache2/php.ini && sed -i -e \"s/max_execution_time\\s*=\\s*30/max_execution_time = $PHP_MAX_EXCUTION_TIME/g\" /etc/php5/apache2/php.ini && sed -i -e \"s/memory_limit\\s*=\\s*128M/memory_limit = $PHP_MEMORY_LIMIT/g\" /etc/php5/apache2/php.ini",
+      "rm /etc/apache2/sites-enabled/000-default.conf && rm -rf /App && rm owncloud-$OWNCLOUD_VERSION.zip &&rm -rf /var/www/html && apt-get clean && service apache2 restart"
+    ],
+    "workdir": [
+      "/var/www/${APP_NAME}"
+    ],
+    "from": "ubuntu:14.04",
+    "maintainer": "tlnk <support@tlnk.fr>",
+    "env": {
+      "APP_NAME": "owncloud",
+      "OWNCLOUD_VERSION": "9.1.0",
+      "PHP_UPLOAD_MAX_FILESIZE": "100M",
+      "PHP_POST_MAX_SIZE": "100M",
+      "PHP_MAX_EXCUTION_TIME": "200",
+      "PHP_MEMORY_LIMIT": "256M"
+    },
+    "copy": "${APP_NAME}.conf /etc/apache2/sites-available/${APP_NAME}.conf",
+    "entrypoint": "[\"/usr/sbin/apache2ctl\", \"-D\", \"FOREGROUND\"]"
+  },
+  "source_repository_url": "https://github.com/tle06/owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/tle06/owncloud",
+  "docker_repository": "tlnk/owncloud",
+  "docker_image": "tlnk/owncloud",
+  "parameters_schema": {
+    "APP_NAME": {
+      "default": "owncloud",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OWNCLOUD_VERSION": {
+      "default": "9.1.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PHP_UPLOAD_MAX_FILESIZE": {
+      "default": "100M",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PHP_POST_MAX_SIZE": {
+      "default": "100M",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PHP_MAX_EXCUTION_TIME": {
+      "default": "200",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PHP_MEMORY_LIMIT": {
+      "default": "256M",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "tlnk/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/tlnk/owncloud",
+    "https://hub.docker.com/v2/repositories/tlnk/owncloud",
+    "https://github.com/tle06/owncloud.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/tlnk/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

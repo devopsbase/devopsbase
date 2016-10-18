@@ -1,0 +1,110 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mreithub/simple-apache",
+    "repository_url": "https://hub.docker.com/v2/repositories/mreithub/simple-apache",
+    "tags_url": "https://hub.docker.com/v2/repositories/mreithub/simple-apache/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mreithub/simple-apache/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mreithub/simple-apache/autobuild",
+    "user": "mreithub",
+    "name": "simple-apache",
+    "namespace": "mreithub",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 295,
+    "last_updated": "2016-09-23T20:50:07.001394Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 228243837,
+        "id": 1914783,
+        "repository": 512588,
+        "creator": 320024,
+        "last_updater": 320024,
+        "last_updated": "2016-09-23T20:47:42.988283Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "mreithub/simple-apache"
+  },
+  "name": "mreithub/simple-apache Docker container",
+  "description": "Apache2 web server bundled with the simp_le letsencrypt.org client (for easy HTTP setup)",
+  "readme": "simp_le Apache\n==============\n\nsimp_le Apache is a Docker image providing a relatively basic Apache installation bundled with the [simp_le][0] letsencrypt.org client.\n\n**IMPORTANT: ** Make sure to at least define the `/etc/apache2/ssl` directory as a persistent volume as there are rate limits on how many certificates can be requested per domain and week on letsencrypt.org (see [1]) (so if you re-request them each time you recreate the container, you might hit that limit)\n\nUsage - with bind mounts\n------------------------\n\nRun the following command (I've added newlines here to increase readability):\n\n    docker run -d\n      -e SIMPLE_EMAIL=me@example.com \n      -e SIMPLE_DOMAINS='example.com foo.example.net'\n      -v /data/apache/sites/:/etc/apache2/sites-available/\n      -v /data/apache/certs/:/etc/apache2/ssl/\n      mreithub/simple-apache\n\nThen for each site you want to create add a virtual host configuration (in the above example in `/data/apache/sites/`); e.g. `foo.example.net.conf`(make sure the filename ends with `.conf` or the file will be ignored):\n\n    <VirtualHost *:443>\n        ServerAdmin webmaster@localhost\n        ServerName foo.example.net\n        \n        DocumentRoot /var/www/foo.example.net/\n        \n        <Directory /var/www/foo.example.net/>\n            Order allow,deny\n            Allow from all\n            Require all granted\n        </Directory>\n\n        # ...\n\n        # This part is crucial:\n        SslEngine on\n        SSLCertificateFile      /etc/apache2/ssl/fullchain.pem\n        SSLCertificateKeyFile   /etc/apache2/ssl/key.pem\n    </VirtualHost>\n\nThen either restart your container or run\n\n    docker exec -ti <containerName> updateSites\n\nto update the list of enabled sites and reload Apache.\n\nUsage - Custom image\n--------------------\n\nIf you need additional software for the container (for this example we'll use PHP), create your own image using this one as its base:\n\n    FROM mreithub/simple-apache\n    RUN apt-get install --yes libapache2-mod-php5\n    RUN a2enmod php5\n\n    # ...\n\nOf course you then also put your sites directly into your image then (instead of using volumes)\n\n\nHTTP sites\n----------\n\nIf you also want to allow HTTP on a site (and therefore create a `:80` VirtualHost config), make sure the letsencrypt can access the challenges at `/.well-known/`.\n\nThis can be done by either specifying the document root in the `SIMPLE_DOMAINS` variable (format: `domainname:documentRoot`):\n\n    SIMPLE_DOMAINS=\"... foo.example.net:/var/www/myHttpPage/ ...\"\n\nor by making an alias/symlink/...\n\n\nEnvironment Variables\n---------------------\n\n- `SIMPLE_EMAIL`  \n  letsencrypt.org account e-mail address.\n- `SIMPLE_DOMAINS`  \n  Space separated list of domain names to fetch certificates for.\n- `ENABLE_MODULES`  \n  Allows you to activate additional apache modules (just specify them as space separated list) \n- `SIMPLE_KSPASS`  \n  If present the script will generate/update a `keystore.p12` file (in `/etc/apache2/ssl/`) with the given password\n- `SIMPLE_TOS`\n  If present, use this SHA256 hash instead of the default Terms of Service hash (use this if you get a 'TOS hash mismatch' error)\n\nDesign choices\n--------------\n\n- The image is based on Debian Jessie\n- Extra sites will only be enabled after the SSL certificates have been fetched\n- Only site configurations ending with `.conf` will be enabled (which allows you to disable a site simply by renaming its config file)\n- Certificates are fetched once a month (using a cronjob).  \n- the `sites-enabled/`directory is managed. The `updateSites` script manages its symlinks.\n- The default HTTP site (`000-default.conf`) is configured to provide access to the letsencrypt challenges but will redirect all other traffic to HTTPS\n    - The redirect is done using `HTTP 302 Found`. This will break POST requests issued over HTTP, but that's intentional (Use HTTPS for user data ;). If you can't (e.g. for backwards compatibility reasons), simply create another HTTP that handles things the way you need it to).\n- Instead of having separate containers (one for apache/nginx/... and one for simp_le) I chose to bundle them. That way apache can be reloaded automatically after certificates have changed\n\n[0]: https://github.com/kuba/simp_le\n[1]: https://community.letsencrypt.org/t/rate-limits-for-lets-encrypt/6769\n",
+  "dockerfile": "FROM debian:jessie\n\nMAINTAINER manuel@reithuber.net\n\n# Install packages\nRUN apt-get update && apt-get -y install apache2 python3-pip git libssl-dev libffi-dev cron\n\n# Install simp-le (letsencrypt.org client)\nRUN pip3 install git+https://github.com/kuba/simp_le\n\n# install required pypi packages\nRUN pip3 install --upgrade six\nRUN pip3 install --upgrade setuptools\n\nRUN a2enmod proxy_http rewrite ssl\n\n# Create simp_le user (and add it to the ssl-cert group)\nRUN adduser --disabled-password --no-create-home --gecos \"simp_le user\" simp-le\nRUN adduser simp-le ssl-cert\n\n\nVOLUME /etc/apache2/ssl/\nVOLUME /etc/apache2/sites-available/\nVOLUME /var/www/\n\nCOPY res/ /\n\n# create some working dirs (without them apache refuses to run)\nRUN mkdir -p /var/lock/apache2/ /var/run/apache2/\nRUN chown www-data /var/lock/apache2/\n\nEXPOSE 80\nEXPOSE 443\n\nENTRYPOINT [ \"/run.sh\" ]\n\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80,
+      443
+    ],
+    "volume": [
+      "/etc/apache2/ssl/",
+      "/etc/apache2/sites-available/",
+      "/var/www/"
+    ],
+    "run": [
+      "apt-get update && apt-get -y install apache2 python3-pip git libssl-dev libffi-dev cron",
+      "pip3 install git+https://github.com/kuba/simp_le",
+      "pip3 install --upgrade six",
+      "pip3 install --upgrade setuptools",
+      "a2enmod proxy_http rewrite ssl",
+      "adduser --disabled-password --no-create-home --gecos \"simp_le user\" simp-le",
+      "adduser simp-le ssl-cert",
+      "mkdir -p /var/lock/apache2/ /var/run/apache2/",
+      "chown www-data /var/lock/apache2/"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "manuel@reithuber.net",
+    "copy": "res/ /",
+    "entrypoint": "[ \"/run.sh\" ]"
+  },
+  "source_repository_url": "https://github.com/mreithub/simple-apache.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mreithub/simple-apache",
+  "docker_repository": "mreithub/simple-apache",
+  "docker_image": "mreithub/simple-apache",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80,
+        443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mreithub/simple-apache",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/mreithub/simple-apache",
+    "https://hub.docker.com/v2/repositories/mreithub/simple-apache",
+    "https://github.com/mreithub/simple-apache.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Bundle",
+    "Mode/CLI",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/mreithub/simple-apache",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

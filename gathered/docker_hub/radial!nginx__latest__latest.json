@@ -1,0 +1,119 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/radial/nginx",
+    "repository_url": "https://hub.docker.com/v2/repositories/radial/nginx",
+    "tags_url": "https://hub.docker.com/v2/repositories/radial/nginx/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/radial/nginx/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/radial/nginx/autobuild",
+    "user": "radial",
+    "name": "nginx",
+    "namespace": "radial",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 2885,
+    "last_updated": "2016-10-13T22:01:45.115768Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 104383755,
+        "id": 49682,
+        "repository": 56343,
+        "creator": 16199,
+        "last_updater": 16199,
+        "last_updated": "2016-10-13T22:01:44.764367Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "radial/wheel-nginx"
+  },
+  "name": "radial/nginx Docker container",
+  "description": "Spoke container for Nginx, a high performance web server.",
+  "readme": "# Nginx: High Performance Web Server\n\nThis is a Radial Wheel repository for a [nginx][nginx] server.\n\nBy itself, the default configuration will serve static files at `/data/www`.\n\nServing web-apps (in their own Spoke container) via sockets is functional,\nbut undocumented at the moment. \n\n[nginx]: http://nginx.org/\n\n## Tunables\n\nTunable environment variables; modify at runtime. Italics are defaults.\n\n  - **$SSL_DIR**: [_\"/etc/ssl/nginx\"_] Location to store Certificate Signing\n    Request\n  - **$WWW_DIR**: [_\"/data/www\"_] File path of website root.\n  - **$CSR_C**: {_\"US\"_} CSR \"Country\" subject\n  - **$CSR_ST**: {_\"CA\"_} CSR \"State\" subject\n  - **$CSR_L**: {_\"Los Angeles\"_} CSR \"Location\" subject\n  - **$CSR_O**: {_\"myorg\"_} CSR \"Organization\" subject\n  - **$CSR_OU**: {_\"department\"_} CSR \"Organizational Unit\" subject\n  - **$CSR_CN**: {_\"myorg.com\"_} CSR \"Common Name\" subject\n  - **$ENABLE**: {_\"static_serv\"_} Website(s) to enable when run. Static serving\n    on `$WWW_DIR` by default.  Set as single string with sites separated with\n    spaces. (\"site_one site_two\")\n\n## Radial\n\n[Radial][radial] is a [Docker][docker] container topology strategy that\nseeks to put the cannon of Docker best-practices into simple, re-usable, and\nscalable images, dockerfiles, and repositories. Radial categorizes containers\ninto 3 types: Axles, Hubs, and Spokes. A Wheel is a repository used to recreate\nan application stack consisting of any combination of all three types of\ncontainers. Check out the [Radial documentation][radialdocs] for more.\n\nOne of the main design goals of Radial containers is simple and painless\nmodularity. All Spoke (application/binary) containers are designed to be run by\nthemselves as a service (a Wheel consisting of a Hub container for configuration\nand a Spoke container for the running binary) or as part of a larger stack as a\nWheel of many Spokes all joined by the Hub container (database, application\ncode, web server, backend services etc.). Check out the [Wheel\ntutorial][wheel-template] for some more details on how this works.\n\nNote also that for now, Radial makes use of [Fig][fig] for all orchestration,\ndemonstration, and testing. Radial is just a collection of images and\nstrategies, so technically, any orchestration tool can work. But Fig was the\nleanest and most logical to use for now. \n\n[wheel-template]: https://github.com/radial/template-wheel\n[fig]: http://www.fig.sh\n[docker]: http://docker.io/\n[radial]: https://github.com/radial\n[radialdocs]: http://radial.viewdocs.io/docs\n\n## How to Use\n### Static Build\n\nIn case you need to modify the entrypoint script, the Dockerfile itself, create\nyour \"config\" branch for dynamic building, or just prefer to build your own from\nscratch, then you can do the following:\n\n1. Clone this repository\n2. Make whatever changes needed to configuration and add whatever files\n3. `fig up`\n\n### Dynamic Build\n\nA standard feature of all Radial images is their ability to be used dynamically.\nThis means that since great care is made to separate the application code from\nit's configuration, as long as you make your application configuration available\nas a git repository, and in it's own \"config\" branch as per the guidelines in\nthe [Wheel template][wheel-template], no building of any images will be\nnecessary at deploy time. This has many benefits as it allows rapid deployment\nand configuration without any wait time in the building process. However:\n\n**Dynamic builds will not commit your configuration files into any\nresulting images like static builds.**\n\nStatic builds do a \"COPY\" of files into the image before exposing the\ndirectories as volumes. Dynamic builds do a `git fetch` at run time and the\nresulting data is downloaded to an already existing volume location, which is\nnow free from Docker versioning. Both methods have their advantages and\ndisadvantages. Deploying the same exact configuration might benefit from a\nsingle image built statically whereas deploying many different disposable \nconfigurations rapidly are best done dynamically with no building.\n\nTo run dynamically:\n\n1. Modify the `fig-dynamic.yml` file to point at your own Wheel repository\n   location by setting the `$WHEEL_REPO` variable. When run, the Hub container\n   will pull the \"config\" branch of that repository and use it to run the Spoke\n   container with your own configuration.\n3. `fig -f fig-dynamic.yml up`\n",
+  "dockerfile": "# Spoke Dockerfile for nginx\n\nFROM            radial/spoke-base:latest\nMAINTAINER      Brian Clements <radial@brianclements.net>\n\n# Install packages\nENV             DEBIAN_FRONTEND noninteractive\nRUN             apt-get -q update && apt-get -qyV install \\\n                    wget \nRUN             echo \"deb http://nginx.org/packages/ubuntu/ trusty nginx\" > /etc/apt/sources.list.d/nginx.list &&\\\n                wget -q -O /tmp/nginx.key http://nginx.org/keys/nginx_signing.key &&\\\n                apt-key add /tmp/nginx.key\nRUN             apt-get -q update && apt-get -qyV install \\\n                    curl libcurl3 bzip2 openssl ssl-cert sharutils libmcrypt4\\\n                    nginx &&\\\n                apt-get clean &&\\\n                rm -rf /var/lib/apt/lists/*\n\n# Generate DH parameter\nRUN             mkdir -p /etc/nginx/ssl &&\\\n                openssl dhparam -out /etc/nginx/ssl/dhparam.pem 2048\n\n# Set Spoke ID\nENV             SPOKE_NAME nginx\n\nCOPY            /entrypoint.sh /entrypoint.sh\n\nEXPOSE          80\nEXPOSE          443\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80,
+      443
+    ],
+    "volume": [],
+    "run": [
+      "            apt-get -q update && apt-get -qyV install                     wget ",
+      "            echo \"deb http://nginx.org/packages/ubuntu/ trusty nginx\" > /etc/apt/sources.list.d/nginx.list &&                wget -q -O /tmp/nginx.key http://nginx.org/keys/nginx_signing.key &&                apt-key add /tmp/nginx.key",
+      "            apt-get -q update && apt-get -qyV install                     curl libcurl3 bzip2 openssl ssl-cert sharutils libmcrypt4                    nginx &&                apt-get clean &&                rm -rf /var/lib/apt/lists/*",
+      "            mkdir -p /etc/nginx/ssl &&                openssl dhparam -out /etc/nginx/ssl/dhparam.pem 2048"
+    ],
+    "workdir": [],
+    "from": "           radial/spoke-base:latest",
+    "maintainer": "     Brian Clements <radial@brianclements.net>",
+    "env": {
+      "": "",
+      "DEBIAN_FRONTEND": "noninteractive",
+      "SPOKE_NAME": "nginx"
+    },
+    "copy": "           /entrypoint.sh /entrypoint.sh"
+  },
+  "source_repository_url": "https://github.com/radial/wheel-nginx.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/radial/wheel-nginx",
+  "docker_repository": "radial/nginx",
+  "docker_image": "radial/nginx",
+  "parameters_schema": {
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SPOKE_NAME": {
+      "default": "nginx",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80,
+        443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "radial/nginx",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/radial/nginx",
+    "https://hub.docker.com/v2/repositories/radial/nginx",
+    "https://github.com/radial/wheel-nginx.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/radial/nginx",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,92 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/marvambass/nginx-registry-proxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/marvambass/nginx-registry-proxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/marvambass/nginx-registry-proxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/marvambass/nginx-registry-proxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/marvambass/nginx-registry-proxy/autobuild",
+    "user": "marvambass",
+    "name": "nginx-registry-proxy",
+    "namespace": "marvambass",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 31,
+    "pull_count": 120502,
+    "last_updated": "2016-10-12T17:07:41.547882Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 81081509,
+        "id": 108200,
+        "repository": 77522,
+        "creator": 136116,
+        "last_updater": 136116,
+        "last_updated": "2016-10-12T17:07:40.484354Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "MarvAmBass/docker-nginx-registry-proxy"
+  },
+  "name": "marvambass/nginx-registry-proxy Docker container",
+  "description": "Docker Registry Reverse Proxy with Basic Auth Nginx Server - ready for production",
+  "readme": "# Docker Registry Reverse Proxy with Basic Auth Nginx Server (marvambass/nginx-registry-proxy)\n_maintained by MarvAmBass_\n\n[FAQ - All you need to know about the marvambass Containers](https://marvin.im/docker-faq-all-you-need-to-know-about-the-marvambass-containers/)\n\n## What is it\n\nThis Dockerfile (available as ___marvambass/nginx-registry-proxy___) gives you a nginx reverse proxy with SSL and Basic Auth to use with your Docker Registry (___registry___)\n\nView in Docker Registry [marvambass/nginx-registry-proxy](https://registry.hub.docker.com/u/marvambass/nginx-registry-proxy/)\n\nView in GitHub [MarvAmBass/docker-nginx-registry-proxy](https://github.com/MarvAmBass/docker-nginx-registry-proxy)\n\n## Running marvambass/nginx-registry-proxy Container \n\nTo run this container, you need a running ___registry___ with the name _registry_ for example:\n\n    docker run -d --name registry \\\n    -v $YOUR_REGISTRY_DIR:/registry \\\n    -e \"SETTINGS_FLAVOR=local\" \\\n    -e \"STORAGE_PATH=/registry\" \\\n    registry\n\nYou also need a htpasswd-file [howto](#creating-a-htpasswd-file) and a ssl keypair [howto](#creating-a-self-signed-ssl-cert)\n\nPut the new files in a folder to get a result like this:\n\n    ~/your/path/external$ ls\n    cert.pem  docker-registry.htpasswd  key.pem\n\nYou're now ready to run the nginx-registry-proxy Server ;)\n\n    docker run -d -p 443:443 \\\n    -v $PATH\\_TO\\_YOUR/external:/etc/nginx/external \\\n    --link registry:registry --name nginx-registry-proxy \\\n    marvambass/nginx-registry-proxy\n\n## Use your private Docker Registry\n\nLet's asume, you followed all steps until now. You've a Server (_https://mydockerreg.com:443_) with _https_ on port _443_ and a basicauth user named _tom_ with the password _jerry_.\n\nLet's check if the Server is available by opening this URL _https://mydockerreg.com:443/v1/\\_ping_. If the Server returns _true_ your Registry is up and running.\n\nLet's get a new Docker Image from the offical Registry, rename it, and publish it into your private Registry.\n\n    $ docker pull scratch # this pulls the scratch image from the offical registry\n\nNow we have the image named _scratch_ in our local Docker Image Registry. You can check that with the command:\n\n    $ docker images\n    scratch              latest              511136ea3c5a        16 months ago       0 B\n\nLet's rename the Image and publish it into your private Registry\n\n    $ docker tag scratch mydockerreg.com:443/scratch\n\nNow the command _docker images_ will show another Image\n\n    scratch              latest              511136ea3c5a        16 months ago       0 B\n    mydockerreg.com:443/scratch             latest              511136ea3c5a        16 months ago       0 B\n\nAt this Point we're able to publish it into your private Registry but first we need to login into the server\n\n    $ docker login https://mydockerreg.com:443\n    Username: tom\n    Password: jerry\n    Email: \n    $ docker push mydockerreg.com:443/scratch\n\nYou're successfully published you're first Image into your private Registry.\n__Note__ that you need _docker login_ on every Server (you can also use arguments for password and username, but this is not secure because of the process list of linux _ps aux_ or the bash history)\n\nDownload the uploaded Image:\n\n    $ docker login https://mydockerreg.com:443\n    Username: tom\n    Password: jerry\n    Email: \n    $ docker pull mydockerreg.com:443/scratch\n    \nThat's it - Have fun!\n    \n## Based on\n\nThis Dockerfile bases on the [marvambass/nginx-ssl-secure](https://registry.hub.docker.com/u/marvambass/nginx-ssl-secure) Image.\n\nI got inspired by the following DigitalOcean Tutorial [https://www.digitalocean.com/community/tutorials/how-to-set-up-a-private-docker-registry-on-ubuntu-14-04\n](https://www.digitalocean.com/community/tutorials/how-to-set-up-a-private-docker-registry-on-ubuntu-14-04)\n\n## Building the Dockerfile yourself\n\nJust use the following command to build and publish your/this Docker Container.\n\n    docker build -t username/nginx-registry-proxy .\n    docker push username/nginx-registry-proxy\n\n## Cheat Sheet\n\n### Creating a self-signed ssl cert\n\nPlease note, that the Common Name (CN) is important and should be the FQDN to the secured server:\n\n    openssl req -x509 -newkey rsa:4086 -keyout key.pem -out cert.pem -days 3650 -nodes\n\n### Creating a htpasswd file\n\nYou need the _htpasswd_ command (on _Ubuntu_ you can simply install it with _sudo apt-get install -y apache2-utils_)\n\nThe first time you wanna __create__ the htpasswd-file, you need to use the _-c_ parameter (it stands for create).\n\n    htpasswd -c docker-registry.htpasswd user1\n\nAny other new User you want to add, simply use the following command:\n\n    htpasswd docker-registry.htpasswd userN\n\n_if you use the -c on a existing htpasswd-file, all existing user will be deleted and you create a new file which only contains the new user_\n",
+  "dockerfile": "FROM marvambass/nginx-ssl-secure\nMAINTAINER MarvAmBass\n\nADD docker-registry.conf /etc/nginx/conf.d/docker-registry.conf\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "docker-registry.conf",
+        "dest": "/etc/nginx/conf.d/docker-registry.conf"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [],
+    "workdir": [],
+    "from": "marvambass/nginx-ssl-secure",
+    "maintainer": "MarvAmBass"
+  },
+  "source_repository_url": "https://github.com/MarvAmBass/docker-nginx-registry-proxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/MarvAmBass/docker-nginx-registry-proxy",
+  "docker_repository": "marvambass/nginx-registry-proxy",
+  "docker_image": "marvambass/nginx-registry-proxy",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "marvambass/nginx-registry-proxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/marvambass/nginx-registry-proxy",
+    "https://hub.docker.com/v2/repositories/marvambass/nginx-registry-proxy",
+    "https://github.com/MarvAmBass/docker-nginx-registry-proxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Web Server/Nginx",
+    "Type/Middleware/Proxy"
+  ],
+  "info_url": "https://hub.docker.com/r/marvambass/nginx-registry-proxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

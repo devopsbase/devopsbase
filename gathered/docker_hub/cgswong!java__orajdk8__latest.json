@@ -1,0 +1,217 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/cgswong/java",
+    "repository_url": "https://hub.docker.com/v2/repositories/cgswong/java",
+    "tags_url": "https://hub.docker.com/v2/repositories/cgswong/java/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/cgswong/java/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/cgswong/java/autobuild",
+    "user": "cgswong",
+    "name": "java",
+    "namespace": "cgswong",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 741,
+    "last_updated": "2016-02-18T02:08:48.660415Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "orajdk8",
+        "full_size": 67470656,
+        "id": 799157,
+        "repository": 299734,
+        "creator": 28802,
+        "last_updater": 28802,
+        "last_updated": "2016-02-18T02:08:48.252850Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "openjdk8",
+        "full_size": 51894159,
+        "id": 799155,
+        "repository": 299734,
+        "creator": 28802,
+        "last_updater": 28802,
+        "last_updated": "2016-02-18T02:07:13.929754Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "orajre8",
+        "full_size": 66933034,
+        "id": 799153,
+        "repository": 299734,
+        "creator": 28802,
+        "last_updater": 28802,
+        "last_updated": "2016-02-18T02:06:11.775515Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 67470737,
+        "id": 799154,
+        "repository": 299734,
+        "creator": 28802,
+        "last_updater": 28802,
+        "last_updated": "2016-02-18T02:04:54.744916Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "openjre8",
+        "full_size": 42192622,
+        "id": 799151,
+        "repository": 299734,
+        "creator": 28802,
+        "last_updater": 28802,
+        "last_updated": "2016-02-18T02:03:31.186460Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "oraclejdk7",
+        "full_size": 370786746,
+        "id": 1343887,
+        "repository": 299734,
+        "creator": 28802,
+        "last_updater": 28802,
+        "last_updated": "2015-11-14T08:20:06.063462Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "oraclejdk8",
+        "full_size": 408034933,
+        "id": 1343881,
+        "repository": 299734,
+        "creator": 28802,
+        "last_updater": 28802,
+        "last_updated": "2015-11-14T08:17:34.994901Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "cgswong/docker-alpine-java"
+  },
+  "name": "cgswong/java Docker container",
+  "description": "Minimal Java using Alpine Linux",
+  "readme": "# Alpine Java\nDocker image for Java based on Alpine Linux base image. Provides:\n\n- orajdk8: Oracle JDK 8\n- orajre8: Oracle JRE 8\n- openjdk8: OpenJDK 8\n- openjre8: OpenJRE 8\n\n# Using the images\nBy default the image just outputs the Java version. You can either use a volume mount and provide your own flags to run a JAR file, or use this image as a base image (which is the primary intent). To use as a base image simply start your Dockerfile with `FROM cgswong/java:openjdk8`.\n",
+  "dockerfile": "# Docker base image for Oracle JDK 8 w/glibc-2.21.\nFROM gliderlabs/alpine:3.3\nMAINTAINER Stuart Wong <cgs.wong@gmail.com>\n\n# Setup environment\nENV PKG_URL \"https://circle-artifacts.com/gh/andyshinn/alpine-pkg-glibc/6/artifacts/0/home/ubuntu/alpine-pkg-glibc/packages/x86_64\"\nENV JAVA_VERSION_MAJOR 8\nENV JAVA_VERSION_MINOR 66\nENV JAVA_VERSION_BUILD 17\nENV JAVA_BASE /usr/local/java\nENV JAVA_HOME ${JAVA_BASE}/jdk\nENV JAVA_PKG jdk\n\nENV PATH ${PATH}:${JAVA_HOME}/bin\nENV LANG C.UTF-8\n\n# Use workarounds from https://github.com/gliderlabs/docker-alpine/issues/11:\n# 1. Install glibc\n# 2. hotfix /etc/nsswitch.conf, which is apperently required by glibc and is not used in Alpine Linux\nRUN apk --no-cache add \\\n      bash \\\n      ca-certificates \\\n      curl &&\\\n    curl -sSL --output /tmp/glibc-2.21-r2.apk \"${PKG_URL}/glibc-2.21-r2.apk\" &&\\\n    curl -sSL --output /tmp/glibc-bin-2.21-r2.apk \"${PKG_URL}/glibc-bin-2.21-r2.apk\" &&\\\n    apk --no-cache add --allow-untrusted \\\n      /tmp/glibc-2.21-r2.apk \\\n      /tmp/glibc-bin-2.21-r2.apk &&\\\n    /usr/glibc/usr/bin/ldconfig /lib /usr/glibc/usr/lib &&\\\n    # Install Java\n    mkdir -p ${JAVA_BASE} &&\\\n    curl -sSL --header \"Cookie: oraclelicense=accept-securebackup-cookie\" http://download.oracle.com/otn-pub/java/jdk/${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-b${JAVA_VERSION_BUILD}/${JAVA_PKG}-${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-linux-x64.tar.gz | tar zxf - -C $JAVA_BASE &&\\\n    ln -s $JAVA_BASE/jdk1.${JAVA_VERSION_MAJOR}.0_${JAVA_VERSION_MINOR} ${JAVA_HOME} &&\\\n    echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf &&\\\n    # Cleanup\n    rm -rf /tmp/* \\\n        ${JAVA_HOME}/*src.zip \\\n        ${JAVA_HOME}/lib/missioncontrol \\\n        ${JAVA_HOME}/lib/visualvm \\\n        ${JAVA_HOME}/lib/*javafx* \\\n        ${JAVA_HOME}/jre/lib/plugin.jar \\\n        ${JAVA_HOME}/jre/lib/ext/jfxrt.jar \\\n        ${JAVA_HOME}/jre/bin/javaws \\\n        ${JAVA_HOME}/jre/lib/javaws.jar \\\n        ${JAVA_HOME}/jre/lib/desktop \\\n        ${JAVA_HOME}/jre/plugin \\\n        ${JAVA_HOME}/jre/lib/deploy* \\\n        ${JAVA_HOME}/jre/lib/*javafx* \\\n        ${JAVA_HOME}/jre/lib/*jfx* \\\n        ${JAVA_HOME}/jre/lib/amd64/libdecora_sse.so \\\n        ${JAVA_HOME}/jre/lib/amd64/libprism_*.so \\\n        ${JAVA_HOME}/jre/lib/amd64/libfxplugins.so \\\n        ${JAVA_HOME}/jre/lib/amd64/libglass.so \\\n        ${JAVA_HOME}/jre/lib/amd64/libgstreamer-lite.so \\\n        ${JAVA_HOME}/jre/lib/amd64/libjavafx*.so \\\n        ${JAVA_HOME}/jre/lib/amd64/libjfx*.so\n\n# Start container\nCMD [\"java\",\"-Djava.security.egd=file:/dev/urandom\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apk --no-cache add       bash       ca-certificates       curl &&    curl -sSL --output /tmp/glibc-2.21-r2.apk \"${PKG_URL}/glibc-2.21-r2.apk\" &&    curl -sSL --output /tmp/glibc-bin-2.21-r2.apk \"${PKG_URL}/glibc-bin-2.21-r2.apk\" &&    apk --no-cache add --allow-untrusted       /tmp/glibc-2.21-r2.apk       /tmp/glibc-bin-2.21-r2.apk &&    /usr/glibc/usr/bin/ldconfig /lib /usr/glibc/usr/lib &&    # Install Java"
+    ],
+    "workdir": [],
+    "from": "gliderlabs/alpine:3.3",
+    "maintainer": "Stuart Wong <cgs.wong@gmail.com>",
+    "env": {
+      "PKG_URL": "\"https://circle-artifacts.com/gh/andyshinn/alpine-pkg-glibc/6/artifacts/0/home/ubuntu/alpine-pkg-glibc/packages/x86_64\"",
+      "JAVA_VERSION_MAJOR": "8",
+      "JAVA_VERSION_MINOR": "66",
+      "JAVA_VERSION_BUILD": "17",
+      "JAVA_BASE": "/usr/local/java",
+      "JAVA_HOME": "${JAVA_BASE}/jdk",
+      "JAVA_PKG": "jdk",
+      "PATH": "${PATH}:${JAVA_HOME}/bin",
+      "LANG": "C.UTF-8"
+    },
+    "cmd": "[\"java\",\"-Djava.security.egd=file:/dev/urandom\"]"
+  },
+  "source_repository_url": "https://github.com/cgswong/docker-alpine-java.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/cgswong/docker-alpine-java",
+  "docker_repository": "cgswong/java",
+  "docker_image": "cgswong/java",
+  "parameters_schema": {
+    "PKG_URL": {
+      "default": "\"https://circle-artifacts.com/gh/andyshinn/alpine-pkg-glibc/6/artifacts/0/home/ubuntu/alpine-pkg-glibc/packages/x86_64\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_VERSION_MAJOR": {
+      "default": "8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_VERSION_MINOR": {
+      "default": "66",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_VERSION_BUILD": {
+      "default": "17",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_BASE": {
+      "default": "/usr/local/java",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_HOME": {
+      "default": "${JAVA_BASE}/jdk",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_PKG": {
+      "default": "jdk",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "${PATH}:${JAVA_HOME}/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "C.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "cgswong/java",
+  "revision": "orajdk8",
+  "uris": [
+    "https://hub.docker.com/r/cgswong/java",
+    "https://hub.docker.com/v2/repositories/cgswong/java",
+    "https://github.com/cgswong/docker-alpine-java.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System/Linux"
+  ],
+  "info_url": "https://hub.docker.com/r/cgswong/java",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,102 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/gymnae/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/gymnae/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/gymnae/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/gymnae/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/gymnae/owncloud/autobuild",
+    "user": "gymnae",
+    "name": "owncloud",
+    "namespace": "gymnae",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 168,
+    "last_updated": "2016-10-04T09:33:20.912554Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 88169016,
+        "id": 2288392,
+        "repository": 575242,
+        "creator": 671285,
+        "last_updater": 671285,
+        "last_updated": "2016-10-04T09:33:19.290269Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Gymnae/docker-owncloud"
+  },
+  "name": "gymnae/owncloud Docker container",
+  "description": "Alpine:edge based owncloud 9 image",
+  "readme": "Based on, inspired by and ripped off from:\n1. http://wiki.alpinelinux.org/wiki/OwnCloud\n2. https://github.com/jchaney/owncloud\n3. https://github.com/splattael/docker-owncloud/blob/master/Makefile\n4. https://github.com/psi-4ward/docker-owncloud/\n\nYou may need to tune the init and dockerfile to your needs. The current setup facilitates migration from existing installations, but the code from the inspirational sources for starting from scratch is still there and can be reused\n\nThis owncloud install comes with a running redis server for caching, but I use a separate redis container\n\nI switched to an owncloud package which requires an external database server, thus you'd need to link to an existing database container\n\nI've turned off SSL, because I'm still working on the let's encrypt wrapper. Do not run an owncloud container without SSL if you want public usage! Please don't.\n\nthis is my command, as an example:\ndocker run -d -v <data volume / folder on host>:/media/owncloud --link=<your great database container exposing port 3306>:db --link=<redis container>:redis -p <external port>:80 --name=\"<givemeaname>\" gymnae/owncloud\n\nyour data volume / folder should have the following structure - pre-fill for migration or let owncloud fill it for a virgin install\nconfig/\nlogs/\ndata/\n\n\nPlease prepare a database in your your database container and have it's login data ready for install when starting for the first time",
+  "dockerfile": "##\n#\n# owncloud based on, inspired by and ripped off from:\n#\t1. http://wiki.alpinelinux.org/wiki/OwnCloud\n#\t2. https://github.com/jchaney/owncloud\n#\t3. https://github.com/splattael/docker-owncloud/blob/master/Makefile\n#\t4. https://github.com/psi-4ward/docker-owncloud/\n#\n\nFROM gymnae/webserverbase:latest\n\n# add the packages needed and other initial preparations\n\nRUN apk-install \\\n    # redis server\n    redis \\\n    # server modules\n    freetype \\    \n    libmcrypt \\\n    libjpeg \\\n    libltdl \\\n    libpng \\\n    libpq \\\n    libxml2 \\\n    libbz2 \\\n    ffmpeg \\\n    # additional php modules\n    php5-pdo_pgsql \\\n    php5-pdo_mysql \\\n    php5-posix \\\n    php5-dom \\\n    php5-ftp \\\n    php5-exif \\\n    php5-intl \\\n    php5-gmp \\\n    php5-bz2 \\\n    php5-ctype \\\n    php5-iconv \\\n    php5-xml \\\n    php5-zip \\\n    php5-xmlreader \\\n    #owncloud packages\n\towncloud \\\n\towncloud-texteditor \\\n\towncloud-documents \\\n\towncloud-contacts \\\n\towncloud-calendar \\\n\towncloud-encryption \\\n\towncloud-music \\\n\towncloud-external \\\n\towncloud-gallery \\\n\tmusl \\ \n\towncloud-videoplayer \n\n# make folders\nRUN mkdir -pv /etc/nginx/sites-enabled/\n\n# Volumes\nVOLUME [\"/media/owncloud\"]\n\n\n# environment files at the end\n# usually ignored once installed\n#ENV OWNCLOUDVERSION=8.2.2\n\n# expose the ports needed\nEXPOSE 80 443\n\n\n# copy configs\nCOPY conf/nginx/nginx.conf /etc/nginx/\nCOPY conf/nginx/sites-enabled/default.conf /etc/nginx/sites-enabled/default.conf\nCOPY conf/php-fpm/php-fpm.conf /etc/php5/\nCOPY conf/owncloud/config.php /tmp/\nCOPY conf/autoconfig.php /tmp/\n\n# prepare init script for start\nADD init.sh /init.sh\nRUN chmod +x /init.sh\n\nCMD [\"/init.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "init.sh",
+        "dest": "/init.sh"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/media/owncloud\"]"
+    ],
+    "run": [
+      "apk-install     # redis server",
+      "mkdir -pv /etc/nginx/sites-enabled/",
+      "chmod +x /init.sh"
+    ],
+    "workdir": [],
+    "from": "gymnae/webserverbase:latest",
+    "copy": "conf/autoconfig.php /tmp/",
+    "cmd": "[\"/init.sh\"]"
+  },
+  "source_repository_url": "https://github.com/Gymnae/docker-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Gymnae/docker-owncloud",
+  "docker_repository": "gymnae/owncloud",
+  "docker_image": "gymnae/owncloud",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "gymnae/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/gymnae/owncloud",
+    "https://hub.docker.com/v2/repositories/gymnae/owncloud",
+    "https://github.com/Gymnae/docker-owncloud.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image"
+  ],
+  "info_url": "https://hub.docker.com/r/gymnae/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

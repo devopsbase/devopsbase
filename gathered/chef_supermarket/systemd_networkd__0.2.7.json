@@ -1,0 +1,82 @@
+{
+  "name": "systemd_networkd Chef cookbook",
+  "chef_cookbook_name": "systemd_networkd",
+  "revision": "0.2.7",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/systemd_networkd",
+    "https://supermarket.chef.io/cookbooks/systemd_networkd/download",
+    "https://supermarket.chef.io/cookbooks/systemd_networkd/versions/0.2.7",
+    "https://supermarket.chef.io/cookbooks/systemd_networkd/versions/0.2.7/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/systemd_networkd/versions/0.2.7",
+    "https://supermarket.chef.io/api/v1/cookbooks/systemd_networkd",
+    "https://supermarket.chef.io/api/v1/cookbooks/systemd_networkd/versions/0.2.7/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Networking",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Style/Virtualization Level/Hardware/Network"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/systemd_networkd",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/systemd_networkd/versions/0.2.7/download",
+  "deprecated": false,
+  "created": "2015-05-22T17:11:26.592Z",
+  "updated": "2016-02-22T11:35:37.947Z",
+  "description": "Configures systemd_networkd",
+  "maintainer": {
+    "name": "proxykillah",
+    "email": "david.m.oneill@intel.com"
+  },
+  "license": "Apache v2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 2,
+  "downloads_count": 1124911,
+  "downloads_count_revision": 137791,
+  "repository_url": "https://github.com/Intel-Corp/systemd_networkd",
+  "issues_url": "https://github.com/Intel-Corp/systemd_networkd",
+  "chef_source_url": "https://github.com/Intel-Corp/systemd_networkd",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "systemd_networkd Cookbook\n=========================\nThis cookbook is responsible for configuring systemd-networkd.\nA modified version of systemd networkd is required.\n\nThis can be found @ https://github.com/Intel-Corp/systemd\n\nRequirements\n------------\n- `systemd` - systemd_networkd requires systemd > 216\n\nAttributes\n----------\n\nAll keys are case sensitive.  CamelCase is used instead of underscore.\n\nRecipes\n-------\n\n- default: sets up directories and deletes old configurations\n- cpuport: configures attributes specific to cpu port\n- link: configures port state and port speed\n- static_mac_table: confgures the static MAC table (FDB)\n- switchport: configures port attributes\n- team: configures LAGs and LAG-specific features (e.g. LAG attributes)\n- ufd: configures uplink failure detection\n- backup: copies pre-requisities for backup tool - see below for ussage\n\nUsage\n-----\n\nJust include `systemd_networkd` in your node's `run_list`:\nBelow is a fully working example of the relevant configuration options.\n\n\n```json\n{                                                                                                        \n  \"name\": \"IES\",                                                                                          \n  \"description\": \"Default role\",                                                                         \n  \"run_list\": [\n    \"recipe[systemd_networkd]\"\n  ],\n  \"default_attributes\": {                         \n    \"SystemdNetworkd\": {\n      \"Backup\": false,\n      \"Teams\": {\n        \"team1\": {\n          \"Enabled\": true,\n          \"Members\": [\n            \"sw0p9\",\n            \"sw0p10\"\n          ],\n          \"Attributes\": {\n            \"DefVlan\": \"1\"\n          },\n          \"Vlans\": {\n            \"lab\": {\n              \"Id\": \"20\",\n              \"EgressUntagged\": \"true\"\n            },\n            \"office\": {\n              \"Id\": \"25\"\n            }\n          }\n        }\n      },\n      \"UFD\": {\n        \"sw0p1\": {\n          \"Enabled\": true,\n          \"BindCarrier\": \"sw0p2 sw0p3\"\n        },\n        \"sw0p5\": {\n          \"Enabled\": true,\n          \"BindCarrier\": \"sw0p6 sw0p7 sw0p8 sw0p9\"\n        }\n      },\n      \"Ports\": {\n        \"sw0p0\": {\n          \"Attributes\": {\n            \"LagMode\": \"1\"\n          },\n          \"L2HashKey\": {\n            \"UseL3Hash\": \"1\"\n          },\n          \"L3HashConfig\": {\n            \"UseTcp\": \"1\"\n          }\n        },\n        \"sw0p4\": {\n          \"Enabled\": true,\n          \"FDB\": [\n            [\n              \"MACAddress\",\n              \"AB:BC:CC:00:01:02\",\n              \"VLANId\",\n              \"2\"\n            ],\n            [\n              \"MACAddress\",\n              \"AB:BC:CC:00:01:02\",\n              \"VLANId\",\n              \"2\"\n            ],\n            [\n              \"MACAddress\",\n              \"AB:BC:CC:00:01:02\",\n              \"VLANId\",\n              \"3\"\n            ]\n          ],\n          \"Attributes\": [\n            [\n              \"Autoneg\",\n              \"1\"\n            ]\n          ]\n        },\n        \"sw0p5\": {\n          \"Enabled\": \"false\",\n          \"FDB\": [\n            [\n              \"MACAddress\",\n              \"AB:BC:CC:00:01:02\",\n              \"VLANId\",\n              \"2\"\n            ],\n            [\n              \"MACAddress\",\n              \"AB:BC:CC:00:01:03\",\n              \"VLANId\",\n              \"2\"\n            ],\n            [\n              \"MACAddress\",\n              \"AB:BC:CC:00:01:03\",\n              \"VLANId\",\n              \"3\"\n            ]\n          ],\n          \"Link\": {\n            \"Link\": [\n              [\n                \"Duplex\",\n                \"full\"\n              ],\n              [\n                \"BitsPerSecond\",\n                \"10240000\"\n              ]\n            ]\n          }\n        },\n        \"sw0p6\": {\n          \"Enabled\": true,\n          \"FDB\": [\n            [\n              \"MACAddress\",\n              \"AB:BC:CC:00:01:01\",\n              \"VLANId\",\n              \"2\"\n            ],\n            [\n              \"MACAddress\",\n              \"AB:BC:CC:00:01:01\",\n              \"VLANId\",\n              \"2\"\n            ],\n            [\n              \"MACAddress\",\n              \"AB:BC:CC:00:01:01\",\n              \"VLANId\",\n              \"3\"\n            ]\n          ],\n          \"Vlans\": {\n            \"lab\": {\n              \"Id\": \"20\",\n              \"EgressUntagged\": \"true\"\n            },\n            \"office\": {\n              \"Id\": \"25\"\n            }\n          }\n        }\n      }\n    }\n  }\n}\n```\n\nBackup Tool and Usage\n---------------------\n```text\n\n2 Methods of runing the backup or dumping the memory resident configuration\n\nThere are 2 files in systemd_networkd/files/default\n\n1) cfgdump.rb \n   Copied to /usr/bin/cfgdump\n2) intel_switch.rb \n   Copied to /opt/chef/embedded/apps/ohai/lib/ohai/plugins/intel/intel_switch.rb\n\nMethod 1 (Chef Server):\nOn the chef workstation, modify the configuration to include a key \"Backup\": true under \"SystemdNetworkd\".\nYou will need the cookbook \"ohai\" and copy the intel_switch plugin to the cookbooks/ohai/files/ directory.\nRunning the chef-client on the node will result in /etc/systemd/network/backup/XXXX being created.\n\nMethod 2 (Solo):\nYou should clone your working copy of the chef repo to a node.\nCopy the ohai plugin to /opt/chef/embedded/apps/ohai/lib/ohai/plugins/intel/intel_switch.rb \nCopy the cfgdump.rb to /usr/bin/cfgdump\nExecute cfgdump\n\n```\n\nLicense and Authors\n-------------------\nAuthors: \n- David O Neill (david.m.oneill@intel.com)\n- Kim-marie Jones (kim-marie.jones@intel.com)\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "gentoo",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ]
+}

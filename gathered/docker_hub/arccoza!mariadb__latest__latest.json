@@ -1,0 +1,131 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/arccoza/mariadb",
+    "repository_url": "https://hub.docker.com/v2/repositories/arccoza/mariadb",
+    "tags_url": "https://hub.docker.com/v2/repositories/arccoza/mariadb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/arccoza/mariadb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/arccoza/mariadb/autobuild",
+    "user": "arccoza",
+    "name": "mariadb",
+    "namespace": "arccoza",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 106,
+    "last_updated": "2015-10-25T09:21:43.445785Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 106661303,
+        "id": 1090032,
+        "repository": 354063,
+        "creator": 464415,
+        "last_updater": 464415,
+        "last_updated": "2015-10-25T09:21:45.271341Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "10.0",
+        "full_size": 106661256,
+        "id": 1090033,
+        "repository": 354063,
+        "creator": 464415,
+        "last_updater": 464415,
+        "last_updated": "2015-10-25T09:21:31.244253Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "arccoza/docker-mariadb"
+  },
+  "name": "arccoza/mariadb Docker container",
+  "description": "A simple, flexible Docker image for MariaDB 10.0",
+  "readme": "# docker-mariadb\nA simple, flexible Docker image for MariaDB 10.0\n\n## Create the image\nPull the image from Docker Hub:\n```\ndocker pull arccoza/mariadb\n```\n\nor\n\n\nClone or download the repo to a folder, and from inside that folder run from terminal:\n\n```\n$ docker build -t \"arccoza/mariadb\" .\n```\n\n-t names the image with \"arccoza/mariadb\", you can change this to use your own username.\n\n## Run / create the container\n\nTo create and run a new arccoza/mariadb container run from terminal:\n\n```\n$ docker run -d --name mariadb \\\n             -p 127.0.0.1:3306:3306 \\\n             -e \"MYSQL_ROOT_PASSWORD=some password\" \\\n             -e \"MYSQL_DATABASE=appdb\" \\\n             -e \"MYSQL_USER=appuser\" \\\n             -e \"MYSQL_PASSWORD=another password\" \\\n             -e \"INNODB_BUFFER_POOL_SIZE=128M\" \\\n             arccoza/mariadb\n```\n\n### Environment variables\nThe variables:\n```\nMYSQL_ROOT_PASSWORD\nMYSQL_DATABASE\nMYSQL_USER\nMYSQL_PASSWORD\nINNODB_BUFFER_POOL_SIZE\n```\nare all optional.\n\n**MYSQL_ROOT_PASSWORD**\nSets the password for the *root* user in MariaDB.\n\n**MYSQL_DATABASE**\nSets a database to be created on the server.\n\n**MYSQL_USER & MYSQL_PASSWORD**\nThe username and password for an additional user created in MariaDB, \nwith admin rights on the database created with *MYSQL_DATABASE*.\n**Requires** *MYSQL_DATABASE* to be set, if not set then the user won't be created.\n\n**INNODB_BUFFER_POOL_SIZE**\nSets the size of the *innodb_buffer_pool_size* in *my.cnf* MariaDB configuration. \nThe default value is 128M.\n",
+  "dockerfile": "FROM ubuntu:trusty\nMAINTAINER Adrien de Pierres <adrien@arccoza.com>\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\nRUN groupadd -r mysql && useradd -r -g mysql mysql\n\nRUN apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db && \\\n    echo 'deb http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.0/ubuntu trusty main' >> /etc/apt/sources.list && \\\n    echo 'deb-src http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.0/ubuntu trusty main' >> /etc/apt/sources.list && \\\n    apt-get update && \\\n    apt-get install -y mariadb-server pwgen && \\\n    rm -rf /var/lib/mysql/* && \\\n    apt-get clean && \\\n    rm -rf /var/lib/apt/lists/*\n\nENV INNODB_BUFFER_POOL_SIZE 128M\n\nADD mysql_config_users.sh /mysql_config_users.sh\nADD run.sh /run.sh\nRUN chmod 775 /*.sh\n\n# Add VOLUMEs to allow backup of config and databases\nVOLUME  [\"/etc/mysql\", \"/var/lib/mysql\"]\n\n#Added to avoid in container connection to the database with mysql client error message \"TERM environment variable not set\"\nENV TERM dumb\n\nEXPOSE 3306\nCMD [\"/run.sh\"]",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "mysql_config_users.sh",
+        "dest": "/mysql_config_users.sh"
+      },
+      {
+        "source": "run.sh",
+        "dest": "/run.sh"
+      }
+    ],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      " [\"/etc/mysql\", \"/var/lib/mysql\"]"
+    ],
+    "run": [
+      "groupadd -r mysql && useradd -r -g mysql mysql",
+      "apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db &&     echo 'deb http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.0/ubuntu trusty main' >> /etc/apt/sources.list &&     echo 'deb-src http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.0/ubuntu trusty main' >> /etc/apt/sources.list &&     apt-get update &&     apt-get install -y mariadb-server pwgen &&     rm -rf /var/lib/mysql/* &&     apt-get clean &&     rm -rf /var/lib/apt/lists/*",
+      "chmod 775 /*.sh"
+    ],
+    "workdir": [],
+    "from": "ubuntu:trusty",
+    "maintainer": "Adrien de Pierres <adrien@arccoza.com>",
+    "env": {
+      "INNODB_BUFFER_POOL_SIZE": "128M",
+      "TERM": "dumb"
+    },
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/arccoza/docker-mariadb.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/arccoza/docker-mariadb",
+  "docker_repository": "arccoza/mariadb",
+  "docker_image": "arccoza/mariadb",
+  "parameters_schema": {
+    "INNODB_BUFFER_POOL_SIZE": {
+      "default": "128M",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TERM": {
+      "default": "dumb",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "arccoza/mariadb",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/arccoza/mariadb",
+    "https://hub.docker.com/v2/repositories/arccoza/mariadb",
+    "https://github.com/arccoza/docker-mariadb.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/arccoza/mariadb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

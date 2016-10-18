@@ -1,0 +1,147 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/qq58945591/logstash",
+    "repository_url": "https://hub.docker.com/v2/repositories/qq58945591/logstash",
+    "tags_url": "https://hub.docker.com/v2/repositories/qq58945591/logstash/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/qq58945591/logstash/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/qq58945591/logstash/autobuild",
+    "user": "qq58945591",
+    "name": "logstash",
+    "namespace": "qq58945591",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 45,
+    "last_updated": "2016-09-29T19:14:42.982751Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 220326624,
+        "id": 3775363,
+        "repository": 791409,
+        "creator": 437080,
+        "last_updater": 437080,
+        "last_updated": "2016-09-29T19:14:42.359956Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "airforce-captain/docker"
+  },
+  "name": "qq58945591/logstash Docker container",
+  "description": "自定义logstash配置的docker image, 增加了配置nginx与postfix的自定义日志格式匹配.",
+  "readme": "自定义logstash配置的docker image, 增加了配置nginx与postfix的自定义日志格式匹配..\n",
+  "dockerfile": "FROM java:8-jre\n\nMAINTAINER YougnMan <bushengquan@eastspider.com>\n\nLABEL description=\"自定义logstash配置的docker image, 增加了配置nginx与postfix的自定义日志格式匹配.\"\n\n# install plugin dependencies\nRUN apt-get update && apt-get install -y --no-install-recommends \\\n\t\tlibzmq3 \\\n\t&& rm -rf /var/lib/apt/lists/*\n\n# the \"ffi-rzmq-core\" gem is very picky about where it looks for libzmq.so\nRUN mkdir -p /usr/local/lib \\\n\t&& ln -s /usr/lib/*/libzmq.so.3 /usr/local/lib/libzmq.so\n\n# grab gosu for easy step-down from root\nENV GOSU_VERSION 1.7\nRUN set -x \\\n\t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \\\n\t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \\\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n\t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\n\t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu \\\n\t&& gosu nobody true\n\n# https://www.elastic.co/guide/en/logstash/2.3/package-repositories.html\n# https://packages.elastic.co/GPG-KEY-elasticsearch\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4\n\nENV LOGSTASH_MAJOR 2.3\nENV LOGSTASH_VERSION 1:2.3.4-1\n\nRUN echo \"deb http://packages.elastic.co/logstash/${LOGSTASH_MAJOR}/debian stable main\" > /etc/apt/sources.list.d/logstash.list\n\nRUN set -x \\\n\t&& apt-get update \\\n\t&& apt-get install -y --no-install-recommends logstash=$LOGSTASH_VERSION \\\n\t&& rm -rf /var/lib/apt/lists/* \\\n\t&& wget -O /etc/logstash/GeoLiteCity.dat.gz http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz \\\n        && gunzip -d /etc/logstash/GeoLiteCity.dat.gz \\\n\t&& mkdir /etc/logstash/patterns.d\n\n#add configfile\nADD ./logstash.conf /etc/logstash/conf.d\nADD ./httpd.grok /etc/logstash/patterns.d\nADD ./postfix.grok /etc/logstash/patterns.d\n\nENV PATH /opt/logstash/bin:$PATH\n\n# necessary for 5.0+ (overriden via \"--path.settings\", ignored by < 5.0)\nENV LS_SETTINGS_DIR /etc/logstash\n# comment out some troublesome configuration parameters\n#   path.log: logs should go to stdout\n#   path.config: No config files found: /etc/logstash/conf.d/*\nRUN set -ex \\\n\t&& if [ -f \"$LS_SETTINGS_DIR/logstash.yml\" ]; then \\\n\t\tsed -ri 's!^(path.log|path.config):!#&!g' \"$LS_SETTINGS_DIR/logstash.yml\"; \\\n\tfi\n\nCOPY ./entrypoint.sh /\n\nENTRYPOINT [\"/docker-entrypoint.sh\"]\nCMD [\"-e\", \"\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./logstash.conf",
+        "dest": "/etc/logstash/conf.d"
+      },
+      {
+        "source": "./httpd.grok",
+        "dest": "/etc/logstash/patterns.d"
+      },
+      {
+        "source": "./postfix.grok",
+        "dest": "/etc/logstash/patterns.d"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y --no-install-recommends \t\tlibzmq3 \t&& rm -rf /var/lib/apt/lists/*",
+      "mkdir -p /usr/local/lib \t&& ln -s /usr/lib/*/libzmq.so.3 /usr/local/lib/libzmq.so",
+      "set -x \t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \t&& export GNUPGHOME=\"$(mktemp -d)\" \t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu \t&& gosu nobody true",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4",
+      "echo \"deb http://packages.elastic.co/logstash/${LOGSTASH_MAJOR}/debian stable main\" > /etc/apt/sources.list.d/logstash.list",
+      "set -x \t&& apt-get update \t&& apt-get install -y --no-install-recommends logstash=$LOGSTASH_VERSION \t&& rm -rf /var/lib/apt/lists/* \t&& wget -O /etc/logstash/GeoLiteCity.dat.gz http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz         && gunzip -d /etc/logstash/GeoLiteCity.dat.gz \t&& mkdir /etc/logstash/patterns.d",
+      "set -ex \t&& if [ -f \"$LS_SETTINGS_DIR/logstash.yml\" ]; then \t\tsed -ri 's!^(path.log|path.config):!#&!g' \"$LS_SETTINGS_DIR/logstash.yml\"; \tfi"
+    ],
+    "workdir": [],
+    "from": "java:8-jre",
+    "maintainer": "YougnMan <bushengquan@eastspider.com>",
+    "label": "description=\"自定义logstash配置的docker image, 增加了配置nginx与postfix的自定义日志格式匹配.\"",
+    "env": {
+      "GOSU_VERSION": "1.7",
+      "LOGSTASH_MAJOR": "2.3",
+      "LOGSTASH_VERSION": "1:2.3.4-1",
+      "PATH": "/opt/logstash/bin:$PATH",
+      "LS_SETTINGS_DIR": "/etc/logstash"
+    },
+    "copy": "./entrypoint.sh /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"-e\", \"\"]"
+  },
+  "source_repository_url": "https://github.com/airforce-captain/docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/airforce-captain/docker",
+  "docker_repository": "qq58945591/logstash",
+  "docker_image": "qq58945591/logstash",
+  "parameters_schema": {
+    "GOSU_VERSION": {
+      "default": "1.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LOGSTASH_MAJOR": {
+      "default": "2.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LOGSTASH_VERSION": {
+      "default": "1:2.3.4-1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/opt/logstash/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LS_SETTINGS_DIR": {
+      "default": "/etc/logstash",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "qq58945591/logstash",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/qq58945591/logstash",
+    "https://hub.docker.com/v2/repositories/qq58945591/logstash",
+    "https://github.com/airforce-captain/docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Logging/Logstash",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Nginx",
+    "Type/Middleware/Email/Postfix"
+  ],
+  "info_url": "https://hub.docker.com/r/qq58945591/logstash",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

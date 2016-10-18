@@ -1,0 +1,132 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/frodenas/redis",
+    "repository_url": "https://hub.docker.com/v2/repositories/frodenas/redis",
+    "tags_url": "https://hub.docker.com/v2/repositories/frodenas/redis/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/frodenas/redis/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/frodenas/redis/autobuild",
+    "user": "frodenas",
+    "name": "redis",
+    "namespace": "frodenas",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 270256,
+    "last_updated": "2016-07-20T22:56:25.121078Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2.8.23",
+        "full_size": 168544392,
+        "id": 1335621,
+        "repository": 38418,
+        "creator": 25001,
+        "last_updater": 25001,
+        "last_updated": "2016-07-20T22:56:24.705632Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.8",
+        "full_size": 168544385,
+        "id": 46532,
+        "repository": 38418,
+        "creator": 25001,
+        "last_updater": 25001,
+        "last_updated": "2016-07-20T22:54:19.433593Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 168544381,
+        "id": 46534,
+        "repository": 38418,
+        "creator": 25001,
+        "last_updater": 25001,
+        "last_updated": "2016-07-20T22:52:13.628672Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "frodenas/docker-redis"
+  },
+  "name": "frodenas/redis Docker container",
+  "description": "A Docker Image for Redis",
+  "readme": "# Redis Dockerfile\n\nA Dockerfile that produces a Docker Image for [Redis](http://redis.io/).\n\n## Redis version\n\nThe `master` branch currently hosts Redis 2.8.\n\nDifferent versions of Redis are located at the github repo [branches](https://github.com/frodenas/docker-redis/branches).\n\n## Usage\n\n### Build the image\n\nTo create the image `frodenas/redis`, execute the following command on the `docker-redis` folder:\n\n```\n$ docker build -t frodenas/redis .\n```\n\n### Run the image\n\nTo run the image and bind to host port 6379:\n\n```\n$ docker run -d --name redis -p 6379:6379 frodenas/redis\n```\n\nThe first time you run your container, a new random password will be generated. To get the password,\ncheck the logs of the container by running:\n\n```\ndocker logs <CONTAINER_ID>\n```\n\nYou will see an output like the following:\n\n```\n========================================================================\nRedis Password: \"LRaHE3zucm4CPSo3\"\n========================================================================\n```\n\n#### Credentials\n\nIf you want to preset credentials instead of a random generated ones, you can set the following environment variables:\n\n* `REDIS_PASSWORD` to set a specific password\n\n```\n$ docker run -d \\\n    --name redis \\\n    -p 6379:6379 \\\n    -e REDIS_PASSWORD=mypassword \\\n    frodenas/redis\n```\n\n#### Extra arguments\n\nWhen you run the container, it will start the Redis server without any arguments. If you want to pass any arguments,\njust add them to the `run` command:\n\n```\n$ docker run -d --name redis -p 6379:6379 frodenas/redis --loglevel debug\n```\n\n#### Persistent data\n\nThe Redis server is configured to store data in the `/data` directory inside the container. You can map the\ncontainer's `/data` volume to a volume on the host so the data becomes independent of the running container:\n\n```\n$ mkdir -p /tmp/redis\n$ docker run -d \\\n    --name redis \\\n    -p 6379:6379 \\\n    -v /tmp/redis:/data \\\n    frodenas/redis\n```\n\nThere are also additional volumes at:\n\n* `/etc/redis` which exposes Redis's configuration\n\n## Copyright\n\nCopyright (c) 2014 Ferran Rodenas. See [LICENSE](https://github.com/frodenas/docker-redis/blob/master/LICENSE) for details.\n",
+  "dockerfile": "FROM frodenas/ubuntu\nMAINTAINER Ferran Rodenas <frodenas@gmail.com>\n\n# Install and configure Redis 2.8\nRUN cd /tmp && \\\n    wget http://download.redis.io/releases/redis-2.8.23.tar.gz && \\\n    tar xzvf redis-2.8.23.tar.gz && \\\n    cd redis-2.8.23 && \\\n    make && \\\n    make install && \\\n    cp -f src/redis-sentinel /usr/local/bin && \\\n    mkdir -p /etc/redis && \\\n    cp -f *.conf /etc/redis && \\\n    sed -i 's/^\\(bind .*\\)$/# \\1/' /etc/redis/redis.conf && \\\n    sed -i 's/^\\(daemonize .*\\)$/# \\1/' /etc/redis/redis.conf && \\\n    sed -i 's/^\\(dir .*\\)$/# \\1\\ndir \\/data/' /etc/redis/redis.conf && \\\n    sed -i 's/^\\(appendonly .*\\)$/# \\1\\nappendonly yes/' /etc/redis/redis.conf && \\\n    sed -i 's/^\\(logfile .*\\)$/# \\1/' /etc/redis/redis.conf && \\\n    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n# Add scripts\nADD scripts /scripts\nRUN chmod +x /scripts/*.sh\nRUN touch /.firstrun\n\n# Command to run\nENTRYPOINT [\"/scripts/run.sh\"]\nCMD [\"\"]\n\n# Expose listen port\nEXPOSE 6379\n\n# Expose our data and configuration volumes\nVOLUME [\"/data\", \"/etc/redis\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "scripts",
+        "dest": "/scripts"
+      }
+    ],
+    "expose": [
+      6379
+    ],
+    "volume": [
+      "[\"/data\", \"/etc/redis\"]"
+    ],
+    "run": [
+      "cd /tmp &&     wget http://download.redis.io/releases/redis-2.8.23.tar.gz &&     tar xzvf redis-2.8.23.tar.gz &&     cd redis-2.8.23 &&     make &&     make install &&     cp -f src/redis-sentinel /usr/local/bin &&     mkdir -p /etc/redis &&     cp -f *.conf /etc/redis &&     sed -i 's/^\\(bind .*\\)$/# \\1/' /etc/redis/redis.conf &&     sed -i 's/^\\(daemonize .*\\)$/# \\1/' /etc/redis/redis.conf &&     sed -i 's/^\\(dir .*\\)$/# \\1\\ndir \\/data/' /etc/redis/redis.conf &&     sed -i 's/^\\(appendonly .*\\)$/# \\1\\nappendonly yes/' /etc/redis/redis.conf &&     sed -i 's/^\\(logfile .*\\)$/# \\1/' /etc/redis/redis.conf &&     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "chmod +x /scripts/*.sh",
+      "touch /.firstrun"
+    ],
+    "workdir": [],
+    "from": "frodenas/ubuntu",
+    "maintainer": "Ferran Rodenas <frodenas@gmail.com>",
+    "entrypoint": "[\"/scripts/run.sh\"]",
+    "cmd": "[\"\"]"
+  },
+  "source_repository_url": "https://github.com/frodenas/docker-redis.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/frodenas/docker-redis",
+  "docker_repository": "frodenas/redis",
+  "docker_image": "frodenas/redis",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        6379
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "frodenas/redis",
+  "revision": "2.8.23",
+  "uris": [
+    "https://hub.docker.com/r/frodenas/redis",
+    "https://hub.docker.com/v2/repositories/frodenas/redis",
+    "https://github.com/frodenas/docker-redis.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Data Store/Key-Value/Redis"
+  ],
+  "info_url": "https://hub.docker.com/r/frodenas/redis",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

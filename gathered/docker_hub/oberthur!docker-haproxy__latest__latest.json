@@ -1,0 +1,174 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/oberthur/docker-haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/oberthur/docker-haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/oberthur/docker-haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/oberthur/docker-haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/oberthur/docker-haproxy/autobuild",
+    "user": "oberthur",
+    "name": "docker-haproxy",
+    "namespace": "oberthur",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 15407,
+    "last_updated": "2016-08-08T22:28:09.608622Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 129383410,
+        "id": 865031,
+        "repository": 316366,
+        "creator": 135822,
+        "last_updater": 901305,
+        "last_updated": "2016-08-08T22:28:09.219332Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.6.7",
+        "full_size": 129382522,
+        "id": 4174454,
+        "repository": 316366,
+        "creator": 272317,
+        "last_updater": 272317,
+        "last_updated": "2016-08-05T08:52:58.111093Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.6.5",
+        "full_size": 129102729,
+        "id": 3359475,
+        "repository": 316366,
+        "creator": 272317,
+        "last_updater": 272317,
+        "last_updated": "2016-06-11T19:01:52.528402Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.6.4",
+        "full_size": 128973522,
+        "id": 2603446,
+        "repository": 316366,
+        "creator": 272317,
+        "last_updater": 272317,
+        "last_updated": "2016-04-21T14:36:03.136438Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.6.3",
+        "full_size": 123826653,
+        "id": 2173896,
+        "repository": 316366,
+        "creator": 272317,
+        "last_updater": 272317,
+        "last_updated": "2016-03-16T12:27:28.426585Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.6.2",
+        "full_size": 101842649,
+        "id": 1822420,
+        "repository": 316366,
+        "creator": 29889,
+        "last_updater": 29889,
+        "last_updated": "2016-01-26T05:59:33.151431Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "oberthur/docker-haproxy"
+  },
+  "name": "oberthur/docker-haproxy Docker container",
+  "description": "docker-haproxy",
+  "readme": "# docker-haproxy\nBasic Docker image to run haproxy as client to connect the server with mutual auth\n\nYou need edit (add) this env:\n- **LISTENPORT**: 80 or other port value\n- **MODE**: mode tcp or http\n- **CERTIFICATE**: server certificate file name placed as volume in path /usr/local/etc/haproxy/certs/ (optional)\n- **DEFAULT**: define default backend\n- **RETRIES**: define number of retries to perform on a server after a connection failure (optional - default 3)\n- **LOGFORMAT**: define custom log format, ex `\"%Ci [%t] %b %hr %r %ST %B %Tr\"` (optional)\n- **START_MODE**: define start mode, ex `simple` or `haproxy` or `multiconfig`\n\n- **CA**: server trusted ca file name placed as volume in path /usr/local/etc/haproxy/certs/ (optional)\n- **VERIFY**: if you enabled CA you should provide verify option ```optional``` or ```required```\n\n- **BACKEND_1_ADDRESS**: backend address\n- **BACKEND_1_PORT**: backend port\n- **BACKEND_1_ACL**: acr rule like \"hdr_dom(server) -i BACKEND_1\"\n- **BACKEND_1_CERTIFICATE**: backend client certificate file name placed as volume in path /usr/local/etc/haproxy/certs/ (optional)\n- **BACKEND_1_REQIREP**: reqirep (optional)\n\n- **RESOLVER_1_VALUE**: dns domain (optional)\n\n- **PRINT_CONFIG**: print config files on startup (optional)\n\n**There is important change - we moved to supervisord.**\nHAProxy can be started with different modes:\n- **simple**: configuration based on single file\n- **haproxy**: configuration based on environments\n- **multiconfig**: configuration based on multiple files\n\nYou also need to mount folder with client certificates to /usr/local/etc/haproxy/certs/\n\nUsage: \n```\ndocker run --name haproxy -d -v /path/to/certs/:/usr/local/etc/haproxy/certs/ -e LISTENPORT=80 -e BACKEND_1_ACL=\"hdr_dom(server) -i BACKEND_1\" -e BACKEND_1_ADDRESS=my-server.com -e BACKEND_1_PORT=443 -e BACKEND_1_CERTIFICATE=my-server.crt oberthur/docker-haproxy\n```\n",
+  "dockerfile": "FROM oberthur/docker-ubuntu:14.04.4\n\nMAINTAINER Dawid Malinowski <d.malinowski@oberthur.com>\n\nENV HAPROXY_VERSION=1.6.7 \\\n    START_MODE=haproxy\n\nCOPY haproxy.cfg /etc/haproxy/haproxy.cfg.template\nCOPY start-*.sh /bin/\nCOPY supervisor.conf /etc/supervisor/conf.d/haproxy.conf\n\n# Prepare image\nRUN chmod +x /bin/start-*.sh \\\n    && add-apt-repository ppa:vbernat/haproxy-1.6 \\\n    && apt-get update \\\n    && apt-get install rsyslog supervisor haproxy=${HAPROXY_VERSION}* \\\n    && apt-get clean autoclean \\\n    && apt-get autoremove --yes \\\n    && rm -rf /var/lib/{apt,dpkg,cache,log}/ \\\n    && ln -sf /dev/stdout /var/log/haproxy.log\n\nCOPY haproxy.rsyslog /etc/rsyslog.conf\n\nENTRYPOINT [\"/usr/bin/supervisord\",\"-n\",\"-c\",\"/etc/supervisor/supervisord.conf\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "chmod +x /bin/start-*.sh     && add-apt-repository ppa:vbernat/haproxy-1.6     && apt-get update     && apt-get install rsyslog supervisor haproxy=${HAPROXY_VERSION}*     && apt-get clean autoclean     && apt-get autoremove --yes     && rm -rf /var/lib/{apt,dpkg,cache,log}/     && ln -sf /dev/stdout /var/log/haproxy.log"
+    ],
+    "workdir": [],
+    "from": "oberthur/docker-ubuntu:14.04.4",
+    "maintainer": "Dawid Malinowski <d.malinowski@oberthur.com>",
+    "env": {
+      "HAPROXY_VERSION": "1.6.7",
+      "": "",
+      "START_MODE": "haproxy"
+    },
+    "copy": "haproxy.rsyslog /etc/rsyslog.conf",
+    "entrypoint": "[\"/usr/bin/supervisord\",\"-n\",\"-c\",\"/etc/supervisor/supervisord.conf\"]"
+  },
+  "source_repository_url": "https://github.com/oberthur/docker-haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/oberthur/docker-haproxy",
+  "docker_repository": "oberthur/docker-haproxy",
+  "docker_image": "oberthur/docker-haproxy",
+  "parameters_schema": {
+    "HAPROXY_VERSION": {
+      "default": "1.6.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "START_MODE": {
+      "default": "haproxy",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "oberthur/docker-haproxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/oberthur/docker-haproxy",
+    "https://hub.docker.com/v2/repositories/oberthur/docker-haproxy",
+    "https://github.com/oberthur/docker-haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/oberthur/docker-haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

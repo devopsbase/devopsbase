@@ -1,0 +1,206 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/cismet/cids-java-maven",
+    "repository_url": "https://hub.docker.com/v2/repositories/cismet/cids-java-maven",
+    "tags_url": "https://hub.docker.com/v2/repositories/cismet/cids-java-maven/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/cismet/cids-java-maven/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/cismet/cids-java-maven/autobuild",
+    "user": "cismet",
+    "name": "cids-java-maven",
+    "namespace": "cismet",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 119,
+    "last_updated": "2016-09-15T13:09:38.380976Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 288340418,
+        "id": 2622676,
+        "repository": 631238,
+        "creator": 747511,
+        "last_updater": 747511,
+        "last_updated": "2016-09-15T13:09:38.050159Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "cismet/docker-images"
+  },
+  "name": "cismet/cids-java-maven Docker container",
+  "description": "java and maven runtime environment for cids services",
+  "readme": "# docker-images\n\ndocker-images + [docker-volumes](https://github.com/cismet/docker-volumes) = dockerized cids systems\n",
+  "dockerfile": "FROM ubuntu:trusty\nMAINTAINER Jean-Michel Ruiz <jean.ruiz@cismet.de>\n\nENV DATA_DIR /data\nENV LIB_DIR ${DATA_DIR}/lib\nENV MAVEN_LIB_DIR ${LIB_DIR}/m2\nENV MAVEN_OPTS -XX:-OmitStackTraceInFastThrow -server -Xms512m -Xmx1024m\nENV JAVA_VERSION 8\nENV JAVA_UPDATE 92\nENV JAVA_BUILD 14\nENV OPENSSL_VERSION 1.0.2g\nENV MAVEN_VERSION 3.3.9\nENV JAVA_HOME /usr/lib/jvm/java-${JAVA_VERSION}-oracle\nENV JRE_HOME ${JAVA_HOME}/jre\nENV MAVEN_HOME /usr/share/maven\nENV IMPORT_DIR /import\nENV CIDS_ACCOUNT_EXTENSION CidsReference\nENV UPDATE_SNAPSHOTS -U\n\nRUN apt-get update \\\n  && apt-get -y --no-install-recommends install ca-certificates curl gcc libc6-dev libssl-dev make\n\nRUN mkdir -p /usr/lib/jvm\nRUN curl --silent --location --retry 3 --cacert /etc/ssl/certs/GeoTrust_Global_CA.pem --header \"Cookie: oraclelicense=accept-securebackup-cookie;\" http://download.oracle.com/otn-pub/java/jdk/\"${JAVA_VERSION}\"u\"${JAVA_UPDATE}\"-b\"${JAVA_BUILD}\"/server-jre-\"${JAVA_VERSION}\"u\"${JAVA_UPDATE}\"-linux-x64.tar.gz | tar xz -C /tmp\nRUN mv /tmp/jdk1.${JAVA_VERSION}.0_${JAVA_UPDATE} \"${JAVA_HOME}\"\n\nRUN curl --silent --location --retry 3 --cacert /etc/ssl/certs/GlobalSign_Root_CA.pem https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz | tar xz -C /tmp\nRUN cd /tmp/openssl-\"${OPENSSL_VERSION}\" ; ./config --prefix=/usr\nRUN cd /tmp/openssl-\"${OPENSSL_VERSION}\" ; make clean\nRUN cd /tmp/openssl-\"${OPENSSL_VERSION}\" ; make\nRUN cd /tmp/openssl-\"${OPENSSL_VERSION}\" ; make install\n\nRUN mkdir -p ${MAVEN_HOME}\nRUN curl -fsSL http://apache.osuosl.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar -xzC ${MAVEN_HOME} --strip-components=1\nRUN ln -s ${MAVEN_HOME}/bin/mvn /usr/bin/mvn\n\nRUN apt-get remove --purge --auto-remove -y gcc libc6-dev libssl-dev make\nRUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nRUN update-alternatives --install \"/usr/bin/java\" \"java\" \"${JRE_HOME}/bin/java\" 1\nRUN update-alternatives --install \"/usr/bin/javac\" \"javac\" \"${JAVA_HOME}/bin/javac\" 1\nRUN update-alternatives --set java \"${JRE_HOME}/bin/java\"\nRUN update-alternatives --set javac \"${JAVA_HOME}/bin/javac\"\n\nRUN apt-get update \\\n  && apt-get install -y postgresql-client \\\n  && rm -rf /var/lib/apt/lists/*\n\nCOPY lib $MAVEN_LIB_DIR/\nCOPY policy.file ${DATA_DIR}/\nCOPY truststore.ks ${DATA_DIR}/",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update   && apt-get -y --no-install-recommends install ca-certificates curl gcc libc6-dev libssl-dev make",
+      "mkdir -p /usr/lib/jvm",
+      "curl --silent --location --retry 3 --cacert /etc/ssl/certs/GeoTrust_Global_CA.pem --header \"Cookie: oraclelicense=accept-securebackup-cookie;\" http://download.oracle.com/otn-pub/java/jdk/\"${JAVA_VERSION}\"u\"${JAVA_UPDATE}\"-b\"${JAVA_BUILD}\"/server-jre-\"${JAVA_VERSION}\"u\"${JAVA_UPDATE}\"-linux-x64.tar.gz | tar xz -C /tmp",
+      "mv /tmp/jdk1.${JAVA_VERSION}.0_${JAVA_UPDATE} \"${JAVA_HOME}\"",
+      "curl --silent --location --retry 3 --cacert /etc/ssl/certs/GlobalSign_Root_CA.pem https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz | tar xz -C /tmp",
+      "cd /tmp/openssl-\"${OPENSSL_VERSION}\" ; ./config --prefix=/usr",
+      "cd /tmp/openssl-\"${OPENSSL_VERSION}\" ; make clean",
+      "cd /tmp/openssl-\"${OPENSSL_VERSION}\" ; make",
+      "cd /tmp/openssl-\"${OPENSSL_VERSION}\" ; make install",
+      "mkdir -p ${MAVEN_HOME}",
+      "curl -fsSL http://apache.osuosl.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar -xzC ${MAVEN_HOME} --strip-components=1",
+      "ln -s ${MAVEN_HOME}/bin/mvn /usr/bin/mvn",
+      "apt-get remove --purge --auto-remove -y gcc libc6-dev libssl-dev make",
+      "rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "update-alternatives --install \"/usr/bin/java\" \"java\" \"${JRE_HOME}/bin/java\" 1",
+      "update-alternatives --install \"/usr/bin/javac\" \"javac\" \"${JAVA_HOME}/bin/javac\" 1",
+      "update-alternatives --set java \"${JRE_HOME}/bin/java\"",
+      "update-alternatives --set javac \"${JAVA_HOME}/bin/javac\"",
+      "apt-get update   && apt-get install -y postgresql-client   && rm -rf /var/lib/apt/lists/*"
+    ],
+    "workdir": [],
+    "from": "ubuntu:trusty",
+    "maintainer": "Jean-Michel Ruiz <jean.ruiz@cismet.de>",
+    "env": {
+      "DATA_DIR": "/data",
+      "LIB_DIR": "${DATA_DIR}/lib",
+      "MAVEN_LIB_DIR": "${LIB_DIR}/m2",
+      "MAVEN_OPTS": "-XX:-OmitStackTraceInFastThrow",
+      "-server": "-Xms512m",
+      "JAVA_VERSION": "8",
+      "JAVA_UPDATE": "92",
+      "JAVA_BUILD": "14",
+      "OPENSSL_VERSION": "1.0.2g",
+      "MAVEN_VERSION": "3.3.9",
+      "JAVA_HOME": "/usr/lib/jvm/java-${JAVA_VERSION}-oracle",
+      "JRE_HOME": "${JAVA_HOME}/jre",
+      "MAVEN_HOME": "/usr/share/maven",
+      "IMPORT_DIR": "/import",
+      "CIDS_ACCOUNT_EXTENSION": "CidsReference",
+      "UPDATE_SNAPSHOTS": "-U"
+    },
+    "copy": "truststore.ks ${DATA_DIR}/"
+  },
+  "source_repository_url": "https://github.com/cismet/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/cismet/docker-images",
+  "docker_repository": "cismet/cids-java-maven",
+  "docker_image": "cismet/cids-java-maven",
+  "parameters_schema": {
+    "DATA_DIR": {
+      "default": "/data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LIB_DIR": {
+      "default": "${DATA_DIR}/lib",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_LIB_DIR": {
+      "default": "${LIB_DIR}/m2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_OPTS": {
+      "default": "-XX:-OmitStackTraceInFastThrow",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "-server": {
+      "default": "-Xms512m",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_VERSION": {
+      "default": "8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_UPDATE": {
+      "default": "92",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_BUILD": {
+      "default": "14",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OPENSSL_VERSION": {
+      "default": "1.0.2g",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_VERSION": {
+      "default": "3.3.9",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_HOME": {
+      "default": "/usr/lib/jvm/java-${JAVA_VERSION}-oracle",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JRE_HOME": {
+      "default": "${JAVA_HOME}/jre",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_HOME": {
+      "default": "/usr/share/maven",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "IMPORT_DIR": {
+      "default": "/import",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CIDS_ACCOUNT_EXTENSION": {
+      "default": "CidsReference",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "UPDATE_SNAPSHOTS": {
+      "default": "-U",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "cismet/cids-java-maven",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/cismet/cids-java-maven",
+    "https://hub.docker.com/v2/repositories/cismet/cids-java-maven",
+    "https://github.com/cismet/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Type/Devopsware/Build/Java/Maven"
+  ],
+  "info_url": "https://hub.docker.com/r/cismet/cids-java-maven",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

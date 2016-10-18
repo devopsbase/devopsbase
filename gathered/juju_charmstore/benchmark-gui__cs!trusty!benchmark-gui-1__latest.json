@@ -1,0 +1,98 @@
+{
+  "name": "benchmark-gui Juju charm",
+  "juju_charm_name": "benchmark-gui",
+  "revision": "cs:trusty/benchmark-gui-1",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/benchmark-gui",
+    "https://jujucharms.com/benchmark-gui/trusty",
+    "https://jujucharms.com/benchmark-gui/trusty/1",
+    "https://api.jujucharms.com/v5/benchmark-gui",
+    "https://api.jujucharms.com/v5/trusty/benchmark-gui",
+    "https://api.jujucharms.com/v5/trusty/benchmark-gui-1"
+  ],
+  "labels": [
+    "Juju charm",
+    "misc",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Mode/GUI",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Middleware/Data Store/Graph"
+  ],
+  "info_url": "https://jujucharms.com/benchmark-gui",
+  "package_url": "https://api.jujucharms.com/v5/trusty/benchmark-gui-1/archive",
+  "created": "2016-05-02T19:21:33.62Z",
+  "updated": "2016-05-02T19:21:33.62Z",
+  "description": "Graphical User Interface and metric collection service\n\nGraphical User Interface and metric collection service\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/benchmark",
+      "self_resolve": true,
+      "juju_interface": "benchmark",
+      "juju_name": "benchmark",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/benchmark-collector",
+      "self_resolve": true,
+      "juju_interface": "benchmark-collector",
+      "juju_name": "collector",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "juju-secret": {
+      "type": "string",
+      "description": "Juju Secret for API User",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "juju-user": {
+      "type": "string",
+      "description": "Juju API User",
+      "default": "user-admin",
+      "mapping": "charm_option"
+    },
+    "proxy": {
+      "type": "string",
+      "description": "Proxy to use when fetching resources from PyPI, if not already set in Juju",
+      "default": null,
+      "mapping": "charm_option"
+    },
+    "publish-url": {
+      "type": "string",
+      "description": "\"The url to which benchmark results can be published, e.g., http://cloud-benchmarks.org/submissions. Leave blank to disable publishing.\"\n",
+      "default": "",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/http",
+      "juju_interface": "http",
+      "juju_name": "website",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "readme": "# Overview\n\nBenchmark GUI, for Charm Benchmarking, is a set of Juju Charms to repeatedly run benchmarks across multiple different substrates (bare metal[x86, POWER, ARM], public, private cloud) and continually improve on the services and benchmarks. Benchmark GUI is able to perform the following tasks:\n- determine which benchmarks can be run for a given environment\n- list available benchmarks to run\n- run and track benchmarks\n- collect performance data\n- report on results\n- compare benchmark runs\n\nThe main intent is to allow folks interested in a given workload to repeatedly run a benchmark across multiple substrates, and enable quick experimentation to improve the service's performance. Benchmark GUI takes care of the benchmarking infrastructure so the focus is on the science of tuning.\n\nThe Benchmark GUI charm is the main way the user will interact with the benchmarking environment. The Benchmark GUI charm provides a GUI that allows the user to perform the above mentioned actions.\n\n# Getting Started\n\nThis guide aims to lead a user from zero to benchmarking. Prerequisites include:\n- Knowledge of [Juju](https://jujucharms.com) and how it [works](https://jujucharms.com/docs/stable/getting-started)\n- [Latest Juju version recommended](https://jujucharms.com/get-started), Juju 1.24 minimum\n- A [Juju bootstrapped](https://jujucharms.com/docs/stable/getting-started) environment\n\n# Configuring Benchmark GUI\n\nAssuming you already have a Juju environment [bootstrapped](https://jujucharms.com/docs/stable/charms) you will first need to deploy the Benchmark GUI and benchmark-collector charms into your environment.\n\n    juju deploy local:trusty/benchmark-gui\n    juju deploy local:trusty/benchmark-collector\n\nThe Benchmark GUI charm needs to communicate with the Juju API server. In order to do that, you'll need to set the juju-secret configuration key. In a Juju 1.x environment, you can get the value like this:\n\n    juju api-info password\n\nIn a Juju 2.x environment:\n\n    juju show-controller --show-passwords  # look for the 'password'\nfield in the output\n\nOnce you have the API password, set the juju-secret key for Benchmark GUI by doing the following.\n\n    juju set benchmark-gui juju-secret=<password> # Juju 1.x\n\nor\n\n    juju set-config benchmark-gui juju-secret=<password> # Juju 2.x\n\nOnce that's set, the Benchmark GUI charm will finish it's configuration and you'll be able to browse to http://ip-address:9000/ to view and compare the benchmark metrics.\n\nStand up your target environment. For example, if we wanted to benchmark a mediawiki deployment, we would do something like this:\n\n    juju deploy mediawiki\n    juju deploy mysql\n    juju deploy siege\n\n    juju add-relation mysql mediawiki:db\n    juju add-relation mediawiki siege\n\n    # Setup the subordinate relation between benchmark-collector and the services to be benchmarked\n    juju add-relation benchmark-collector mediawiki\n    juju add-relation benchmark-collector mysql\n\n    juju add-relation benchmark-gui benchmark-collector:collector\n\n    # Relate the benchmark-aware charm to benchmark-gui so we can launch benchmarks from the benchmark UI\n    juju add-relation benchmark-gui siege\n\n# Basic use of the UI\n\nThe Benchmark GUI dashboard provides you with a high-level view of benchmark statistics, including:\n- The name of the service:benchmark.\n- It's state; running, queued, errored, or complete.\n- The unit or service the benchmark was run against.\n- The composite result; a single representative unit to judge the benchmark by.\n- The length of time it took for the benchmark to run, including any standing up or down required by the benchmark.\n- When the benchmark was launched.\n\nYou can launch actions directly from the Benchmark GUI dashboard, rather than using the `juju action` command. Clicking on the \"Launch Benchmark\" button will give you a form where you can select the available benchmarks from any benchmark-enabled charm. Select the benchmark you'd like to run, choose the unit(s) to run against, the tag(s) you'd like associated with this run, and any configuration options and press \"Launch\". You'll then be returned to the dashboard, where you can monitor the status of the benchmark.\n\n## Benchmark Details\n\nClicking on a benchmark name will take you to a page with the parameters, results, and collected metrics from that benchmark run.\n\n## Comparison\n\nWhen you have more than one of the same type of benchmark, you can compare two or more benchmarks.\n\nMoving your mouse over a benchmark will backlight all benchmarks of the same type and highlight the best scoring benchmark.\n\nUse the selector to choose benchmarks to compare. Once two or more benchmarks are selected, the \"Launch Benchmark\" button will offer a drop-down option to compare.\n\n\n## Importing/Exporting data\n\nYou can export and import benchmark data in two ways:\n- Via buttons on the Benchmark GUI dashboard\n- Via API endpoints\n\n### Exporting\n\nThe \"Export Data\" button will download a JSON file of all the benchmark data in the Benchmark GUI database. This includes benchmark data generated in the current environment as well as data previously imported from other environments.\n\nThe exported file includes benchmark data, metric data, graph data, profile data, and comparison data. The file may be saved and later imported into another Benchmark GUI environment.\n\n    # API Export\n    curl http://ip-address:9000/api/export > /tmp/export.json\n\n### Importing\n\nThe \"Import Data\" button will display a file upload form. Upload a JSON file that was previously exported from a Benchmark GUI environment. Multiple files may be imported one after another, making it possible to consolidate data from many different Benchmark GUI environments.\n\n    # API Import\n    curl -X POST http://ip-address:9000/api/import -d @/tmp/export.json --header \"Content-Type: application/json\"\n\n# How to write benchmarks\n\nBenchmarks are written as [Juju Actions](https://jujucharms.com/docs/stable/actions) on charms. Benchmarks are typically either an [action](https://jujucharms.com/docs/stable/actions) on the service you wish to benchmark, a service which solely does benchmarking (load generation), or a subordinate which, when related, installs a benchmark suite.\n\nPlease refer to the [Juju Docs](https://jujucharms.com/docs/devel/authors-charm-benchmarks) for further details on developing benchmarks for Juju Charms.\n\n# Charms with benchmarks\n - [siege](https://github.com/juju-solutions/siege)\n - [cassandra](https://github.com/juju-solutions/cassandra)\n - [hadoop](https://code.launchpad.net/~aisrael/charms/trusty/apache-hadoop-client/benchmarks)\n - [pts](https://github.com/phoronix-test-suite/phoronix-test-suite/tree/master/deploy/juju/trusty/pts)\n - [mongodb](https://jujucharms.com/mongodb)\n - [mysql-benchmark](https://github.com/juju-solutions/mysql-benchmark) (works against mysql, percona, and mariadb)\n - [Rally](https://jujucharms.com/u/marcoceppi/rally/trusty/0)\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

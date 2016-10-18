@@ -1,0 +1,53 @@
+{
+  "name": "ssl-key-vault Chef cookbook",
+  "chef_cookbook_name": "ssl-key-vault",
+  "revision": "0.1.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/ssl-key-vault",
+    "https://supermarket.chef.io/cookbooks/ssl-key-vault/download",
+    "https://supermarket.chef.io/cookbooks/ssl-key-vault/versions/0.1.2",
+    "https://supermarket.chef.io/cookbooks/ssl-key-vault/versions/0.1.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/ssl-key-vault/versions/0.1.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/ssl-key-vault",
+    "https://supermarket.chef.io/api/v1/cookbooks/ssl-key-vault/versions/0.1.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Test",
+    "Type/Middleware/Data Store"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/ssl-key-vault",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/ssl-key-vault/versions/0.1.2/download",
+  "deprecated": false,
+  "created": "2013-06-24T15:05:52.000Z",
+  "updated": "2015-02-11T15:15:25.163Z",
+  "description": "SSL key & certificate storage in chef-vault",
+  "maintainer": {
+    "name": "mpasternacki",
+    "email": "maciej@3ofcoins.net"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 9178898,
+  "downloads_count_revision": 1230409,
+  "repository_url": "https://github.com/3ofcoins/chef-cookbook-ssl-key-vault/",
+  "issues_url": "https://github.com/3ofcoins/chef-cookbook-ssl-key-vault/",
+  "chef_source_url": "https://github.com/3ofcoins/chef-cookbook-ssl-key-vault/",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "ssl-key-vault cookbook\n======================\n\nThis cookbook manages OpenSSL key pairs, using\n[chef-vault](https://github.com/Nordstrom/chef-vault/) to share and\nstore private keys.\n\nThis cookbook's home is at https://github.com/3ofcoins/ssl-key-vault/\n\nRequirements\n------------\n\nUsage\n-----\n\n1. Generate a self-signed key or a secret key and certificate.\n2. Store the private key in chef-vault. The name should be set to\n   *ssl-key-key.name*.:\n\n    $ knife encrypt cert \\\n      --search 'QUERY' --admins '' \\\n      --name ssl-key-example.com \\\n      --cert /path/to/example.com.key\n    $ knife upload data_bags/certs\n    \n   Either add Chef server's admin API users to the `--admins`, or make\n   the key otherwise accessible to yourself in future (e.g. with\n   [knife-briefcase](https://github.com/3ofcoins/knife-briefcase/)).\n\n3. Add the certificate to node's `ssl_certificates` attribute (key is\n   key's name, and value is full certificate):\n\n```ruby\nexample_com_cert = <<EOF\n-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----\nEOF\n\ndefault_attributes :ssl_certificates => {\n  'example.com' => example_com_cert\n}\n```\n\nIf you don't want to clutter your role definition, you can read the\ncertificate from file in the chef repo:\n   \n```ruby\ndefault_attributes :ssl_certificates => {\n  'example.com' => Pathname.new(__FILE__).dirname.join('../config/certificates/example.com.crt').read\n}\n```\n\n4. Add `recipe[ssl-key-vault]` to node's run list.\n\nThe key will be stored in `/etc/ssl/private/key.name.key`, and\ncertificate in `/etc/ssl/certs/key.name.pem`.\n\n### Multiple certificate files\n\nIf you need to store certificate and chain separately, or store public\npart in multiple files for any other reason, the `ssl_certificates`\nentry can also be a dictionary, where key is extension of the file in\n`/etc/ssl/certs`, and value is the file's content.\n\n```ruby\ncertificates = Pathname.new(__FILE__).dirname.join('../config/certificates')\ndefault_attributes :ssl_certificates => {\n  'example.com' => {\n    'crt' => certificates.join('example.com.crt').read,\n    'chain.pem' => certificates.join('example.com.chain.pem).read,\n  }\n}\n```\n\nIn this example, files `/etc/ssl/certs/example.com.crt` and\n`/etc/ssl/certs/example.com.chain.pem` will be created.\n\n\nTODOs & questions\n-----------------\n\nMaybe we should store certificate somewhere else than in attributes?\nknife-vault supports only one value, and certificate is public, so it\nshouldn't be encrypted. Creating a separate data bag seems to create\na lot of clutter, and is not easy to describe in _Usage_ section, as\nit needs to be encoded in JSON. Adding it to cookbook's _files/_ is\nalso kind of messy.\n\nMaybe the answer would be to script adding a new key. A knife plugin\nor at least a Thor task definition may be helpful here.\n\nI don't have much of idea currently how to add tests, with chef-vault,\nencrypted data bags, and such.\n\nAuthor\n------\n\nAuthor:: Maciej Pasternacki <maciej@3ofcoins.net>\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ]
+}

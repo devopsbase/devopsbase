@@ -1,0 +1,165 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/desertbit/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/desertbit/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/desertbit/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/desertbit/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/desertbit/owncloud/autobuild",
+    "user": "desertbit",
+    "name": "owncloud",
+    "namespace": "desertbit",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 3636,
+    "last_updated": "2016-09-23T21:14:22.736229Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 216149724,
+        "id": 164374,
+        "repository": 191110,
+        "creator": 270827,
+        "last_updater": 270827,
+        "last_updated": "2016-09-23T21:14:21.733414Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "desertbit/docker-owncloud"
+  },
+  "name": "desertbit/owncloud Docker container",
+  "description": "Deploy the latest ownCloud on Debian 8 with Nginx and PHP-FPM.",
+  "readme": "# ownCloud Docker Image\n\n![ownCloud Logo](images/owncloud.png \"ownCloud\")\n\nDeploy the latest ownCloud on Debian 8 with Nginx and PHP-FPM.\nThere is no builtin encryption support. This ownCloud instance is supposed to be served by a HTTP proxy or load balancer, which handles the encryption...\n\n## Setup\n\nThe quickest way to get it up is:\n\n```bash\ndocker run -d -p 80:80 desertbit/owncloud\n```\n\nThen go to http://localhost/ and log in as `admin`, password: `changeme`.\n\n### Fine tuning\n\nGo to the admin page and set the cron job execution mode to **Cron**.\n\n![cron](images/admin-cron.png \"cron\")\n\nYou should also set a custom e-mail smtp access point to be able to send e-mails from the ownCloud instance.\n\n## Environment variables\n\n- `DB_TYPE`: Either `sqlite`, `mysql` or `pgsql`. Default: `sqlite`\n- `DB_HOST`: Database host. Default: `localhost`\n- `DB_NAME`: Database name. Default: `owncloud`\n- `DB_USER`: Database user. Default: `owncloud`\n- `DB_PASS`: Database password. Default: `owncloud`\n- `DB_TABLE_PREFIX`: Prefix for all database tables. Default: `oc_`\n- `ADMIN_USER`: Username of the admin. Default: `admin`\n- `ADMIN_PASS`: Password of the admin account. Default: `changeme`\n- `TIMEZONE`: Timezone. Default: `UTC`\n\n## Database setup\n\nThe image currently supports linking against a MySQL or PostgreSQL container.\nThis container **MUST** be named `db` for this to work.\n\n### MySQL/MariaDB\n\nYou have to set the binlog-format option to MIXED. Otherwise the [owncloud setup will fail](https://github.com/owncloud/core/issues/16008).\n\nEither use the desertbit/mariadb image and set the binlog-format option with an environment variable or set it in the mariadb settings in /etc.\n\n\n\n\n## Volumes\n\n- `/var/www/owncloud/apps`: ownCloud's plugin/apps directory\n- `/var/www/owncloud/config`: ownCloud's config directory\n- `/var/www/owncloud/data`: ownCloud's data directory\n- `/var/log/nginx`: Nginx logs\n\nIf `/var/www/owncloud/apps` is mounted as volume, then the apps files have to be copied manually from the ownCloud source.\n\n## TURTLE\n\nThere is a Turtlefile available to setup and run ownCloud in one shot.\nCheck the Turtle documentation for more information.\n\n\n## Systemd service\n\n```\n[Unit]\nDescription=Dockerized ownCloud\nAfter=docker.service docker-owncloud-db.service\nRequires=docker.service docker-owncloud-db.service\n\n[Service]\nTimeoutStartSec=0\nRestart=always\nExecStartPre=-/usr/bin/docker kill owncloud\nExecStartPre=-/usr/bin/docker rm owncloud\nExecStartPre=/usr/bin/docker pull desertbit/owncloud\nExecStart=/usr/bin/docker run --name=owncloud -h owncloud.example.com \\\n  -p 80:80 \\\n  --link owncloud-db:db \\\n  -e 'TIMEZONE=Europe/Berlin' \\\n  -e 'DB_TYPE=mysql' \\\n  -e 'DB_NAME=owncloud' \\\n  -e 'DB_USER=owncloud' \\\n  -e 'DB_PASS=PassWord' \\\n  -e 'ADMIN_USER=admin' \\\n  -e 'ADMIN_PASS=admin' \\\n  -v /srv/docker/owncloud/apps:/var/www/owncloud/apps \\\n  -v /srv/docker/owncloud/config:/var/www/owncloud/config \\\n  -v /srv/docker/owncloud/data:/var/www/owncloud/data \\\n  -v /srv/docker/owncloud/log:/var/log/nginx \\\n  desertbit/owncloud\n\n[Install]\nAlias=owncloud.service\nWantedBy=multi-user.target\n```\n\n## Run occ commands\n\nownCloud’s occ command (ownCloud console) is ownCloud’s command-line interface. You can perform many common server operations with occ.\n\nProvided `owncloud` is the name of your container:\n\n```bash\ndocker exec -it owncloud occ help\n```\n\nUse the following command to upgrade an ownCloud instance:\n\n```bash\ndocker exec -it owncloud occ upgrade\n```\n",
+  "dockerfile": "#\n# DesertBit Owncloud Dockerfile\n# Initially based on pschmitt/owncloud\n#\n\nFROM debian:8\n\nMAINTAINER Roland Singer, roland.singer@desertbit.com\n\n# Environment variables\nENV OWNCLOUD_VERSION 8.1.1\nENV TIMEZONE UTC\n\n# Install dependencies\nRUN export DEBIAN_FRONTEND=noninteractive; \\\n\tapt-get update && \\\n\tapt-get install -y cron bzip2 php5-cli php5-gd php5-pgsql php5-sqlite \\\n\tphp5-mysqlnd php5-curl php5-intl php5-mcrypt php5-ldap php5-gmp php5-apcu \\\n\tphp5-imagick php5-fpm smbclient nginx supervisor gnupg && \\\n\tapt-get clean && \\\n\trm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n# gpg key from https://owncloud.org/owncloud.asc\nRUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys E3036906AD9F30807351FAC32D5D5E97F6978A26\n\n# Download the owncloud archive to the temporary directory, verify it and install owncloud.\nRUN mkdir -p /tmp/owncloud\nADD https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2.asc /tmp/owncloud/owncloud.tar.bz2.asc\nADD https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2 /tmp/owncloud/owncloud.tar.bz2\nADD owncloud.tar.bz2.sha256 /tmp/owncloud/owncloud.tar.bz2.sha256\nRUN cd /tmp/owncloud && \\\n\tsha256sum -c owncloud.tar.bz2.sha256 && \\\n\tgpg --verify owncloud.tar.bz2.asc && \\\n\tmkdir -p /var/www/owncloud /owncloud && \\\n\ttar -C /var/www/ -xvf /tmp/owncloud/owncloud.tar.bz2 && \\\n\tmkdir -p /var/www/owncloud/data && \\\n\tchown -R www-data:www-data /var/www/owncloud && \\\n\trm -r /tmp/owncloud\n\n\n# Config script files.\nADD nginx.conf /etc/nginx/nginx.conf\nADD php.ini /etc/php5/fpm/php.ini\nADD php-cli.ini /etc/php5/cli/php.ini\nADD www.conf /etc/php5/fpm/pool.d/www.conf\nADD cron.conf /etc/owncloud-cron.conf\nADD supervisor.conf /etc/supervisor/conf.d/supervisor-owncloud.conf\nADD run.sh /usr/bin/run.sh\nADD occ.sh /usr/bin/occ\n\n# Fix permissions.\nRUN chmod +x /usr/bin/run.sh /usr/bin/occ\n\n# Activate the cron file.\nRUN su -s /bin/sh www-data -c \"crontab /etc/owncloud-cron.conf\"\n\n\nVOLUME [\"/var/www/owncloud/config\", \"/var/www/owncloud/data\", \\\n        \"/var/www/owncloud/apps\", \"/var/log/nginx\"]\n\nEXPOSE 80\n\nWORKDIR /var/www/owncloud\n\nCMD [\"/usr/bin/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2.asc",
+        "dest": "/tmp/owncloud/owncloud.tar.bz2.asc"
+      },
+      {
+        "source": "https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2",
+        "dest": "/tmp/owncloud/owncloud.tar.bz2"
+      },
+      {
+        "source": "owncloud.tar.bz2.sha256",
+        "dest": "/tmp/owncloud/owncloud.tar.bz2.sha256"
+      },
+      {
+        "source": "nginx.conf",
+        "dest": "/etc/nginx/nginx.conf"
+      },
+      {
+        "source": "php.ini",
+        "dest": "/etc/php5/fpm/php.ini"
+      },
+      {
+        "source": "php-cli.ini",
+        "dest": "/etc/php5/cli/php.ini"
+      },
+      {
+        "source": "www.conf",
+        "dest": "/etc/php5/fpm/pool.d/www.conf"
+      },
+      {
+        "source": "cron.conf",
+        "dest": "/etc/owncloud-cron.conf"
+      },
+      {
+        "source": "supervisor.conf",
+        "dest": "/etc/supervisor/conf.d/supervisor-owncloud.conf"
+      },
+      {
+        "source": "run.sh",
+        "dest": "/usr/bin/run.sh"
+      },
+      {
+        "source": "occ.sh",
+        "dest": "/usr/bin/occ"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/var/www/owncloud/config\", \"/var/www/owncloud/data\",         \"/var/www/owncloud/apps\", \"/var/log/nginx\"]"
+    ],
+    "run": [
+      "export DEBIAN_FRONTEND=noninteractive; \tapt-get update && \tapt-get install -y cron bzip2 php5-cli php5-gd php5-pgsql php5-sqlite \tphp5-mysqlnd php5-curl php5-intl php5-mcrypt php5-ldap php5-gmp php5-apcu \tphp5-imagick php5-fpm smbclient nginx supervisor gnupg && \tapt-get clean && \trm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "gpg --keyserver ha.pool.sks-keyservers.net --recv-keys E3036906AD9F30807351FAC32D5D5E97F6978A26",
+      "mkdir -p /tmp/owncloud",
+      "cd /tmp/owncloud && \tsha256sum -c owncloud.tar.bz2.sha256 && \tgpg --verify owncloud.tar.bz2.asc && \tmkdir -p /var/www/owncloud /owncloud && \ttar -C /var/www/ -xvf /tmp/owncloud/owncloud.tar.bz2 && \tmkdir -p /var/www/owncloud/data && \tchown -R www-data:www-data /var/www/owncloud && \trm -r /tmp/owncloud",
+      "chmod +x /usr/bin/run.sh /usr/bin/occ",
+      "su -s /bin/sh www-data -c \"crontab /etc/owncloud-cron.conf\""
+    ],
+    "workdir": [
+      "/var/www/owncloud"
+    ],
+    "from": "debian:8",
+    "maintainer": "Roland Singer, roland.singer@desertbit.com",
+    "env": {
+      "OWNCLOUD_VERSION": "8.1.1",
+      "TIMEZONE": "UTC"
+    },
+    "cmd": "[\"/usr/bin/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/desertbit/docker-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/desertbit/docker-owncloud",
+  "docker_repository": "desertbit/owncloud",
+  "docker_image": "desertbit/owncloud",
+  "parameters_schema": {
+    "OWNCLOUD_VERSION": {
+      "default": "8.1.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TIMEZONE": {
+      "default": "UTC",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "desertbit/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/desertbit/owncloud",
+    "https://hub.docker.com/v2/repositories/desertbit/owncloud",
+    "https://github.com/desertbit/docker-owncloud.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Devopsware/Test",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/desertbit/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,112 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/marvambass/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/marvambass/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/marvambass/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/marvambass/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/marvambass/owncloud/autobuild",
+    "user": "marvambass",
+    "name": "owncloud",
+    "namespace": "marvambass",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 113,
+    "last_updated": "2015-11-14T10:09:36.409624Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 346720207,
+        "id": 58923,
+        "repository": 91257,
+        "creator": 136116,
+        "last_updater": 136116,
+        "last_updated": "2015-11-14T10:09:46.444443Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "MarvAmBass/docker-owncloud"
+  },
+  "name": "marvambass/owncloud Docker container",
+  "description": "owncloud headless installable",
+  "readme": "# Docker OwnCloud Container (marvambass/owncloud)\n_maintained by MarvAmBass_\n\n[FAQ - All you need to know about the marvambass Containers](https://marvin.im/docker-faq-all-you-need-to-know-about-the-marvambass-containers/)\n\n## What is it\n\nThis Dockerfile (available as ___marvambass/owncloud___) gives you a completly secure owncloud.\n\nIt's based on the [marvambass/nginx-ssl-php](https://registry.hub.docker.com/u/marvambass/nginx-ssl-php/) Image\n\nView in Docker Registry [marvambass/owncloud](https://registry.hub.docker.com/u/marvambass/owncloud/)\n\nView in GitHub [MarvAmBass/docker-owncloud](https://github.com/MarvAmBass/docker-owncloud)\n\n## Environment variables and defaults\n\n### For Headless installation required\n\nOwnCloud Install Settings\n\n* __OWNCLOUD\\_DO\\_NOT_INITIALIZE__\n * not set by default - it set with any value, initialization process is skipped\n \nOwnCloud Database Settings\n\n* __OWNCLOUD\\_MYSQL\\_USER__\n * no default - if null it will use sqlite\n* __OWNCLOUD\\_MYSQL\\_PASSWORD__\n * no default - if null it will use sqlite\n* __OWNCLOUD\\_MYSQL\\_HOST__\n * default: _mysql_\n* __OWNCLOUD\\_MYSQL\\_PORT__\n * default: _3306_ - if you use a different mysql port change it\n* __OWNCLOUD\\_MYSQL\\_DBNAME__\n * default: _owncloud_\n \nOwnCloud Admin Settings\n\n* __OWNCLOUD\\_ADMIN__\n * default: _admin_ - the name of the admin user\n* __OWNCLOUD\\_ADMIN\\_PASSWORD__\n * default: <randomly generated 10 characters> - the password for the admin user\n\nOwnCloud Site Settings\n\n* __OWNCLOUD\\_RELATIVE\\_URL\\_ROOT__\n * default: _/_ - you can chance that to whatever you want/need\n* __OWNCLOUD\\_HSTS\\_HEADERS\\_ENABLE__\n * default: not set - if set to any value the HTTP Strict Transport Security will be activated on SSL Channel\n* __OWNCLOUD\\_HSTS\\_HEADERS\\_ENABLE\\_NO\\_SUBDOMAINS__\n * default: not set - if set together with __OWNCLOUD\\_HSTS\\_HEADERS\\_ENABLE__ and set to any value the HTTP Strict Transport Security will be deactivated on subdomains\n\n### Inherited Variables\n\n* __DH\\_SIZE__\n * default: 1024 fast but a bit insecure. if you need more security just use a higher value\n * inherited from [MarvAmBass/docker-nginx-ssl-secure](https://github.com/MarvAmBass/docker-nginx-ssl-secure)\n\n## Using the marvambass/owncloud Container\n\nFirst you need a running MySQL Container (you could use: [marvambass/mysql](https://registry.hub.docker.com/u/marvambass/mysql/)).\n\nYou need to _--link_ your mysql container to marvambass/owncloud with the name __mysql__\n\n    docker run -d -p 443:443 --link mysql:mysql --name owncloud marvambass/owncloud\n    \n## Fail2ban\n\nYou can use Fail2ban to block bruteforce password attacks.\n\nIn order to use Fail2ban you need to make your ___owncloud.log___ available on the outside.\nThis may be the regular case if you mapped __/owncloud/data__ to the outside.\n\n### Fail2ban Filter\n\nNow we need to create a new Fail2ban Filter to recognise bruteforce attacks on owncloud.\nThere are two kinds of Filters needed, which depends on your configuration.\n\n__owncloud is directly available__\n\n_/etc/fail2ban/filter.d/docker-owncloud-direct.conf_\n\n    [Definition]\n    failregex={.*Login failed:.*IP: '<HOST>',.*\"}\n    ignoreregex =\n\n__owncloud is behind reverse proxy__\n\n_/etc/fail2ban/filter.d/docker-owncloud-proxied.conf_\n\n    [Definition]\n    failregex={.*Login failed:.*X-Forwarded-For: '<HOST>'.*\"}\n    ignoreregex =\n    \n## Fail2ban Jail Config    \n\n_/etc/fail2ban/jail.d/docker-owncloud.conf_\n\n    [docker-owncloud-direct]\n    enabled = false\n    port    = http,https\n    filter  = docker-owncloud-direct\n    logpath = /var/docker-owncloud/data/owncloud.log\n    maxretry = 3\n\n    [docker-owncloud-proxied]\n    enabled = false\n    port    = http,https\n    filter  = docker-owncloud-proxied\n    logpath = /var/docker-owncloud/data/owncloud.log\n    maxretry = 3\n    \nJust enable the suitable rule, check if the logpath is right you may also change maxretry and port to your needs.\n\nRestart Fail2ban and that's all!\n",
+  "dockerfile": "FROM marvambass/nginx-ssl-php\nMAINTAINER MarvAmBass\n\nENV DH_SIZE 1024\n\nRUN apt-get update; apt-get install -y \\\n    mysql-client \\\n    php5-mysql \\\n    wget\n\n# clean http directory\nRUN rm -rf /usr/share/nginx/html/*\n\n# install owncloud\nRUN echo 'deb http://download.opensuse.org/repositories/isv:/ownCloud:/community/Debian_7.0/ /' >> /etc/apt/sources.list.d/owncloud.list && \\\n    wget -O - 'http://download.opensuse.org/repositories/isv:ownCloud:community/Debian_7.0/Release.key' | apt-key add -\n\nRUN apt-get update; apt-get install -y \\\n    owncloud \\\n    mysql-client \\\n    php5-imap \\\n    sendmail\n\n# optionals\nRUN apt-get update; apt-get install -y --no-install-recommends \\\n    libreoffice\n\n# install nginx owncloud config\nADD nginx-owncloud.conf /etc/nginx/conf.d/nginx-owncloud.conf\n\n# enable php5 imap\nRUN php5enmod imap\n\n# upload limits\nRUN sed -i 's/^post_max_size =.*/post_max_size = 0/g' /etc/php5/fpm/php.ini\nRUN sed -i 's/^upload_max_filesize =.*/upload_max_filesize = 25G/g' /etc/php5/fpm/php.ini\nRUN sed -i 's/^max_file_uploads =.*/max_file_uploads = 100/g' /etc/php5/fpm/php.ini\n\n# add startup.sh\nADD startup-owncloud.sh /opt/startup-owncloud.sh\nRUN chmod a+x /opt/startup-owncloud.sh\n\n# add '/opt/startup-owncloud.sh' to entrypoint.sh\nRUN sed -i 's/# exec CMD/# exec CMD\\n\\/opt\\/startup-owncloud.sh/g' /opt/entrypoint.sh\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "nginx-owncloud.conf",
+        "dest": "/etc/nginx/conf.d/nginx-owncloud.conf"
+      },
+      {
+        "source": "startup-owncloud.sh",
+        "dest": "/opt/startup-owncloud.sh"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update; apt-get install -y     mysql-client     php5-mysql     wget",
+      "rm -rf /usr/share/nginx/html/*",
+      "echo 'deb http://download.opensuse.org/repositories/isv:/ownCloud:/community/Debian_7.0/ /' >> /etc/apt/sources.list.d/owncloud.list &&     wget -O - 'http://download.opensuse.org/repositories/isv:ownCloud:community/Debian_7.0/Release.key' | apt-key add -",
+      "apt-get update; apt-get install -y     owncloud     mysql-client     php5-imap     sendmail",
+      "apt-get update; apt-get install -y --no-install-recommends     libreoffice",
+      "php5enmod imap",
+      "sed -i 's/^post_max_size =.*/post_max_size = 0/g' /etc/php5/fpm/php.ini",
+      "sed -i 's/^upload_max_filesize =.*/upload_max_filesize = 25G/g' /etc/php5/fpm/php.ini",
+      "sed -i 's/^max_file_uploads =.*/max_file_uploads = 100/g' /etc/php5/fpm/php.ini",
+      "chmod a+x /opt/startup-owncloud.sh",
+      "sed -i 's/# exec CMD/# exec CMD\\n\\/opt\\/startup-owncloud.sh/g' /opt/entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "marvambass/nginx-ssl-php",
+    "maintainer": "MarvAmBass",
+    "env": {
+      "DH_SIZE": "1024"
+    }
+  },
+  "source_repository_url": "https://github.com/MarvAmBass/docker-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/MarvAmBass/docker-owncloud",
+  "docker_repository": "marvambass/owncloud",
+  "docker_image": "marvambass/owncloud",
+  "parameters_schema": {
+    "DH_SIZE": {
+      "default": "1024",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "marvambass/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/marvambass/owncloud",
+    "https://hub.docker.com/v2/repositories/marvambass/owncloud",
+    "https://github.com/MarvAmBass/docker-owncloud.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/marvambass/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

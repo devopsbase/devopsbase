@@ -1,0 +1,123 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kreable/memcached",
+    "repository_url": "https://hub.docker.com/v2/repositories/kreable/memcached",
+    "tags_url": "https://hub.docker.com/v2/repositories/kreable/memcached/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kreable/memcached/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kreable/memcached/autobuild",
+    "user": "kreable",
+    "name": "memcached",
+    "namespace": "kreable",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 263,
+    "last_updated": "2016-09-02T13:31:06.117611Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 119424207,
+        "id": 1628057,
+        "repository": 460090,
+        "creator": 453656,
+        "last_updater": 566672,
+        "last_updated": "2016-09-02T13:31:05.640515Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "nlzet/docker-lemp-stack"
+  },
+  "name": "kreable/memcached Docker container",
+  "description": "Lemp stack memcached service",
+  "readme": "# Docker lemp stack with multiple PHP versions\n\n## What is this ?\n\nThis is a development or(/and) production environment for PHP built in seperate docker containers, managed with docker-compose. The basic setup contains a LEMP stack (Linux, Nginx, MySQL and PHP) \n\n(MySQL is replaced by a MariaDB instance which is technically the same as MySQL, but with extra features and promises too be faster than MySQL)\n\n## What's inside:\n * Nginx\n * PHP 5.6 and PHP 7.0, both contain:\n    * APCu (optional)\n    * XDebug (optional)\n    * Mailcatcher (optional)\n    * Production/development config (optional)\n    * Wkhtmltopdf\n    * Wkhtmltoimage\n    * Composer\n    * PHPUnit\n    * Phing/Ant\n    * ...\n * MariaDB\n * Automated backups\n * Redis / Memcached\n\n## Documentation\n\n### Requirements\n\nMake sure you have installed `docker` and `docker-compose`. Both are easily installed via:\n\n\nDocker: https://docs.docker.com/engine/installation/\n   \nDocker compose: https://docs.docker.com/compose/install/\n\n### Makefile\n\nIn the root of the project there is a `Makefile`, if you are using an OS that support it, a lot of commands explained below can be ran easily trough the makefile as a shortcut. If you don't support the Makefile you can find each command inside this file. (Variables are defined at the top).\n\nUseful commands:\n    \n    # Pull all the newest images\n    pull\n    # Start development environment. Will recreate linked containers of new services, using compose-up-development.yml\n    up_dev\n    # The same as up_dev but then for your production environment, using compose-up-production.yml\n    up_prod\n    # Create a backup of the shared containers data in data/backups/\n    backup_container_data\n    # Create a backup of the MariaDB instance in data/backups/\n    backup_database\n    # Create a backup of the wwwdata container volum in data/backups/\n    backup_www\n    # Reload PHP FPM of the php56 service\n    reload_php_56\n    # Reload PHP FPM of the php70 service\n    reload_php_70:\n    # Reload the nginx configuration files (service nginx reload)\n    reload_nginx:\n\t\n\t# Connect to different containers. (Create a bash shell session inside a container)\n\tconnect_backup\t\n\tconnect_mailcatcher\n\tconnect_mariadb\n\tconnect_memcached\n\tconnect_nginx\n\tconnect_php56\n\tconnect_php70\n\tconnect_rabbitmq\n\tconnect_redis\n\tconnect_wwwdata\n\nCommands for building and developing the services:\n\n    # Stop and remove all containers shown by 'docker ps -a'\n    clear_containers\n    # Remove all stored images shown by 'docker images'\n    clear_images\n    # Will run both 'clear_containers' and 'clear_images\"\n    clear_all\n    # Use the compose build file to build all containers, even unused containers for specific environments\n    build\n\n### Launching containers\n\nThe entire collection of containers is built to run as a development environment and (or) a production environment. The files `compose-up-development.yml` and `compose-up-production.yml` define the configuration for each environment. See https://docs.docker.com/compose/ for more information about a compose configuration file.\n\nYou can specify the configuration file with the `-f` flag, which will result in:\n\n    docker-compose -f compose-up-development.yml up\n    \nOR\n\n    docker-compose -f compose-up-production.yml up\n    \nWhen supporting the Makefile you could run:\n\n    make up_dev\n    \nOR\n\n    make up_production\n\n# Specifying development or production use\n\nCurrently there are a few changes that are supported through config files and mounted files.\n\n## PHP56 and PHP70\n\nBoth containers support 4 environment variables that can be filled through your compose configuration file:\n\n    # Set this to `true` to enable APCu cache, and to `false` to disable it.\n    PHP_APCU_ENABLED: 'false'\n    # Set this to `true` to enable XDebug, and to `false` to disable it. Typically enabled only for development\n    PHP_XDEBUG_ENABLED: 'true'\n    # Set this to `true` to enable mailcatcher, and to `false` to disable it. Typically enabled only for development\n    PHP_MAILCATCHER_ENABLED: 'true'\n    # Set this to `development` to load the mounted development.ini file, and to `production` to load the mounted production.ini file.\n    PHP_ENV: 'development'\n\nWhen disabling mailcatcher you can remove the mailcatcher service in your compose file, with the links to the mailcatcher service from other services as well (like in the production compose configuration file).\n\n# Common recipes\n\n[How to disable the php56 or php70 service](docs/recipes/01-disable-php56-or-php70.md)\n\n[Customizing a service](docs/recipes/02-customizing-services.md)\n",
+  "dockerfile": "FROM phusion/baseimage:latest\n\nENV \\\n  HOME /root \\\n  DEBIAN_FRONTEND noninteractive\n\nRUN \\\n  rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh && \\\n  locale-gen en_US.UTF-8 && \\\n  export LANG=en_US.UTF-8 && \\\n  apt-get update && \\\n  apt-get dist-upgrade -y && \\\n  apt-get install -y memcached  && \\\n  apt-get clean && \\\n  apt-get autoremove -y && \\\n  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nADD runit/memcached /etc/service/memcached/run\n\nEXPOSE 11211\n\nENV TERM xterm\n\nCMD [\"/sbin/my_init\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "runit/memcached",
+        "dest": "/etc/service/memcached/run"
+      }
+    ],
+    "expose": [
+      11211
+    ],
+    "volume": [],
+    "run": [
+      "  rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh &&   locale-gen en_US.UTF-8 &&   export LANG=en_US.UTF-8 &&   apt-get update &&   apt-get dist-upgrade -y &&   apt-get install -y memcached  &&   apt-get clean &&   apt-get autoremove -y &&   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+    ],
+    "workdir": [],
+    "from": "phusion/baseimage:latest",
+    "env": {
+      "": "",
+      "HOME": "/root",
+      "DEBIAN_FRONTEND": "noninteractive",
+      "TERM": "xterm"
+    },
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/nlzet/docker-lemp-stack.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/nlzet/docker-lemp-stack",
+  "docker_repository": "kreable/memcached",
+  "docker_image": "kreable/memcached",
+  "parameters_schema": {
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TERM": {
+      "default": "xterm",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        11211
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kreable/memcached",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/kreable/memcached",
+    "https://hub.docker.com/v2/repositories/kreable/memcached",
+    "https://github.com/nlzet/docker-lemp-stack.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Cache/Memcached"
+  ],
+  "info_url": "https://hub.docker.com/r/kreable/memcached",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

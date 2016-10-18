@@ -1,0 +1,147 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/vsense/couchpotato",
+    "repository_url": "https://hub.docker.com/v2/repositories/vsense/couchpotato",
+    "tags_url": "https://hub.docker.com/v2/repositories/vsense/couchpotato/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/vsense/couchpotato/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/vsense/couchpotato/autobuild",
+    "user": "vsense",
+    "name": "couchpotato",
+    "namespace": "vsense",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 864,
+    "last_updated": "2016-09-23T20:40:15.161283Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "develop",
+        "full_size": 49313144,
+        "id": 672408,
+        "repository": 244956,
+        "creator": 49323,
+        "last_updater": 195335,
+        "last_updated": "2016-09-23T20:35:41.503322Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 50049804,
+        "id": 505997,
+        "repository": 244956,
+        "creator": 49323,
+        "last_updater": 195335,
+        "last_updated": "2016-09-23T20:34:02.560432Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "supervisor-develop",
+        "full_size": 50485868,
+        "id": 672402,
+        "repository": 244956,
+        "creator": 49323,
+        "last_updater": 195335,
+        "last_updated": "2016-08-22T13:10:14.351168Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "supervisor-latest",
+        "full_size": 50722054,
+        "id": 672397,
+        "repository": 244956,
+        "creator": 49323,
+        "last_updater": 195335,
+        "last_updated": "2016-08-22T13:09:56.214935Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "vSense/docker-couchpotato"
+  },
+  "name": "vsense/couchpotato Docker container",
+  "description": "",
+  "readme": "# What is Couchpotato?\n\nAwesome PVR for usenet and torrents. Just fill in what you want to see and CouchPotato will add it to your \"want to watch\"-list. Every day it will search through multiple NZBs & Torrents sites, looking for the best possible match. If available, it will download it using your favorite download software.\n\n> [More info](https://couchpota.to/)\n\n![Couchpotato](https://raw.githubusercontent.com/vSense/docker-couchpotato/master/logo.png)\n\n\n# How to choose a tag\n\nAvailable tags:\n-   `latest` : based on master branch\n-   `develop` : based on develop branch\n-   `supervisord-latest` : based on master branch\n-   `supervisord-develop` : based on develop branch\n\nThe above tags provide images with or without an init process (couchpotato or supervisor as PID 1)\n\nDepending on how you are planning to launch Couchpotato you have to choose the right image.\n\n# How to use this image.\n\nRun Couchpotato :\n\n\tdocker run vsense/couchpotato:<yourtag>\n\nYou can test it by visiting `http://container-ip:5050` in a browser or, if you need access outside the host, on port 5050 :\n\n\tdocker run -p 5050:5050 vsense/couchpotato:<yourtag>\n\nThen go to `http://localhost:5050` or `http://host-ip:5050` in a browser.\n\n# Overriding\n\nThe image has two volumes :\n-   /config : contains couchpotato configuration\n-   /downloads : contains the files downloaded by the service provider of your choice : NZB, Torrents or Others. Also postprocessed files. You can pretty much drop whatever you want here it is sort of a data volume.\n\nCouchpotato is installed in the /couchpotato directory but it is not a volume. If you wish to use host mount point instead of volumes it's possible.\n\nTo use an on-host config (for persistent configuration if you do not want to deal with volumes:\n\n    docker run --restart=always --name couchpotato --hostname couchpotato -v /srv/configs/couchpotato:/config vsense/couchpotato\n\nTo mount your download folder (you will probably need to do that anyway) :\n\n    docker run --restart=always --name couchpotato --hostname couchpotato -v /srv/configs/couchpotato:/config -v /srv/seedbox:/downloads vsense/couchpotato\n\nYou can even override couchpotato directory if you prefer to git clone on your host for whatever reason :\n\n    docker run --restart=always --name couchpotato --hostname couchpotato -v /srv/couchpotato:/couchpotato vsense/couchpotato\n\nAnd you can combine the commands above as you like :\n\n    docker run --restart=always --name couchpotato --hostname couchpotato  -v /srv/seedbox:/downloads -v /srv/couchpotato:/couchpotato -v /srv/configs/couchpotato:/config vsense/couchpotato\n\n# Recommanded running methods\n\n## Running without init with Docker\n\n```\ndocker run --restart=always --name couchpotato --hostname couchpotato  -v /srv/seedbox:/downloads -v /srv/configs/couchpotato:/config vsense/couchpotato\n```\n\n## Running with systemd (Preferred)\n\n```\n# /etc/systemd/system/couchpotato.service\n[Unit]\nDescription=Couchpotato movie downloader\nAfter=docker.service\nRequires=docker.service\n\n[Service]\nTimeoutStartSec=0\nExecStartPre=-/usr/bin/docker pull vsense/couchpotato\nExecStart=/usr/bin/docker run --rm --name couchpotato --hostname couchpotato -v /srv/configs/couchpotato:/config -v /srv/seedbox:/downloads vsense/couchpotato:supervisor-latest\nExecStop=/usr/bin/docker stop couchpotato\nExecReload=/usr/bin/docker restart couchpotato\n\n[Install]\nWantedBy=multi-user.target\n```\n",
+  "dockerfile": "FROM vsense/baseimage:alpine\n\nMAINTAINER vSense <docker@vsense.fr>\n\nENV BRANCH master\n\nRUN apk add --update \\\n    git \\\n    python \\\n    unrar \\\n    zip \\\n    py-lxml \\\n    py-openssl \\\n    py-cryptography \\\n    py-enum34 \\\n    py-cffi \\\n    && git clone -b $BRANCH --single-branch https://github.com/RuudBurger/CouchPotatoServer.git /couchpotato  \\\n    && mkdir /config \\\n    && mkdir /downloads \\\n    && adduser -D -h /couchpotato -s /sbin/nologin -u 5001 couchpotato \\\n    && chown -R couchpotato:couchpotato /couchpotato /config /downloads \\\n    && rm -rf /var/cache/apk/*\n\nVOLUME /config /downloads\n\nEXPOSE 5050\n\nUSER couchpotato\n\nCMD [\"--data_dir=/config\"]\n\nENTRYPOINT [\"/usr/bin/env\",\"python2\",\"/couchpotato/CouchPotato.py\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5050
+    ],
+    "volume": [
+      "/config /downloads"
+    ],
+    "run": [
+      "apk add --update     git     python     unrar     zip     py-lxml     py-openssl     py-cryptography     py-enum34     py-cffi     && git clone -b $BRANCH --single-branch https://github.com/RuudBurger/CouchPotatoServer.git /couchpotato      && mkdir /config     && mkdir /downloads     && adduser -D -h /couchpotato -s /sbin/nologin -u 5001 couchpotato     && chown -R couchpotato:couchpotato /couchpotato /config /downloads     && rm -rf /var/cache/apk/*"
+    ],
+    "workdir": [],
+    "from": "vsense/baseimage:alpine",
+    "maintainer": "vSense <docker@vsense.fr>",
+    "env": {
+      "BRANCH": "master"
+    },
+    "user": "couchpotato",
+    "cmd": "[\"--data_dir=/config\"]",
+    "entrypoint": "[\"/usr/bin/env\",\"python2\",\"/couchpotato/CouchPotato.py\"]"
+  },
+  "source_repository_url": "https://github.com/vSense/docker-couchpotato.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/vSense/docker-couchpotato",
+  "docker_repository": "vsense/couchpotato",
+  "docker_image": "vsense/couchpotato",
+  "parameters_schema": {
+    "BRANCH": {
+      "default": "master",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5050
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "vsense/couchpotato",
+  "revision": "develop",
+  "uris": [
+    "https://hub.docker.com/r/vsense/couchpotato",
+    "https://hub.docker.com/v2/repositories/vsense/couchpotato",
+    "https://github.com/vSense/docker-couchpotato.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP"
+  ],
+  "info_url": "https://hub.docker.com/r/vsense/couchpotato",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

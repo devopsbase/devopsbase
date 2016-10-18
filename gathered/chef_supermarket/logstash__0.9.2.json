@@ -1,0 +1,154 @@
+{
+  "name": "logstash Chef cookbook",
+  "chef_cookbook_name": "logstash",
+  "revision": "0.9.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/logstash",
+    "https://supermarket.chef.io/cookbooks/logstash/download",
+    "https://supermarket.chef.io/cookbooks/logstash/versions/0.9.2",
+    "https://supermarket.chef.io/cookbooks/logstash/versions/0.9.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/logstash/versions/0.9.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/logstash",
+    "https://supermarket.chef.io/api/v1/cookbooks/logstash/versions/0.9.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Logging/Logstash"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/logstash",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/logstash/versions/0.9.2/download",
+  "deprecated": false,
+  "created": "2011-08-02T07:43:22.000Z",
+  "updated": "2015-09-13T18:21:49.150Z",
+  "description": "Installs/Configures logstash",
+  "maintainer": {
+    "name": "lusis",
+    "email": "lusis.org+github.com@gmail.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 104,
+  "downloads_count": 16788461,
+  "downloads_count_revision": 1573448,
+  "repository_url": "https://github.com/lusis/chef-logstash",
+  "issues_url": "https://github.com/lusis/chef-logstash",
+  "chef_source_url": "https://github.com/lusis/chef-logstash",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# <a name=\"title\"></a> chef-logstash [![Build Status](https://secure.travis-ci.org/lusis/chef-logstash.png?branch=master)](http://travis-ci.org/lusis/chef-logstash)\n\nDescription\n===========\n\nThis is the semi-official 'all-in-one' Logstash cookbook.\n\nThis cookbook is in transition from being a regular cookbook to following the Library Cookbook pattern.\nWhile you can still use the `agent` and `server` recipes,  the power of this cookbook now comes from the\n`LWRPs`.\n\nIf you are using logstash < 1.2 you might want to use the 0.6.x branch.\nIf you are using logstash < 1.4 you might want to use the 0.7.x branch.\n\nRequirements\n============\n\nAll of the requirements are explicitly defined in the recipes. Every\neffort has been made to utilize Opscode's cookbooks.\n\nHowever if you wish to use an external ElasticSearch cluster, you will\nneed to install that yourself and change the relevant attributes for\ndiscovery. The same applies to integration with Graphite.\n\nThis cookbook has been tested together with the following cookbooks,\nsee the Berksfile for more details\n\n* [Heavywater Graphite Cookbook](https://github.com/hw-cookbooks/graphite)   - This is the one I use\n* [Karmi's ElasticSearch Cookbook](https://github.com/elasticsearch/cookbook-elasticsearch)\n* [RiotGames RBENV cookbook](https://github.com/RiotGames/rbenv-cookbook)\n* [@lusis Kibana cookbook](https://github.com/lusis/chef-kibana)\n\nAttributes\n==========\n\n## Default\n\nsee [attributes/default.rb](attributes/default.rb)\n\n## Beaver (alternative to Logstash Agent)\n\n_This will be depreciated soon in favor of an external library cookbook._\n\n* `node['logstash']['beaver']['repo']` - URL or repository to install\n  beaver from (using pip).\n* `node['logstash']['beaver']['server_role']` - The role of the node\n  behaving as a Logstash `server`/`indexer`.\n* `node['logstash']['beaver']['server_ipaddress']` - Server IP address\n  to use (needed when not using server_role).\n* `node['logstash']['beaver']['inputs']` - Array of input plugins\n  configuration (Supported: file).\n  For example:\n  \n        override['logstash']['beaver']['inputs'] =  [\n          { :file =>  \n            {\n              :path => [\"/var/log/nginx/*log\"], \n              :type => \"nginx\", \n              :tags => [\"logstash\",\"nginx\"]\n            }\n          },\n          { :file =>  \n            {\n              :path => [\"/var/log/syslog\"], \n              :type => \"syslog\", \n              :tags => [\"logstash\",\"syslog\"] \n            }\n          }\n        ]    \n    \n* `node['logstash']['beaver']['outputs']` - Array of output plugins\n  configuration (Supported: amq, redis, stdout, zeromq).\n  For example:\n\n        override['logstash']['beaver']['outputs'] = [ \n          { \n            :amqp => { \n              :port => \"5672\",\n              :exchange => \"rawlogs\",\n              :name => \"rawlogs_consumer\"\n            } \n          } \n        ]\n  This example sets up the amqp output and uses the recipe defaults for the host value\n\n## Source\n\n* `node['logstash']['source']['repo']` - The git repo to use for the\n  source code of Logstash\n* `node['logstash']['source']['sha']` - The sha/branch/tag of the repo\n  you wish to clone. Uses `node['logstash']['server']['version']` by\n  default.\n* `node['logstash']['source']['java_home']` - your `JAVA_HOME`\n  location. Needed explicity for `ant` when building JRuby\n\n## Index Cleaner\n\n* `node['logstash']['index_cleaner']['days_to_keep']` - Integer number\n  of days from today of Logstash index to keep.\n* `node['logstash']['index_cleaner']['cron']['minute']` - Minute to run\n  the index_cleaner cron job\n* `node['logstash']['index_cleaner']['cron']['hour']` - Hour to run the\n  index_cleaner cron job\n* `node['logstash']['index_cleaner']['cron']['log_file']` - Path to direct\n  the index_cleaner cron job's stdout and stderr\n\nLightweight Resource Providers\n===================\n\nThese now do all the heavy lifting.\n\n## logstash_instance\n\nThis will install a logstash instance.   It will take defaults from attributes for most attributes.\n\nsee [resources/instance.rb](resources/instance.rb)\n\n## logstash_service\n\nThis will create system init scripts for managing logstash instance.   It will take defaults from attributes for most attributes.\n\nsee [resources/service.rb](resources/service.rb)\n\n_experimental support for pleaserun has been added.   Only `native` for `Ubuntu 12.04` has been thoroughly tested._\n\n## logstash_config\n\nThis will create logstash config files.   It will take defaults from attributes for most attributes.\n\nsee [resources/config.rb](resources/config.rb)\n\n## logstash_pattern\n\nThis will install custom grok patterns for logstash.   It will take defaults from attributes for most attributes:\n\nsee [resources/pattern.rb](resources/pattern.rb)\n\n## logstash_plugns\n\nThis will install the logstash community plugins:\n\nsee [resources/plugins.rb](resources/plugins.rb)\n\n## attribute precidence in logstash LWRPs\n\nWe've done our best to make this intuitive and easy to use.\n\n1. the value directly in the resource call.\n2. the value from the hash node['logstash']['instance'][name]\n3. the value from the hash node['logstash']['instance']['default']\n\nSearching\n======\n\nThere is a search helper library `libraries/search.rb` which will help you search for values such as `elasticsearch_ip`.  see the `server` recipe for an example of its usage.\n\n\nTesting\n=======\n\n## Vagrant\n\n```\nvagrant up precise64\n```\n\n## Rubocop, FoodCritic, Rspec, Test-Kitchen\n\n```\nbundle exec rake\n```\n\nContributing\n========\n\nAny and all contributions are welcome.   We do ask that you test your contributions with the testing framework before you send a PR.\n\nDocumentation contributions will earn you lots of hugs and kisses.\n\nUsage\n=====\n\nA proper readme is forthcoming but in the interim....\n\nThese two recipes show how to install and configure logstash instances via the provided `LWRPs`\n\n* [recipe/server.rb](recipe/server.rb) - This would be your indexer node\n* [recipe/agent.rb](recipe/agent.rb) - This would be a local host's agent for collection\n\n\nEvery attempt (and I mean this) was made to ensure that the following\nobjectives were met:\n\n* Any agent install can talk to a server install\n* Kibana web interface can talk to the server install\n* Each component works OOB and with each other\n* Utilize official opscode cookbooks where possible\n\nThis setup makes HEAVY use of roles. Additionally, ALL paths have been\nmade into attributes. Everything I could think of that would need to\nbe customized has been made an attribute.\n\n## Defaults\n\nBy default, the recipes look for the following roles (defined as\nattributes so they can be overridden):\n\n* `graphite_server` - `node['logstash']['graphite_role']`\n* `elasticsearch_server` - `node['logstash']['elasticsearch_role']`\n* `logstash_server` -\n  `node['logstash']['kibana']['elasticsearch_role']` and\n  `node['logstash']['agent']['server_role']`\n\nThe reason for giving `kibana` its own role assignment is to allow you\nto point to existing ES clusters/logstash installs.\n\nThe reason for giving `agent` its own role assignment is to allow the\n`server` and `agent` recipes to work together.\n\nYes, if you have a graphite installation with a role of\n`graphite_server`, logstash will send stats of events received to\n`logstash.events`.\n\n## Agent and Server configuration\n\nThe template to use for configuration is made an attribute as well.\nThis allows you to define your OWN logstash configuration file without\nmucking with the default templates.\n\nThe `server` will, by default, enable the embedded ES server. This can\nbe overriden as well.\n\nSee the `server` and `agent` attributes for more details.\n\n## Source vs. Jar install methods\n\nBoth `agent` and `server` support an attribute for how to install. By\ndefault this is set to `jar` to use the 1.1.1preview as it is required\nto use elasticsearch 0.19.4. The current release is defined in\nattributes if you choose to go the `source` route.\n\n## Out of the box behaviour\n\nHere are some basic steps\n\n* Create a role called `logstash_server` and assign it the following\n  recipes: `logstash::server`\n* Assign the role to a new server\n* Assign the `logstash::agent` recipe to another server\n\nIf there is a system found with the `logstash_server` role, the agent\nwill automatically configure itself to send logs to it over tcp port\n5959. This is, not coincidently, the port used by the chef logstash\nhandler.\n\nIf there is NOT a system with the `logstash_server` role, the agent\nwill use a null output. The default input is to read files from\n`/var/log/*.log` excluding and gzipped files.\n\nIf you point your browser to the `logstash_server` system's ip\naddress, you should get the kibana web interface.\n\nDo something to generate a new line in any of the files in the agent's\nwatch path (I like to SSH to the host), and the events will start\nshowing up in kibana. You might have to issue a fresh empty search.\n\nThe `pyshipper` recipe will work as well but it is NOT wired up to\nanything yet.\n\n## config templates\n\nIf you want to use chef templates to drive your configs you'll want to set the following:\n\n* example using `agent`, `server` works the same way.\n* The actual template file for the following would resolve to `templates/default/apache.conf.erb` and be installed to `/opt/logstash/agent/etc/conf.d/apache.conf`\n* Each template has a hash named for it to inject variables in `node['logstash']['agent']['config_templates_variables']`\n\n\n```\nnode['logstash']['agent']['config_file'] = \"\" # disable data drive templates ( can be left enabled if want both )\nnode['logstash']['agent']['config_templates'] = [\"apache\"]\nnode['logstash']['agent']['config_templates_cookbook'] = 'logstash'\nnode['logstash']['agent']['config_templates_variables'] = { apache: { type: 'apache' } }\n```\n\n\n\n\n## Letting data drive your templates\n\n*DEPRECIATED!*\n\nWhile this may work ...   it is no longer being actively supported by the maintainers of this cookbook.\nWe will accept `PRs`.\n\nThe current templates for the agent and server are written so that you\ncan provide ruby hashes in your roles that map to inputs, filters, and\noutputs. Here is a role for logstash_server.\n\nThere are two formats for the hashes for filters and outputs that you should be aware of ...   \n\n### Legacy\n\nThis is for logstash < 1.2.0 and uses the old pattern of setting 'type' and 'tags' in the plugin to determine if it should be run.\n\n```\nfilters: [\n  grok: {\n  type: \"syslog\"\n    match: [\n      \"message\",\n      \"%{SYSLOGTIMESTAMP:timestamp} %{IPORHOST:host} (?:%{PROG:program}(?:\\[%{POSINT:pid}\\])?: )?%{GREEDYDATA:message}\"\n    ]\n  },\n  date: {\n  type: \"syslog\"\n    match: [ \n      \"timestamp\",\n      \"MMM  d HH:mm:ss\",\n      \"MMM dd HH:mm:ss\",\n      \"ISO8601\"\n    ]\n  }\n]\n```\n\n### Conditional\n\nThis is for logstash >= 1.2.0 and uses the new pattern of conditioansl `if 'type' == \"foo\" {}`\n\nNote:  the condition applies to all plugins in the block hash in the same object.\n\n```\nfilters: [\n  { \n    condition: 'if [type] == \"syslog\"',\n    block: {    \n      grok: {\n        match: [\n          \"message\",\n          \"%{SYSLOGTIMESTAMP:timestamp} %{IPORHOST:host} (?:%{PROG:program}(?:\\[%{POSINT:pid}\\])?: )?%{GREEDYDATA:message}\"\n        ]\n      },\n      date: {\n        match: [ \n          \"timestamp\",\n          \"MMM  d HH:mm:ss\",\n          \"MMM dd HH:mm:ss\",\n          \"ISO8601\"\n        ]\n      }\n    }\n  }\n]\n```\n\n### Examples\n\nThese examples show the legacy format and need to be updated for logstash >= 1.2.0\n\n    name \"logstash_server\"\n    description \"Attributes and run_lists specific to FAO's logstash instance\"\n    default_attributes(\n      :logstash => {\n        :server => {\n          :enable_embedded_es => false,\n          :inputs => [\n            :rabbitmq => {\n              :type => \"all\",\n              :host => \"<IP OF RABBIT SERVER>\",\n              :exchange => \"rawlogs\"\n            }\n          ],\n          :filters => [\n            :grok => {\n              :type => \"haproxy\",\n              :pattern => \"%{HAPROXYHTTP}\",\n              :patterns_dir => '/opt/logstash/server/etc/patterns/'\n            }\n          ],\n          :outputs => [\n            :file => {\n              :type => 'haproxy',\n              :path => '/opt/logstash/server/haproxy_logs/%{request_header_host}.log',\n              :message_format => '%{client_ip} - - [%{accept_date}] \"%{http_request}\" %{http_status_code} ....'\n            }\n          ]\n        }\n      }\n    )\n    run_list(\n      \"role[elasticsearch_server]\",\n      \"recipe[logstash::server]\"\n    )\n\n\nIt will produce the following logstash.conf file\n\n    input {\n\n      amqp {\n        exchange => 'rawlogs'\n        host => '<IP OF RABBIT SERVER>'\n        name => 'rawlogs_consumer'\n        type => 'all'\n      }\n    }\n\n    filter {\n\n      grok {\n        pattern => '%{HAPROXYHTTP}'\n        patterns_dir => '/opt/logstash/server/etc/patterns/'\n        type => 'haproxy'\n      }\n    }\n\n    output {\n      stdout { debug => true debug_format => \"json\" }\n      elasticsearch { host => \"127.0.0.1\" cluster => \"logstash\" }\n\n      file {\n        message_format => '%{client_ip} - - [%{accept_date}] \"%{http_request}\" %{http_status_code} ....'\n        path => '/opt/logstash/server/haproxy_logs/%{request_header_host}.log'\n        type => 'haproxy'\n      }\n    }\n\nHere is an example using multiple filters\n\n    default_attributes(\n      :logstash => {\n        :server => {\n          :filters => [\n            { :grep => {\n                :type => 'tomcat',\n                :match => { '@message' => '([Ee]xception|Failure:|Error:)' },\n                :add_tag => 'exception',\n                :drop => false\n            } },\n            { :grep => {\n                :type => 'tomcat',\n                :match => { '@message' => 'Unloading class ' },\n                :add_tag => 'unloading-class',\n                :drop => false\n            } },\n            { :multiline => {\n                :type => 'tomcat',\n                :pattern => '^\\s',\n                :what => 'previous'\n            } }\n          ]\n        }\n      }\n    )\n\nIt will produce the following logstash.conf file\n\n    filter {\n\n      grep {\n        add_tag => 'exception'\n        drop => false\n        match => ['@message', '([Ee]xception|Failure:|Error:)']\n        type => 'tomcat'\n      }\n\n      grep {\n        add_tag => 'unloading-class'\n        drop => false\n        match => [\"@message\", \"Unloading class \"]\n        type => 'tomcat'\n      }\n\n      multiline {\n        patterns_dir => '/opt/logstash/patterns'\n        pattern => '^\\s'\n        type => 'tomcat'\n        what => 'previous'\n      }\n\n    }\n\n## Adding grok patterns\n\nGrok pattern files can be generated using attributes as follows\n\n    default_attributes(\n      :logstash => {\n        :patterns => {\n          :apache => {\n            :HTTP_ERROR_DATE => '%{DAY} %{MONTH} %{MONTHDAY} %{TIME} %{YEAR}',\n            :APACHE_LOG_LEVEL => '[A-Za-z][A-Za-z]+',\n            :ERRORAPACHELOG => '^\\[%{HTTP_ERROR_DATE:timestamp}\\] \\[%{APACHE_LOG_LEVEL:level}\\](?: \\[client %{IPORHOST:clientip}\\])?',\n          },\n          :mywebapp => {\n            :MYWEBAPP_LOG => '\\[mywebapp\\]',\n          },\n        },\n        [...]\n      }\n    )\n\nThis will generate the following files:\n\n`/opt/logstash/server/etc/patterns/apache`\n\n    APACHE_LOG_LEVEL [A-Za-z][A-Za-z]+\n    ERRORAPACHELOG ^\\[%{HTTP_ERROR_DATE:timestamp}\\] \\[%{APACHE_LOG_LEVEL:level}\\](?: \\[client %{IPORHOST:clientip}\\])?\n    HTTP_ERROR_DATE %{DAY} %{MONTH} %{MONTHDAY} %{TIME} %{YEAR}\n\n`/opt/logstash/server/etc/patterns/mywebapp`\n\n    MYWEBAPP_LOG \\[mywebapp\\]\n\nThis patterns will be included by default in the grok and multiline\nfilters.\n\n\n# Vagrant\n\n## Requirements\n* Vagrant 1.2.1+\n* Vagrant Berkshelf Plugin `vagrant plugin install vagrant-berkshelf`\n* Vagrant Omnibus Plugin   `vagrant plugin install vagrant-omnibus`\n\nUses the Box Name to determine the run list ( based on whether its Debian or RHEL based ).\n\nSee chef_json and chef_run_list variables to change recipe behavior.\n\n## Usage:\n\nRun Logstash on Ubuntu Lucid   : `vagrant up lucid32` or `vagrant up lucid64`\n\nRun Logstash on Centos 6 32bit : `vagrant up centos6_32`\n\nLogstash will listen for syslog messages on tcp/5140\n\n\n# BIG WARNING\n\n* Currently only tested on Ubuntu Natty, Precise, and RHEL 6.2.\n\n## License and Author\n\n- Author:    John E. Vincent\n- Author:    Bryan W. Berry (<bryan.berry@gmail.com>)\n- Author:    Richard Clamp (@richardc)\n- Author:    Juanje Ojeda (@juanje)\n- Author:    @benattar\n- Author:    Paul Czarkowski (@pczarkowski)\n- Copyright: 2012, John E. Vincent\n- Copyright: 2012, Bryan W. Berry\n- Copyright: 2012, Richard Clamp\n- Copyright: 2012, Juanje Ojeda\n- Copyright: 2012, @benattar\n- Copyright: 2014, Paul Czarkowski\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/runit",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/git",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ant",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/java",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/logrotate",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/python",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ark",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "recommends": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 0.0.0"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0"
+    }
+  ]
+}

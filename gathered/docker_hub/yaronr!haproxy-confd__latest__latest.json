@@ -1,0 +1,118 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/yaronr/haproxy-confd",
+    "repository_url": "https://hub.docker.com/v2/repositories/yaronr/haproxy-confd",
+    "tags_url": "https://hub.docker.com/v2/repositories/yaronr/haproxy-confd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/yaronr/haproxy-confd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/yaronr/haproxy-confd/autobuild",
+    "user": "yaronr",
+    "name": "haproxy-confd",
+    "namespace": "yaronr",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 12,
+    "pull_count": 46658,
+    "last_updated": "2016-09-19T10:36:02.745216Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 88181994,
+        "id": 111527,
+        "repository": 88291,
+        "creator": 69803,
+        "last_updater": 69803,
+        "last_updated": "2016-09-19T10:36:02.222439Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "yaronr/dockerfile"
+  },
+  "name": "yaronr/haproxy-confd Docker container",
+  "description": "HAProxy with zero-downtime reconfiguration based on etcd",
+  "readme": "haproxy combined with confd for HTTP load balancing\n\n## Usage\n\nI apologise but I don't have the time to properly document this right now.\nWhat's important to know:\n\n* HAProxy 1.5.x backed by Confd 1.7.0 beta 1\n* Uses zero-downtime reconfiguration (e.g - instead of harpy reload, which will drop all connections, will gradually transfer new connections to the new config)\n* Added support for url rexeg (not reggae, damn you spell checker) for routing, in addition to the usual hostname pattern\n* Added validation for existence of keys in backing kv store, to prevent failures\n\n\nCreate the paths allowing confd to find the services:\n```bash\netcdctl mkdir \"/haproxy-discover/services\"\netcdctl mkdir \"/haproxy-discover/tcp-services\"\n```\n\nDepending on your needs, create one or more services or tcp-services.\nFor instance, to create an http service named *myapp* linked to the domain *example.org* and load balancing on servers *1.2.3.4:80* (we'll call it *nodeA*) and *2.3.4.5:80* (called *nodeB*), run these commands:\n```bash\netcdctl set \"/haproxy-discover/services/myapp/domain\" \"example.org\"\netcdctl set \"/haproxy-discover/services/myapp/upstreams/nodeA\" \"1.2.3.4:80\"\netcdctl set \"/haproxy-discover/services/myapp/upstreams/nodeB\" \"2.3.4.5:80\"\n```\n\n\nStart the container making sure to expose port 80 on the host machine\n\n```bash\ndocker run -e ETCD_NODE=172.17.42.1:4001 -p 1000:1000 -p 80:8080 yaronr/haproxy-confd\n```\n\n\nTo *add an upstream node*, let's say *nodeB2*, *2.3.4.5:90*, you just have to run this, and the configuration should safely be updated !\n```bash\netcdctl set \"/haproxy-discover/services/myapp/upstreams/nodeB2\" \"2.3.4.5:90\"\n```\n\nTo *remove an upstream server*, let's say ... *nodeB2* (added by mistake ?), just run\n```bash\netcdctl rm \"/haproxy-discover/services/myapp/upstreams/nodeB2\"\n```\n\nTo *remove a service*, and so a directory, you must type\n```bash\netcdctl rmdir \"/haproxy-discover/services/myapp\"\n```\n\nThe commands for a tcp-service are the same but with *tcp-services* instead of *services*\n\n\nHave fun !",
+  "dockerfile": "FROM yaronr/debian-wheezy\n\nMAINTAINER yaronr\n\nENV ETCD_NODE 172.17.42.1:4001\nENV confd_ver 0.7.1\n\nENTRYPOINT [\"/entrypoint.sh\"]\n\nRUN\t(echo \"deb http://cdn.debian.net/debian wheezy-backports main\" > /etc/apt/sources.list.d/backports.list) && \\\n\tDEBIAN_FRONTEND=noninteractive apt-get update -y && \\\n    DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \\\n    \tca-certificates \\\n    \tlibssl1.0.0 \\\n\t\tsoftware-properties-common python-software-properties \\\n\t\thaproxy -t wheezy-backports && \\\n\t\tapt-get remove --purge -y software-properties-common python-software-properties && \\\n\t\tapt-get clean && \\\n\t\trm -rf /var/cache/apt/* /var/lib/apt/lists/* && \\\n\t\tsed -i 's/^ENABLED=.*/ENABLED=1/' /etc/default/haproxy\n\nRUN wget --progress=bar:force --retry-connrefused -t 5 https://github.com/kelseyhightower/confd/releases/download/v${confd_ver}/confd-${confd_ver}-linux-amd64 -O /bin/confd && \\\n\tchmod +x /bin/confd\n\nADD entrypoint.sh /entrypoint.sh\nADD confd /etc/confd\n\t\n# Expose ports.\nEXPOSE 8080\nEXPOSE 8090\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "entrypoint.sh",
+        "dest": "/entrypoint.sh"
+      },
+      {
+        "source": "confd",
+        "dest": "/etc/confd"
+      }
+    ],
+    "expose": [
+      8080,
+      8090
+    ],
+    "volume": [],
+    "run": [
+      "wget --progress=bar:force --retry-connrefused -t 5 https://github.com/kelseyhightower/confd/releases/download/v${confd_ver}/confd-${confd_ver}-linux-amd64 -O /bin/confd && \tchmod +x /bin/confd"
+    ],
+    "workdir": [],
+    "from": "yaronr/debian-wheezy",
+    "maintainer": "yaronr",
+    "env": {
+      "ETCD_NODE": "172.17.42.1:4001",
+      "confd_ver": "0.7.1"
+    },
+    "entrypoint": "[\"/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/yaronr/dockerfile.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/yaronr/dockerfile",
+  "docker_repository": "yaronr/haproxy-confd",
+  "docker_image": "yaronr/haproxy-confd",
+  "parameters_schema": {
+    "ETCD_NODE": {
+      "default": "172.17.42.1:4001",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "confd_ver": {
+      "default": "0.7.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080,
+        8090
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "yaronr/haproxy-confd",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/yaronr/haproxy-confd",
+    "https://hub.docker.com/v2/repositories/yaronr/haproxy-confd",
+    "https://github.com/yaronr/dockerfile.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/yaronr/haproxy-confd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

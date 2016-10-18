@@ -1,0 +1,113 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/apopelo/logstash-forwarder",
+    "repository_url": "https://hub.docker.com/v2/repositories/apopelo/logstash-forwarder",
+    "tags_url": "https://hub.docker.com/v2/repositories/apopelo/logstash-forwarder/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/apopelo/logstash-forwarder/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/apopelo/logstash-forwarder/autobuild",
+    "user": "apopelo",
+    "name": "logstash-forwarder",
+    "namespace": "apopelo",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 7160,
+    "last_updated": "2016-09-23T18:46:48.790173Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "0.4.0",
+        "full_size": 5132446,
+        "id": 783668,
+        "repository": 296928,
+        "creator": 9132,
+        "last_updater": 9132,
+        "last_updated": "2016-09-23T18:43:09.602640Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 5130195,
+        "id": 783669,
+        "repository": 296928,
+        "creator": 9132,
+        "last_updater": 9132,
+        "last_updated": "2016-09-23T18:35:14.511512Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "apopelo/docker-logstash-forwarder"
+  },
+  "name": "apopelo/logstash-forwarder Docker container",
+  "description": "Docker image for Logstash Forwarder, formerly known as lumberjack. Has minimal ~13Mb footprint.",
+  "readme": "Docker Logstash Forwarder\n=========================\n\nDocker image for [Logstash Forwarder](https://github.com/elasticsearch/logstash-forwarder),\nformerly known as _lumberjack_.\n\nHas minimal ~13Mb footprint.\n\nPrerequisites\n-------------\n\nIn order to use this image, you MUST [create an SSL certificate](https://github.com/elasticsearch/logstash-forwarder#generating-an-ssl-certificate),\nand [configure Logstash Forwarder](https://github.com/elasticsearch/logstash-forwarder#configuring)\nusing a `config.json` file. This configuration file MUST be named `config.json`\nand MUST be located in `/etc/logstash-forwarder`.\n\n### SSL Certificate\n\nIf you want to generate self-signed SSL certificates and use an IP address\nrather than a DNS record to point to your `logstash` server(s), then you SHOULD\nuse this\n[lc-tlscert](https://github.com/driskell/log-courier/blob/master/src/lc-tlscert/lc-tlscert.go)\ntool:\n\n```\n$ wget https://raw.githubusercontent.com/driskell/log-courier/master/src/lc-tlscert/lc-tlscert.go\n$ go run lc-tlscert.go\n```\n\nCopy the generated `selfsigned.{crt,key}` files to the `logstash-forwarder`\nserver **and** to the `logstash` server.\n\n### Logstash Forwarder Configuration\n\nBelow is a basic configuration for Logstash Forwarder:\n\n``` json\n{\n    \"network\": {\n        \"servers\": [ \"logstash.example.org:5043\" ],\n        \"ssl certificate\": \"/etc/ssl/selfsigned.crt\",\n        \"ssl key\": \"/etc/ssl/selfsigned.key\",\n        \"ssl ca\": \"/etc/ssl/selfsigned.crt\"\n    },\n    \"files\": [\n        {\n            \"paths\":  [ \"/var/log/nginx/access.log\" ],\n            \"fields\": { \"type\": \"nginx-access\" }\n        }\n    ]\n}\n```\n\nUsage\n-----\n\nLet's say your `selfsigned.{crt,key}` files are located in\n`/path/to/your/ssl/files`, and your `config.json` file is in\n`/path/to/your/config/file`.\n\nYou can start forwarding nginx logs to your `logstash` server by running the\nfollowing command:\n\n```\n$ docker run \\\n    --volume /path/to/your/ssl/files:/etc/ssl \\\n    --volume /path/to/your/config/file:/etc/logstash-forwarder \\\n    --volume /var/log/nginx:/var/log/nginx \\\n    apopelo/logstash-forwarder\n```\n\nHowever, this solution is not satisfying as you have to mount a `host` directory\nas a volume. A better approach would be to use a _data-only container_ with a\n`/var/log/nginx` volume:\n\n```\n$ docker run \\\n    --volume /path/to/your/ssl/files:/etc/ssl \\\n    --volume /path/to/your/config/file:/etc/logstash-forwarder \\\n    --volume-from logs \\\n    apopelo/logstash-forwarder\n```\n\n## Using Docker Compose\n\n``` yaml\nlogstashforwarder:\n  image: apopelo/logstash-forwarder\n  volumes:\n    - /path/to/your/ssl/files:/etc/ssl\n    - /path/to/your/config/file:/etc/logstash-forwarder\n  volumes_from:\n    - logs\n\nlogs:\n  image: busybox\n  volumes:\n    - /var/log/nginx\n```\n\n\nExtend It\n---------\n\nOne of the Docker best practices is to avoid mapping a host folder to a\ncontainer volume. Instead of specifying a volume, it is recommended to use this\nimage as base image and configure your own image.\n",
+  "dockerfile": "FROM alpine\n\nMAINTAINER Andrey Popelo andrey@popelo.com\n\nENV LOGSTASH_FORWARDER_VERSION 0.4.0\n\nRUN apk add --update curl go && \\\n    mkdir /opt && \\\n    curl -Ls https://github.com/elastic/logstash-forwarder/archive/v$LOGSTASH_FORWARDER_VERSION.tar.gz | tar -vxz -C /opt && \\\n    ln -s /opt/logstash-forwarder-$LOGSTASH_FORWARDER_VERSION /opt/logstash-forwarder && \\\n    cd /opt/logstash-forwarder && \\\n    go build && \\\n    apk del -r curl go\n\nENTRYPOINT [\"/opt/logstash-forwarder/logstash-forwarder\"]\nCMD [\"-config\", \"/etc/logstash-forwarder/config.json\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apk add --update curl go &&     mkdir /opt &&     curl -Ls https://github.com/elastic/logstash-forwarder/archive/v$LOGSTASH_FORWARDER_VERSION.tar.gz | tar -vxz -C /opt &&     ln -s /opt/logstash-forwarder-$LOGSTASH_FORWARDER_VERSION /opt/logstash-forwarder &&     cd /opt/logstash-forwarder &&     go build &&     apk del -r curl go"
+    ],
+    "workdir": [],
+    "from": "alpine",
+    "maintainer": "Andrey Popelo andrey@popelo.com",
+    "env": {
+      "LOGSTASH_FORWARDER_VERSION": "0.4.0"
+    },
+    "entrypoint": "[\"/opt/logstash-forwarder/logstash-forwarder\"]",
+    "cmd": "[\"-config\", \"/etc/logstash-forwarder/config.json\"]"
+  },
+  "source_repository_url": "https://github.com/apopelo/docker-logstash-forwarder.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/apopelo/docker-logstash-forwarder",
+  "docker_repository": "apopelo/logstash-forwarder",
+  "docker_image": "apopelo/logstash-forwarder",
+  "parameters_schema": {
+    "LOGSTASH_FORWARDER_VERSION": {
+      "default": "0.4.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "apopelo/logstash-forwarder",
+  "revision": "0.4.0",
+  "uris": [
+    "https://hub.docker.com/r/apopelo/logstash-forwarder",
+    "https://hub.docker.com/v2/repositories/apopelo/logstash-forwarder",
+    "https://github.com/apopelo/docker-logstash-forwarder.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Logging/Logstash"
+  ],
+  "info_url": "https://hub.docker.com/r/apopelo/logstash-forwarder",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

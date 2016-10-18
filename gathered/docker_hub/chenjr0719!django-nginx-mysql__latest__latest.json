@@ -1,0 +1,106 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/chenjr0719/django-nginx-mysql",
+    "repository_url": "https://hub.docker.com/v2/repositories/chenjr0719/django-nginx-mysql",
+    "tags_url": "https://hub.docker.com/v2/repositories/chenjr0719/django-nginx-mysql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/chenjr0719/django-nginx-mysql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/chenjr0719/django-nginx-mysql/autobuild",
+    "user": "chenjr0719",
+    "name": "django-nginx-mysql",
+    "namespace": "chenjr0719",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 57,
+    "last_updated": "2016-08-09T18:45:55.054558Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 316679213,
+        "id": 4199180,
+        "repository": 842148,
+        "creator": 1014125,
+        "last_updater": 1014125,
+        "last_updated": "2016-08-09T18:45:54.752967Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "chenjr0719/Docker-Django-Nginx-MySQL"
+  },
+  "name": "chenjr0719/django-nginx-mysql Docker container",
+  "description": "Django with MySQL, uWSGI, Nginx, Python 3.",
+  "readme": "# Docker-Django-Nginx-MySQL\n\nDockerfile for Django with uWSGI, Nginx, MySQL, Python 3.\n\nThis **Image/Dockerfile** aims to create a container for **Django** with **MySQL**, **Python 3** and using **uWSGI**, **Nginx** to hosting.\n\n\n## How to use?\n\nYou can build this **Dockerfile** yourself:\n\n```\nsudo docker build -t \"chenjr0719/django-nginx-mysql\" .\n```\n\nOr, just pull my **image**:\n\n```\nsudo docker pull chenjr0719/django-nginx-mysql\n```\n\nThen, run this image:\n\n```\nsudo docker run -itd -p 80:80 chenjr0719/django-nginx-mysql\n```\n\nWait a minute, you can see the initial project of **Django** at http://127.0.0.1\n\n### Check it work properly\n\nYou can check is **Django** work properly with **MySQL Server** by:\n\n1. First, query your **Django Admin Password**:\n\n   ```\n   sudo docker exec -it $CONTAINER_ID cat /home/django/password.txt\n   ```\n\n2. Access http://127.0.0.1/admin and log in as Username: admin.\n\n3. Choose **Model_Example** to test **CRUD** function.\n\n\n## Use your Django project?\n\nIf you want to use your **Django** project which you already developed, use following command:\n\n```\nsudo docker run -itd -p 80:80 -v $PROJECET_DIR:/home/django/website chenjr0719/django-nginx-mysql\n```\n\n### Project requirements\n\nMake sure you already add your **requirements** module at $PROJECET_DIR/requirements.txt.\n\nThis image will auto install all requirements module in this file.\n\n### Data migration\n\nIf you are using **SQLite**, this image will auto migrate your data into **MySQL Server**.\n\nBut, if you are using other database, you need to **dump** data yourself.\n\nUsing this command:\n\n```\npython manage.py dumpdata -e sessions -e admin -e contenttypes -e auth --natural-primary --natural-foreign --indent=4 > $PROJECT_DIR/dump.json\n```\n\n### Modify project name\n\nIf your project name is not **website**, this image will not work properly.\n\nyou need modify the setting of **uwsgi.ini** in your container:\n\n```\nsudo docker exec $CONTAINER_ID sed -i \"s|module=website.wsgi:application|module=$PROJECT_NAME.wsgi:application|g\" /home/django/uwsgi.ini\nsudo docker restart $CONTAINER_ID\n```\n\n\n## About Django static files\n\nIf you want to use **Django** static files, you have to:\n\n1. Enter to your container:\n\n  ```\n  sudo docker exec -it $CONTAINER_ID bash\n  ```\n\n2. Modify the setting of **Django**.\n\n  ```\n  SETTING_PATH=`find /home/django/website -name settings.py`\n  vim $SETTING_PATH\n  ```\n\n  In the **Static files** section, if your static files are in templates/static, add following setting:\n\n  ```\n  STATICFILES_DIRS = [\n  os.path.join(BASE_DIR, \"templates/static\"),\n  ]\n\n  STATIC_ROOT = os.path.join(BASE_DIR, \"static\")\n  ```\n\n3. Run the following command to collect all static files of your project into a folder.\n\n  In default it will use /static/, you can change it by modifying STATIC_ROOT in **settings.py**\n\n  ```\n  echo yes | python3 /home/django/website/manage.py collectstatic\n  ```\n\n4. If you want to use different name of static folder, you need to modify the setting of **nginx-site.conf** in your container.\n\n  You can use this command:\n\n  ```\n  sed -i \"s|/home/django/website/static|/home/django/website/$STATIC_FOLDER_NAME|g\" /etc/nginx/sites-available/default\n  ```\n\n5. Exit your container and restart it:\n\n  ```\n  exit\n  sudo docker restart $CONTAINER_ID\n  ```\n",
+  "dockerfile": "From ubuntu:16.04\n\nMAINTAINER Jacob chenjr0719@gmail.com\n\nENV DEBIAN_FRONTEND noninteractive\n\nRUN apt-get update && apt-get install -y \\\n    git \\\n    vim \\\n    python3 \\\n    python3-pip \\\n    nginx \\\n    supervisor \\\n    mysql-server \\\n    mysql-client \\\n    libmysqld-dev \\\n    pwgen && rm -rf /var/lib/apt/lists/*\n\nRUN pip3 install uwsgi django\n\n# nginx config\nRUN echo \"daemon off;\" >> /etc/nginx/nginx.conf\nCOPY nginx-site.conf /etc/nginx/sites-available/default\n\n# supervisor config\nCOPY supervisor.conf /etc/supervisor/conf.d/\n\n# mysql config\nCOPY my.cnf /etc/mysql/\n\n# uWSGI config\nCOPY uwsgi.ini /home/django/\nCOPY uwsgi_params /home/django/\n\n# Model_example content\nCOPY admin.py /home/django/\nCOPY models.py /home/django/\n\n# Copy initialization scripts\nCOPY start.sh /home/django/\n\nEXPOSE 80\nCMD [\"/bin/bash\", \"/home/django/start.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y     git     vim     python3     python3-pip     nginx     supervisor     mysql-server     mysql-client     libmysqld-dev     pwgen && rm -rf /var/lib/apt/lists/*",
+      "pip3 install uwsgi django",
+      "echo \"daemon off;\" >> /etc/nginx/nginx.conf"
+    ],
+    "workdir": [],
+    "from": "ubuntu:16.04",
+    "maintainer": "Jacob chenjr0719@gmail.com",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "copy": "start.sh /home/django/",
+    "cmd": "[\"/bin/bash\", \"/home/django/start.sh\"]"
+  },
+  "source_repository_url": "https://github.com/chenjr0719/Docker-Django-Nginx-MySQL.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/chenjr0719/Docker-Django-Nginx-MySQL",
+  "docker_repository": "chenjr0719/django-nginx-mysql",
+  "docker_image": "chenjr0719/django-nginx-mysql",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "chenjr0719/django-nginx-mysql",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/chenjr0719/django-nginx-mysql",
+    "https://hub.docker.com/v2/repositories/chenjr0719/django-nginx-mysql",
+    "https://github.com/chenjr0719/Docker-Django-Nginx-MySQL.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Type/Middleware/Web Server/Nginx",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/chenjr0719/django-nginx-mysql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

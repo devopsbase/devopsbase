@@ -1,0 +1,178 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/rivetmichael/apache-php",
+    "repository_url": "https://hub.docker.com/v2/repositories/rivetmichael/apache-php",
+    "tags_url": "https://hub.docker.com/v2/repositories/rivetmichael/apache-php/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/rivetmichael/apache-php/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/rivetmichael/apache-php/autobuild",
+    "user": "rivetmichael",
+    "name": "apache-php",
+    "namespace": "rivetmichael",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 947,
+    "last_updated": "2016-10-15T01:53:20.628146Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "7-opcache",
+        "full_size": 286137245,
+        "id": 2920665,
+        "repository": 525878,
+        "creator": 362539,
+        "last_updater": 362539,
+        "last_updated": "2016-10-15T01:53:20.331324Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 222798086,
+        "id": 1995403,
+        "repository": 525878,
+        "creator": 362539,
+        "last_updater": 362539,
+        "last_updated": "2016-09-23T22:34:42.394025Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5",
+        "full_size": 222798109,
+        "id": 2005368,
+        "repository": 525878,
+        "creator": 362539,
+        "last_updater": 362539,
+        "last_updated": "2016-09-23T22:20:15.797678Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "7",
+        "full_size": 273425369,
+        "id": 2005363,
+        "repository": 525878,
+        "creator": 362539,
+        "last_updater": 362539,
+        "last_updated": "2016-09-23T21:56:10.927666Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5-opcache",
+        "full_size": 223584985,
+        "id": 2920702,
+        "repository": 525878,
+        "creator": 362539,
+        "last_updater": 362539,
+        "last_updated": "2016-09-23T21:46:28.057551Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "rivetmichael/apache-php"
+  },
+  "name": "rivetmichael/apache-php Docker container",
+  "description": "PHP / Apache environment for development purpose",
+  "readme": "## PHP Development container \n\nDockerized environment for PHP development with some PHP extensions :\n* Xdebug \n* mcrypt\n* GD\n* curl\n* pdo_mysql / mysqli\n* mbstring.\n\n## Environment variables\nYou can pass env vars to change default behaviour\n### ``APACHE_DOC_ROOT``\n(Optional) Will replace the default `DocumentRoot` in the `/etc/apache2/apache.conf` file.\n## Usage\n```\n$ docker run --rm -v $(pwd):/srv -e APACHE_DOC_ROOT=/var/www/html/other/dir rivetmichael/apache-php\n```\n",
+  "dockerfile": "FROM php:7.0.7-apache\nMAINTAINER Michaël Rivet <rivet.michael@gmail.com>\n\n# Installs php extensions\nRUN apt-get update && apt-get install -y \\\n      git \\\n      locales \\\n      libfreetype6-dev \\\n      libjpeg62-turbo-dev \\\n      libmcrypt-dev \\\n      libpng12-dev \\\n      mysql-client \\\n      libcurl3 \\\n      libcurl3-dev \\\n      libxml2-dev \\\n      libicu-dev \\\n      zlib1g-dev\n# Adds french locale\nRUN sed -i -e 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen && \\\n    echo 'LANG=\"fr_FR.UTF-8\"' > /etc/default/locale && \\\n    dpkg-reconfigure --frontend=noninteractive locales && \\\n    update-locale LANG=fr_FR.UTF-8\n\nRUN docker-php-ext-install mcrypt gd curl pdo_mysql mbstring mysqli soap opcache intl zip\n\n# Blackfire probe\nRUN export VERSION=`php -r \"echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;\"` \\\n    && curl -A \"Docker\" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/${VERSION} \\\n    && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp \\\n    && mv /tmp/blackfire-*.so `php -r \"echo ini_get('extension_dir');\"`/blackfire.so \\\n    && echo \"extension=blackfire.so\\nblackfire.agent_socket=\\${BLACKFIRE_PORT}\" > $PHP_INI_DIR/conf.d/blackfire.ini\n\nRUN curl -sS https://packagecloud.io/gpg.key | apt-key add - \\\n    && echo \"deb http://packages.blackfire.io/debian any main\" | tee /etc/apt/sources.list.d/blackfire.list \\\n    && apt-get update \\\n    && apt-get install blackfire-agent\n\n# Install Composer\nRUN curl -sS https://getcomposer.org/installer | php \\\n    && mv composer.phar /usr/local/bin/composer\n\n# Custom PHP ini configuration\nCOPY ./z-php.ini /usr/local/etc/php/conf.d/\n\n# Default document root\nENV APACHE_DOC_ROOT=/srv/\n# Silent composer message\nENV COMPOSER_DISABLE_XDEBUG_WARN=1\n\n# Activating mod rewrite & headers\nRUN a2enmod rewrite\nRUN a2enmod headers\n\n# Add www-data to root group and viceversa\nRUN usermod -u 1000 www-data\n\n# change ownership of www-data root directory\nRUN chown -R www-data:www-data /var/www\nRUN su - www-data -s /bin/bash -c \"composer global require symfony/var-dumper\"\n\n# Default index.php for testing\nCOPY public/index.php /srv/\n\n# Volume for Apache root directory\nVOLUME /srv\nWORKDIR /srv\n\n# Start!\nCOPY ./run.sh /\nRUN chmod +x /run.sh\nCMD [\"/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "/srv"
+    ],
+    "run": [
+      "apt-get update && apt-get install -y       git       locales       libfreetype6-dev       libjpeg62-turbo-dev       libmcrypt-dev       libpng12-dev       mysql-client       libcurl3       libcurl3-dev       libxml2-dev       libicu-dev       zlib1g-dev",
+      "sed -i -e 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen &&     echo 'LANG=\"fr_FR.UTF-8\"' > /etc/default/locale &&     dpkg-reconfigure --frontend=noninteractive locales &&     update-locale LANG=fr_FR.UTF-8",
+      "docker-php-ext-install mcrypt gd curl pdo_mysql mbstring mysqli soap opcache intl zip",
+      "export VERSION=`php -r \"echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;\"`     && curl -A \"Docker\" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/${VERSION}     && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp     && mv /tmp/blackfire-*.so `php -r \"echo ini_get('extension_dir');\"`/blackfire.so     && echo \"extension=blackfire.so\\nblackfire.agent_socket=\\${BLACKFIRE_PORT}\" > $PHP_INI_DIR/conf.d/blackfire.ini",
+      "curl -sS https://packagecloud.io/gpg.key | apt-key add -     && echo \"deb http://packages.blackfire.io/debian any main\" | tee /etc/apt/sources.list.d/blackfire.list     && apt-get update     && apt-get install blackfire-agent",
+      "curl -sS https://getcomposer.org/installer | php     && mv composer.phar /usr/local/bin/composer",
+      "a2enmod rewrite",
+      "a2enmod headers",
+      "usermod -u 1000 www-data",
+      "chown -R www-data:www-data /var/www",
+      "su - www-data -s /bin/bash -c \"composer global require symfony/var-dumper\"",
+      "chmod +x /run.sh"
+    ],
+    "workdir": [
+      "/srv"
+    ],
+    "from": "php:7.0.7-apache",
+    "maintainer": "Michaël Rivet <rivet.michael@gmail.com>",
+    "copy": "./run.sh /",
+    "env": {
+      "APACHE_DOC_ROOT": "/srv/",
+      "COMPOSER_DISABLE_XDEBUG_WARN": "1"
+    },
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "git@bitbucket.org:rivetmichael/apache-php.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/rivetmichael/apache-php",
+  "docker_repository": "rivetmichael/apache-php",
+  "docker_image": "rivetmichael/apache-php",
+  "parameters_schema": {
+    "APACHE_DOC_ROOT": {
+      "default": "/srv/",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "COMPOSER_DISABLE_XDEBUG_WARN": {
+      "default": "1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "rivetmichael/apache-php",
+  "revision": "7-opcache",
+  "uris": [
+    "https://hub.docker.com/r/rivetmichael/apache-php",
+    "https://hub.docker.com/v2/repositories/rivetmichael/apache-php",
+    "git@bitbucket.org:rivetmichael/apache-php.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/rivetmichael/apache-php",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

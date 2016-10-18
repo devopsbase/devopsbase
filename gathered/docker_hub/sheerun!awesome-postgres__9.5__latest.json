@@ -1,0 +1,122 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/sheerun/awesome-postgres",
+    "repository_url": "https://hub.docker.com/v2/repositories/sheerun/awesome-postgres",
+    "tags_url": "https://hub.docker.com/v2/repositories/sheerun/awesome-postgres/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/sheerun/awesome-postgres/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/sheerun/awesome-postgres/autobuild",
+    "user": "sheerun",
+    "name": "awesome-postgres",
+    "namespace": "sheerun",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 307,
+    "last_updated": "2016-09-29T18:25:50.236544Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "9.5",
+        "full_size": 290843010,
+        "id": 3721523,
+        "repository": 784855,
+        "creator": 11141,
+        "last_updater": 11141,
+        "last_updated": "2016-09-29T18:25:49.524440Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "sheerun/dockerfiles"
+  },
+  "name": "sheerun/awesome-postgres Docker container",
+  "description": "Postgres bundled with modern extensions",
+  "readme": "# awesome-postgres\n\nPostgres bundled with modern extensions\n\n- [PostGIS 2.2](http://postgis.net/)\n- [ZomboDB 3.0](https://github.com/zombodb/zombodb)\n- [pglogical 1.1.2](https://2ndquadrant.com/en/resources/pglogical/)\n- [pgxn](http://pgxn.org/)\n- [temporal_tables](http://pgxn.org/dist/temporal_tables/)\n- [pgaudit](https://github.com/pgaudit/pgaudit)\n\n## License\n\nMIT\n",
+  "dockerfile": "FROM postgres:9.5\nMAINTAINER Adam Stankiewicz <sheerun@sher.pl>\n\nENV ZOMBODB_VER 3.0.0\nENV POSTGIS_VER 2.2\nENV SKYTOOLS_VERSION 3.2.6-4.pgdg80+1\n\nRUN apt-get update && apt-get install -y --no-install-recommends ca-certificates wget python-pip curl build-essential\n\nRUN \\\n  echo \"deb [arch=amd64] http://packages.2ndquadrant.com/pglogical/apt/ jessie-2ndquadrant main\\n\" \\\n    > /etc/apt/sources.list.d/2ndquadrant.list\n\nRUN wget --quiet -O - http://packages.2ndquadrant.com/pglogical/apt/AA7A6805.asc | apt-key add - && apt-get update\n\nRUN apt-get install -y --no-install-recommends postgresql-server-dev-${PG_MAJOR} libpq-dev\n\n# Install zombo\nRUN cd / && mkdir zombodb && cd zombodb \\\n  && wget https://github.com/zombodb/zombodb/releases/download/v${ZOMBODB_VER}/zombodb_trusty_pg95-${ZOMBODB_VER}_amd64.deb \\\n  && cd /zombodb && dpkg -i zombodb_trusty_pg95-${ZOMBODB_VER}_amd64.deb\n\n# Install temporal tables extension\nRUN pip install pgxnclient && pgxn install temporal_tables\n\nRUN apt-get install -y --no-install-recommends postgresql-${PG_MAJOR}-postgis-${POSTGIS_VER}\n\nRUN apt-get install -y --no-install-recommends \\\n  postgresql-${PG_MAJOR}-pglogical \\\n  postgresql-${PG_MAJOR}-pglogical-output\n\nRUN apt-get install -y postgresql-${PG_MAJOR}-pgq3\n\n# Cleanup\nRUN apt-get update -y -qq --fix-missing \\\n  && apt-get clean \\\n  && rm -rf /var/lib/apt/lists/*\n\nRUN mkdir -p /tmp/pgaudit && cd /tmp/pgaudit && curl -L https://github.com/pgaudit/pgaudit/archive/1.0.4.tar.gz | tar xz --strip 1\nRUN cd /tmp/pgaudit && USE_PGXS=1 make -s check && USE_PGXS=1 make install\n\n# Configuration\nCOPY config/postgresql.conf \"/usr/share/postgresql/${PG_MAJOR}/postgresql.conf.sample\"\nCOPY config/pg_hba.conf \"/usr/share/postgresql/${PG_MAJOR}/pg_hba.conf\"\nCOPY docker-entrypoint.sh /docker-entrypoint.sh\nCOPY init.sh /docker-entrypoint-initdb.d/init.sh\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y --no-install-recommends ca-certificates wget python-pip curl build-essential",
+      "  echo \"deb [arch=amd64] http://packages.2ndquadrant.com/pglogical/apt/ jessie-2ndquadrant main\\n\"     > /etc/apt/sources.list.d/2ndquadrant.list",
+      "wget --quiet -O - http://packages.2ndquadrant.com/pglogical/apt/AA7A6805.asc | apt-key add - && apt-get update",
+      "apt-get install -y --no-install-recommends postgresql-server-dev-${PG_MAJOR} libpq-dev",
+      "cd / && mkdir zombodb && cd zombodb   && wget https://github.com/zombodb/zombodb/releases/download/v${ZOMBODB_VER}/zombodb_trusty_pg95-${ZOMBODB_VER}_amd64.deb   && cd /zombodb && dpkg -i zombodb_trusty_pg95-${ZOMBODB_VER}_amd64.deb",
+      "pip install pgxnclient && pgxn install temporal_tables",
+      "apt-get install -y --no-install-recommends postgresql-${PG_MAJOR}-postgis-${POSTGIS_VER}",
+      "apt-get install -y --no-install-recommends   postgresql-${PG_MAJOR}-pglogical   postgresql-${PG_MAJOR}-pglogical-output",
+      "apt-get install -y postgresql-${PG_MAJOR}-pgq3",
+      "apt-get update -y -qq --fix-missing   && apt-get clean   && rm -rf /var/lib/apt/lists/*",
+      "mkdir -p /tmp/pgaudit && cd /tmp/pgaudit && curl -L https://github.com/pgaudit/pgaudit/archive/1.0.4.tar.gz | tar xz --strip 1",
+      "cd /tmp/pgaudit && USE_PGXS=1 make -s check && USE_PGXS=1 make install"
+    ],
+    "workdir": [],
+    "from": "postgres:9.5",
+    "maintainer": "Adam Stankiewicz <sheerun@sher.pl>",
+    "env": {
+      "ZOMBODB_VER": "3.0.0",
+      "POSTGIS_VER": "2.2",
+      "SKYTOOLS_VERSION": "3.2.6-4.pgdg80+1"
+    },
+    "copy": "init.sh /docker-entrypoint-initdb.d/init.sh"
+  },
+  "source_repository_url": "https://github.com/sheerun/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/sheerun/dockerfiles",
+  "docker_repository": "sheerun/awesome-postgres",
+  "docker_image": "sheerun/awesome-postgres",
+  "parameters_schema": {
+    "ZOMBODB_VER": {
+      "default": "3.0.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "POSTGIS_VER": {
+      "default": "2.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SKYTOOLS_VERSION": {
+      "default": "3.2.6-4.pgdg80+1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "sheerun/awesome-postgres",
+  "revision": "9.5",
+  "uris": [
+    "https://hub.docker.com/r/sheerun/awesome-postgres",
+    "https://hub.docker.com/v2/repositories/sheerun/awesome-postgres",
+    "https://github.com/sheerun/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Bundle",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/sheerun/awesome-postgres",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

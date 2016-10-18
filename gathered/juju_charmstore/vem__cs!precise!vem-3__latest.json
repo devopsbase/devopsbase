@@ -1,0 +1,134 @@
+{
+  "name": "vem Juju charm",
+  "juju_charm_name": "vem",
+  "revision": "cs:precise/vem-3",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/vem",
+    "https://jujucharms.com/vem/precise",
+    "https://jujucharms.com/vem/precise/3",
+    "https://api.jujucharms.com/v5/vem",
+    "https://api.jujucharms.com/v5/precise/vem",
+    "https://api.jujucharms.com/v5/precise/vem-3"
+  ],
+  "labels": [
+    "Juju charm",
+    "misc",
+    "Type/Infrastructure/Operating System/macOS",
+    "Binding/Provider/HP",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Style/Virtualization Level/Hardware/Network",
+    "Type/Devopsware/Test",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://jujucharms.com/vem",
+  "package_url": "https://api.jujucharms.com/v5/precise/vem-3/archive",
+  "created": "2015-06-17T09:34:02.281Z",
+  "updated": "2015-06-17T09:34:02.281Z",
+  "description": "Charm to automate installation of Cisco N1KV VEM\n\nThis charm automates the installation of Nexus1K VEM(Virtual\nEthernet Module). For any compute node and selectively network node\nVEM can be a subordinate service which provides virtual machine switch \nservice.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": true,
+  "juju_charm_series": "precise",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= precise"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/dvs",
+      "self_resolve": true,
+      "juju_interface": "dvs",
+      "juju_name": "dvs",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/juju-info",
+      "self_resolve": true,
+      "juju_interface": "juju-info",
+      "juju_name": "openstack-nova",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "additional-param": {
+      "type": "string",
+      "description": "Additional parameters for n1kv.conf file",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "host_mgmt_intf": {
+      "type": "string",
+      "description": "Management interface of the Host",
+      "default": "eth0",
+      "mapping": "charm_option"
+    },
+    "mapping": {
+      "type": "string",
+      "description": "Host Specific configuration mapping",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "n1kv-source": {
+      "type": "string",
+      "description": "Repository from which to install vem binaries.eg. cisco private ppa. The value needs be input in the following format:\n\"deb https://<user>:<auth-token>@private-ppa.launchpad.net/<archive>/ precise main|<keyid>\"\n",
+      "default": "ppa:cisco-n1kv/n1kv-updates",
+      "mapping": "charm_option"
+    },
+    "n1kv-version": {
+      "type": "string",
+      "description": "Version number of VEM packages. If left blank, it will pick up the latest",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "n1kv-vsm-domain-id": {
+      "type": "int",
+      "description": "Domain id this vsm will be controlling",
+      "default": 1000,
+      "mapping": "charm_option"
+    },
+    "n1kv-vsm-ip": {
+      "type": "string",
+      "description": "Management ip of VSM",
+      "default": "10.10.10.10",
+      "mapping": "charm_option"
+    },
+    "node_type": {
+      "type": "string",
+      "description": "Function of this node in Cisco Openstack network",
+      "default": "compute",
+      "mapping": "charm_option"
+    },
+    "uplink_profile": {
+      "type": "string",
+      "description": "Port-Profile mapping for all UVEM managed Interfaces",
+      "default": "phys eth8 profile sys-uplink",
+      "mapping": "charm_option"
+    },
+    "vtep_config": {
+      "type": "string",
+      "description": "VTEP config. Syntax: virt <port-name> profile <profile-name> [mode static|dhcp] [address <ipaddr>]",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "vtep_in_same_subnet": {
+      "type": "string",
+      "description": "If vteps created are in same subnet for the purpose of loadbalancing, rpf checking is set to loose mode for all interfaces on the compute node and the quantum-gateway",
+      "default": "no",
+      "mapping": "charm_option"
+    }
+  },
+  "license": "Overview\n--------\nVEM charm installs the Cisco Nexus 1000v virtual switch onto the \ncompute/network nodes.\n\nVEM charm is designed as a subordinate charm. The aim is to\nhave this charm installed on the nova-compute and the \nquantum-gateway hosts.\n\n\nUsage\n-----\nIn order to use Cisco Openstack solution we would need to \ninstall VEM on the nova-compute and quantum-gateway hosts. \nWe need to have nova-compute deployed first and we would\nhave vem charm as subordinate it.\n\nIn the config.yaml you can provide general config that will\nbe common to all VEM hosts in environement. If you need to \nconfigure host-specific config to each host depending on its fqdn,\na mapping file can be provided as a string to the variable called\nmapping.\n```\njuju deploy nova-compute\njuju deploy --config=config.yaml vem\njuju add-relation nova-compute vem\njuju set vem mapping=\"$(cat mapping.yaml)\"\n```\nHere is a sample of the mapping file:\n```\nmaas-node-1:\n  host_mgmt_intf: eth0\n  uplink_profile: phys eth3 profile sys-uplink\n  node_type: compute\nmaas-node-3:\n  host_mgmt_intf: eth0\n  uplink_profile: phys eth4 profile sys-uplink \n  node_type: network\n  vtep_config: 'virt vtep1-nw2 profile vxlan-vtep mode static address 6.0.8.253 netmask 255.255.0.0 mac 0e:1f:56:cf:82:53'\n```\nIn this way, the hosts in the mapping mentioned in the mapping file will\nget these specific config which will overwrite the generate config provided\nin the config.yaml\n\n\nConfiguration\n-------------\n\n\nContact Information\n-------------------\n\nContact Information\n\nAuthor: Shiva Prasad Rao <shivrao@cisco.com>\n\nReport bugs at: http://bugs.launchpad.net/charms/+source/vem\n\nLocation: http://jujucharms.com/charms/distro/vem\n\n",
+  "readme": "Overview\n--------\nVEM charm installs the Cisco Nexus 1000v virtual switch onto the \ncompute/network nodes.\n\nVEM charm is designed as a subordinate charm. The aim is to\nhave this charm installed on the nova-compute and the \nquantum-gateway hosts.\n\n\nUsage\n-----\nIn order to use Cisco Openstack solution we would need to \ninstall VEM on the nova-compute and quantum-gateway hosts. \nWe need to have nova-compute deployed first and we would\nhave vem charm as subordinate it.\n\nIn the config.yaml you can provide general config that will\nbe common to all VEM hosts in environement. If you need to \nconfigure host-specific config to each host depending on its fqdn,\na mapping file can be provided as a string to the variable called\nmapping.\n```\njuju deploy nova-compute\njuju deploy --config=config.yaml vem\njuju add-relation nova-compute vem\njuju set vem mapping=\"$(cat mapping.yaml)\"\n```\nHere is a sample of the mapping file:\n```\nmaas-node-1:\n  host_mgmt_intf: eth0\n  uplink_profile: phys eth3 profile sys-uplink\n  node_type: compute\nmaas-node-3:\n  host_mgmt_intf: eth0\n  uplink_profile: phys eth4 profile sys-uplink \n  node_type: network\n  vtep_config: 'virt vtep1-nw2 profile vxlan-vtep mode static address 6.0.8.253 netmask 255.255.0.0 mac 0e:1f:56:cf:82:53'\n```\nIn this way, the hosts in the mapping mentioned in the mapping file will\nget these specific config which will overwrite the generate config provided\nin the config.yaml\n\n\nConfiguration\n-------------\n\n\nContact Information\n-------------------\n\nContact Information\n\nAuthor: Shiva Prasad Rao <shivrao@cisco.com>\n\nReport bugs at: http://bugs.launchpad.net/charms/+source/vem\n\nLocation: http://jujucharms.com/charms/distro/vem\n\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

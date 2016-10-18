@@ -1,0 +1,114 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/quadorg/consul-haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/quadorg/consul-haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/quadorg/consul-haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/quadorg/consul-haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/quadorg/consul-haproxy/autobuild",
+    "user": "quadorg",
+    "name": "consul-haproxy",
+    "namespace": "quadorg",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 173,
+    "last_updated": "2016-06-27T20:42:09.745632Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 9120267,
+        "id": 3517433,
+        "repository": 756839,
+        "creator": 453756,
+        "last_updater": 453756,
+        "last_updated": "2016-06-27T20:42:09.284597Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "quadorg/haproxy-consul"
+  },
+  "name": "quadorg/consul-haproxy Docker container",
+  "description": "The official QUAD HAProxy image.\n",
+  "readme": "# haproxy-consul\n\nDynamic haproxy configuration using consul packed into a Docker container that weighs 24MB.\n\n**Table of Contents**\n\n- [haproxy-consul](#haproxy-consul)\n- [Overview](#overview)\n\n  - [How it works](#how-it-works)\n  - [Running](#running)\n\n    - [Usage](#usage)\n    - [Modes](#modes)\n\n  - [Service registration](#service-registration)\n\n    - [Registrator](#registrator)\n    - [Naming services](#naming-services)\n\n  - [Options](#options)\n\n    - [SSL Termination](#ssl-termination)\n\n- [License](#license)\n\n# Overview\n\nThis project combines [Alpine Linux](https://www.alpinelinux.org), [consul template](https://github.com/hashicorp/consul-template), and [haproxy](http://haproxy.org) to create a proxy that forwards traffic to apps registered in consul.\n\n## How it works\n\nFirst, you must set up a wildcard dns (using something like CloudFlare or [xip.io](http://xip.io)). This means that if your domain is `example.com`, any request to a `<name>.example.com` will resolve to the IP of your haproxy container.\n\nInside the haproxy container, a header match is used to map `<application>.example.com` to the service registered in consul under `application`.\n\n## Running\n\n### Usage\n\nStart the container as follows:\n\n```\ndocker run --net=host --name=haproxy -d asteris/haproxy-consul\n```\n\nalternative way not sharing network stack with host:\n\n```\ndocker run -d --name haproxy -p 80:80 -p 443:443 -e CONSUL_CONNECT=172.17.0.1:8500 asteris/haproxy-consul\n```\n\nNow that it is set up, connect to an app:\n\n```\ncurl -L http://myapp.mycompany.com\n```\n\nOr if you do not have a wildcard DNS:\n\n```\ncurl -L http://myapp.180.19.20.21.xip.io\n```\n\n### Modes\n\nhaproxy-consul can run in two different modes: forwarding either consul services (the default) or Marathon apps. This behavior is controlled by the `HAPROXY_MODE` variable, which should be set to `consul` or `marathon`.\n\n#### Reload configuration\n\nIt's possible to reload the HA proxy configuration without restarting the container itself. `docker exec -it <container_id> bash reload.sh`\n\n#### consul Configuration\n\nWhen `HAPROXY_MODE` is set to `consul`, haproxy-consul uses consul service names to set subdomains. No other configuration is required.\n\n#### Marathon Configuration\n\nWhen `HAPROXY_MODE` is set to `marathon`, haproxy-consul assumes that there will be app information in the `marathon` prefix of the Consul KV store. It was written to work with the information provided by [marathon-consul](https://github.com/CiscoCloud/marathon-consul).\n\nBy default, haproxy will forward all Marathon-assigned ports. So if you specify that your application should own port 10000 in the \"ports\" member of the app JSON, haproxy will open port 10000 to direct traffic to your app. This works with auto-assigned ports (ports set to 0), as well. This is all automatic, you don't need to think about it other than to pull the ports from Marathon.\n\nHowever, if you want HTTP load balancing using the host header, you need a specify the following labels on your app:\n\n```\n{\n    \"id\": \"hello-rails\",\n    \"cmd\": \"cd hello && bundle install && bundle exec unicorn -p $PORT\",\n    \"mem\": 100,\n    \"cpus\": 1.0,\n    \"instances\": 1,\n    \"uris\": [\n        \"http://downloads.mesosphere.com/tutorials/RailsHello.tgz\"\n    ],\n    \"env\": {\n        \"RAILS_ENV\": \"production\"\n    },\n    \"ports\": [10000],\n    \"labels\": {\n        \"HAPROXY_HTTP\": \"true\",\n        \"HTTP_PORT_IDX_0_NAME\": \"hello_rails\",\n    }\n}\n```\n\nIn this example (available at [`examples/rails.json`](examples/rails.json)), the hello-rails application is assigned port 10000\\. This is different from the service or host port of the app; it is a global value that Marathon tracks. This means that haproxy-consul will forward all TCP traffic to port 10000 to the app workers.\n\nWhen `HAPROXY_HTTP` is set to true and `HTTP_PORT_IDX_0_NAME` is set to a DNS-valid name Haproxy will forward all HTTP traffic with the host header (the name specified plus [`HAPROXY_DOMAIN`](#options)) to the app workers. This extends to as many ports as you'd care to give it in the form `HTTP_PORT_IDX_{port_number}_NAME`.\n\nThis particular app results in something like the following haproxy configuration:\n\n```\nglobal\n    maxconn 256\n    debug\n\ndefaults\n    mode tcp\n    timeout connect 5000ms\n    timeout client 50000ms\n    timeout server 50000ms\n\n# HTTP services\nfrontend www\n    mode http\n    bind *:80\n\n    # files ACLs\n    acl host_hello_rails hdr(host) -i hello_rails.haproxy.service.consul\n    use_backend hello_rails_backend if host_hello_rails\n\n# files backends\nbackend hello_rails_backend\n    mode http\n    server 1.2.3.4:49165 # TASK_RUNNING\n\n# TCP services\nlisten hello-rails_10000\n    mode tcp\n    bind *:10000\n    server task_id 1.2.3.4:41965 # TASK_RUNNING\n```\n\n## Service registration\n\n### Registrator\n\nRun a registrator to automatically add and remove services. The best option so far is to run [gliderlabs/registrator](https://github.com/gliderlabs/registrator) container through the following command.\n\n```\ndocker run -d --net host --name registrator -v /var/run/docker.sock:/tmp/docker.sock gliderlabs/registrator consul://127.0.0.1:8500\n```\n\nAn other way to run it, without net host is:\n\n```\ndocker run -d --name registrator -v /var/run/docker.sock:/tmp/docker.sock gliderlabs/registrator consul://172.17.0.1:8500\n```\n\n### Naming services\n\nThe service can be declared through the environment variables `SERVICE_NAME` and `SERVICE_TAGS`.\n\nThe `SERVICE_NAME` or `SERVICE_<port>_NAME` is the actual name you want to give to the service. It will be the subdomain of your requests: `<SERVICE_NAME>.domain.tld`.\n\nThe domain can be specified using `SERVICE_TAGS` using the followind syntax: `<domain>_<tld>`. Note the `_` (underscore) instead of a `.` (dot), this approach was used because consul forbids the presence of dots in a service name or tag. If no `SERVICE_TAGS` is specified, the service will be available on **all** domains.\n\nHere is an complete example:\n\n```\ndocker run -p 80 -e SERVICE_NAME=www -e SERVICE_TAGS=example_com,example_net webserver\n```\n\nThis will make the webserver's 80 port accessible through request to `www.example.com` or `www.example.net`. Also note that requests to `example.com` or `example.com` will be redirected (302 permanent redirect) to the corresponding `www` subdomain.\n\n## Options\n\nIf you want to override the config and template files, mount a volume and set the `CONSUL_CONFIG` environment variable before launch. In docker this can be accomplished with the `-e` option:\n\n```\ndocker run -v /host/config:/my_config -e CONSUL_CONFIG=/my_config -net=host --name=haproxy -d asteris/haproxy-consul\n```\n\nIf you need to have a root CA added so you can connect to Consul over SSL, mount a directory containing your root CA at `/usr/local/share/ca-certificates/`.\n\nConfigure using the following environment variables:\n\nVariable              | Description                                                       | Default\n--------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------\n`HAPROXY_DOMAIN`      | The domain to match against                                       | `haproxy.service.consul` (for `app.haproxy.service.consul`).\n`HAPROXY_MODE`        | forward consul service or Marathon apps                           | `consul` (`marathon` also available, as described [above](#modes))\n`HAPROXY_USESSL`      | Enable the SSL frontend (see [below](#ssl-termination))           | `false`\n`HAPROXY_STATS`       | Enable Statistics UI on port 1936 (see [below](#ssl-termination)) | `false`\n`HAPROXY_STATS_TITLE` | Change Statistics Title (see [below](#ssl-termination))           | `false`\n`HAPROXY_STATS_URI`   | Change Statistics URI (see [below](#ssl-termination))             | `false`\n\nconsul-template variables:\n\nVariable          | Description                                                          | Default\n----------------- | -------------------------------------------------------------------- | --------------------------------\n`CONSUL_TEMPLATE` | Location of consul-template bin                                      | `/usr/local/bin/consul-template`\n`CONSUL_CONNECT`  | The consul connection                                                | `consul.service.consul:8500`\n`CONSUL_CONFIG`   | File/directory for consul-template config                            | `/consul-template/config.d`\n`CONSUL_LOGLEVEL` | Valid values are \"debug\", \"info\", \"warn\", and \"err\".                 | `debug`\n`CONSUL_TOKEN`    | The [Consul API token](http://www.consul.io/docs/internals/acl.html) |\n\n### SSL Termination\n\nIf you wish to configure HAproxy to terminate incoming SSL connections, you must set the environment variable `HAPROXY_USESSL=true`, and mount your SSL certificate at `/certs/` - this folder should contain all your certificates, each should contain both the SSL certificate and the private key to use (with no passphrase), in PEM format. You should also include any intermediate certificates in this bundle.\n\nFor example:\n\n```\ndocker run -v /etc/ssl/wildcard.example.com.pem:/certs/ssl.crt:ro --net=host --name=haproxy asteris/haproxy-consul\n```\n\nSSL termination is currently only available in 'consul' mode.\n\n# License\n\nReleased under an Apache 2.0 License. See LICENSE\n",
+  "dockerfile": "FROM alpine:3.4\n\nMAINTAINER Steven Borrelli <steve@aster.is>\n\n\nENV CONSUL_TEMPLATE_VERSION=0.14.0\n\nRUN apk update && \\\n    apk add bash haproxy ca-certificates iptables iproute2 libnl3 libnl3-cli && \\\n    apk add wget zip && \\\n    wget -O /consul-template.zip \"https://releases.hashicorp.com/consul-template/${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.zip\" && \\\n    unzip /consul-template.zip  && \\\n    mv /consul-template /usr/local/bin/consul-template && \\\n    rm -rf /consul-template.zip && \\\n    apk del wget zip && \\\n    rm -rf /var/cache/apk/*\n\nRUN mkdir -p /haproxy /consul-template/config.d /consul-template/template.d\nADD config/ /consul-template/config.d/\nADD template/ /consul-template/template.d/\n\nADD scripts /scripts\nRUN chmod u+rx,go+r /scripts/*.sh\n\nCMD [\"/scripts/launch.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "config/",
+        "dest": "/consul-template/config.d/"
+      },
+      {
+        "source": "template/",
+        "dest": "/consul-template/template.d/"
+      },
+      {
+        "source": "scripts",
+        "dest": "/scripts"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apk update &&     apk add bash haproxy ca-certificates iptables iproute2 libnl3 libnl3-cli &&     apk add wget zip &&     wget -O /consul-template.zip \"https://releases.hashicorp.com/consul-template/${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.zip\" &&     unzip /consul-template.zip  &&     mv /consul-template /usr/local/bin/consul-template &&     rm -rf /consul-template.zip &&     apk del wget zip &&     rm -rf /var/cache/apk/*",
+      "mkdir -p /haproxy /consul-template/config.d /consul-template/template.d",
+      "chmod u+rx,go+r /scripts/*.sh"
+    ],
+    "workdir": [],
+    "from": "alpine:3.4",
+    "maintainer": "Steven Borrelli <steve@aster.is>",
+    "env": {
+      "CONSUL_TEMPLATE_VERSION": "0.14.0"
+    },
+    "cmd": "[\"/scripts/launch.sh\"]"
+  },
+  "source_repository_url": "https://github.com/quadorg/haproxy-consul.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/quadorg/haproxy-consul",
+  "docker_repository": "quadorg/consul-haproxy",
+  "docker_image": "quadorg/consul-haproxy",
+  "parameters_schema": {
+    "CONSUL_TEMPLATE_VERSION": {
+      "default": "0.14.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "quadorg/consul-haproxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/quadorg/consul-haproxy",
+    "https://hub.docker.com/v2/repositories/quadorg/consul-haproxy",
+    "https://github.com/quadorg/haproxy-consul.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Orchestration/Consul",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/quadorg/consul-haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

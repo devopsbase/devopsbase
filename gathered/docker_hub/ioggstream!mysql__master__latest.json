@@ -1,0 +1,126 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/ioggstream/mysql",
+    "repository_url": "https://hub.docker.com/v2/repositories/ioggstream/mysql",
+    "tags_url": "https://hub.docker.com/v2/repositories/ioggstream/mysql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/ioggstream/mysql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/ioggstream/mysql/autobuild",
+    "user": "ioggstream",
+    "name": "mysql",
+    "namespace": "ioggstream",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 6,
+    "pull_count": 557,
+    "last_updated": "2015-11-14T05:40:24.866865Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "master",
+        "full_size": 96591418,
+        "id": 122970,
+        "repository": 125962,
+        "creator": 103323,
+        "last_updater": 103323,
+        "last_updated": "2015-11-14T05:40:31.164086Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "5.6-replica",
+        "full_size": 96591878,
+        "id": 122966,
+        "repository": 125962,
+        "creator": 103323,
+        "last_updater": 103323,
+        "last_updated": "2015-11-14T05:39:24.342241Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "ioggstream/mysql"
+  },
+  "name": "ioggstream/mysql Docker container",
+  "description": "MySQL Image with Master-Slave replication",
+  "readme": "A MySQL 5.6 image supporting the following environment variables:\r\n\r\n - MYSQL_ROOT_PASSWORD\r\n - MYSQL_REPLICA_USER: create the given user on the intended master host\r\n - MYSQL_REPLICA_PASS\r\n - MYSQL_MASTER_SERVER: change master on this location on the intended slave\r\n - MYSQL_MASTER_PORT: optional, by default 3306\r\n - MYSQL_MASTER_WAIT_TIME: seconds to wait for the master to come up\r\n\r\nYou can use this fig.yml to setup a master-slave:\r\n\r\n    # run with: #fig up\r\n    master:\r\n      image: ioggstream/mysql:5.6-replica\r\n      ports:\r\n        - 3301:3306\r\n      environment:\r\n        - MYSQL_ROOT_PASSWORD=root\r\n        - MYSQL_REPLICA_USER=repl\r\n        - MYSQL_REPLICA_PASS=replpass\r\n      command: mysqld --log-bin=mysql-bin  --server-id=1  \r\n    \r\n    \r\n    slave:\r\n      image: ioggstream/mysql:5.6-replica\r\n      ports:\r\n        - 3302:3306\r\n      environment:\r\n        - MYSQL_ROOT_PASSWORD=root\r\n        - MYSQL_REPLICA_USER=repl\r\n        - MYSQL_REPLICA_PASS=replpass\r\n        - MYSQL_MASTER_SERVER=master\r\n      links:\r\n        - master\r\n      command: mysqld --log-bin=mysql-bin  --server-id=2 \r\n\r\n\r\n",
+  "dockerfile": "FROM debian:wheezy\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\nRUN groupadd -r mysql && useradd -r -g mysql mysql\n\n# FATAL ERROR: please install the following Perl modules before executing /usr/local/mysql/scripts/mysql_install_db:\n# File::Basename\n# File::Copy\n# Sys::Hostname\n# Data::Dumper\nRUN apt-get update && apt-get install -y perl --no-install-recommends && rm -rf /var/lib/apt/lists/*\n\n# gpg: key 5072E1F5: public key \"MySQL Release Engineering <mysql-build@oss.oracle.com>\" imported\nRUN apt-key adv --keyserver pool.sks-keyservers.net --recv-keys A4A9406876FCBD3C456770C88C718D3B5072E1F5\n\nENV MYSQL_MAJOR 5.6\nENV MYSQL_VERSION 5.6.22\n\nRUN echo \"deb http://repo.mysql.com/apt/debian/ wheezy mysql-${MYSQL_MAJOR}\" > /etc/apt/sources.list.d/mysql.list\n\n# the \"/var/lib/mysql\" stuff here is because the mysql-server postinst doesn't have an explicit way to disable the mysql_install_db codepath besides having a database already \"configured\" (ie, stuff in /var/lib/mysql/mysql)\n# also, we set debconf keys to make APT a little quieter\nRUN { \\\n\t\techo mysql-community-server mysql-community-server/data-dir select ''; \\\n\t\techo mysql-community-server mysql-community-server/root-pass password ''; \\\n\t\techo mysql-community-server mysql-community-server/re-root-pass password ''; \\\n\t\techo mysql-community-server mysql-community-server/remove-test-db select false; \\\n\t} | debconf-set-selections \\\n\t&& apt-get update && apt-get install -y mysql-server=\"${MYSQL_VERSION}\"* && rm -rf /var/lib/apt/lists/* \\\n\t&& rm -rf /var/lib/mysql && mkdir -p /var/lib/mysql\n\n# comment out a few problematic configuration values\nRUN sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/my.cnf\n\nVOLUME /var/lib/mysql\n\nCOPY docker-entrypoint.sh /entrypoint.sh\nENTRYPOINT [\"/entrypoint.sh\"]\n\nEXPOSE 3306\nCMD [\"mysqld\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      "/var/lib/mysql"
+    ],
+    "run": [
+      "groupadd -r mysql && useradd -r -g mysql mysql",
+      "apt-get update && apt-get install -y perl --no-install-recommends && rm -rf /var/lib/apt/lists/*",
+      "apt-key adv --keyserver pool.sks-keyservers.net --recv-keys A4A9406876FCBD3C456770C88C718D3B5072E1F5",
+      "echo \"deb http://repo.mysql.com/apt/debian/ wheezy mysql-${MYSQL_MAJOR}\" > /etc/apt/sources.list.d/mysql.list",
+      "{ \t\techo mysql-community-server mysql-community-server/data-dir select ''; \t\techo mysql-community-server mysql-community-server/root-pass password ''; \t\techo mysql-community-server mysql-community-server/re-root-pass password ''; \t\techo mysql-community-server mysql-community-server/remove-test-db select false; \t} | debconf-set-selections \t&& apt-get update && apt-get install -y mysql-server=\"${MYSQL_VERSION}\"* && rm -rf /var/lib/apt/lists/* \t&& rm -rf /var/lib/mysql && mkdir -p /var/lib/mysql",
+      "sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/my.cnf"
+    ],
+    "workdir": [],
+    "from": "debian:wheezy",
+    "env": {
+      "MYSQL_MAJOR": "5.6",
+      "MYSQL_VERSION": "5.6.22"
+    },
+    "copy": "docker-entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"mysqld\"]"
+  },
+  "source_repository_url": "https://github.com/ioggstream/mysql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/ioggstream/mysql",
+  "docker_repository": "ioggstream/mysql",
+  "docker_image": "ioggstream/mysql",
+  "parameters_schema": {
+    "MYSQL_MAJOR": {
+      "default": "5.6",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_VERSION": {
+      "default": "5.6.22",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "ioggstream/mysql",
+  "revision": "master",
+  "uris": [
+    "https://hub.docker.com/r/ioggstream/mysql",
+    "https://hub.docker.com/v2/repositories/ioggstream/mysql",
+    "https://github.com/ioggstream/mysql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/ioggstream/mysql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

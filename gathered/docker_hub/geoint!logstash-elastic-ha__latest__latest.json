@@ -1,0 +1,92 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/geoint/logstash-elastic-ha",
+    "repository_url": "https://hub.docker.com/v2/repositories/geoint/logstash-elastic-ha",
+    "tags_url": "https://hub.docker.com/v2/repositories/geoint/logstash-elastic-ha/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/geoint/logstash-elastic-ha/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/geoint/logstash-elastic-ha/autobuild",
+    "user": "geoint",
+    "name": "logstash-elastic-ha",
+    "namespace": "geoint",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 202,
+    "last_updated": "2016-10-14T20:24:25.607065Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 232412448,
+        "id": 4897431,
+        "repository": 921645,
+        "creator": 490790,
+        "last_updater": 490790,
+        "last_updated": "2016-10-14T20:24:25.276893Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "ngageoint/scale"
+  },
+  "name": "geoint/logstash-elastic-ha Docker container",
+  "description": "Logstash container for ElasticSearch forwarding. Support provided for failover of Elasticsearch.",
+  "readme": "# Logstash Elastic High-Availability\nImage to support Scale log capture with Logstash failover between Elasticsearch nodes.\n\nThis image is primarily intended to mitigate issues when Elasticsearch cluster nodes fail and are instantiated\nelsewhere. Barring all nodes moving to other addresses, the watchdog process will discover the new locations from\nElasticsearch APIs and update the logstash pipeline to all available nodes.\n\n## Configuration\nThis image provides a number of environment variables that can be used to tweak the behavior of logstash.\n\n* ELASTICSEARCH_URLS: One or more comma delimited full URLs to Elasticsearch nodes to bootstrap watchdog. For example,\n \"http://node01:9200,http://node02:9200\". The watchdog will continually update Logstash configuration as nodes are \n added or removed.\n* LOGSTASH_ARGS: String of any arbitrary command-line arguments to pass to Logstash.\n* SLEEP_TIME: Time in seconds to sleep between watchdog checks of Elasticsearch nodes.\n* TEMPLATE_URI: URL to container accessible location of Logstash template config. See below for example.\n\n### Logstash Configuration Template\nIf there is a need to override the default configuration or specify additional filters, the following example contains\nthe minimum required configuration that should be used as a starting point for your config.\n\n```\ninput {\n  http {\n    port => 80\n    type => \"app-healthcheck\"\n  }\n}\nfilter {\n  if [type] == \"app-healthcheck\" {\n    drop { }\n  }\n}\noutput {\n  elasticsearch {\n    hosts => _ES_HOSTS_\n  }\n}\n```\n\nThe `http` input handler and `filter` is needed to support Marathon health checks and drop all messages from that input.\nIf health checks are not needed all that is required is the `output` directive. The `_ES_HOSTS_` value is required to\nsupport the watchdog injection of nodes into the Logstash pipeline.",
+  "dockerfile": "FROM logstash:2.4\nMAINTAINER Jonathan Meyer <jon@gisjedi.com>\n\nRUN apt-get update && apt-get install -y supervisor python-requests\n\nCOPY supervisord.conf /etc/supervisord.conf\n\nRUN mkdir -p /opt/watchdog && chown -R logstash /opt/watchdog && chown logstash /var/run\nCOPY logstash.conf-template /opt/watchdog/logstash.conf-template\nCOPY elastic_watchdog.py /opt/watchdog/elastic_watchdog.py\n\nCMD [ \"supervisord\" ]\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y supervisor python-requests",
+      "mkdir -p /opt/watchdog && chown -R logstash /opt/watchdog && chown logstash /var/run"
+    ],
+    "workdir": [],
+    "from": "logstash:2.4",
+    "maintainer": "Jonathan Meyer <jon@gisjedi.com>",
+    "copy": "elastic_watchdog.py /opt/watchdog/elastic_watchdog.py",
+    "cmd": "[ \"supervisord\" ]"
+  },
+  "source_repository_url": "https://github.com/ngageoint/scale.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/ngageoint/scale",
+  "docker_repository": "geoint/logstash-elastic-ha",
+  "docker_image": "geoint/logstash-elastic-ha",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "geoint/logstash-elastic-ha",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/geoint/logstash-elastic-ha",
+    "https://hub.docker.com/v2/repositories/geoint/logstash-elastic-ha",
+    "https://github.com/ngageoint/scale.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Logging/Logstash",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/geoint/logstash-elastic-ha",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

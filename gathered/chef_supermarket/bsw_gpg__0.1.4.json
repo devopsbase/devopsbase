@@ -1,0 +1,52 @@
+{
+  "name": "bsw_gpg Chef cookbook",
+  "chef_cookbook_name": "bsw_gpg",
+  "revision": "0.1.4",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/bsw_gpg",
+    "https://supermarket.chef.io/cookbooks/bsw_gpg/download",
+    "https://supermarket.chef.io/cookbooks/bsw_gpg/versions/0.1.4",
+    "https://supermarket.chef.io/cookbooks/bsw_gpg/versions/0.1.4/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/bsw_gpg/versions/0.1.4",
+    "https://supermarket.chef.io/api/v1/cookbooks/bsw_gpg",
+    "https://supermarket.chef.io/api/v1/cookbooks/bsw_gpg/versions/0.1.4/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/bsw_gpg",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/bsw_gpg/versions/0.1.4/download",
+  "deprecated": false,
+  "created": "2014-08-20T21:05:40.360Z",
+  "updated": "2014-12-20T20:03:54.280Z",
+  "description": "Installs/Configures gpg using an LWRP based approach",
+  "maintainer": {
+    "name": "cokecand2",
+    "email": "support@bswtechconsulting.com"
+  },
+  "license": "BSD 2 Clause License",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 10500008,
+  "downloads_count_revision": 1044702,
+  "repository_url": "https://github.com/wied03/cookbook-gpg",
+  "issues_url": "https://github.com/wied03/cookbook-gpg/issues",
+  "chef_source_url": "https://github.com/wied03/cookbook-gpg",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "gpg Cookbook\n============\nLWRP focused cookbook that helps load public or private keys into your GPG keyring from either a string, a cookbook file, or a Chef vault item.  The cookbook will check to see if the key fingerprint and user name already exist in the key ring before converging.  The resources automatically choose secret vs. public keyrings based on the header of the base64 key contents.\n\n\nRequirements\n------------\n\nUbuntu 14.04\n\nAttributes\n----------\nNone, LWRP focused\n\nUsage\n-----\n\nInclude the bsw_gpg::default recipe in your cookbook, which will install the gnupg2 package\n\n#### Install from a string\n\n```ruby\nbsw_gpg_load_key_from_string 'a string key' do\n    key_contents '-----BEGIN PGP PUBLIC KEY BLOCK----- (rest of key here'\n    for_user 'joe' # The user you want to install the key to\nend\n```\n\n#### Install from a cookbook file\n\n```ruby\npublic_key_in_base_64 = cookbook_file_contents 'something.pub','mycookbookname'\nbsw_gpg_load_key_from_string 'a cookbook key' do\n    key_contents public_key_in_base_64\n    for_user 'joe' # The user you want to install the key to\nend\n```\n\n#### Install from a Chef vault item\n\n```ruby\nbsw_gpg_load_key_from_chef_vault 'a chef vault key' do\n    data_bag 'thedatabag'\n    item 'the_item'\n    json_key 'json_key' # Expects to find a hash key with the base64 key contents in it            \n    for_user 'joe' # The user you want to install the key to\nend\n```\n\n#### Install from a key server\n\n```ruby\nbsw_gpg_load_key_from_key_server 'some key' do\n  key_server 'keyserver.ubuntu.com'\n  key_id '561F9B9CAC40B2F7'\n  for_user 'root'\nend\n```\n\n#### Use a non-default keyring\n\nYou can use this on any of the resources\n\n```ruby\nbsw_gpg_load_key_from_key_server 'some key' do\n  key_server 'keyserver.ubuntu.com'\n  key_id '561F9B9CAC40B2F7'\n  for_user 'root'\n  keyring_file 'stuff_secret.gpg'\nend\n```\n\n#### Force the trust-db rebuild\n\nYou can use this on any of the resources.  By default, the LWRP lets gpg2 update the trustdb whenever it's executing commands on the default keyring.  When it's a custom keyring, in order to avoid gpg2 complaining about not being able to find keys you trust, the LWRP will add --no-auto-check-trustdb.  If you want to override this behavior, you can do so like below\n\n```ruby\n# TrustDB check would normally be disabled\nbsw_gpg_load_key_from_key_server 'some key' do\n  key_server 'keyserver.ubuntu.com'\n  key_id '561F9B9CAC40B2F7'\n  for_user 'root'\n  keyring_file 'stuff.gpg'\n  disable_trust_db_check false\nend\n# TrustDB check would normally be enabled\nbsw_gpg_load_key_from_key_server 'some key' do\n  key_server 'keyserver.ubuntu.com'\n  key_id '561F9B9CAC40B2F7'\n  for_user 'root'\n  disable_trust_db_check true\nend\n```\n\n#### Force trusting (or not) of newly imported keys\n\nBy default, after importing the key, if a private key is being imported into the default keyring, these LWRPs runs the equivalent of echo \"<keyFingerprint>:6:\\n\" | gpg2 --import-ownertrust.  If you wish to force the trust to be imported (or not imported) regardless of the default, you can do something like this.\n\n```ruby\n# Example 1\nbsw_gpg_load_key_from_chef_vault 'a chef vault key' do\n    data_bag 'thedatabag'\n    item 'the_item'\n    json_key 'json_key' # Expects to find a hash key with the base64 key contents in it            \n    for_user 'joe' # The user you want to install the key to\n    force_import_owner_trust false # Will prevent an import that otherwise would have occurred\nend\n# Example 1\nbsw_gpg_load_key_from_chef_vault 'a chef vault key' do\n  data_bag 'thedatabag'\n  item 'the_item'\n  json_key 'json_key' # Expects to find a hash key with the base64 key contents in it            \n  for_user 'joe' # The user you want to install the key to\n  keyring_file 'stuff_secret.gpg'\n  force_import_owner_trust true # Will force an import that otherwise would NOT have occurred  \nend\n```\n\nContributing\n------------\n\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n\nLicense and Authors\n-------------------\nAuthors: Brady Wied\n\nCopyright (c) 2014, BSW Technology Consulting LLC\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n\n1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\n2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": "14.04",
+      "one_of_group": "os"
+    }
+  ]
+}

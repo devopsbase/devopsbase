@@ -1,0 +1,128 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/c3h3/rabbitmq",
+    "repository_url": "https://hub.docker.com/v2/repositories/c3h3/rabbitmq",
+    "tags_url": "https://hub.docker.com/v2/repositories/c3h3/rabbitmq/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/c3h3/rabbitmq/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/c3h3/rabbitmq/autobuild",
+    "user": "c3h3",
+    "name": "rabbitmq",
+    "namespace": "c3h3",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 84,
+    "last_updated": "2015-10-11T20:41:18.145171Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 116328473,
+        "id": 117711,
+        "repository": 68813,
+        "creator": 52419,
+        "last_updater": 52419,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "c3h3/tutum-docker-rabbitmq"
+  },
+  "name": "c3h3/rabbitmq Docker container",
+  "description": "",
+  "readme": "## (This image is forked from  tutum/rabbitmq but modified the base image with debian:jessie and export the \"mnesia\" and \"log\" dirs)\n\n\ntutum-docker-rabbitmq\n=====================\n\nBase docker image to run a RabbitMQ server\n\n\nUsage\n-----\n\nTo create the image `c3h3/rabbitmq`, execute the following command on the tutum-rabbitmq folder:\n\n\tsudo docker build -t c3h3/rabbitmq .\n\n\nRunning the RabbitMQ server\n---------------------------\n\nRun the following command to start rabbitmq:\n\n\tdocker run -d -p 5672:5672 -p 15672:15672 c3h3/rabbitmq\n\nThe first time that you run your container, a new random password will be set.\nTo get the password, check the logs of the container by running:\n\n\tdocker logs <CONTAINER_ID>\n\nYou will see an output like the following:\n\n\t========================================================================\n\tYou can now connect to this RabbitMQ server using, for example:\n\n            curl --user admin:5elsT6KtjrqV  http://<host>:<port>/api/vhosts\n\n\tPlease remember to change the above password as soon as possible!\n\t========================================================================\n\nIn this case, `5elsT6KtjrqV` is the password set. \nYou can then connect to RabbitMQ:\n\n        curl --user admin:5elsT6KtjrqV  http://<host>:<port>/api/vhosts\n\nDone!\n\n\nSetting a specific password for the admin account\n-------------------------------------------------\n\nIf you want to use a preset password instead of a randomly generated one, you can\nset the environment variable `RABBITMQ_PASS` to your specific password when running the container:\n\n\tdocker run -d -p 5672:5672 -p 15672:15672 -e RABBITMQ_PASS=\"mypass\" c3h3/rabbitmq\n\nYou can now test your new admin password:\n\n        curl --user admin:mypass  http://<host>:<port>/api/vhosts\n\n\nMount with outside mnesia and log directories\n-------------------------------------------------\n\nIf you want to use outside \"mnesia\" and \"log\" directories, you could use the following command:\n\t\n\tmkdir -p mnesia\n\tmkdir -p log\n    docker run -d -p 5672:5672 -p 15672:15672 -v $PWD/mnesia:/data/mnesia -v $PWD/log:/data/log c3h3/rabbitmq\n\n\n",
+  "dockerfile": "FROM debian:jessie\n\n# Install RabbitMQ\n\nENV DEBIAN_FRONTEND noninteractive\n\nRUN apt-get update\nRUN apt-get -y install wget\n\nRUN echo \"deb http://www.rabbitmq.com/debian/ testing main\" >> /etc/apt/sources.list\nRUN cd /tmp && wget http://www.rabbitmq.com/rabbitmq-signing-key-public.asc && apt-key add rabbitmq-signing-key-public.asc\nRUN apt-get update\n\n\nRUN apt-get install -y rabbitmq-server pwgen && \\\n    rabbitmq-plugins enable rabbitmq_management && \\\n    apt-get clean && \\\n    rm -rf /var/lib/apt/lists/*\n\n# Add scripts\nADD run.sh /run.sh\nADD set_rabbitmq_password.sh /set_rabbitmq_password.sh\nRUN chmod 755 ./*.sh\n\n# change the owner of volume dir\nRUN mkdir /data && mkdir /data/mnesia && mkdir /data/log\n\nENV RABBITMQ_LOG_BASE /data/log\nENV RABBITMQ_MNESIA_BASE /data/mnesia\n\nEXPOSE 5672 15672\nVOLUME [\"/data/log\",\"/data/mnesia\"]\n\n\nCMD [\"/run.sh\"]\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "run.sh",
+        "dest": "/run.sh"
+      },
+      {
+        "source": "set_rabbitmq_password.sh",
+        "dest": "/set_rabbitmq_password.sh"
+      }
+    ],
+    "expose": [
+      5672
+    ],
+    "volume": [
+      "[\"/data/log\",\"/data/mnesia\"]"
+    ],
+    "run": [
+      "apt-get update",
+      "apt-get -y install wget",
+      "echo \"deb http://www.rabbitmq.com/debian/ testing main\" >> /etc/apt/sources.list",
+      "cd /tmp && wget http://www.rabbitmq.com/rabbitmq-signing-key-public.asc && apt-key add rabbitmq-signing-key-public.asc",
+      "apt-get update",
+      "apt-get install -y rabbitmq-server pwgen &&     rabbitmq-plugins enable rabbitmq_management &&     apt-get clean &&     rm -rf /var/lib/apt/lists/*",
+      "chmod 755 ./*.sh",
+      "mkdir /data && mkdir /data/mnesia && mkdir /data/log"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "RABBITMQ_LOG_BASE": "/data/log",
+      "RABBITMQ_MNESIA_BASE": "/data/mnesia"
+    },
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/c3h3/tutum-docker-rabbitmq.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/c3h3/tutum-docker-rabbitmq",
+  "docker_repository": "c3h3/rabbitmq",
+  "docker_image": "c3h3/rabbitmq",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_LOG_BASE": {
+      "default": "/data/log",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_MNESIA_BASE": {
+      "default": "/data/mnesia",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5672
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "c3h3/rabbitmq",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/c3h3/rabbitmq",
+    "https://hub.docker.com/v2/repositories/c3h3/rabbitmq",
+    "https://github.com/c3h3/tutum-docker-rabbitmq.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/c3h3/rabbitmq",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

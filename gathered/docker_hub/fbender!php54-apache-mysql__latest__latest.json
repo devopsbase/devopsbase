@@ -1,0 +1,118 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/fbender/php54-apache-mysql",
+    "repository_url": "https://hub.docker.com/v2/repositories/fbender/php54-apache-mysql",
+    "tags_url": "https://hub.docker.com/v2/repositories/fbender/php54-apache-mysql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/fbender/php54-apache-mysql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/fbender/php54-apache-mysql/autobuild",
+    "user": "fbender",
+    "name": "php54-apache-mysql",
+    "namespace": "fbender",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 501,
+    "last_updated": "2016-10-15T03:13:40.216964Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 183747161,
+        "id": 1442700,
+        "repository": 423964,
+        "creator": 449236,
+        "last_updater": 449236,
+        "last_updated": "2016-10-15T03:13:39.859833Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "fbender/Dockerfiles"
+  },
+  "name": "fbender/php54-apache-mysql Docker container",
+  "description": "Image for local development on old projects. It is supposed to be linked with a mysql container. ",
+  "readme": "This image is not to be used on a production server! I use it for local development on old projects (hence the PHP version).\n\nSee Dockerfile for more info, it should be pretty self-explanatory.\n",
+  "dockerfile": "FROM php:5.4-apache\nMAINTAINER Florian Bender <fb+dockerhub@quantumedia.de>\n\n# This image is not to be used on a production server!\n# I use it for local development on old projects (hence the PHP version).\n\n# Install gd, iconv, mbstring, mcrypt, mysql, soap, sockets, and zip extensions\n# see example at https://hub.docker.com/_/php/\nRUN apt-get update && apt-get install -y \\\n        libbz2-dev \\\n        libfreetype6-dev \\\n        libjpeg62-turbo-dev \\\n        libmcrypt-dev \\\n        libpng12-dev \\\n        libxml2-dev \\\n    && docker-php-ext-install iconv mbstring mcrypt soap sockets zip \\\n    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \\\n    && docker-php-ext-install gd \\\n    && docker-php-ext-configure mysql --with-mysql=mysqlnd \\\n    && docker-php-ext-install mysql\n\n# Add a PHP config file. The file was copied from a php53 dotdeb package and\n# lightly modified (mostly for improving debugging). This may not be the best\n# idea.\nCOPY php.ini /usr/local/etc/php/\n\n# enable mod_rewrite\nRUN a2enmod rewrite\n\n# make the webroot a volume\nVOLUME /var/www/html/\n\n# In images building upon this image, copy the src/ directory to the webserver\n# root and correct the owner.\nONBUILD COPY src/ /var/www/html/\nONBUILD RUN chown -R www-data:www-data /var/www/html\n\n# support jwilder/nginx-proxy resp. docker-gen\n# You may wan to overwrite VIRTUAL_HOST and UPSTREAM_NAME in your Docker file.\nEXPOSE 80\nENV VIRTUAL_HOST site.local\nENV UPSTREAM_NAME web-site\n\n# Put something like this into your Dockerfile if you want to add more files.\n# Note that you need to correctly set the owner otherwise PHP will not be able\n# to edit the file system.\n## copy src-extra\n#COPY src-extra/ /var/www/html/extra/\n#RUN chown -R www-data:www-data /var/www/html/extra\n\n# Entrypoint file tries to fix permissions, again\nCOPY entrypoint.sh /entrypoint.sh\nRUN chmod +x /entrypoint.sh\nENTRYPOINT [\"/entrypoint.sh\"]\n\n#EOF\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "/var/www/html/"
+    ],
+    "run": [
+      "apt-get update && apt-get install -y         libbz2-dev         libfreetype6-dev         libjpeg62-turbo-dev         libmcrypt-dev         libpng12-dev         libxml2-dev     && docker-php-ext-install iconv mbstring mcrypt soap sockets zip     && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/     && docker-php-ext-install gd     && docker-php-ext-configure mysql --with-mysql=mysqlnd     && docker-php-ext-install mysql",
+      "a2enmod rewrite",
+      "chmod +x /entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "php:5.4-apache",
+    "maintainer": "Florian Bender <fb+dockerhub@quantumedia.de>",
+    "copy": "entrypoint.sh /entrypoint.sh",
+    "onbuild": "RUN chown -R www-data:www-data /var/www/html",
+    "env": {
+      "VIRTUAL_HOST": "site.local",
+      "UPSTREAM_NAME": "web-site"
+    },
+    "entrypoint": "[\"/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/fbender/Dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/fbender/Dockerfiles",
+  "docker_repository": "fbender/php54-apache-mysql",
+  "docker_image": "fbender/php54-apache-mysql",
+  "parameters_schema": {
+    "VIRTUAL_HOST": {
+      "default": "site.local",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "UPSTREAM_NAME": {
+      "default": "web-site",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "fbender/php54-apache-mysql",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/fbender/php54-apache-mysql",
+    "https://hub.docker.com/v2/repositories/fbender/php54-apache-mysql",
+    "https://github.com/fbender/Dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image/Container Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/fbender/php54-apache-mysql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

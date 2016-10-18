@@ -1,0 +1,162 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/nhsbsa/docker-centos-iac",
+    "repository_url": "https://hub.docker.com/v2/repositories/nhsbsa/docker-centos-iac",
+    "tags_url": "https://hub.docker.com/v2/repositories/nhsbsa/docker-centos-iac/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/nhsbsa/docker-centos-iac/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/nhsbsa/docker-centos-iac/autobuild",
+    "user": "nhsbsa",
+    "name": "docker-centos-iac",
+    "namespace": "nhsbsa",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 1915,
+    "last_updated": "2016-10-16T09:03:25.656797Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 999012222,
+        "id": 2674545,
+        "repository": 638030,
+        "creator": 694897,
+        "last_updater": 694897,
+        "last_updated": "2016-10-16T09:03:25.330070Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "nhsbsa/docker-centos-iac"
+  },
+  "name": "nhsbsa/docker-centos-iac Docker container",
+  "description": "Centos-7, Java, Maven, Ruby, Python, Ansible, Terraform",
+  "readme": "## nhsbsa/docker-centos-iac:latest\nCentos-7, Java, Maven, Ruby, Python, Ansible, Terraform, jMeter\n",
+  "dockerfile": "FROM centos:centos7\n\nMAINTAINER Phil Stephenson <philip.stephenson1@nhs.net>\n\nENV JAVA_VERSION 1.8.0\nENV ANSIBLE_VERSION 2.0.2.0\nENV LIQUIBASE_VERSION 3.4.2\nENV PGJDBC_VERSION 9.4.1208.jre7\nENV TERRAFORM_VERSION 0.6.16\nENV JMETER_VERSION 3.0\nENV MIN_SETUPTOOLS_VERSION 11.3\nENV INSTALL_RUBY_VERSION 2.2.2\nENV PATH /terraform:$PATH\nENV PATH /root/.rbenv/bin:/root/.rbenv/shims:${PATH}\n\n# Install a few RPMs\nRUN echo \"===> Adding epel, java, ruby, pip, etc\" && \\\n    yum update -y && \\\n    yum group install -y \"Development Tools\" && \\\n    yum install -y epel-release && \\\n    yum install -y wget bc openssl sudo unzip graphviz git perl jq \\\n      java-${JAVA_VERSION}-openjdk java-${JAVA_VERSION}-openjdk-devel \\\n      maven libffi-devel which \\\n      python-pip python-devel zlib-devel openssl-devel readline-devel\n\n# Install Ansible pre-reqs\nRUN echo \"===> Adding ansible pre-reqs\" && \\\n    pip install --upgrade \"setuptools>=${MIN_SETUPTOOLS_VERSION}\"\n\n# Install Ansible\nRUN echo \"===> Adding ansible ${ANSIBLE_VERSION}\" && \\\n    pip install ansible==${ANSIBLE_VERSION}\n\n# Download liquibase\nRUN echo \"===> Adding liquibase ${LIQUIBASE_VERSION}\" && \\\n    wget -P /tmp https://github.com/liquibase/liquibase/releases/download/liquibase-parent-3.4.2/liquibase-${LIQUIBASE_VERSION}-bin.tar.gz && \\\n    mkdir -p /opt/liquibase && \\\n    tar -xzf /tmp/liquibase-3.4.2-bin.tar.gz -C /opt/liquibase && \\\n    chmod +x /opt/liquibase/liquibase && \\\n    ln -s /opt/liquibase/liquibase /usr/local/bin/\n\n# Add JDBC driver\nRUN echo \"===> Adding postgres jdbc driver ${PGJDBC_VERSION}\" && \\\n    mkdir -p /opt/jdbc_drivers && \\\n    wget -P /tmp https://jdbc.postgresql.org/download/postgresql-${PGJDBC_VERSION}.jar && \\\n    mv /tmp/postgresql-${PGJDBC_VERSION}.jar /opt/jdbc_drivers/ && \\\n    ln -s /opt/jdbc_drivers/postgresql-${PGJDBC_VERSION}.jar /opt/liquibase/lib\n\n# Add jMeter\nRUN echo \"===> Adding jMeter ${JMETER_VERSION}\" && \\\n    wget http://mirror.vorboss.net/apache/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz && \\\n    tar zxvf apache-jmeter-${JMETER_VERSION}.tgz -C /opt/ && \\\n    ln -s /opt/apache-jmeter-${JMETER_VERSION} /opt/jmeter && \\\n    ln -s /opt/apache-jmeter-${JMETER_VERSION}/bin/jmeter /usr/local/bin/\n\n# Add terraform\nRUN echo \"===> Adding terraform ${TERRAFORM_VERSION}\" && \\\n    wget -P /tmp \"https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip\" && \\\n    unzip /tmp/terraform_${TERRAFORM_VERSION}_linux_amd64.zip -d /usr/local/bin/\n\n# Add rbenv and ruby\nRUN echo \"===> Installing rbenv and ruby\" && \\\n    git clone https://github.com/rbenv/rbenv.git ${HOME}/.rbenv && \\\n    git clone https://github.com/rbenv/ruby-build.git ${HOME}/.rbenv/plugins/ruby-build && \\\n    rbenv install 2.0.0-p598 && \\\n    rbenv install $INSTALL_RUBY_VERSION && \\\n    rbenv global $INSTALL_RUBY_VERSION && \\\n    rbenv rehash && \\\n    eval \"$(rbenv init -)\"\n\n# Add Gems\nRUN echo \"===> Adding gems\" && \\\n    gem install bundler liquid diplomat fog json fpm jekyll awscli \\\n      rspec mechanize cucumber git coderay ruby-jmeter \\\n      rubocop english\n\n# Clean up\nRUN echo \"===> Cleaning up\" && \\\n    rm -rf /tmp/* && \\\n    yum upgrade -y && \\\n    yum clean all # && yum group remove -y \"Development Tools\"\n\nWORKDIR /\n\n# default command: display Ansible version\nCMD [ \"ansible\", \"--version\" ]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "echo \"===> Adding epel, java, ruby, pip, etc\" &&     yum update -y &&     yum group install -y \"Development Tools\" &&     yum install -y epel-release &&     yum install -y wget bc openssl sudo unzip graphviz git perl jq       java-${JAVA_VERSION}-openjdk java-${JAVA_VERSION}-openjdk-devel       maven libffi-devel which       python-pip python-devel zlib-devel openssl-devel readline-devel",
+      "echo \"===> Adding ansible pre-reqs\" &&     pip install --upgrade \"setuptools>=${MIN_SETUPTOOLS_VERSION}\"",
+      "echo \"===> Adding ansible ${ANSIBLE_VERSION}\" &&     pip install ansible==${ANSIBLE_VERSION}",
+      "echo \"===> Adding liquibase ${LIQUIBASE_VERSION}\" &&     wget -P /tmp https://github.com/liquibase/liquibase/releases/download/liquibase-parent-3.4.2/liquibase-${LIQUIBASE_VERSION}-bin.tar.gz &&     mkdir -p /opt/liquibase &&     tar -xzf /tmp/liquibase-3.4.2-bin.tar.gz -C /opt/liquibase &&     chmod +x /opt/liquibase/liquibase &&     ln -s /opt/liquibase/liquibase /usr/local/bin/",
+      "echo \"===> Adding postgres jdbc driver ${PGJDBC_VERSION}\" &&     mkdir -p /opt/jdbc_drivers &&     wget -P /tmp https://jdbc.postgresql.org/download/postgresql-${PGJDBC_VERSION}.jar &&     mv /tmp/postgresql-${PGJDBC_VERSION}.jar /opt/jdbc_drivers/ &&     ln -s /opt/jdbc_drivers/postgresql-${PGJDBC_VERSION}.jar /opt/liquibase/lib",
+      "echo \"===> Adding jMeter ${JMETER_VERSION}\" &&     wget http://mirror.vorboss.net/apache/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz &&     tar zxvf apache-jmeter-${JMETER_VERSION}.tgz -C /opt/ &&     ln -s /opt/apache-jmeter-${JMETER_VERSION} /opt/jmeter &&     ln -s /opt/apache-jmeter-${JMETER_VERSION}/bin/jmeter /usr/local/bin/",
+      "echo \"===> Adding terraform ${TERRAFORM_VERSION}\" &&     wget -P /tmp \"https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip\" &&     unzip /tmp/terraform_${TERRAFORM_VERSION}_linux_amd64.zip -d /usr/local/bin/",
+      "echo \"===> Installing rbenv and ruby\" &&     git clone https://github.com/rbenv/rbenv.git ${HOME}/.rbenv &&     git clone https://github.com/rbenv/ruby-build.git ${HOME}/.rbenv/plugins/ruby-build &&     rbenv install 2.0.0-p598 &&     rbenv install $INSTALL_RUBY_VERSION &&     rbenv global $INSTALL_RUBY_VERSION &&     rbenv rehash &&     eval \"$(rbenv init -)\"",
+      "echo \"===> Adding gems\" &&     gem install bundler liquid diplomat fog json fpm jekyll awscli       rspec mechanize cucumber git coderay ruby-jmeter       rubocop english",
+      "echo \"===> Cleaning up\" &&     rm -rf /tmp/* &&     yum upgrade -y &&     yum clean all # && yum group remove -y \"Development Tools\""
+    ],
+    "workdir": [
+      "/"
+    ],
+    "from": "centos:centos7",
+    "maintainer": "Phil Stephenson <philip.stephenson1@nhs.net>",
+    "env": {
+      "JAVA_VERSION": "1.8.0",
+      "ANSIBLE_VERSION": "2.0.2.0",
+      "LIQUIBASE_VERSION": "3.4.2",
+      "PGJDBC_VERSION": "9.4.1208.jre7",
+      "TERRAFORM_VERSION": "0.6.16",
+      "JMETER_VERSION": "3.0",
+      "MIN_SETUPTOOLS_VERSION": "11.3",
+      "INSTALL_RUBY_VERSION": "2.2.2",
+      "PATH": "/root/.rbenv/bin:/root/.rbenv/shims:${PATH}"
+    },
+    "cmd": "[ \"ansible\", \"--version\" ]"
+  },
+  "source_repository_url": "https://github.com/nhsbsa/docker-centos-iac.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/nhsbsa/docker-centos-iac",
+  "docker_repository": "nhsbsa/docker-centos-iac",
+  "docker_image": "nhsbsa/docker-centos-iac",
+  "parameters_schema": {
+    "JAVA_VERSION": {
+      "default": "1.8.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ANSIBLE_VERSION": {
+      "default": "2.0.2.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LIQUIBASE_VERSION": {
+      "default": "3.4.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGJDBC_VERSION": {
+      "default": "9.4.1208.jre7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TERRAFORM_VERSION": {
+      "default": "0.6.16",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JMETER_VERSION": {
+      "default": "3.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MIN_SETUPTOOLS_VERSION": {
+      "default": "11.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "INSTALL_RUBY_VERSION": {
+      "default": "2.2.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/root/.rbenv/bin:/root/.rbenv/shims:${PATH}",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "nhsbsa/docker-centos-iac",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/nhsbsa/docker-centos-iac",
+    "https://hub.docker.com/v2/repositories/nhsbsa/docker-centos-iac",
+    "https://github.com/nhsbsa/docker-centos-iac.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Type/Middleware/Runtime/Python",
+    "Type/Middleware/Runtime/Ruby",
+    "Type/Devopsware/Build/Java/Maven",
+    "Type/Devopsware/Deployment/Ansible",
+    "Type/Devopsware/Orchestration/Terraform",
+    "Type/Infrastructure/Operating System/Linux/CentOS"
+  ],
+  "info_url": "https://hub.docker.com/r/nhsbsa/docker-centos-iac",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

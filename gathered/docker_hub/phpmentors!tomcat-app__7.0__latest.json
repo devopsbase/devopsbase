@@ -1,0 +1,160 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/phpmentors/tomcat-app",
+    "repository_url": "https://hub.docker.com/v2/repositories/phpmentors/tomcat-app",
+    "tags_url": "https://hub.docker.com/v2/repositories/phpmentors/tomcat-app/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/phpmentors/tomcat-app/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/phpmentors/tomcat-app/autobuild",
+    "user": "phpmentors",
+    "name": "tomcat-app",
+    "namespace": "phpmentors",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 455,
+    "last_updated": "2016-10-14T18:53:31.890707Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "7.0",
+        "full_size": 298519228,
+        "id": 140468,
+        "repository": 149945,
+        "creator": 150199,
+        "last_updater": 150199,
+        "last_updated": "2016-10-14T18:53:31.592786Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "phpmentors-jp/docker-images"
+  },
+  "name": "phpmentors/tomcat-app Docker container",
+  "description": "Tomcat application image using Maven",
+  "readme": "# PHP Mentors Docker Images\n\n## Repositories\n\n* [phpmentors/maven-app](https://hub.docker.com/r/phpmentors/maven-app/) based on [java](https://hub.docker.com/_/java/)\n* [phpmentors/mysql](https://registry.hub.docker.com/u/phpmentors/mysql/) based on [mysql](https://registry.hub.docker.com/_/mysql/)\n* [phpmentors/node-browser-app](https://registry.hub.docker.com/u/phpmentors/node-browser-app/) based on [node](https://registry.hub.docker.com/_/node/)\n* [phpmentors/php-app](https://registry.hub.docker.com/u/phpmentors/php-app/) based on [ubuntu](https://registry.hub.docker.com/_/ubuntu/)\n* [phpmentors/sphinx-app](https://hub.docker.com/r/phpmentors/sphinx-app/) based on [nginx](https://hub.docker.com/_/nginx/)\n* [phpmentors/symfony-app](https://registry.hub.docker.com/u/phpmentors/symfony-app/) based on [phpmentors/php-app](https://registry.hub.docker.com/u/phpmentors/php-app/)\n* [phpmentors/tomcat-app](https://registry.hub.docker.com/u/phpmentors/tomcat-app/) based on [tomcat](https://registry.hub.docker.com/_/tomcat/)\n\n## Support\n\nIf you find a bug or have a question, or want to request a feature, create an issue or pull request for it on [Issues](https://github.com/phpmentors-jp/docker-images/issues).\n\n## Copyright\n\nCopyright (c) 2014-2016 KUBO Atsuhiro, All rights reserved.\n\n## License\n\n[The MIT License](http://opensource.org/licenses/MIT)\n",
+  "dockerfile": "#\n# tomcat-app\n#\n\nFROM tomcat:7.0\nMAINTAINER KUBO Atsuhiro <kubo@iteman.jp>\n\nRUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections\nRUN apt-get update\nRUN apt-get -y upgrade\nRUN apt-get install -y locales\nRUN apt-get install -y apt-utils\nRUN apt-get install -y supervisor\nRUN apt-get install -y git\nRUN apt-get install -y less vim-tiny\nRUN apt-get install -y sudo\nRUN apt-get install -y openjdk-7-jdk\n\n# Supervisor\nRUN mkdir -p /var/log/supervisor\nADD supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf\n\n# Maven\nENV MAVEN_VERSION 3.3.9\nENV MAVEN_HOME /usr/share/maven\nRUN curl -fsSLk https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - -C /usr/share && mv /usr/share/apache-maven-$MAVEN_VERSION $MAVEN_HOME\n\n# Tomcat\nRUN sed -i \"s/\\(<tomcat-users>\\)/\\\\1\\\\n  <role rolename=\\\"manager-gui\\\"\\/>\\\\n  <role rolename=\\\"manager-script\\\"\\/>\\\\n  <user username=\\\"admin\\\" password=\\\"\\\" roles=\\\"manager-gui,manager-script\\\"\\/>/\" /usr/local/tomcat/conf/tomcat-users.xml\n\n# Tomcat application\nADD app/init /usr/local/sbin/app-init\nRUN chmod 755 /usr/local/sbin/app-init\nADD app/mvn /usr/local/bin/mvn\nRUN chmod 755 /usr/local/bin/mvn\nADD app/tomcat-jpda /usr/local/sbin/tomcat-jpda\nRUN chmod 755 /usr/local/sbin/tomcat-jpda\n\n# System\nRUN dpkg-reconfigure -f noninteractive locales\nADD system/init /usr/local/sbin/system-init\nRUN chmod 755 /usr/local/sbin/system-init\nADD system/locale.sh /usr/local/sbin/system-locale.sh\nADD system/timezone.sh /usr/local/sbin/system-timezone.sh\n\n# Others\nRUN mkdir -p /var/app\nRUN echo \"This file is a placeholder to expose /var/app directory after creating a new container from Kitematic.\" > /var/app/.placeholder\nVOLUME [\"/var/app\"]\n\n# Command\nCMD [\"/usr/local/sbin/system-init\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "supervisor/supervisord.conf",
+        "dest": "/etc/supervisor/conf.d/supervisord.conf"
+      },
+      {
+        "source": "app/init",
+        "dest": "/usr/local/sbin/app-init"
+      },
+      {
+        "source": "app/mvn",
+        "dest": "/usr/local/bin/mvn"
+      },
+      {
+        "source": "app/tomcat-jpda",
+        "dest": "/usr/local/sbin/tomcat-jpda"
+      },
+      {
+        "source": "system/init",
+        "dest": "/usr/local/sbin/system-init"
+      },
+      {
+        "source": "system/locale.sh",
+        "dest": "/usr/local/sbin/system-locale.sh"
+      },
+      {
+        "source": "system/timezone.sh",
+        "dest": "/usr/local/sbin/system-timezone.sh"
+      }
+    ],
+    "expose": [],
+    "volume": [
+      "[\"/var/app\"]"
+    ],
+    "run": [
+      "echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections",
+      "apt-get update",
+      "apt-get -y upgrade",
+      "apt-get install -y locales",
+      "apt-get install -y apt-utils",
+      "apt-get install -y supervisor",
+      "apt-get install -y git",
+      "apt-get install -y less vim-tiny",
+      "apt-get install -y sudo",
+      "apt-get install -y openjdk-7-jdk",
+      "mkdir -p /var/log/supervisor",
+      "curl -fsSLk https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - -C /usr/share && mv /usr/share/apache-maven-$MAVEN_VERSION $MAVEN_HOME",
+      "sed -i \"s/\\(<tomcat-users>\\)/\\\\1\\\\n  <role rolename=\\\"manager-gui\\\"\\/>\\\\n  <role rolename=\\\"manager-script\\\"\\/>\\\\n  <user username=\\\"admin\\\" password=\\\"\\\" roles=\\\"manager-gui,manager-script\\\"\\/>/\" /usr/local/tomcat/conf/tomcat-users.xml",
+      "chmod 755 /usr/local/sbin/app-init",
+      "chmod 755 /usr/local/bin/mvn",
+      "chmod 755 /usr/local/sbin/tomcat-jpda",
+      "dpkg-reconfigure -f noninteractive locales",
+      "chmod 755 /usr/local/sbin/system-init",
+      "mkdir -p /var/app",
+      "echo \"This file is a placeholder to expose /var/app directory after creating a new container from Kitematic.\" > /var/app/.placeholder"
+    ],
+    "workdir": [],
+    "from": "tomcat:7.0",
+    "maintainer": "KUBO Atsuhiro <kubo@iteman.jp>",
+    "env": {
+      "MAVEN_VERSION": "3.3.9",
+      "MAVEN_HOME": "/usr/share/maven"
+    },
+    "cmd": "[\"/usr/local/sbin/system-init\"]"
+  },
+  "source_repository_url": "https://github.com/phpmentors-jp/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/phpmentors-jp/docker-images",
+  "docker_repository": "phpmentors/tomcat-app",
+  "docker_image": "phpmentors/tomcat-app",
+  "parameters_schema": {
+    "MAVEN_VERSION": {
+      "default": "3.3.9",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_HOME": {
+      "default": "/usr/share/maven",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "phpmentors/tomcat-app",
+  "revision": "7.0",
+  "uris": [
+    "https://hub.docker.com/r/phpmentors/tomcat-app",
+    "https://hub.docker.com/v2/repositories/phpmentors/tomcat-app",
+    "https://github.com/phpmentors-jp/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Style/Virtualization Level/Application",
+    "Type/Devopsware/Build/Java/Maven",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/phpmentors/tomcat-app",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

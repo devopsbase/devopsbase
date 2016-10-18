@@ -1,0 +1,100 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/chedi/django-1.6",
+    "repository_url": "https://hub.docker.com/v2/repositories/chedi/django-1.6",
+    "tags_url": "https://hub.docker.com/v2/repositories/chedi/django-1.6/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/chedi/django-1.6/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/chedi/django-1.6/autobuild",
+    "user": "chedi",
+    "name": "django-1.6",
+    "namespace": "chedi",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 242,
+    "last_updated": "2015-10-19T20:38:50.744722Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "f20",
+        "full_size": 203880404,
+        "id": 12102,
+        "repository": 10064,
+        "creator": 13150,
+        "last_updater": 13150,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "Chedi/dk_f20_django_1.6"
+  },
+  "name": "chedi/django-1.6 Docker container",
+  "description": "",
+  "readme": "dk_f20_django_1.6\n=================\n\nDocker container for django 1.6 + gunicorn + psycopg2 + some django goodies\n\n\n##Info:\nThis Dockerfile creates a container running a gunicorn service on port 8080 for django application based on the fedora 20 distro\n\n* expose port 8080\n* initializes the django application from remote git repository (support for github/bitbucket only for now)\n\n\n##Usage:\n\nYou can rebuild the container by yourself using :\n\n```\ndocker build git://github.com/Chedi/dk_f20_django_1.6.git\n```\n\nor directly download it from the docker index \n\n```\ndocker pull chedi/django-1.6\n```\n\nonce the image ready you can run it with something like this (see my [container_fall repo](https://github.com/Chedi/container_fall)):\n\n```\n\nexport DATA_CONTAINER=\"chedi/psql-9.3:f20\"\nexport CODE_CONTAINER=\"chedi/django-1.6:f20\"\n\nexport APPLICATION_NAME=\"epsilon\"\nexport APPLICATION_REPO=\"git@bitbucket.org:chedi/epsilon_comming_soon.git\"\n\nexport APPLICATION_DATA_PATH=\"/var/data/psql\"\nexport APPLICATION_CODE_PATH=\"/var/data/application\"\n\ndocker pull $DATA_CONTAINER\ndocker pull $CODE_CONTAINER\n\nmkdir -p \"$APPLICATION_DATA_PATH\"\nmkdir -p \"$APPLICATION_CODE_PATH\"\n\ndocker run -t -d -P -v \"$APPLICATION_DATA_PATH\":/var/lib/pgsql \"$DATA_CONTAINER\"\n\ndocker run -t -d -P -v \"$APPLICATION_CODE_PATH\":\"/var/www/project/$APPLICATION_NAME\" \\\n-e APPLICATION_NAME=\"$APPLICATION_NAME\" -e APPLICATION_REPO=\"$APPLICATION_REPO\"      \\\n-e SSH_KEY=\"$(<id_rsa)\" \"$CODE_CONTAINER\"\n\n```\n\nAs you notice I use multiple environment variables and volume mounting to get everthing in place, this example uses also  my [postgresql container](https://github.com/Chedi/dk_f20_psql_9.3).\n\n\nThe database and application folders are mounted from the host machine respectively under:\n\n* /var/data/psql\n* /var/data/application\n\nI also use my private rsa key for authenification so that must be in the same path as the script launching these commands, or if you have to have it somewhere elese modifiy the\n\n```\n-e SSH_KEY=\"$(<id_rsa)\"\n```\n\npart of the script\n\n##Meta:\nBuilt with docker-io 0.7.6 on Centos 6.4\n",
+  "dockerfile": "FROM chedi/f20_micro\nMAINTAINER Chedi Toueiti <chedi.toueiti@gmail.com>\n\nADD scripts/ /var/www/project/\n\nRUN chmod 0755 /var/www/project/start.sh                          && \\\n    chmod 0755 /var/www/project/setup_gunicorn.sh                 && \\\n                                                                     \\\n    yum install python-pip python-virtualenv                         \\\n                libjpeg-turbo-devel zlib-devel libpng-devel          \\\n                libtiff-devel libwebp-devel gcc lcms2-devel          \\\n                postgresql-devel freetype-devel git-core             \\\n                openssh-server supervisor                            \\\n                -y                                                && \\\n                                                                     \\\n    yum clean all && yum history new                              && \\\n    truncate -c -s 0 /var/log/yum.log                             && \\\n    rm -fr /usr/share/docs                                        && \\\n    mv /usr/share/locale/en_US /tmp                               && \\\n    rm -fr /usr/share/locale/*                                    && \\\n    mv /tmp/en_US /usr/share/locale/                              && \\\n    rm -fr /var/lib/yum/yumdb                                     && \\\n    rm -fr var/lib/rpm/Packages/*                                 && \\\n    /usr/sbin/sshd-keygen                                         && \\\n    echo 'root:chikaka' |chpasswd                                 && \\\n                                                                     \\\n    virtualenv --no-site-packages /var/www/project/ve             && \\\n    source /var/www/project/ve/bin/activate                       && \\\n    pip install -r /var/www/project/base_requirements.txt         && \\\n                                                                     \\\n    mkdir -p /root/.ssh                                           && \\\n    echo -e \"Host github.com\\n\\tStrictHostKeyChecking no\\n\" >>       \\\n         /root/.ssh/config                                        && \\\n                                                                     \\\n    echo -e \"Host bitbucket.org\\n\\tStrictHostKeyChecking no\\n\" >>    \\\n         /root/.ssh/config                                        && \\\n                                                                     \\\n    yum remove libjpeg-turbo-devel zlib-devel libpng-devel           \\\n               libtiff-devel libwebp-devel gcc lcms2-devel           \\\n               postgresql-devel freetype-devel glibc-devel           \\\n               cpp -y\n\nADD supervisord.conf /etc/supervisord.conf\n\nEXPOSE 22 8080\n\nCMD [\"/bin/supervisord\"]",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "scripts/",
+        "dest": "/var/www/project/"
+      },
+      {
+        "source": "supervisord.conf",
+        "dest": "/etc/supervisord.conf"
+      }
+    ],
+    "expose": [
+      22
+    ],
+    "volume": [],
+    "run": [
+      "chmod 0755 /var/www/project/start.sh                          &&     chmod 0755 /var/www/project/setup_gunicorn.sh                 &&                                                                          yum install python-pip python-virtualenv                                         libjpeg-turbo-devel zlib-devel libpng-devel                          libtiff-devel libwebp-devel gcc lcms2-devel                          postgresql-devel freetype-devel git-core                             openssh-server supervisor                                            -y                                                &&                                                                          yum clean all && yum history new                              &&     truncate -c -s 0 /var/log/yum.log                             &&     rm -fr /usr/share/docs                                        &&     mv /usr/share/locale/en_US /tmp                               &&     rm -fr /usr/share/locale/*                                    &&     mv /tmp/en_US /usr/share/locale/                              &&     rm -fr /var/lib/yum/yumdb                                     &&     rm -fr var/lib/rpm/Packages/*                                 &&     /usr/sbin/sshd-keygen                                         &&     echo 'root:chikaka' |chpasswd                                 &&                                                                          virtualenv --no-site-packages /var/www/project/ve             &&     source /var/www/project/ve/bin/activate                       &&     pip install -r /var/www/project/base_requirements.txt         &&                                                                          mkdir -p /root/.ssh                                           &&     echo -e \"Host github.com\\n\\tStrictHostKeyChecking no\\n\" >>                /root/.ssh/config                                        &&                                                                          echo -e \"Host bitbucket.org\\n\\tStrictHostKeyChecking no\\n\" >>             /root/.ssh/config                                        &&                                                                          yum remove libjpeg-turbo-devel zlib-devel libpng-devel                          libtiff-devel libwebp-devel gcc lcms2-devel                          postgresql-devel freetype-devel glibc-devel                          cpp -y"
+    ],
+    "workdir": [],
+    "from": "chedi/f20_micro",
+    "maintainer": "Chedi Toueiti <chedi.toueiti@gmail.com>",
+    "cmd": "[\"/bin/supervisord\"]"
+  },
+  "source_repository_url": "git://github.com/Chedi/dk_f20_django_1.6.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Chedi/dk_f20_django_1.6",
+  "docker_repository": "chedi/django-1.6",
+  "docker_image": "chedi/django-1.6",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        22
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "chedi/django-1.6",
+  "revision": "f20",
+  "uris": [
+    "https://hub.docker.com/r/chedi/django-1.6",
+    "https://hub.docker.com/v2/repositories/chedi/django-1.6",
+    "git://github.com/Chedi/dk_f20_django_1.6.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python"
+  ],
+  "info_url": "https://hub.docker.com/r/chedi/django-1.6",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

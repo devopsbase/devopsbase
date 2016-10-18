@@ -1,0 +1,145 @@
+{
+  "name": "openresty Chef cookbook",
+  "chef_cookbook_name": "openresty",
+  "revision": "0.5.3",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/openresty",
+    "https://supermarket.chef.io/cookbooks/openresty/download",
+    "https://supermarket.chef.io/cookbooks/openresty/versions/0.5.3",
+    "https://supermarket.chef.io/cookbooks/openresty/versions/0.5.3/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/openresty/versions/0.5.3",
+    "https://supermarket.chef.io/api/v1/cookbooks/openresty",
+    "https://supermarket.chef.io/api/v1/cookbooks/openresty/versions/0.5.3/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Mode/Executable/Bundle",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/openresty",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/openresty/versions/0.5.3/download",
+  "deprecated": false,
+  "created": "2013-02-25T04:33:27.000Z",
+  "updated": "2016-09-16T09:11:36.916Z",
+  "description": "Installs and configures the OpenResty NGINX bundle",
+  "maintainer": {
+    "name": "priestjim",
+    "email": "pj@ezgr.net"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": false,
+  "rating": null,
+  "followers_count": 12,
+  "downloads_count": 12074763,
+  "downloads_count_revision": 45,
+  "repository_url": "https://github.com/priestjim/chef-openresty",
+  "issues_url": "https://github.com/priestjim/chef-openresty/issues",
+  "chef_source_url": "https://github.com/priestjim/chef-openresty",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nInstalls the OpenResty NGINX bundle (http://www.openresty.org) from source and\nsets up configuration handling similar to Debian's Apache2 scripts. It also\nprovides an OHAI plugin for configuration detection and an LWRP for easy site\nactivation and deactivation.\n\nThe latest and greatest revision of this cookbook will always be available\nat https://github.com/priestjim/chef-openresty\n\nRequirements\n============\n\nCookbooks\n---------\n\nThe following cookbooks are direct dependencies because they're used\nfor common \"default\" functionality.\n\n* build-essential\n* ohai (for openresty::ohai_plugin)\n* logrotate (for log file rotation)\n* apt\n* yum\n\nIn order to install the OpenResty `postgresql` module you'll also need\nthe `postgresql` cookbook.\n\nIf you want to link NGINX to the very performant jemalloc library, you'll\nneed the `jemalloc` cookbook.\n\nPlatform\n--------\n\nThe following platforms are supported and tested using test-kitchen:\n\n* Ubuntu 16.04\n* CentOS 7.2\n\nOther Debian and RHEL family distributions are assumed to work.\n\nChef Server\n-----------\n\nThe cookbook converges best on Chef installations >= 10.16.2\n\nAwesome stuff\n=============\n\nThis cookbook includes automatic activation of some nice NGINX features such as:\n\n* **By default LUAJIT-enabled build**: The cookbook by default activates the LUAJIT\n  feature of OpenResty (since this is the main reason to use the bundle) and\n  accounts for all the peculiarities this option may bring.\n\n* **Automatic CPU affinity**: Automatically sets the worker-to-core affinity for all\n  of the NGINX worker processes. For a scenario of 8 workers and 8 cores, the\n  following directive gets generated:\n\n        worker_cpu_affinity 00000001 00000010 00000100 00001000 00010000 00100000 01000000 10000000;\n\n  This feature can offer a nice performance boost, since it helps the CPUs maintain\n  cache locality (especially when used in conjunction to the LUA module)\n\n* **Automatic detection and activation of the AIO feature**: The cookbook automatically\n  detects support (Linux kernel >= 2.6.22) and enables the `aio` directive of NGINX.\n\n* **Automatic IPv6 detection and activation**: The cookbook automatically detects and\n  activates IPv6 support on NGINX.\n\n* **Support for custom PCRE runtime**: The cookbook can use custom PCRE sources in order\n  to statically link to a custom-compiled PCRE runtime that supports JIT regular expression\n  compilation which will significantly speed up RE execution in the NGINX and Lua environments.\n\n* **Support for LUA Rocks**: The cookbook installs support for LUA Rocks embedded in the LUAJIT\n  installation, allowing you to install any rock you want, right from the official Rocks site. It\n  also provides an LWRP for installing rocks via your recipes.\n\nAttributes\n==========\n\nNode attributes for this cookbook are logically separated into different files.\n\n## default.rb\n\nGenerally used attributes. Some have platform specific values. See\n`attributes/default.rb`. \"The Config\" refers to \"nginx.conf\" the main config file.\n\n* `node['openresty']['source']['version']` - The OpenResty version to be installed from source.\n\n* `node['openresty']['source']['url']` - The URL for downloading the selected version.\n\n* `node['openresty']['source']['checksum']` - The SHA-256 checksum for the selected version.\n\n* `node['openresty']['source']['file_prefix']` - The main source directory name.\n  `ngx_` got dropped in newer OpenResty versions.\n\n* `node['openresty']['dir']` - Location for NGINX configuration.\n\n* `node['openresty']['log_dir']` - Location for NGINX logs.\n\n* `node['openresty']['cache_dir']` - Location for NGINX cache files.\n\n* `node['openresty']['run_dir']` - Location for NGINX state and pid files.\n\n* `node['openresty']['binary']` - Location for NGINX executable.\n\n* `node['openresty']['pid']` - The exact NGINX pid filename.\n\n* `node['openresty']['source']['conf_path']` - Exact filename for the NGINX configuration file.\n\n* `node['openresty']['source']['prefix']` - Installation prefix for miscellaneous data.\n\n* `node['openresty']['source']['path']` - Download and compilation temporary path.\n\n* `node['openresty']['source']['default_configure_flags']` - A set of default configuration\n  flags for the source compilation, generally best left untouched unless you\n  *really* know what you're doing.\n\n* `node['openresty']['modules']` - An array of recipe names that are included\n  from this cookbook and add additional features to the source compilation process.\n\n* `node['openresty']['extra_modules']` - An array of full recipe references (in the\n  form of cookbook::recipe), for you to include extra-cookbook modules in the same\n  manner as above.\n\n* `node['openresty']['configure_flags']` - An array of extra configure flags to\n  be included included along the default configure flags.\n\n* `node['openresty']['user']` - User that NGINX will run as.\n* `node['openresty']['group]` - Group for NGINX.\n\n* `node['openresty']['ipv6']` - Enables IPv6 support for NGINX. Automatically\n  detected and enabled.\n\n* `node['openresty']['gzip']` - Whether to use gzip, can be \"on\" or \"off\"\n\n* `node['openresty']['gzip_http_version']` - used for config value of `gzip_http_version`.\n\n* `node['openresty']['gzip_comp_level']` - used for config value of `gzip_comp_level`.\n* `node['openresty']['gzip_proxied']` - used for config value of `gzip_proxied`.\n\n* `node['openresty']['gzip_vary']` - used for config value of `gzip_vary`.\n\n* `node['openresty']['gzip_buffers']` - used for config value of `gzip_buffers`.\n\n* `node['openresty']['gzip_types']` - used for config value of `gzip_types` - must be an Array.\n\n* `node['openresty']['keepalive']` - Whether to use `keepalive_timeout`,\n  any value besides \"on\" will leave that option out of the config.\n\n* `node['openresty']['keepalive_timeout']` - used for config value of\n  `keepalive_timeout`.\n\n* `node['openresty']['worker_processes']` - used for config value of\n  `worker_processes`.\n\n* `node['openresty']['worker_connections']` - used for config value of\n  `events { worker_connections }`\n\n* `node['openresty']['worker_rlimit_nofile']` - used for config value of\n  `worker_rlimit_nofile`. Can replace any \"ulimit -n\" command. The\n  value depend on your usage (cache or not) but must always be\n  superior than worker_connections.\n\n* `node['openresty']['worker_auto_affinity']` - Automatically computes and creates\n  CPU affinity assignments (config value `worker_cpu_affinity`) based on the\n  total number of workers and CPU cores. Can show a nice performance boost when\n  used in high request volume scenarios.\n\n* `node['openresty']['multi_accept']` - used for config value of `events {\n  multi_accept }`. Try to accept() as many connections as possible.\n  Disable by default.\n\n* `node['openresty']['event']` - used for config value of `events { use\n  }`. Set the event-model. By default NGINX looks for the most\n  suitable method for your OS. Automatically set to `epoll` for Linux >= 2.6 kernels\n\n* `node['openresty']['server_names_hash_bucket_size']` - used for config\n  value of `server_names_hash_bucket_size`.\n\n* `node['openresty']['client_max_body_size']` - used for config\n  value of `client_max_body_size`.\n\n* `node['openresty']['client_body_buffer_size']` - used for config\n  value of `client_body_buffer_size`.\n\n* `node['openresty']['large_client_header_buffers']` - used for config\n  value of `large_client_header_buffers`.\n\n* `node['openresty']['types_hash_max_size']` - used for config\n  value of `types_hash_max_size`.\n\n* `node['openresty']['types_hash_bucket_size']` - used for config\n  value of `types_hash_bucket_size`.\n\n* `node['openresty']['open_file_cache']` - used for config\n  value of `open_file_cache`. Must be an array with values used in the\n  `open_file_cache` directive of NGINX.\n\n* `node['openresty']['log_formats']` - hash of `log_format`s you want to use in\n  `nginx.conf` http context\n\n* `node['openresty']['logrotate']` - set to true to use the `logrotate_app` of the\n  `logrotate` cookbook to enable automatic log rotation of NGINX logs.\n\n* `node['openresty']['disable_access_log']` - set to true to disable the\n  general access log, may be useful on high traffic sites.\n\n* `node['openresty']['default_site_enabled']` - enable the default site\n\n* `node['openresty']['custom_pcre']` - Se to true to download and use a custom\n  PCRE source tree in order to enable RE JIT support.\n\n* `node['openresty']['link_to_jemalloc']` - Se to true to link the NGINX executable to the\n  jemalloc library. Requires the `jemalloc` cookbook.\n\n* `node['openresty']['generate_dhparams']` - Set to true to generate a 2048-bit Diffie-Helman parameter file\n  for increased security.\n\n* `node['openresty']['resolver']` - Set a customer DNS resolver IP address for internal domain name resolution.\n\n* `node['openresty']['resolver_ttl']` - Set the cache time to live for the resolved domains by the resolver.\n\n* `node['openresty']['lua_package_path']` - The default LUA package path\n\n* `node['openresty']['lua_package_cpath']` - The default LUA package path for C libraries\n\n## service.rb\n\nDefine service-specific attributes\n\n* `node['openresty']['service']['recipe']` - Set it to a fully qualified Chef recipe definition\n  like `openresty::service_init`. The recipe should initialize the service definition and maybe\n  start OpenResty. The default installs and initializes a SYSV-init-style service.\n\n* `node['openresty']['service']['resource']` - Set it to the resource string, i.e. `service[nginx]`\n  that will be notified on configuration file changes.\n\n* `node['openresty']['service']['restart_on_update']` - Set it to `true` to enable automatic service\n  restart after updating the OpenResty binary.\n\n* `node['openresty']['service']['start_on_boot']` - Set it to `true` to enable automatic service\n  activation and startup via the selected init service. Currently used by the default `init`\n  service handler.\n\n* `node['openresty']['service']['defaults_file_cookbook']` - Optionally specify a cookbook location \n  for a custom defaults file that contains exported environment variables for Nginx\n\n* `node['openresty']['service']['defaults_file_template']` - Optionally specify the template name, \n  if the previous `defaults_file_cookbook` attribute is not set to the current cookbook.\n\n\n## realip.rb\n\nFrom: http://wiki.nginx.org/HttpRealIpModule\n\n* `node['openresty']['realip']['header']` - Header to use for the RealIp\n  Module; only accepts \"X-Forwarded-For\" or \"X-Real-IP\"\n\n* `node['openresty']['realip']['addresses']` - Addresses to use for the\n  `http_realip` configuration.\n\n## fair.rb\n\nFrom: http://wiki.nginx.org/HttpUpstreamFairModule\n\n* `node['openresty']['fair']['url']` - GitHub URL to checkout the fair module from\n\n* `node['openresty']['fair']['name']` - Directory name to checkout the module to\n\n## upload_progress.rb\n\nFrom: http://wiki.nginx.org/HttpUploadProgressModule\n\n* `node['openresty']['upload_progress']['url']` - GitHub URL to checkout the upload_progress\n  module from\n\n* `node['openresty']['upload_progress']['name']` - Directory name to checkout the\n  module to\n\n## status.rb\n\n* `node['openresty']['status']['url']` - The URL that will be exposed as the NGINX\n  status URL\n* `node['openresty']['status']['name']` - An array of IPs allowed to view the\n  status URL\n\n## or_modules.rb\n\nExplicitely activate not-automatically-activated OpenResty modules\n\n* `node['openresty']['or_modules']['luajit']` - Enables LUAJIT module compilation\n* `node['openresty']['or_modules']['luajit_binary']` - Defines the bundled `luajit` binary version\n* `node['openresty']['or_modules']['iconv']` - Enables iconv module compilation\n* `node['openresty']['or_modules']['postgres']` - Enables PostgreSQL module compilation\n* `node['openresty']['or_modules']['drizzle']` - Enables Drizzle module compilation\n\n## cache_purge.rb\n\nFrom: https://github.com/FRiCKLE/ngx_cache_purge and http://labs.frickle.com/nginx_ngx_cache_purge\n\n* `node['openresty']['cache_purge']['version']` - The version of the cache_purge module\n* `node['openresty']['cache_purge']['url']` - URL to download the cache purge module from\n* `node['openresty']['cache_purge']['checksum']` - The SHA-256 sum of the cache_purge module archive\n\n## luarocks.rb\n\n* `node['openresty']['luarocks']['version']` - The version of the luarocks pacakge to download\n* `node['openresty']['luarocks']['url']` - URL to download the luarocks package from\n* `node['openresty']['luarocks']['checksum']` - The SHA-256 sum of the luarocks archive\n* `node['openresty']['luarocks']['default_rocks']` - A hash with the names and versions of Lua rocks\n  to install by default.\n\nRecipes\n=======\n\n## default.rb\n\nThe default recipe will install the OpenResty NGINX bundle from source,\nautomatically including your selected set of modules, extra-cookbook modules and\nset up the configuration according to the Debian site enable/disable style with\n`sites-enabled` using the `nxensite` and `nxdissite` scripts provided by the\n`openresty_site` LWRP.\n\nThe recipe ensures that the required packages to build NGINX are installed (pcre,\nopenssl, compile tools). The source will be downloaded from the\n`node['openresty']['source']['url']`. The `node['openresty']['user']` will be\ncreated as a system user. The appropriate configuration and log\ndirectories and config files will be created as well according to the\nattributes `node['openresty']['dir']` and `'node['openresty']['log_dir']`.\n\nThe recipe attempts to detect whether additional modules should be\nadded to the configure command through recipe inclusion (see below),\nand whether the version or configuration flags have changed and should\ntrigger a recompile.\n\nMany features are automatically detected and enabled into the NGINX default\nconfiguration file such as AIO support for Linux kernels >= 2.6.22, IPv6 support\nand CPU worker affinity.\n\nThe NGINX service can be either managed with SYSV init style scripts that are already included in\nthe cookbook or you can define your own. You only have to define the service resource used for\nnotifications (like `runit_service[nginx]` or `service[nginx]`) and optionally a recipe to be included\nin the convergence flow (like `openresty::service_init` or `my_openresty:::service_runit`).\n\nThe cookbook generates various include files (.inc) that are available for inclusion\nin standard NGINX site definition files via the `#include` directive. Look in the\n`conf.d` directory of `node['openresty']['dir']` location for them!\n\nIncludes the `ohai_plugin` recipe so the plugin is available.\n\n## ohai_plugin.rb\n\nThis recipe provides an Ohai plugin as a template. It is automatically included\nby the `default.rb` recipe.\n\n## http_*_module.rb, fair_module.rb, upload_progress_module.rb, cache_purge_module.rb\n\nThese recipes are automatically included by the `default.rb` recipe according to\nthe `node['openresty']['modules']` array and provide compiled-in additional\nfeatures to the standard OpenResty NGINX compile. Check each recipe separately\nfor more information.\n\n## http_stub_status_module.rb\n\nSpecial mention needs to be made for the stub status module. The approach followed\nhere is to create an _include_ file with proper directives (set in the\n`status_module.rb` attribute file) that can be included in any NGINX configuration\nvirtual host via the include directive:\n\n    include /etc/nginx/conf.d/nginx_status.conf.inc;\n\n## luarocks.rb\n\nThe `luarocks` recipe installs the LUA rocks package management system for the\nLUAJIT bundle that comes with OpenResty. You can define a set of rocks to install by\ndefault using the `node['openresty']['luarocks']['default_rocks']` hash.\n\nFor more information on using LUA rocks with OpenResty check out http://openresty.org/#UsingLuaRocks\n\nAdding New Modules\n------------------\n\nTo add a new module to be compiled into NGINX in the source recipe,\nthe node's run state is manipulated in a recipe, and the module as a\nrecipe should be added to `node['openresty']['modules']`. For\nexample:\n\n    node.run_state['openresty_configure_flags'] =\n      node.run_state['openresty_configure_flags'] | [\"--with-http_stub_status_module\"]\n\nThe recipe will be included by `recipe[nginx::default]` automatically,\nadding the configure flags. Add any other configuration templates or\nother resources as required. See the recipes described above for\nexamples.\n\nIn order to include extra-cookbook modules (most probably via an _application_\ncookbook), you can use the `node['openresty']['extra_modules']` array,\nwhich takes as elements full recipe references like\n\n    'recipe[my_openresty::module_42istheanswerforeveryhing]'\n\nThe extra-cookbook modules will be included in the same manner as the standard\nintra-cookbook modules.\n\nLWRP\n====\n\n## site\n\nThe cookbook includes the `openresty_site` LWRP (in contrast to the original\n`nginx_site` cookbook definition script). The LWRP can be used in the same manner\nas `nginx_site` and offers resource notifications (an advantage LWRPs\noffer over simpler definitions). It also includes a `timing` parameter that can\nbe used to notify the `nginx` process to restart immediately based on configuration\nfile changes. It can also deploy your website's configuration in the appropriate place\nif you define the `template` parameter with the filename of your website's configuration template\n(variables for this template can be defined with `variables`) in the cookbook where you've also\ndefined the `openresty_site` resource. The LWRP can be used such as:\n\n    openresty_site 'site.example.com' do\n      template 'site.example.com.conf.erb'\n      variables hostname: 'site.example.com'\n      action :enable\n      timing :immediately\n    end\n\n## luarock\n\nThe cookbook includes a LUA rock LWRP that allows for easy installation of LUA rocks,\navailable to use with the LUAJIT system bundled with OpenResty. You can install and remove\nLUA rocks using the `install` and `remove` actions of the LWRP. A sample follows:\n\n    openresty_luarock 'md5' do\n      action :install\n      version '1.1.2'\n    end\n\n    openresty_luarock 'luafilesystem' do\n      action :remove # Removes all versions installed\n    end\n\nOhai Plugin\n===========\n\nThe `ohai_plugin` recipe includes an Ohai plugin. It will be\nautomatically installed and activated, providing the following\nattributes via ohai, no matter how NGINX is installed (source or\npackage):\n\n* `node['nginx']['version']` - version of NGINX\n* `node['nginx']['configure_arguments']` - options passed to\n  ./configure when NGINX was built.\n* `node['nginx']['prefix']` - installation prefix\n* `node['nginx']['conf_path']` - configuration file path\n\nThe Ohai plugin is generally used to determine whether control\nattributes for building NGINX have changed.\n\nUsage\n=====\n\nInclude the recipe on your node or role. Modify the\nattributes as required in a role cookbook to change how various\nconfiguration is applied per the attributes section above.\n\nIf you need to alter the location of various cookbook_file\ndirectives, use `chef_rewind`.\n\nLicense and Author\n==================\n\n- Author:: Panagiotis Papadomitsos (<pj@ezgr.net>)\n\nA whole lot of this cookbook was based on original work by:\n\n- Author:: Joshua Timberman (<joshua@opscode.com>)\n- Author:: Adam Jacob (<adam@opscode.com>)\n- Author:: AJ Christensen (<aj@opscode.com>)\n- Author:: Jamie Winsor (<jamie@vialstudios.com>)\n\nCopyright 2012, Panagiotis Papadomitsos\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "oracle",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/logrotate",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ohai",
+      "revision": ">= 4.1.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/git",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/postgresql",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/jemalloc",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "openresty": "Installs the OpenResty NGINX bundle and sets up configuration with Debian apache style sites-enabled/sites-available"
+  }
+}

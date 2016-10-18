@@ -1,0 +1,76 @@
+{
+  "name": "hdp-pig Juju charm",
+  "juju_charm_name": "hdp-pig",
+  "revision": "cs:trusty/hdp-pig-4",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/hdp-pig",
+    "https://jujucharms.com/hdp-pig/trusty",
+    "https://jujucharms.com/hdp-pig/trusty/4",
+    "https://api.jujucharms.com/v5/hdp-pig",
+    "https://api.jujucharms.com/v5/trusty/hdp-pig",
+    "https://api.jujucharms.com/v5/trusty/hdp-pig-4"
+  ],
+  "labels": [
+    "Juju charm",
+    "application",
+    "Type/Middleware/Runtime/Java",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Test",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Processing/Hadoop"
+  ],
+  "info_url": "https://jujucharms.com/hdp-pig",
+  "package_url": "https://api.jujucharms.com/v5/trusty/hdp-pig-4/archive",
+  "created": "2015-06-17T09:35:29.392Z",
+  "updated": "2015-06-17T09:35:29.392Z",
+  "description": "Apache™ Pig allows you to write complex MapReduce operation\n\nApache™ Pig allows you to write complex MapReduce transformations using a \nsimple scripting language. Pig Latin (the language) defines a set of \ntransformations on a data set such as aggregate, join and sort.  \nPig translates the Pig Latin script into MapReduce so that it can be executed\nwithin Hadoop®. Pig Latin is sometimes extended using UDFs \n(User Defined Functions), which the user can write in Java or a scripting \nlanguage and then call directly from the Pig Latin\n",
+  "maintainer": {
+    "name": "bigdata-charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "bigdata-charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/mapred",
+      "self_resolve": true,
+      "juju_interface": "mapred",
+      "juju_name": "hadoop-nodes",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/dfs",
+      "self_resolve": true,
+      "juju_interface": "dfs",
+      "juju_name": "namenode",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/mapred",
+      "self_resolve": true,
+      "juju_interface": "mapred",
+      "juju_name": "resourcemanager",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "license": "# Hortonworks Pig overview\nHortonworks HDP 2.1 Apache Pig is a platform for analyzing large data sets that\nconsists of a high-level language for expressing data analysis programs, coupled\nwith infrastructure for evaluating these programs. The salient property of Pig\nprograms is that their structure is amenable to substantial parallelization, \nwhich in turns enables them to handle very large data sets.\nAt the present time, Pig's infrastructure layer consists of a compiler that\nproduces sequences of Map-Reduce programs, for which large-scale parallel \nimplementations already exist (e.g., the Hadoop subproject). Pig's language\nlayer currently consists of a textual language called Pig Latin, which has the \nfollowing key properties:\n\n - Ease of programming. It is trivial to achieve parallel execution of simple, \n   \"embarrassingly parallel\" data analysis tasks. Complex tasks comprised of \n   multiple interrelated data transformations are explicitly encoded as data \n   flow sequences, making them easy to write, understand, and maintain.\n - Optimization opportunities. The way in which tasks are encoded permits the \n   system to optimize their execution automatically, allowing the user to focus \n   on semantics rather than efficiency.\n - Extensibility. Users can create their own functions to do special-purpose \n   processing.\n\nPig has two execution modes or exectypes:\n - Local Mode - To run Pig in local mode, you need access to a single machine;\n   all files are installed and run using your local host and file system. Specify \n   local mode using the -x flag (pig -x local). \n - Mapreduce Mode - To run Pig in mapreduce mode, you need access to a Hadoop\n   cluster\n   and HDFS installation. Mapreduce mode is the default mode; you can, but don't\n   need to, specify it using the -x flag (pig OR pig -x mapreduce).\n \nThis charm provides Pig client with both execution modes (above).\n\n# Hortonworks Pig usage\n\nStep-by-step instructions on using the charm:\n    **Local Mode**\n    juju deploy hdp-pig hdp-pig\n    \n    **Mapreduce Mode - remote hadoop cluster**\n      - Install Hadoop HDP 2.1 cluster\n      juju deploy hdp-hadoop yarn-hdfs-master\n      juju deploy hdp-hadoop compute-node\n      juju add-unit -n 2 compute-node\n      juju add-relation yarn-hdfs-master:namenode compute-node:datanode\n      juju add-relation yarn-hdfs-master:resourcemanager compute-node:nodemanager\n      \n      - Install HDP Pig\n      juju deploy hdp-pig hdp-pig\n      juju add-relation hdp-pig:namenode yarn-hdfs-master:namenode\n      juju add-relation hdp-pig:resourcemanager yarn-hdfs-master:resourcemanager\n\nSmoke test local mode deployment:\n    1) pig -x local\n    \nSmoke test mapreduce deployment:\n    **Verify connections to remote cluster:**\n    1) juju ssh hdp-pig\n    2) sudo su $HDFS_USER\n    3) hadoop version             <= verifies if hadoop client is installed \n    4) hdfs dfsadmin -report      <= verifies if Pig client has been connected to the\n                                     remote HDFS server\n    5) yarn rmadmin -getGroups    <= verifies if Pig client has been connected to the\n                                     remote ResourceManager server\n    Run a Pig Script Test:\n    1) hdfs dfs -mkdir -p /user/hduser \n    2) hdfs dfs -copyFromLocal /etc/passwd /user/hduser/passwd\n    3) vim /tmp/id.pig\n    4) add following Pig script commands, save and exit:\n       A = load '/user/hduser/passwd' using PigStorage(':');\n       B = foreach A generate \\$0 as id; store B into '/tmp/id.out';\n    5) pig -l /tmp/pig.log /tmp/id.pig\n    6) hadoop fs -cat /tmp/id.out/part-m-00000   <= check the result on the \n       hadoop cluster\n    \n\n\n## Developer Contact Information \n amir sanjar <amir.sanjar@canonical.com>\n\n### Upstream Hortonworks Links\n * Hortonworks Upstream website  http://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.1.3/bk_installing_manually_book/content/rpm-chap1.html\n\n",
+  "readme": "# Hortonworks Pig overview\nHortonworks HDP 2.1 Apache Pig is a platform for analyzing large data sets that\nconsists of a high-level language for expressing data analysis programs, coupled\nwith infrastructure for evaluating these programs. The salient property of Pig\nprograms is that their structure is amenable to substantial parallelization, \nwhich in turns enables them to handle very large data sets.\nAt the present time, Pig's infrastructure layer consists of a compiler that\nproduces sequences of Map-Reduce programs, for which large-scale parallel \nimplementations already exist (e.g., the Hadoop subproject). Pig's language\nlayer currently consists of a textual language called Pig Latin, which has the \nfollowing key properties:\n\n - Ease of programming. It is trivial to achieve parallel execution of simple, \n   \"embarrassingly parallel\" data analysis tasks. Complex tasks comprised of \n   multiple interrelated data transformations are explicitly encoded as data \n   flow sequences, making them easy to write, understand, and maintain.\n - Optimization opportunities. The way in which tasks are encoded permits the \n   system to optimize their execution automatically, allowing the user to focus \n   on semantics rather than efficiency.\n - Extensibility. Users can create their own functions to do special-purpose \n   processing.\n\nPig has two execution modes or exectypes:\n - Local Mode - To run Pig in local mode, you need access to a single machine;\n   all files are installed and run using your local host and file system. Specify \n   local mode using the -x flag (pig -x local). \n - Mapreduce Mode - To run Pig in mapreduce mode, you need access to a Hadoop\n   cluster\n   and HDFS installation. Mapreduce mode is the default mode; you can, but don't\n   need to, specify it using the -x flag (pig OR pig -x mapreduce).\n \nThis charm provides Pig client with both execution modes (above).\n\n# Hortonworks Pig usage\n\nStep-by-step instructions on using the charm:\n    **Local Mode**\n    juju deploy hdp-pig hdp-pig\n    \n    **Mapreduce Mode - remote hadoop cluster**\n      - Install Hadoop HDP 2.1 cluster\n      juju deploy hdp-hadoop yarn-hdfs-master\n      juju deploy hdp-hadoop compute-node\n      juju add-unit -n 2 compute-node\n      juju add-relation yarn-hdfs-master:namenode compute-node:datanode\n      juju add-relation yarn-hdfs-master:resourcemanager compute-node:nodemanager\n      \n      - Install HDP Pig\n      juju deploy hdp-pig hdp-pig\n      juju add-relation hdp-pig:namenode yarn-hdfs-master:namenode\n      juju add-relation hdp-pig:resourcemanager yarn-hdfs-master:resourcemanager\n\nSmoke test local mode deployment:\n    1) pig -x local\n    \nSmoke test mapreduce deployment:\n    **Verify connections to remote cluster:**\n    1) juju ssh hdp-pig\n    2) sudo su $HDFS_USER\n    3) hadoop version             <= verifies if hadoop client is installed \n    4) hdfs dfsadmin -report      <= verifies if Pig client has been connected to the\n                                     remote HDFS server\n    5) yarn rmadmin -getGroups    <= verifies if Pig client has been connected to the\n                                     remote ResourceManager server\n    Run a Pig Script Test:\n    1) hdfs dfs -mkdir -p /user/hduser \n    2) hdfs dfs -copyFromLocal /etc/passwd /user/hduser/passwd\n    3) vim /tmp/id.pig\n    4) add following Pig script commands, save and exit:\n       A = load '/user/hduser/passwd' using PigStorage(':');\n       B = foreach A generate \\$0 as id; store B into '/tmp/id.out';\n    5) pig -l /tmp/pig.log /tmp/id.pig\n    6) hadoop fs -cat /tmp/id.out/part-m-00000   <= check the result on the \n       hadoop cluster\n    \n\n\n## Developer Contact Information \n amir sanjar <amir.sanjar@canonical.com>\n\n### Upstream Hortonworks Links\n * Hortonworks Upstream website  http://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.1.3/bk_installing_manually_book/content/rpm-chap1.html\n\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

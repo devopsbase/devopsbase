@@ -1,0 +1,112 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/vibioh/wordpress",
+    "repository_url": "https://hub.docker.com/v2/repositories/vibioh/wordpress",
+    "tags_url": "https://hub.docker.com/v2/repositories/vibioh/wordpress/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/vibioh/wordpress/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/vibioh/wordpress/autobuild",
+    "user": "vibioh",
+    "name": "wordpress",
+    "namespace": "vibioh",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 744,
+    "last_updated": "2016-09-01T16:51:07.175302Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 10562055,
+        "id": 68690,
+        "repository": 223707,
+        "creator": 136702,
+        "last_updater": 136702,
+        "last_updated": "2016-09-01T16:51:06.306356Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "ViBiOh/docker-wordpress"
+  },
+  "name": "vibioh/wordpress Docker container",
+  "description": "",
+  "readme": "# Wordpress with 60MB Docker's image\n\n[![](https://badge.imagelayers.io/vibioh/wordpress:latest.svg)](https://imagelayers.io/?images=vibioh/wordpress:latest 'Get your own badge on imagelayers.io')\n\n```\nREPOSITORY                      VIRTUAL SIZE\nvibioh/maildev                  44.78 MB\nvibioh/php                      32.38 MB\nvibioh/wordpress                27.31 MB\nvibioh/mysql                    156 MB\n```\n\n## Forewords\n\nAll images used in this guide are based on the latest [Alpine image](https://registry.hub.docker.com/_/alpine/). A very light Linux distributions, shipped with nothing, perfect for making one role image.\n\n## Quick start with Docker Compose\n\nDefine environment variables `WORDPRESS_NAME`, `MYSQL_PASSWORD`, `WORDPRESS_PASSWORD` and `MAILDEV_PASSWORD` to configure variables interpolations and also `DOMAIN` if you use [Traefik](https://traefik.github.io/).\n\n```bash\ndocker-compose -p ${WORDPRESS_NAME} up -d\n```\n\n## Wordpress Data Docker\n\nWordpress is written in PHP and is provided as a directory that you simply have to deploy in your web server. This directory also contains the `wp-content` directory, the one that makes your blog very unique. We want to keep this directory in a safe zone, where we can make easy backup. Also, Wordpress stores data in a relational database, commonly MySQL. As the `wp-content` directory, we want to keep datas in a the database in a safe place.\n\nSo we'll put all this informations in a data container which the only prupose is to provide a filesystem.\n\nThe full Dockerfile is available on my [GitHub account](https://github.com/ViBiOh/docker-wordpress/blob/master/Dockerfile).\n\n```docker\ndocker run \\\n  --name wordpress \\\n  --read-only \\\n  vibioh/wordpress:latest\n```\n\nSome explanations are welcome:\n\n* `--name wordpress` option gives a name to the container. It's especially important in our case. Next, we will link containers and they must be referenced by name\n* `--read-only` option define a read-only filesystem. The container is autorized to write data only in places specified in the `Dockerfile`\n\n## MySql Docker\n\nWordpress works pretty well with MySql, so we will start a container for it.\n\nThe entrypoint of MySql's image allows us to create a database and user with credentials to connect (largely inspired by [MySQL official image](https://github.com/docker-library/mysql) and [Hypriot MySQL image](https://github.com/hypriot/rpi-mysql))\n\nThe full Dockerfile is available on my [GitHub account](https://github.com/ViBiOh/docker-mysql/blob/master/Dockerfile).\n\n```docker\ndocker run -d \\\n  --name mysql \\\n  -e MYSQL_ROOT_PASSWORD=s3Cr3T! \\\n  -e MYSQL_DATABASE=wordpress \\\n  -e MYSQL_USER=wordpress \\\n  -e MYSQL_PASSWORD=W0RDPR3SS! \\\n  --volumes-from wordpress \\\n  --read-only \\\n  vibioh/mysql:latest\n```\n\nSome explanations are welcome:\n\n* `-d` option start the container as a *daemon*\n* `-e MYSQL_ROOT_PASSWORD=s3Cr3T!` option defines the root's password of MySql (MariaDB) used to initialize database structure\n* `-e MYSQL_DATABASE=wordpress` option defines the database's name that will be created when the container starts\n* `-e MYSQL_USER=wordpress -e MYSQL_PASSWORD=W0RDPR3SS!` option defines the username with its credentials that will have access to database created\n* `--volumes-from wordpress` option is an important part too. In the `wordpress` container [Dockerfile](https://github.com/ViBiOh/docker-wordpress/blob/master/Dockerfile#L28), we defined a volume `/var/lib/mysql` and the same in `mysql` container [Dockerfile](https://github.com/ViBiOh/docker-mysql/blob/master/Dockerfile#L18). This option tells Docker to map `mysql`'s volume to the `wordpress`'s one\n* We don't use the `-p` to expose port 3306 to external connections (outside of host machine). Only Docker will need access to the container.\n\n## SMTP Server Docker\n\nWordpress need to send mails to users when account are created or to reset password. We use [MailDev](http://djfarrelly.github.io/MailDev/) for demonstration purpose.\n\n    docker run -d \\\n      --name maildev \\\n      --read-only \\\n      vibioh/maildev:latest \\\n      --web-user admin --web-pass password\n\n## Wordpress Docker\n\nWordpress needs is a HTTP server, with PHP enabled and zlib to uncompress modules, themes, updates, etc.\n\nThe full Dockerfile is available on my [GitHub account](https://github.com/ViBiOh/docker-php/blob/master/Dockerfile).\n\n    docker run -d \\\n      --name php \\\n      --link mysql:db \\\n      --link mail:smtp \\\n      -e SMTP_URL=smtp \\\n      -e SMTP_PORT=1025 \\\n      --volumes-from wordpress \\\n      vibioh/php:latest\n\nSome explanations are welcome:\n\n* `--link mysql:db` option is the most interesting one. Our MySql container doesn't expose any port to the outside world and even if, we don't want to manage its IP. So we link the container `mysql` to our new container with the name `db`. What Docker does is to modify the `/etc/hosts` to match container's ip to the given alias.\n\n## Configuring Wordpress\n\nYou can now browse to [Wordpress admin](http://docker-IP/) to install and start configuring your blog :)\n\n![](./wp_configure.png)\n\n## On an `armhf` infrastructure\n\nThis tutorial has been executed on a standard architecture (x68/x64) architecture. You can run it on an ARM infrastructure (e.g. a Raspberry Pi2 running [HypriotOS](http://blog.hypriot.com)).\n\nAll images are based on Alpine, so I have rebuilt all of them using my own Alpine builded on an ARM. Checkout the `arm` branch and run the compose !\n\nN.B. At the time, NodeJS is not working on ARM so maildev was turned of.",
+  "dockerfile": "FROM alpine:3.3\nMAINTAINER Vincent Boutour <vincent.boutour@gmail.com>\n\nLABEL keep true\nENV MYSQL_DIR /var/lib/mysql\nENV WWW_DIR /var/www/localhost\nENV WORDPRESS_VERSION latest\n\nCOPY entrypoint.sh /\n\nRUN apk --update add openssl \\\n && adduser -u 1000 -S -s /sbin/nologin mysql \\\n && adduser -u 1001 -S -s /sbin/nologin nginx \\\n && addgroup -g 60 mysql \\\n && addgroup mysql mysql \\\n && mkdir -p ${MYSQL_DIR} \\\n && chown -R mysql:mysql ${MYSQL_DIR} \\\n && wget fr.wordpress.org/wordpress-${WORDPRESS_VERSION}-fr_FR.zip \\\n && mkdir -p /var/www/ \\\n && unzip wordpress-${WORDPRESS_VERSION}-fr_FR.zip -d /var/www/ \\\n && rm -rf wordpress-${WORDPRESS_VERSION}-fr_FR.zip \\\n && mv /var/www/wordpress ${WWW_DIR} \\\n && chown -R nginx:nogroup ${WWW_DIR} \\\n && apk del openssl \\\n && chmod +x /entrypoint.sh \\\n && rm -rf /var/cache/apk/*\n\nVOLUME ${MYSQL_DIR} ${WWW_DIR} /tmp\n\nENTRYPOINT [ \"/entrypoint.sh\" ]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "${MYSQL_DIR} ${WWW_DIR} /tmp"
+    ],
+    "run": [
+      "apk --update add openssl  && adduser -u 1000 -S -s /sbin/nologin mysql  && adduser -u 1001 -S -s /sbin/nologin nginx  && addgroup -g 60 mysql  && addgroup mysql mysql  && mkdir -p ${MYSQL_DIR}  && chown -R mysql:mysql ${MYSQL_DIR}  && wget fr.wordpress.org/wordpress-${WORDPRESS_VERSION}-fr_FR.zip  && mkdir -p /var/www/  && unzip wordpress-${WORDPRESS_VERSION}-fr_FR.zip -d /var/www/  && rm -rf wordpress-${WORDPRESS_VERSION}-fr_FR.zip  && mv /var/www/wordpress ${WWW_DIR}  && chown -R nginx:nogroup ${WWW_DIR}  && apk del openssl  && chmod +x /entrypoint.sh  && rm -rf /var/cache/apk/*"
+    ],
+    "workdir": [],
+    "from": "alpine:3.3",
+    "maintainer": "Vincent Boutour <vincent.boutour@gmail.com>",
+    "label": "keep true",
+    "env": {
+      "MYSQL_DIR": "/var/lib/mysql",
+      "WWW_DIR": "/var/www/localhost",
+      "WORDPRESS_VERSION": "latest"
+    },
+    "copy": "entrypoint.sh /",
+    "entrypoint": "[ \"/entrypoint.sh\" ]"
+  },
+  "source_repository_url": "https://github.com/ViBiOh/docker-wordpress.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/ViBiOh/docker-wordpress",
+  "docker_repository": "vibioh/wordpress",
+  "docker_image": "vibioh/wordpress",
+  "parameters_schema": {
+    "MYSQL_DIR": {
+      "default": "/var/lib/mysql",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WWW_DIR": {
+      "default": "/var/www/localhost",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WORDPRESS_VERSION": {
+      "default": "latest",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "vibioh/wordpress",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/vibioh/wordpress",
+    "https://hub.docker.com/v2/repositories/vibioh/wordpress",
+    "https://github.com/ViBiOh/docker-wordpress.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/vibioh/wordpress",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

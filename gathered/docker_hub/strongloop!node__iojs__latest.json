@@ -1,0 +1,132 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/strongloop/node",
+    "repository_url": "https://hub.docker.com/v2/repositories/strongloop/node",
+    "tags_url": "https://hub.docker.com/v2/repositories/strongloop/node/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/strongloop/node/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/strongloop/node/autobuild",
+    "user": "strongloop",
+    "name": "node",
+    "namespace": "strongloop",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 31,
+    "pull_count": 39825,
+    "last_updated": "2016-10-14T02:08:04.247101Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "iojs",
+        "full_size": 462151941,
+        "id": 78733,
+        "repository": 63911,
+        "creator": 107419,
+        "last_updater": 107419,
+        "last_updated": "2016-10-14T02:08:02.459167Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 358206941,
+        "id": 78735,
+        "repository": 63911,
+        "creator": 107419,
+        "last_updater": 107419,
+        "last_updated": "2016-10-14T01:17:29.305451Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "server",
+        "full_size": 199803901,
+        "id": 78721,
+        "repository": 63911,
+        "creator": 107419,
+        "last_updater": 114136,
+        "last_updated": "2015-11-14T16:45:25.358118Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "strongloop/strongloop-docker"
+  },
+  "name": "strongloop/node Docker container",
+  "description": "StrongLoop, Node.js, and tools.",
+  "readme": "strongloop-docker\n=================\n\nStrongLoop, Node, and tools.\n\n**NOTE**: these images are mostly a proof of concept. If you want to use\nStrongLoop in Docker you probably want to look at\n[strongloop/strong-pm](https://registry.hub.docker.com/u/strongloop/strong-pm/).\n\n### Usage\n\nThe `strongloop/node` image can be used interactive or as the base for other\ncontainers.\n\n### Tags\n\nstrongloop/node comes in the following flavours:\n\n * strongloop/node:latest - latest node compiled from source + strongloop\n * strongloop/node:iojs - latest iojs compiled from source + strongloop\n\n#### Interactive\n\nOnce you have Docker installed and the `docker` command working, you can pull\nthe image from Docker Hub:\n\n```\n$ docker pull strongloop/node\n# .... pulling down image\n```\n\nNow you can spin up a temporary Linux environment with node and strongloop\npre-installed:\n\n```\n$ docker run -it strongloop/node bash\n$ slc --version\nstrongloop v3.1.0 (node v0.10.38)\n├── strong-arc@1.1.0\n├── strong-build@1.0.3 (5a43a57)\n├── strong-deploy@1.2.0 (1c78f8d)\n├── strong-pm@3.1.9 (9579431)\n├── strong-registry@1.1.4 (aab3dbb)\n├── strong-start@1.0.3 (b23e63f)\n├─┬ strong-supervisor@1.5.2 (cd3897a)\n│ └── strong-agent@1.4.0\n├── generator-loopback@1.9.0 (b90e9cd)\n├── node-inspector@0.7.4\n└── nodefly-register@0.3.3\n\nstrongloop@2fc58988f424:~$ exit\nexit\n```\n\n#### Base Image\n\nTo use `strongloop/node` as the base for an image, simply specify it in your\n`Dockerfile` using `FROM strongloop/node`:\n\n```Dockerfile\nFROM strongloop/node\n\n# You start off as the 'strongloop' user.\n# If a RUN command needs root, you can use sudo\n\n# In addition to standard Linux commands you also have access to node, npm,\n# and slc commands\n\n# It is common to copy your current\nADD . /home/strongloop/app\nWORKDIR /home/strongloop/app\nRUN npm install\nENV NODE_ENV production\nCMD [ \"slc\", \"run\", \".\" ]\n```\n",
+  "dockerfile": "FROM buildpack-deps\n\n# Get up to date, install the bare necessities\n# Create \"strongloop\" user\n# DANGEROUS: this is a dev convenience container, everyone has sudo access\nRUN DEBIAN_FRONTEND=noninteractive sh -c '( \\\n    apt-get update -q && \\\n    apt-get install -y -q curl wget vim man-db ssh bash-completion sudo && \\\n    apt-get clean && apt-get autoclean)' > /dev/null && \\\n    useradd -ms /bin/bash strongloop && \\\n    chown -R strongloop /usr/local && \\\n    echo \"ALL\tALL = (ALL) NOPASSWD: ALL\" >> /etc/sudoers\n\n# Set up some semblance of an environment\nWORKDIR /home/strongloop\nENV HOME /home/strongloop\nUSER strongloop\n\nENV IOJS_REF v1.8.1\n\nRUN curl -SLO \"https://github.com/iojs/io.js/archive/$IOJS_REF.tar.gz\" \\\n        && mkdir -p /usr/local/src/node /usr/local/etc \\\n        && tar -xzf \"$IOJS_REF.tar.gz\" -C /usr/local/src/node --strip-components=1 \\\n        && (cd /usr/local/src/node && ./configure && make -j4 V= install) \\\n        && rm -rf /usr/local/src/node \\\n        && npm install -g strongloop \\\n        && npm cache clear \\\n        && slc --version\n\n# Default to a login shell\nCMD [\"/bin/bash\", \"--login\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "DEBIAN_FRONTEND=noninteractive sh -c '(     apt-get update -q &&     apt-get install -y -q curl wget vim man-db ssh bash-completion sudo &&     apt-get clean && apt-get autoclean)' > /dev/null &&     useradd -ms /bin/bash strongloop &&     chown -R strongloop /usr/local &&     echo \"ALL\tALL = (ALL) NOPASSWD: ALL\" >> /etc/sudoers",
+      "curl -SLO \"https://github.com/iojs/io.js/archive/$IOJS_REF.tar.gz\"         && mkdir -p /usr/local/src/node /usr/local/etc         && tar -xzf \"$IOJS_REF.tar.gz\" -C /usr/local/src/node --strip-components=1         && (cd /usr/local/src/node && ./configure && make -j4 V= install)         && rm -rf /usr/local/src/node         && npm install -g strongloop         && npm cache clear         && slc --version"
+    ],
+    "workdir": [
+      "/home/strongloop"
+    ],
+    "from": "buildpack-deps",
+    "env": {
+      "HOME": "/home/strongloop",
+      "IOJS_REF": "v1.8.1"
+    },
+    "user": "strongloop",
+    "cmd": "[\"/bin/bash\", \"--login\"]"
+  },
+  "source_repository_url": "git@github.com:strongloop/strongloop-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/strongloop/strongloop-docker",
+  "docker_repository": "strongloop/node",
+  "docker_image": "strongloop/node",
+  "parameters_schema": {
+    "HOME": {
+      "default": "/home/strongloop",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "IOJS_REF": {
+      "default": "v1.8.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "strongloop/node",
+  "revision": "iojs",
+  "uris": [
+    "https://hub.docker.com/r/strongloop/node",
+    "https://hub.docker.com/v2/repositories/strongloop/node",
+    "git@github.com:strongloop/strongloop-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://hub.docker.com/r/strongloop/node",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

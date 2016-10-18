@@ -1,0 +1,177 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/chrisipa/java",
+    "repository_url": "https://hub.docker.com/v2/repositories/chrisipa/java",
+    "tags_url": "https://hub.docker.com/v2/repositories/chrisipa/java/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/chrisipa/java/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/chrisipa/java/autobuild",
+    "user": "chrisipa",
+    "name": "java",
+    "namespace": "chrisipa",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 285,
+    "last_updated": "2016-09-23T20:53:14.521645Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 291266667,
+        "id": 2130548,
+        "repository": 549216,
+        "creator": 342045,
+        "last_updater": 342045,
+        "last_updated": "2016-09-23T20:51:01.443533Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "chrisipa/docker-java"
+  },
+  "name": "chrisipa/java Docker container",
+  "description": "Java docker image based on Debian Jessie, Oracle JDK 8 and Apache Maven.",
+  "readme": "docker-java\n=============\n\nJava docker image based on Debian Jessie, Oracle JDK 8 and Apache Maven.\n\n# Description\nThis Tomcat docker image contains the following software components:\n\n - [Oracle JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)\n - [Apache Maven 3](https://maven.apache.org/index.html)\n\n# How to run the container\n\n## Using docker\n\n### Example 1: Run version check in Java container \n\nRun the Java container with the following command:\n  ```\n  docker run --rm chrisipa/java java -version\n  ```\n\n## Advanced topics\n\n### Accept self signed SSL certificates from JRE\n\n1. Create sub folder for trusted SSL certificates:\n  ```\n  sudo mkdir -p /opt/ssl/trusted\n  ```\n\n2. Use [OpenSSL](https://www.openssl.org/) to download the self signed certificate to trusted SSL certificates folder:\n  ```\n  echo \"GET /\" | openssl s_client -connect my.host.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /opt/ssl/trusted/my-self-signed.crt\n  ```\n\n3. Run Java container with the commands above and mount folder for trusted SSL certificates:\n  ```\n  -v /opt/ssl/trusted:/opt/ssl/trusted\n  ```\n",
+  "dockerfile": "FROM chrisipa/debian\nMAINTAINER Christoph Papke <info@papke.it>\n\n# set environment variables for program versions\nENV JDK_VERSION 8u66\nENV JDK_BUILD b17\nENV JDK_FOLDER jdk1.8.0_66\nENV JDK_CHECKSUM 88f31f3d642c3287134297b8c10e61bf\nENV JAVA_HOME /opt/java\nENV JRE_SECURITY_FOLDER $JAVA_HOME/jre/lib/security\nENV ORACLE_COOKIE \"Cookie: oraclelicense=accept-securebackup-cookie\"\nENV MAVEN_VERSION 3.3.9\nENV MAVEN_CHECKSUM 516923b3955b6035ba6b0a5b031fbd8b\nENV MAVEN_HOME /opt/mvn\nENV SSL_TRUSTED_CERTS_FOLDER /opt/ssl/trusted\n\n# change to tmp folder\nWORKDIR /tmp\n\n# download and extract jdk to opt folder\nRUN wget --no-cookies --header \"$ORACLE_COOKIE\" http://download.oracle.com/otn-pub/java/jdk/$JDK_VERSION-$JDK_BUILD/jdk-$JDK_VERSION-linux-x64.tar.gz && \\\n    echo \"$JDK_CHECKSUM jdk-$JDK_VERSION-linux-x64.tar.gz\" | md5sum -c && \\  \n    tar -zxf jdk-$JDK_VERSION-linux-x64.tar.gz -C /opt && \\ \n    ln -s /opt/$JDK_FOLDER /opt/java && \\\n    rm -f jdk-$JDK_VERSION-linux-x64.tar.gz\n\n# download zip file with java cryptography extension and unzip to jre security folder\nRUN wget --no-cookies --header \"$ORACLE_COOKIE\" http://download.oracle.com/otn-pub/java/jce/8/jce_policy-8.zip && \\\n    unzip jce_policy-8.zip && \\\n    cp UnlimitedJCEPolicyJDK8/*.jar $JRE_SECURITY_FOLDER && \\\n    rm -f jce_policy-8.zip && \\\n    rm -rf UnlimitedJCEPolicyJDK8\n\n# download and extract maven to opt folder\nRUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz && \\\n    echo \"$MAVEN_CHECKSUM apache-maven-$MAVEN_VERSION-bin.tar.gz\" | md5sum -c && \\\n    tar -zxf apache-maven-$MAVEN_VERSION-bin.tar.gz -C /opt/ && \\\n    ln -s /opt/apache-maven-$MAVEN_VERSION /opt/mvn && \\\n    rm -f apache-maven-$MVN-VERSION-bin.tar.gz\n\n# add executables to path\nRUN update-alternatives --install \"/usr/bin/java\" \"java\" \"/opt/java/bin/java\" 1 && \\\n    update-alternatives --set \"java\" \"/opt/java/bin/java\" && \\\n    update-alternatives --install \"/usr/bin/javac\" \"javac\" \"/opt/java/bin/javac\" 1 && \\\n    update-alternatives --set \"javac\" \"/opt/java/bin/javac\" && \\\n    update-alternatives --install \"/usr/bin/keytool\" \"keytool\" \"/opt/java/bin/keytool\" 1 && \\\n    update-alternatives --set \"keytool\" \"/opt/java/bin/keytool\" && \\\n    update-alternatives --install \"/usr/bin/mvn\" \"mvn\" \"/opt/mvn/bin/mvn\" 1 && \\\n    update-alternatives --set \"mvn\" \"/opt/mvn/bin/mvn\" \n\n# create trusted ssl certs folder and mark as volume\nRUN mkdir -p $SSL_TRUSTED_CERTS_FOLDER\nVOLUME $SSL_TRUSTED_CERTS_FOLDER\n\n# copy import trusted ssl certs script to /usr/bin folder\nCOPY import-trusted-ssl-certs.sh /usr/bin/import-trusted-ssl-certs.sh\n\n# copy entry point to docker image root\nCOPY docker-entrypoint.sh /entrypoint.sh\n\n# specifiy entrypoint\nENTRYPOINT [\"/entrypoint.sh\"]\n\n# specifiy startup script\nCMD [\"bash\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "$SSL_TRUSTED_CERTS_FOLDER"
+    ],
+    "run": [
+      "wget --no-cookies --header \"$ORACLE_COOKIE\" http://download.oracle.com/otn-pub/java/jdk/$JDK_VERSION-$JDK_BUILD/jdk-$JDK_VERSION-linux-x64.tar.gz &&     echo \"$JDK_CHECKSUM jdk-$JDK_VERSION-linux-x64.tar.gz\" | md5sum -c && \\  ",
+      "wget --no-cookies --header \"$ORACLE_COOKIE\" http://download.oracle.com/otn-pub/java/jce/8/jce_policy-8.zip &&     unzip jce_policy-8.zip &&     cp UnlimitedJCEPolicyJDK8/*.jar $JRE_SECURITY_FOLDER &&     rm -f jce_policy-8.zip &&     rm -rf UnlimitedJCEPolicyJDK8",
+      "wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz &&     echo \"$MAVEN_CHECKSUM apache-maven-$MAVEN_VERSION-bin.tar.gz\" | md5sum -c &&     tar -zxf apache-maven-$MAVEN_VERSION-bin.tar.gz -C /opt/ &&     ln -s /opt/apache-maven-$MAVEN_VERSION /opt/mvn &&     rm -f apache-maven-$MVN-VERSION-bin.tar.gz",
+      "update-alternatives --install \"/usr/bin/java\" \"java\" \"/opt/java/bin/java\" 1 &&     update-alternatives --set \"java\" \"/opt/java/bin/java\" &&     update-alternatives --install \"/usr/bin/javac\" \"javac\" \"/opt/java/bin/javac\" 1 &&     update-alternatives --set \"javac\" \"/opt/java/bin/javac\" &&     update-alternatives --install \"/usr/bin/keytool\" \"keytool\" \"/opt/java/bin/keytool\" 1 &&     update-alternatives --set \"keytool\" \"/opt/java/bin/keytool\" &&     update-alternatives --install \"/usr/bin/mvn\" \"mvn\" \"/opt/mvn/bin/mvn\" 1 &&     update-alternatives --set \"mvn\" \"/opt/mvn/bin/mvn\" ",
+      "mkdir -p $SSL_TRUSTED_CERTS_FOLDER"
+    ],
+    "workdir": [
+      "/tmp"
+    ],
+    "from": "chrisipa/debian",
+    "maintainer": "Christoph Papke <info@papke.it>",
+    "env": {
+      "JDK_VERSION": "8u66",
+      "JDK_BUILD": "b17",
+      "JDK_FOLDER": "jdk1.8.0_66",
+      "JDK_CHECKSUM": "88f31f3d642c3287134297b8c10e61bf",
+      "JAVA_HOME": "/opt/java",
+      "JRE_SECURITY_FOLDER": "$JAVA_HOME/jre/lib/security",
+      "ORACLE_COOKIE": "\"Cookie:",
+      "oraclelicense": "accept-securebackup-cookie\"",
+      "MAVEN_VERSION": "3.3.9",
+      "MAVEN_CHECKSUM": "516923b3955b6035ba6b0a5b031fbd8b",
+      "MAVEN_HOME": "/opt/mvn",
+      "SSL_TRUSTED_CERTS_FOLDER": "/opt/ssl/trusted"
+    },
+    "copy": "docker-entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"bash\"]"
+  },
+  "source_repository_url": "https://github.com/chrisipa/docker-java.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/chrisipa/docker-java",
+  "docker_repository": "chrisipa/java",
+  "docker_image": "chrisipa/java",
+  "parameters_schema": {
+    "JDK_VERSION": {
+      "default": "8u66",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JDK_BUILD": {
+      "default": "b17",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JDK_FOLDER": {
+      "default": "jdk1.8.0_66",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JDK_CHECKSUM": {
+      "default": "88f31f3d642c3287134297b8c10e61bf",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_HOME": {
+      "default": "/opt/java",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JRE_SECURITY_FOLDER": {
+      "default": "$JAVA_HOME/jre/lib/security",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ORACLE_COOKIE": {
+      "default": "\"Cookie:",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "oraclelicense": {
+      "default": "accept-securebackup-cookie\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_VERSION": {
+      "default": "3.3.9",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_CHECKSUM": {
+      "default": "516923b3955b6035ba6b0a5b031fbd8b",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_HOME": {
+      "default": "/opt/mvn",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_TRUSTED_CERTS_FOLDER": {
+      "default": "/opt/ssl/trusted",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "chrisipa/java",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/chrisipa/java",
+    "https://hub.docker.com/v2/repositories/chrisipa/java",
+    "https://github.com/chrisipa/docker-java.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Build/Java/Maven",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/chrisipa/java",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

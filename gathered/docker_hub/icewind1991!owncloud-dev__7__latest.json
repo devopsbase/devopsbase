@@ -1,0 +1,157 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/icewind1991/owncloud-dev",
+    "repository_url": "https://hub.docker.com/v2/repositories/icewind1991/owncloud-dev",
+    "tags_url": "https://hub.docker.com/v2/repositories/icewind1991/owncloud-dev/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/icewind1991/owncloud-dev/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/icewind1991/owncloud-dev/autobuild",
+    "user": "icewind1991",
+    "name": "owncloud-dev",
+    "namespace": "icewind1991",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 611,
+    "last_updated": "2016-10-15T03:42:14.828139Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "7",
+        "full_size": 303846905,
+        "id": 1682954,
+        "repository": 335068,
+        "creator": 451387,
+        "last_updater": 451387,
+        "last_updated": "2016-10-15T03:42:14.458986Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 299965629,
+        "id": 975098,
+        "repository": 335068,
+        "creator": 451387,
+        "last_updater": 451387,
+        "last_updated": "2016-10-15T03:38:38.401529Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5",
+        "full_size": 299965565,
+        "id": 1682877,
+        "repository": 335068,
+        "creator": 451387,
+        "last_updater": 451387,
+        "last_updated": "2016-10-15T03:34:54.577143Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "php7",
+        "full_size": 401451647,
+        "id": 1551905,
+        "repository": 335068,
+        "creator": 451387,
+        "last_updater": 451387,
+        "last_updated": "2015-12-14T19:30:02.054390Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "icewind1991/owncloud-dev"
+  },
+  "name": "icewind1991/owncloud-dev Docker container",
+  "description": "Docker image for ownCloud for development",
+  "readme": "# docker-owncloud-dev\n\nDocker image for [ownCloud][] for development\n\nThis image pulls the ownCloud source from the host filesystem while maintaining a seperate config and data directory which makes it easy to test your local code in a clean ownCloud instance.\n\nThe build instructions are tracked on [GitHub][this.project_github_url].\nAutomated builds are hosted on [Docker Hub][this.project_docker_hub_url].\n\n## Getting the image\n\nYou have two options to get the image:\n\n1. Build it yourself with `make build`.\n2. Download it via `docker pull icewind1991/owncloud-dev` ([automated build][this.project_docker_hub_url]).\n\n## ownCloud up and running\n\n`docker run --privileged -d -p 8123:80 -v /srv/http/owncloud:/owncloud-shared icewind1991/owncloud-dev`\n\nReplace `/srv/http/owncloud` with the location of the ownCloud source\n\n## ocserver command\n\nEdit `misc/ocserver` with the location of the ownCloud source and copy or symlink it to somewhere without your $PATH\n\n### Database\n\nYou can specify the database backend to be used by providing it as argument to the `ocserver` command.\nThe following database backends are supported `sqlite` (default), `mysql`, `pgsql` and `oci`.\n\n```\nocserver mysql\n```\n\nFor any database backends besides sqlite a seperate container will be started for the database.\n\n### PHP version\n\nYou can specificy php version 5 (5.6) or 7 by passing it as seccond argument to `ocserver` (defaults to 5)\n\n```\nocserver mysql 7\n```\n\n### Blackfire integration\n\nYou can enable [blackfire.io](https://blackfire.io) integration by defining BLACKFIRE_SERVER_ID and BLACKFIRE_SERVER_TOKEN as enviroment variables or starting a \"blackfire\" container beforehand.\n\nSee https://blackfire.io/docs/integrations/docker#running-the-agent for more information about using the blackfire agent with docker\n\nCurrent blackfire only works with php5\n\n## octests\n\n`misc/octests` starts a new owncloud server in a container and executes the php test suite on it.\n\n`octests` takes the same arguments for database and php version\n\nIt expects `ocserver` to be located in `$PATH`\n\n## License\n\nThis project is distributed under [GNU Affero General Public License, Version 3][AGPLv3].\n[ownCloud]: https://owncloud.org/\n[AGPLv3]: https://github.com/jchaney/owncloud/blob/master/LICENSE\n[this.project_docker_hub_url]: https://registry.hub.docker.com/u/icewind1991/owncloud-dev/\n[this.project_github_url]: https://github.com/icewind1991/owncloud-dev\n",
+  "dockerfile": "FROM icewind1991/php-nginx:7\nMAINTAINER  Robin Appelman <robin@icewind.nl>\n# MAINTAINER Robin Schneider <ypid@riseup.net>\n# MAINTAINER silvio <silvio@port1024.net>\n# MAINTAINER Josh Chaney <josh@chaney.io>\n\nRUN DEBIAN_FRONTEND=noninteractive ;\\\n\tapt-get update && \\\n\tapt-get install --assume-yes \\\n\t\tcron \\\n\t\tredis-server \\\n\t\tsmbclient \\\n\t\tsudo \\\n\t\twget \\\n\t\tattr \\\n\t\tgit\n        \nRUN wget https://phar.phpunit.de/phpunit.phar -O /usr/local/bin/phpunit.phar\n\nADD configs/autoconfig_mysql.php configs/autoconfig_pgsql.php configs/autoconfig_oci.php /root/\nADD configs/nginx-app.conf /etc/nginx/\n\nRUN mkdir --parent /var/log/cron\nADD configs/cron.conf /etc/oc-cron.conf\nRUN crontab /etc/oc-cron.conf\n\nADD misc/bootstrap.sh misc/occ misc/tests misc/phpunit misc/install misc/occ misc/integration /usr/local/bin/\n\nENV WEBROOT /var/www/html\n\nENTRYPOINT  [\"bootstrap.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "configs/autoconfig_mysql.php",
+        "dest": "configs/autoconfig_pgsql.php"
+      },
+      {
+        "source": "configs/nginx-app.conf",
+        "dest": "/etc/nginx/"
+      },
+      {
+        "source": "configs/cron.conf",
+        "dest": "/etc/oc-cron.conf"
+      },
+      {
+        "source": "misc/bootstrap.sh",
+        "dest": "misc/occ"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "DEBIAN_FRONTEND=noninteractive ;\tapt-get update && \tapt-get install --assume-yes \t\tcron \t\tredis-server \t\tsmbclient \t\tsudo \t\twget \t\tattr \t\tgit",
+      "wget https://phar.phpunit.de/phpunit.phar -O /usr/local/bin/phpunit.phar",
+      "mkdir --parent /var/log/cron",
+      "crontab /etc/oc-cron.conf"
+    ],
+    "workdir": [],
+    "from": "icewind1991/php-nginx:7",
+    "maintainer": " Robin Appelman <robin@icewind.nl>",
+    "env": {
+      "WEBROOT": "/var/www/html"
+    },
+    "entrypoint": " [\"bootstrap.sh\"]"
+  },
+  "source_repository_url": "https://github.com/icewind1991/owncloud-dev.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/icewind1991/owncloud-dev",
+  "docker_repository": "icewind1991/owncloud-dev",
+  "docker_image": "icewind1991/owncloud-dev",
+  "parameters_schema": {
+    "WEBROOT": {
+      "default": "/var/www/html",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "icewind1991/owncloud-dev",
+  "revision": "7",
+  "uris": [
+    "https://hub.docker.com/r/icewind1991/owncloud-dev",
+    "https://hub.docker.com/v2/repositories/icewind1991/owncloud-dev",
+    "https://github.com/icewind1991/owncloud-dev.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image"
+  ],
+  "info_url": "https://hub.docker.com/r/icewind1991/owncloud-dev",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

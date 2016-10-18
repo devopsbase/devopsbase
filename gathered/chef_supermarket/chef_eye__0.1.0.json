@@ -1,0 +1,60 @@
+{
+  "name": "chef_eye Chef cookbook",
+  "chef_cookbook_name": "chef_eye",
+  "revision": "0.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/chef_eye",
+    "https://supermarket.chef.io/cookbooks/chef_eye/download",
+    "https://supermarket.chef.io/cookbooks/chef_eye/versions/0.1.0",
+    "https://supermarket.chef.io/cookbooks/chef_eye/versions/0.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/chef_eye/versions/0.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/chef_eye",
+    "https://supermarket.chef.io/api/v1/cookbooks/chef_eye/versions/0.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/chef_eye",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/chef_eye/versions/0.1.0/download",
+  "deprecated": false,
+  "created": "2015-01-03T21:59:17.846Z",
+  "updated": "2016-01-13T10:09:56.306Z",
+  "description": "Installs/Configures chef_eye",
+  "maintainer": {
+    "name": "nikolaymurga",
+    "email": "nikolay.m@randrmusic.com"
+  },
+  "license": "Apache v2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 2337850,
+  "downloads_count_revision": 523859,
+  "repository_url": "https://github.com/MurgaNikolay/chef-eye",
+  "issues_url": "https://github.com/MurgaNikolay/chef-eye/issues",
+  "chef_source_url": "https://github.com/MurgaNikolay/chef-eye",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# chef_eye\n\nCookbook for setup [eye](https://github.com/kostya/eye) service and applications\n\n## Supported Platforms\n\n* Ubuntu 12.04\n* Ubuntu 14.04\n\n## Attributes\n\n<table>\n  <tr>\n    <th>Key</th>\n    <th>Type</th>\n    <th>Description</th>\n    <th>Default</th>\n  </tr>\n  <tr>\n    <td><tt>['chef_eye']['services']</tt></td>\n    <td>Hash or Array</td>\n    <td>Array of users or Hash with users as keys and service options as value</td>\n    <td><tt>['root']</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['chef_eye']['applications']</tt></td>\n    <td>Hash</td>\n    <td>Applications configurations</td>\n    <td><tt>{}</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['chef_eye']['install_ruby']</tt></td>\n    <td>Boolean</td>\n    <td>Try to install ruby packages `ruby`, `ruby-dev`</td>\n    <td><tt>true</tt></td>\n  </tr>\n</table>\n\n## Usage\n\n### Ruby\n\nCookbook used system ruby and try to install `ruby`, `ruby-dev` packages if `node['eye']['install_ruby']` set to `true`\nIf  you want to use custom system ruby, you need set `node['eye']['install_ruby']` to `false` and install custom ruby before\nbefore this cookbook. For example, if you want to use `uid` and `gid` [application options](https://github.com/kostya/eye/issues/50),\nyou need install ruby 2.0.0 as system ruby. Its installation is your concern.\n\n\n##Service\n\nServices named by `eye_` prefix and username. For example, service for user vagrant, well be named as `eye_vagrant`.\nservice for user root as `eye_root`, etc.\n\nIf you need to reload service for user `vagrant`, you can use\n\n    some_resource do\n      ...\n      notifies :reload, 'service[eye_vagrant]'\n    end\n\nif you want to configure service fore some user, you can setup it\n\n    default['eye']['services'] = {\n      ubuntu: {\n        'logger' => '/var/log/eye/ubuntu.log'\n        'mail' => {\n          'host' => 'mx.some.host',\n          'port' => 25,\n          'domain' => 'some.host'\n        },\n        contacts: {\n          'errors' => {\n            'type' => 'mail',\n            'contact' => 'error@some.host'\n          },\n          'dev' => {\n            'type' => 'mail',\n            'contact' => 'error@some.host',\n            'opts' => {}\n          },\n        }\n      }\n    }\n\n### Configuration\n\nYou can use any valid eye [options](https://github.com/kostya/eye/tree/master/examples). For example:\n\n    default['eye']['applications']['my_app'] = {\n      owner: 'vagrant', # required\n      group: 'vagrant',\n      checks: {\n        cpu: {\n          :every => 30,\n          :below => 80,\n          :times => 3\n        },\n        memory:{\n          :every => 30,\n          :below => 73400320,\n          :times => [ 3, 5 ]\n        }\n      },\n      process: {\n        unicorn: {\n          daemonize:  true,\n          pid_file: 'puma.pid',\n          stdall: 'puma.log',\n          start_command: 'bundle exec puma --port 33280 --environment production Config.ru',\n          stop_signals: ['TERM', 5, 'KILL']\n        },\n        resque: {\n          pid_file: 'tmp/pids/resque.pid',\n          start_command: 'bin/resque work --queue=high',\n          checks: {\n            cpu: {\n              :every => 30,\n              :below => 80,\n              :times => 3\n            }\n          }\n        }\n      }\n    }\n\nThis cookbook will install the eye service for user 'vagrant' (`/etc/init.d/eye_vagrant`) and generate valid '.eye' configuration file\n(`/etc/eye/vagrant/my_app.eye`).\n\n\n## LWRP\n\n### chef_eye_application\n\nCookbook provide `chef_eye_application` resource. This is a main resource for generate eye configuration.\n\n    chef_eye_application 'name_of_my_app' do\n      owner 'ubuntu'\n      group 'ubuntu'\n      config do\n        env 'RAILS_ENV' => 'production'\n        working_dir '/var/www/my_app'\n        trigger :flapping, :times => 10, :within => 1.minute\n        process :puma do\n          daemonize true\n          pid_file \"puma.pid\"\n          stdall \"puma.log\"\n          start_command \"bundle exec puma --port 33280 --environment production thin.ru\"\n          stop_signals [:TERM, 5.seconds, :KILL]\n          restart_command \"kill -USR2 {PID}\"\n          restart_grace 10.seconds\n          check :cpu, :every => 30, :below => 80, :times => 3\n          check :memory, :every => 30, :below => 70.megabytes, :times => [3,5]\n        end\n      end\n      action :configure # or :delete\n      notifies :reload, 'service[eye_ubuntu]' # you need notify service for reload\n    end\n\nor as hash\n\n    chef_eye_application 'name_of_my_app' do\n      owner 'ubuntu'\n      group 'ubuntu'\n      config({\n          env: {\n            RAILS_ENV: 'production'\n          },\n          working_dir: '/var/www/my_app',\n          triggers: {\n            flapping: {\n              :times => 10,\n              :within => 1.minute\n            }\n          },\n          processes: {\n            puma: {\n              daemonize: true,\n              pid_file: \"puma.pid\",\n              stdall: \"puma.log\",\n              start_command: \"bundle exec puma --port 33280 --environment production thin.ru\",\n              stop_signals: [:TERM, 5.seconds, :KILL],\n              restart_command: \"kill -USR2 {PID}\",\n              restart_grace: 10.seconds,\n              checks: {\n                cpu: {:every => 30, :below => 80, :times => 3},\n                memory: {:every => 30, :below => 70.megabytes, :times => [3, 5]}\n              }\n            }\n          }\n        })\n      action :configure # or :delete\n      notifies :reload, 'service[eye_ubuntu]' # you need notify service for reload\n    end\n\n\n#### Important! If you use LWRP, you need to add owner of application to `node['eye']['services']` attribute manually.\n\n\n### chef_eye::default\n\nInclude `chef_eye` in your node's `run_list`:\n\n```json\n{\n  \"run_list\": [\n    \"recipe[chef_eye::default]\"\n  ]\n}\n```\n\n## License and Authors\n\nAuthor:: Nikolay Murga (nikolay.m@randrmusic.com)\n\n\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ],
+  "chef_recipes": {
+    "chef_eye": "Installs all"
+  }
+}

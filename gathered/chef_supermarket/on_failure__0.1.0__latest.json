@@ -1,0 +1,41 @@
+{
+  "name": "on_failure Chef cookbook",
+  "chef_cookbook_name": "on_failure",
+  "revision": "0.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/on_failure",
+    "https://supermarket.chef.io/cookbooks/on_failure/download",
+    "https://supermarket.chef.io/cookbooks/on_failure/versions/0.1.0",
+    "https://supermarket.chef.io/cookbooks/on_failure/versions/0.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/on_failure/versions/0.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/on_failure",
+    "https://supermarket.chef.io/api/v1/cookbooks/on_failure/versions/0.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/on_failure",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/on_failure/versions/0.1.0/download",
+  "deprecated": false,
+  "created": "2014-04-09T07:22:45.000Z",
+  "updated": "2014-04-09T07:22:46.000Z",
+  "description": "A proof of concept cookbook for the on_failure Chef RFC",
+  "maintainer": {
+    "name": "arangamani",
+    "email": "me@arangamani.net"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 2192293,
+  "downloads_count_revision": 2192293,
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# on_failure cookbook\n\n[![Cookbook Version](http://img.shields.io/github/release/arangamani-cookbooks/on_failure.svg)][release]\n[![Build Status](http://img.shields.io/travis/arangamani-cookbooks/on_failure.svg)][travis]\n\n[release]: http://github.com/arangamani-cookbooks/on_failure/releases\n[travis]: http://travis-ci.org/arangamani-cookbooks/on_failure\n\nThis cookbook is a proof of concept for the proposed [on_failure Chef RFC]. This cookbook doesn't implement all\npossible features proposed but it covers most use cases for the feature. There are still [discussions] going\non in the proposal on how do certain things. This cookbook will help playing with the feature and proposing changes to\nthe RFC.\n\nFollow this [blog post] for seeing this in action.\n\n[on_failure Chef RFC]: https://github.com/opscode/chef-rfc/blob/sethvargo/on_failure/on_failure.md\n[discussions]: https://github.com/opscode/chef-rfc/pull/1\n[blog post]: http://blog.arangamani.net/blog/2014/04/08/chef-on-failure-handler/\n\n# Requirements\n\n* Requires Chef 11.\n* Willingness to take risk (as it is still a brand new concept).\n\n# Usage\n\nAdd the following `depends` statement to your `metadata.rb`.\n\n```ruby\ndepends 'on_failure'\n```\n\nOnce this cookbook is loaded, you will have access to the `on_failure` construct in any resource.\n\n### Simple Example\n\n```ruby\nmeal 'breakfast' do\n  on_failure { notify :eat, 'food[bacon]' }\nend\n```\n\nIf the  `meal[breakfast]` resource's `:eat` action fails, it will notify the `:eat` action of `'food[bacon]'` resource\nand then retry the `:eat` action again.\n\n### Handling specific exceptions\n\nA specific exception can be specified in the `on_failure` construct which will catch only the matching exceptions.\nFor example:\n\n```ruby\nmeal 'breakfast' do\n  on_failure(HungryError) { notify :eat, 'food[bacon]' }\nend\n```\n\nIn this example, we only want to catch the `HungryError` exception. All other exceptions will immediately raise.\n\n### Specifying retries\n\nBy default the action will be retried only once. But you can specify the number of times the action should be retried.\n\n```ruby\nmeal 'breakfast' do\n  on_failure(retries: 5) { notify :eat, 'food[bacon]' }\nend\n```\n\nIn this example, the action will be retried 5 times before the exception is raised. If the action succeeds before all\nretries, we are good and nothing wil be raised.\n\n### Specifying multiple exceptions\n\nMultiple exceptions classes can be specified to be caught. You can also include the options such as retries along with\nspecifying exceptions.\n\n```ruby\nmeal 'breakfast' do\n  on_failure(UncookedError, HungryError, retries: 3) { notify :fry, 'food[bacon]' }\nend\n```\n\n### Specifying multiple blocks\n\nIf each exception should be handled differently, you can specify them in separate `on_failure` blocks. They will be\nexecuted in the order they are defined (top-bottom).\n\n```ruby\nmeal 'breakfast' do\n  on_failure(UncookedError) { notify :fry, 'food[bacon]' }\n  on_failure(ColdError) { notify :microwave, 'food[bacon]' }\nend\n```\n\n### Access to resource attributes\n\nThe attributes of the resource can be accessed inside the block of `on_failure`. The following example demonstrates\nfeature.\n\n```ruby\nmeal 'breakfast' do\n  time '2014-04-09 08:00:00 -0700'\n  on_failure { |breakfast| Chef::Log.info \"Tried eating breakfast at: #{breakfast.time}\" }\nend\n```\n\nThis handler simply logs the time specified in the resource.\n\n# Testing/Playing\n\nThere are three cookbooks available in the `test/cookbooks` directory that will help playing with this resource.\n\n### Cookbooks\n\n* `sample` - A sample cookbook that uses the `on_failure` feature to demonstrate how it works.\n* `meal` - The cookbook that provides the `meal` resource.\n* `food` - The cookbook that provides the `food` resource.\n\nThis cookbook has a `Vagrantfile` that can be used to provision a virtual machine and start playing with stuffs.\n\nThe sample cookbook has recipes for each use cases explained in the Usage section. Just pick any recipe, put it in\nthe runlist of the virtualmachine and provision it to see it in action.\n\n# Attributes\n\nThere are no attributes in this cookbook.\n\n# Recipes\n\nThere are no recipes in this cookbook.\n\n# License & Author\n\nAuthor:: Kannan Manickam (<me@arangamani.net>)\n\n```\nCopyright (C) 2014 Kannan Manickam\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n   http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n"
+}

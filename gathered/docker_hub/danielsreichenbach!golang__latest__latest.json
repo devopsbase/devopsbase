@@ -1,0 +1,172 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/danielsreichenbach/golang",
+    "repository_url": "https://hub.docker.com/v2/repositories/danielsreichenbach/golang",
+    "tags_url": "https://hub.docker.com/v2/repositories/danielsreichenbach/golang/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/danielsreichenbach/golang/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/danielsreichenbach/golang/autobuild",
+    "user": "danielsreichenbach",
+    "name": "golang",
+    "namespace": "danielsreichenbach",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 183,
+    "last_updated": "2016-09-23T00:06:49.647716Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 91647945,
+        "id": 2162457,
+        "repository": 555351,
+        "creator": 451205,
+        "last_updater": 451205,
+        "last_updated": "2016-09-23T00:06:45.952245Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.6",
+        "full_size": 91648641,
+        "id": 2162447,
+        "repository": 555351,
+        "creator": 451205,
+        "last_updater": 451205,
+        "last_updated": "2016-09-22T23:59:09.163886Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.5",
+        "full_size": 88357312,
+        "id": 2162356,
+        "repository": 555351,
+        "creator": 451205,
+        "last_updater": 451205,
+        "last_updated": "2016-09-22T23:51:40.533253Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "danielsreichenbach/docker-golang"
+  },
+  "name": "danielsreichenbach/golang Docker container",
+  "description": "Minimal version control enabled container for building Go projects",
+  "readme": "[![][image-layers-status]][img-layers]\n\n# Build container for the Go programming language\n\nA build container intended for running builds for the [Go][golang] programming\nlanguage **with support for bzr, git and hg**. Originally it was created for\nbuilding Go projects using the [Drone][drone] continuous integration platform\nbut should work in other CI environments, too.\n\nThe image is based on [Alpine Linux][alpine] version 3.3, and builds upon the\n[Gliderlabs Alpine image][docker-gliderlabs].\n\n# What is Go?\n\n[Go][golang] (a.k.a., Golang) is a programming language first developed at\nGoogle. It is a statically-typed language with syntax loosely derived from C,\nbut with additional features such as garbage collection, type safety, some\ndynamic-typing capabilities, additional built-in types (e.g., variable-length\narrays and key-value maps), and a large standard library.\n\n> [wikipedia.org/wiki/Go_(programming_language)](http://en.wikipedia.org/wiki/Go_%28programming_language%29)\n\n![logo][golang-logo]\n\n## Features\n\nThis container provides a plain Go 1.5/1.6 installation built from official\nrelease packages.\n\nBoth Go containers include the following version control systems to make\n`go get` happy:\n\n* bzr\n* git\n* hg\n\n## Usage\n\nThis container can be used as build image in Drone, as shown in the following\nexample (using a build matrix):\n\n```yaml\nbuild:\n  image: danielsreichenbach/golang:$$GO_VERSION\n  commands:\n    - go get -t -v ./...\n    - go build -v\n    - go test -v\n\nmatrix:\n  GO_VERSION:\n    - 1.5\n    - 1.6\n```\n\n[golang]:               https://golang.org/\n[golang-logo]:          https://golang.org/doc/gopher/frontpage.png\n\n[drone]:                https://github.com/drone/drone/\n\n[alpine]:               https://alpinelinux.org/\n[docker-gliderlabs]:    https://hub.docker.com/r/gliderlabs/alpine/\n\n[img-layers]:           https://imagelayers.io/?images=danielsreichenbach/golang:latest \"Get your own badge on imagelayers.io\"\n[image-layers-status]:  https://badge.imagelayers.io/danielsreichenbach/golang:latest.svg\n",
+  "dockerfile": "FROM gliderlabs/alpine:3.3\nMAINTAINER Daniel S. Reichenbach <daniel@kogitoapp.com>\n\nENV GOLANG_VERSION 1.6.2\nENV GOLANG_SRC_URL https://golang.org/dl/go$GOLANG_VERSION.src.tar.gz\nENV GOLANG_SRC_SHA256 787b0b750d037016a30c6ed05a8a70a91b2e9db4bd9b1a2453aa502a63f1bccc\n\nENV GOLANG_BOOTSTRAP_VERSION 1.4.3\nENV GOLANG_BOOTSTRAP_URL https://golang.org/dl/go$GOLANG_BOOTSTRAP_VERSION.src.tar.gz\nENV GOLANG_BOOTSTRAP_SHA1 486db10dc571a55c8d795365070f66d343458c48\n\nRUN set -ex \\\n\t&& apk add --update bzr git mercurial \\\n\t&& rm -rf /var/cache/apk/*\n\nRUN set -ex \\\n\t&& apk add --no-cache --virtual .build-deps \\\n\t\tbash \\\n\t\tcurl \\\n\t\tgcc \\\n\t\tmusl-dev \\\n\t\topenssl \\\n\t\\\n\t&& mkdir -p /usr/local/bootstrap \\\n\t&& curl -sSL \"$GOLANG_BOOTSTRAP_URL\" -o golang.tar.gz \\\n\t&& echo \"$GOLANG_BOOTSTRAP_SHA1  golang.tar.gz\" | sha1sum -c - \\\n\t&& tar -C /usr/local/bootstrap -xzf golang.tar.gz \\\n\t&& rm golang.tar.gz \\\n\t&& cd /usr/local/bootstrap/go/src \\\n\t&& ./make.bash \\\n\t&& export GOROOT_BOOTSTRAP=/usr/local/bootstrap/go \\\n\t\\\n\t&& curl -sSL \"$GOLANG_SRC_URL\" -o golang.tar.gz \\\n\t&& echo \"$GOLANG_SRC_SHA256  golang.tar.gz\" | sha256sum -c - \\\n\t&& tar -C /usr/local -xzf golang.tar.gz \\\n\t&& rm golang.tar.gz \\\n\t&& cd /usr/local/go/src \\\n\t&& ./make.bash \\\n\t\\\n\t&& rm -rf /usr/local/bootstrap /usr/local/go/pkg/bootstrap \\\n\t&& apk del .build-deps\n\nENV GOPATH /go\nENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH\n\nRUN mkdir -p \"$GOPATH/src\" \"$GOPATH/bin\" && chmod -R 777 \"$GOPATH\"\nWORKDIR $GOPATH\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "set -ex \t&& apk add --update bzr git mercurial \t&& rm -rf /var/cache/apk/*",
+      "set -ex \t&& apk add --no-cache --virtual .build-deps \t\tbash \t\tcurl \t\tgcc \t\tmusl-dev \t\topenssl \t\t&& mkdir -p /usr/local/bootstrap \t&& curl -sSL \"$GOLANG_BOOTSTRAP_URL\" -o golang.tar.gz \t&& echo \"$GOLANG_BOOTSTRAP_SHA1  golang.tar.gz\" | sha1sum -c - \t&& tar -C /usr/local/bootstrap -xzf golang.tar.gz \t&& rm golang.tar.gz \t&& cd /usr/local/bootstrap/go/src \t&& ./make.bash \t&& export GOROOT_BOOTSTRAP=/usr/local/bootstrap/go \t\t&& curl -sSL \"$GOLANG_SRC_URL\" -o golang.tar.gz \t&& echo \"$GOLANG_SRC_SHA256  golang.tar.gz\" | sha256sum -c - \t&& tar -C /usr/local -xzf golang.tar.gz \t&& rm golang.tar.gz \t&& cd /usr/local/go/src \t&& ./make.bash \t\t&& rm -rf /usr/local/bootstrap /usr/local/go/pkg/bootstrap \t&& apk del .build-deps",
+      "mkdir -p \"$GOPATH/src\" \"$GOPATH/bin\" && chmod -R 777 \"$GOPATH\""
+    ],
+    "workdir": [
+      "$GOPATH"
+    ],
+    "from": "gliderlabs/alpine:3.3",
+    "maintainer": "Daniel S. Reichenbach <daniel@kogitoapp.com>",
+    "env": {
+      "GOLANG_VERSION": "1.6.2",
+      "GOLANG_SRC_URL": "https://golang.org/dl/go$GOLANG_VERSION.src.tar.gz",
+      "GOLANG_SRC_SHA256": "787b0b750d037016a30c6ed05a8a70a91b2e9db4bd9b1a2453aa502a63f1bccc",
+      "GOLANG_BOOTSTRAP_VERSION": "1.4.3",
+      "GOLANG_BOOTSTRAP_URL": "https://golang.org/dl/go$GOLANG_BOOTSTRAP_VERSION.src.tar.gz",
+      "GOLANG_BOOTSTRAP_SHA1": "486db10dc571a55c8d795365070f66d343458c48",
+      "GOPATH": "/go",
+      "PATH": "$GOPATH/bin:/usr/local/go/bin:$PATH"
+    }
+  },
+  "source_repository_url": "https://github.com/danielsreichenbach/docker-golang.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/danielsreichenbach/docker-golang",
+  "docker_repository": "danielsreichenbach/golang",
+  "docker_image": "danielsreichenbach/golang",
+  "parameters_schema": {
+    "GOLANG_VERSION": {
+      "default": "1.6.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOLANG_SRC_URL": {
+      "default": "https://golang.org/dl/go$GOLANG_VERSION.src.tar.gz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOLANG_SRC_SHA256": {
+      "default": "787b0b750d037016a30c6ed05a8a70a91b2e9db4bd9b1a2453aa502a63f1bccc",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOLANG_BOOTSTRAP_VERSION": {
+      "default": "1.4.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOLANG_BOOTSTRAP_URL": {
+      "default": "https://golang.org/dl/go$GOLANG_BOOTSTRAP_VERSION.src.tar.gz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOLANG_BOOTSTRAP_SHA1": {
+      "default": "486db10dc571a55c8d795365070f66d343458c48",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOPATH": {
+      "default": "/go",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$GOPATH/bin:/usr/local/go/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "danielsreichenbach/golang",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/danielsreichenbach/golang",
+    "https://hub.docker.com/v2/repositories/danielsreichenbach/golang",
+    "https://github.com/danielsreichenbach/docker-golang.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Golang",
+    "Type/Devopsware/Build",
+    "Type/Devopsware/Version Control"
+  ],
+  "info_url": "https://hub.docker.com/r/danielsreichenbach/golang",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

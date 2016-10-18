@@ -1,0 +1,117 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kartoza/django-base",
+    "repository_url": "https://hub.docker.com/v2/repositories/kartoza/django-base",
+    "tags_url": "https://hub.docker.com/v2/repositories/kartoza/django-base/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kartoza/django-base/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kartoza/django-base/autobuild",
+    "user": "kartoza",
+    "name": "django-base",
+    "namespace": "kartoza",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 848,
+    "last_updated": "2016-10-14T17:50:22.859187Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 317373150,
+        "id": 79685,
+        "repository": 104592,
+        "creator": 94624,
+        "last_updater": 94624,
+        "last_updated": "2016-10-14T17:50:22.445687Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "kartoza/docker-django-base"
+  },
+  "name": "kartoza/django-base Docker container",
+  "description": "",
+  "readme": "# Kartoza Django Base Image\n\nA base image for django projects.\n\nThis is a base image for django projects. It is based on the \npython base image (which in turn is based on debian). \n\nThis image makes some other assumptions in particular:\n\n* nodejs / npm / yuglify are installed to compress django resources\n* uwsgi runs on port 8080\n* uwsgi is set up to serve the django project out of /home/web/django_project\n* the WORKDIR will be set to /home/web/django_project\n* uwsgi will serve up static resources from /home/web/django_project/static\n* uwsgi will serve up media resources from /home/web/django_project/media\n* Your project is mounted into /home/web/django_project from a docker volume\n\n\n**NOTE:** Django itself is not installed in this image - you must add it in your\nREQUIREMENTS.txt file.\n\n# Getting the image\n\nThere are several ways to get the image onto your system:\n\n## Use the docker repository:\n\nThis will consume the most bandwidth for the initial build but \nwill be easy to update thereafter. \n\n```\ndocker pull kartoza/django-base\n```\n\n## Build with no package caching\n\n\nto build the image without apt-cacher do:\n\n```\ndocker build -t kartoza/django-base git://github.com/kartoza/docker-django-base\n```\n\n## Build locally or with apt-cacher-ng caching locally\n\n**Note:** we recommend using ``apt-cacher-ng`` to speed up package fetching -\nyou should configure the host for it in the provided 71-apt-cacher-ng file.\n\nTo build with apt-cacher-ng do you need to clone this repo locally first and \nmodify the contents of 71-apt-cacher-ng to match your cacher host. then \nbuild using a local url instead of directly from github.\n\n```\ngit clone git://github.com/kartoza/docker-django-base\n```\n\nnow edit ``71-apt-cacher-ng`` then do:\n\n```\ndocker build -t kartoza/django-base .\n```\n\n# Usage\n\nYou should use the FROM directive in your Dockerfile to inherit from this file\nand then install your requirements like this:\n\n```\nFROM kartoza/django-base\nADD REQUIREMENTS.txt /REQUIREMENTS.txt\nRUN pip install -r /REQUIREMENTS.txt\nRUN pip install uwsgi\n```\n\n\n\n## credits\n\nTim Sutton (tim@kartoza.com)\nDecember 2014\n\n",
+  "dockerfile": "# This is a base image for django projects. It is based on the \n# python base image (which in turn is based on debian). You should\n# use the FROM dockerfile directive to inherit from this file\n# and then install your requirements like this:\n#\n# ADD REQUIREMENTS.txt /REQUIREMENTS.txt\n# RUN pip install -r /REQUIREMENTS.txt\n# RUN pip install uwsgi\n#\n# This image makes some other assumptions in particular:\n# \n# * nodejs / npm / yuglify are installed to compress django resources\n# * uwsgi runs on port 8080\n# * uwsgi is set up to serve the django project out of /home/web/django_project\n# * the WORKDIR will be set to /home/web/django_project\n# * uwsgi will serve up static resources from /home/web/django_project/static\n# * uwsgi will serve up media resources from /home/web/django_project/media\n# * Your project is mounted into /home/web/django_project from a docker volume\n# \n#\n# NOTE: Django itself is not installed in this image - you must add it in your\n# REQUIREMENTS.txt file.\n#\n# Tim Sutton, December 2014\n\nFROM python:2.7\nMAINTAINER Tim Sutton<tim@linfiniti.com>\n\nRUN  export DEBIAN_FRONTEND=noninteractive\nENV  DEBIAN_FRONTEND noninteractive\nRUN  dpkg-divert --local --rename --add /sbin/initctl\n#RUN  ln -s /bin/true /sbin/initctl\n\n# Use local cached debs from host (saves your bandwidth!)\n# Change ip below to that of your apt-cacher-ng host\n# Or comment this line out if you do not with to use caching\nADD 71-apt-cacher-ng /etc/apt/apt.conf.d/71-apt-cacher-ng\nRUN apt-get -y update\nRUN apt-get -y install \\\n    python-gdal \\\n    python-geoip \\\n    npm \\\n    nodejs \\\n    rpl\nRUN npm -g install yuglify\n\n# Debian is messed up and aliases node as nodejs\n# So when yuglify is installed it references the wrong node binary...\n# lets fix that here...\n\nRUN rpl \"env node\" \"env nodejs\" /usr/local/lib/node_modules/yuglify/bin/yuglify\n\nADD uwsgi.conf /uwsgi.conf\n\n# Open port 8080 as we will be running our uwsgi socket on that\nEXPOSE 8080\n\nWORKDIR /home/web/django_project\n\n# Under normal usage you would supply no additional params and\n# use nginx on the host to forward in the traffic.\n# Entrypoint is preferred but we use CMD\n# as fig run does not currently correctly\n# overload entrypoint\nCMD [\"uwsgi\", \"--ini\", \"/uwsgi.conf\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "71-apt-cacher-ng",
+        "dest": "/etc/apt/apt.conf.d/71-apt-cacher-ng"
+      },
+      {
+        "source": "uwsgi.conf",
+        "dest": "/uwsgi.conf"
+      }
+    ],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      " export DEBIAN_FRONTEND=noninteractive",
+      " dpkg-divert --local --rename --add /sbin/initctl",
+      "apt-get -y update",
+      "apt-get -y install     python-gdal     python-geoip     npm     nodejs     rpl",
+      "npm -g install yuglify",
+      "rpl \"env node\" \"env nodejs\" /usr/local/lib/node_modules/yuglify/bin/yuglify"
+    ],
+    "workdir": [
+      "/home/web/django_project"
+    ],
+    "from": "python:2.7",
+    "maintainer": "Tim Sutton<tim@linfiniti.com>",
+    "env": {
+      "": "DEBIAN_FRONTEND"
+    },
+    "cmd": "[\"uwsgi\", \"--ini\", \"/uwsgi.conf\"]"
+  },
+  "source_repository_url": "https://github.com/kartoza/docker-django-base.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/kartoza/docker-django-base",
+  "docker_repository": "kartoza/django-base",
+  "docker_image": "kartoza/django-base",
+  "parameters_schema": {
+    "": {
+      "default": "DEBIAN_FRONTEND",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kartoza/django-base",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/kartoza/django-base",
+    "https://hub.docker.com/v2/repositories/kartoza/django-base",
+    "https://github.com/kartoza/docker-django-base.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python"
+  ],
+  "info_url": "https://hub.docker.com/r/kartoza/django-base",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

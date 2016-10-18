@@ -1,0 +1,145 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/hpess/rabbitmq",
+    "repository_url": "https://hub.docker.com/v2/repositories/hpess/rabbitmq",
+    "tags_url": "https://hub.docker.com/v2/repositories/hpess/rabbitmq/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/hpess/rabbitmq/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/hpess/rabbitmq/autobuild",
+    "user": "hpess",
+    "name": "rabbitmq",
+    "namespace": "hpess",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1174,
+    "last_updated": "2015-11-15T01:07:49.287437Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 218876530,
+        "id": 107808,
+        "repository": 97911,
+        "creator": 133152,
+        "last_updater": 74074,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "master",
+        "full_size": 218875851,
+        "id": 107796,
+        "repository": 97911,
+        "creator": 133152,
+        "last_updater": 74074,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "Hewlett-Packard-ESS/docker-rabbitmq"
+  },
+  "name": "hpess/rabbitmq Docker container",
+  "description": "",
+  "readme": "![RabbitMQ](/rabbitmq.jpg?raw=true \"RabbitMQ\")\n\nBuilds on the hpess/chef image by installing rabbitmq, currently version 3.5.3-1.\n\n## Use\nHere's an example docker file to spin up a single rabbitmq instance:\n```\nrabbitmq:\n  hostname: 'rabbitmq'\n  image: hpess/rabbitmq\n  ports: \n    - \"15672:15672\"\n    - \"5672:5672\"\n```\nThe default username and password for the admin console on 15672 is 'guest' and 'guest'\n\nOf course you have the ability to override the rather simple configuration with your own config by adding rabbitmq.config to /storage volume.\n\n## Traps\nI've spent a silly amount of time ensuring that we trap all of the SIGTERM SIGKILL signals etc so that the instance/cluster remains stable, you can quite happily `docker restart <id>` or `docker stop <id> && docker stop <id>` and everything will continue to work well.\n\nI've also ensured that when you stop the containers, RabbitMQ is gracefully closed down rather than brutally killed by docker.\n\n## Clustering\nThis container supports clustering with some simple environment variables.  The docker-compose file below shows you how to create a three rabbit cluster:\n```\nrabbit1:\n  image: hpess/rabbitmq \n  restart: always\n  hostname: rabbit1\n  ports:\n    - \"5672:5672\"\n    - \"15672:15672\"\n\nrabbit2:\n  image: hpess/rabbitmq \n  restart: always\n  hostname: rabbit2\n  links:\n    - rabbit1\n  environment: \n   - clustered_with=rabbit1\n   - ram_node=true\n  ports:\n    - \"5673:5672\"\n    - \"15673:15672\"\n\nrabbit3:\n  image: hpess/rabbitmq \n  restart: always\n  hostname: rabbit3\n  links:\n    - rabbit1\n    - rabbit2\n  environment: \n   - clustered_with=rabbit1   \n  ports:\n    - \"5674:5672\"\n```\n\n### Erlang Cookie\nThe erlang cookie must be identical across all rabbit instances, you can specify one with the environment variable `erlang_cookie`, otherwise a default of 'ERLANGCOOKIE' will be used.\n\n## License\nThis docker application is distributed unter the MIT License (MIT).\n\nRabbitMQ itself is licenced under the [Mozilla Public License](https://www.rabbitmq.com/mpl.html) License.\n",
+  "dockerfile": "FROM hpess/chef:master\nMAINTAINER Karl Stoney <karl.stoney@hp.com>\n\n# Latest RabbitMQ\nRUN wget --quiet https://www.rabbitmq.com/releases/rabbitmq-server/v3.5.3/rabbitmq-server-3.5.3-1.noarch.rpm && \\\n    rpm --import http://www.rabbitmq.com/rabbitmq-signing-key-public.asc && \\\n    yum -y -q install rabbitmq-server-3.5.3-1.noarch.rpm && \\\n    yum -y -q clean all && \\\n    rm rabbitmq-server-*.noarch.rpm\n\n# Enable the relevant plugins\nRUN su -c '/usr/sbin/rabbitmq-plugins --offline enable rabbitmq_management' root\nRUN su -c '/usr/sbin/rabbitmq-plugins --offline enable rabbitmq_shovel' root\nRUN su -c '/usr/sbin/rabbitmq-plugins --offline enable rabbitmq_shovel_management' root\n\n# Configure the environment a little\nENV RABBITMQ_LOG_BASE /storage/log\nENV RABBITMQ_MNESIA_BASE /storage/mnesia\nENV RABBITMQ_CONFIG_FILE=/storage/rabbitmq\n\n# Add the service and cookbook files\nCOPY services/* /etc/supervisord.d/\nCOPY preboot/* /preboot/ \nCOPY cookbooks/ /chef/cookbooks/\nCOPY scripts/* /usr/local/bin/\n\nEXPOSE 15672 5672\n\nENV HPESS_ENV rabbitmq\nENV chef_node_name rabbitmq.docker.local\nENV chef_run_list rabbitmq\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      15672
+    ],
+    "volume": [],
+    "run": [
+      "wget --quiet https://www.rabbitmq.com/releases/rabbitmq-server/v3.5.3/rabbitmq-server-3.5.3-1.noarch.rpm &&     rpm --import http://www.rabbitmq.com/rabbitmq-signing-key-public.asc &&     yum -y -q install rabbitmq-server-3.5.3-1.noarch.rpm &&     yum -y -q clean all &&     rm rabbitmq-server-*.noarch.rpm",
+      "su -c '/usr/sbin/rabbitmq-plugins --offline enable rabbitmq_management' root",
+      "su -c '/usr/sbin/rabbitmq-plugins --offline enable rabbitmq_shovel' root",
+      "su -c '/usr/sbin/rabbitmq-plugins --offline enable rabbitmq_shovel_management' root"
+    ],
+    "workdir": [],
+    "from": "hpess/chef:master",
+    "maintainer": "Karl Stoney <karl.stoney@hp.com>",
+    "env": {
+      "RABBITMQ_LOG_BASE": "/storage/log",
+      "RABBITMQ_MNESIA_BASE": "/storage/mnesia",
+      "RABBITMQ_CONFIG_FILE": "/storage/rabbitmq",
+      "HPESS_ENV": "rabbitmq",
+      "chef_node_name": "rabbitmq.docker.local",
+      "chef_run_list": "rabbitmq"
+    },
+    "copy": "scripts/* /usr/local/bin/"
+  },
+  "source_repository_url": "https://github.com/Hewlett-Packard-ESS/docker-rabbitmq.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Hewlett-Packard-ESS/docker-rabbitmq",
+  "docker_repository": "hpess/rabbitmq",
+  "docker_image": "hpess/rabbitmq",
+  "parameters_schema": {
+    "RABBITMQ_LOG_BASE": {
+      "default": "/storage/log",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_MNESIA_BASE": {
+      "default": "/storage/mnesia",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_CONFIG_FILE": {
+      "default": "/storage/rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HPESS_ENV": {
+      "default": "rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "chef_node_name": {
+      "default": "rabbitmq.docker.local",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "chef_run_list": {
+      "default": "rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        15672
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "hpess/rabbitmq",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/hpess/rabbitmq",
+    "https://hub.docker.com/v2/repositories/hpess/rabbitmq",
+    "https://github.com/Hewlett-Packard-ESS/docker-rabbitmq.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/hpess/rabbitmq",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

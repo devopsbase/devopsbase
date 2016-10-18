@@ -1,0 +1,91 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/cheewai/haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/cheewai/haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/cheewai/haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/cheewai/haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/cheewai/haproxy/autobuild",
+    "user": "cheewai",
+    "name": "haproxy",
+    "namespace": "cheewai",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 195,
+    "last_updated": "2016-09-23T18:06:57.882728Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 6177865,
+        "id": 1775276,
+        "repository": 489197,
+        "creator": 268349,
+        "last_updater": 268349,
+        "last_updated": "2016-09-23T18:06:57.383253Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "cynici/haproxy"
+  },
+  "name": "cheewai/haproxy Docker container",
+  "description": "Small footprint HAProxy",
+  "readme": "# haproxy in docker\n\nKey differences from the official [HAProxy](https://hub.docker.com/_/haproxy/) on Docker Hub:\n\n- Uses [alpine](https://hub.docker.com/_/alpine/) as base image for its tiny footprint instead of debian:testing \n- Runs service as user *haproxy* in container instead of *root* as set by HAProxy configuration parameter *user*\n- Includes rsyslogd so that logs can be saved to a file and/or retransmitted to ELK, etc.\n- No *bash*, use *sh* instead if necessary\n- Uses [s6](http://skarnet.org/software/s6/) to ensure liveness of rsyslogd and ensure proper signal propagation\n\nThe image is less than 20 MB!\n\nIf, however, you need to rewrite URLs in HTML response body, [HAProxy is not the right tool](http://serverfault.com/questions/336338/using-nginx-to-rewrite-urls-inside-outgoing-responses). Use [nginx](https://github.com/sickp/docker-alpine-nginx) instead.\n\nFor performance reason, HAProxy does not log to file on its own. Logging is via either a local or remote syslog daemon e.g. rsyslogd etc. That's why this docker image has included *rsyslogd* and  *s6*. The use of *rsyslogd* and *s6* is optional.\n\n*s6* may be used to ensure signals are propagated, defunct processes are reaped, processes restarted if necessary.\n\nBy default, *rsyslogd* saved HAProxy logs to */var/log/messages*. You can customize *rsyslogd*, e.g. log to multiple destination, etc. by crafting additional rsyslogd configuration and mount it into the container with VOLUMES as */etc/rsyslog.d/10-extraconfig.conf*\n\n\n## Usage\n\nAs usual, craft your own *haproxy.cfg*. Next, create a *docker-compose.yml* based on the example below. \n\n```\nhaproxy:\n  image: cheewai/haproxy\n  ports:\n    - \"80:80\"\n    # If you want to proxy SSL, uncomment the line below\n    #- \"443:443\"\n  volumes:\n    # If proxying SSL, you must supply all your certificate PEM(s)\n    # in a directory e.g. 'ssl' and your haproxy.cfg lines should\n    # reference /etc/ssl/private\n    #- ./ssl:/etc/ssl/private\n    - ./haproxy.cfg:/etc/haproxy/haproxy.cfg\n```\n\n\n### HAProxy alone without running rsyslogd\n\nIn this case you don't really need s6. The container exits if HAProxy dies. You can compensate for this adding *restart: always* option to *docker-compose.yml* so that the container may be restarted by the Docker daemon.\n\n\n### HAProxy with rsyslogd, without s6\n\n*s6* does add slight delay to container startup/shutdown. Without it, you lose the ability to ensure that *rsyslogd* remains alive. The container exits if HAProxy dies. You can compensate for this adding *restart: always* option to *docker-compose.yml* so that the container may be restarted by the Docker daemon.\n\n- Create *docker-entrypoint.sh* like this:\n\n```\n#!/bin/sh\nset -ux\nrm -f /var/run/rsyslogd.pid\nrsyslogd\nexec \"$@\"\n```\n- chmod 755 docker-entrypoint.sh\n- Add item *- ./docker-entrypoint.sh:/docker-entrypoint.sh* to *volumes* list in *docker-compose.yml*\n- Add *entrypoint: /docker-compose.yml* to *docker-compose.yml*\n\n\n### HAProxy with rsyslogd and s6\n\n- Add *entrypoint: /init* to *docker-compose.yml*\n\nIn doing so, */etc/services.d/rsyslog/run* script already present in the Docker image will be executed automatically by *s6* to bring up *rsyslogd* when the container comes up. *s6* also re-runs the script in the unlikely event that *rsyslogd* dies.\n\n\n## References\n\n* How to use s6 in a container [https://blog.tutum.co/2015/05/20/s6-made-easy-with-the-s6-overlay/]\n\n* What are s6 services [http://skarnet.org/software/s6/servicedir.html]\n\n* Add s6 to docker image [https://github.com/just-containers/s6-overlay]\n",
+  "dockerfile": "FROM alpine\nMAINTAINER Cheewai Lai <clai@csir.co.za>\n\nARG S6_OVERLAY_VERSION=v1.17.2.0\n\nRUN runDeps='ca-certificates haproxy rsyslog curl' HOME='/root' && \\\n set -x && \\\n apk add --update $runDeps && \\\n curl -sSL https://github.com/just-containers/s6-overlay/releases/download/${S6_OVERLAY_VERSION}/s6-overlay-amd64.tar.gz \\\n | tar xfz - -C / && \\\n rm -rf /root/.gnupg && \\\n rm -rf /var/cache/apk/*\n\nCOPY s6-rsyslog /etc/services.d/rsyslog\nCMD [\"haproxy\", \"-db\", \"-f\", \"/etc/haproxy/haproxy.cfg\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "runDeps='ca-certificates haproxy rsyslog curl' HOME='/root' &&  set -x &&  apk add --update $runDeps &&  curl -sSL https://github.com/just-containers/s6-overlay/releases/download/${S6_OVERLAY_VERSION}/s6-overlay-amd64.tar.gz  | tar xfz - -C / &&  rm -rf /root/.gnupg &&  rm -rf /var/cache/apk/*"
+    ],
+    "workdir": [],
+    "from": "alpine",
+    "maintainer": "Cheewai Lai <clai@csir.co.za>",
+    "arg": "S6_OVERLAY_VERSION=v1.17.2.0",
+    "copy": "s6-rsyslog /etc/services.d/rsyslog",
+    "cmd": "[\"haproxy\", \"-db\", \"-f\", \"/etc/haproxy/haproxy.cfg\"]"
+  },
+  "source_repository_url": "https://github.com/cynici/haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/cynici/haproxy",
+  "docker_repository": "cheewai/haproxy",
+  "docker_image": "cheewai/haproxy",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "cheewai/haproxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/cheewai/haproxy",
+    "https://hub.docker.com/v2/repositories/cheewai/haproxy",
+    "https://github.com/cynici/haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/cheewai/haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

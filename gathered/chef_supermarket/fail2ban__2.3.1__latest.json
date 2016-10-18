@@ -1,0 +1,109 @@
+{
+  "name": "fail2ban Chef cookbook",
+  "chef_cookbook_name": "fail2ban",
+  "revision": "2.3.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/fail2ban",
+    "https://supermarket.chef.io/cookbooks/fail2ban/download",
+    "https://supermarket.chef.io/cookbooks/fail2ban/versions/2.3.1",
+    "https://supermarket.chef.io/cookbooks/fail2ban/versions/2.3.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/fail2ban/versions/2.3.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/fail2ban",
+    "https://supermarket.chef.io/api/v1/cookbooks/fail2ban/versions/2.3.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/fail2ban",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/fail2ban/versions/2.3.1/download",
+  "deprecated": false,
+  "created": "2009-10-28T19:13:04.000Z",
+  "updated": "2016-07-21T05:44:01.506Z",
+  "description": "Installs and configures fail2ban",
+  "maintainer": {
+    "name": "chef",
+    "email": "cookbooks@chef.io"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 68,
+  "downloads_count": 17414499,
+  "downloads_count_revision": 11062,
+  "repository_url": "https://github.com/chef-cookbooks/fail2ban",
+  "issues_url": "https://github.com/chef-cookbooks/fail2ban/issues",
+  "chef_source_url": "https://github.com/chef-cookbooks/fail2ban",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "fail2ban Cookbook\n=================\n\n[![Build Status](https://travis-ci.org/chef-cookbooks/fail2ban.svg?branch=master)](https://travis-ci.org/chef-cookbooks/fail2ban)\n<!-- [![Cookbook Version](https://img.shields.io/cookbook/v/fail2ban.svg)](https://supermarket.chef.io/cookbooks/fail2ban) -->\n\nInstalls and configures `fail2ban`, a utility that watches logs for failed login attempts\nand blocks repeat offenders with firewall rules.  On Redhat systems this cookbook will\nenable the EPEL repository in order to retrieve the fail2ban package.\n\nRequirements\n============\n\n* Chef 11 or greater\n\nPlatforms\n---------\n\n* Debian/Ubuntu\n* RHEL/CentOS/Scientific/Amazon/Oracle\n* Fedora\n* OpenSUSE\n\nCookbooks\n---------\n\n* yum-epel\n\nRecipes\n=======\n\ndefault\n-------\n\nInstalls the fail2ban package, manages 2 templates: `/etc/fail2ban/fail2ban.conf`\nand `/etc/fail2ban/jail.conf`, and manages the fail2ban service.\n\nUsage\n=====\n\nTypically, include `recipe[fail2ban]` in a base role applied to all nodes.\n\nAttributes\n=====\n\nThis cookbook has a set of configuration options for fail2ban\n\n* default['fail2ban']['loglevel'] = 3\n* default['fail2ban']['socket'] = '/var/run/fail2ban/fail2ban.sock'\n* default['fail2ban']['logtarget'] = '/var/log/fail2ban.log'\n* default['fail2ban']['pidfile'] = '/var/run/fail2ban/fail2ban.pid'\n* default['fail2ban']['dbfile'] = '/var/lib/fail2ban/fail2ban.sqlite3'\n* default['fail2ban']['dbpurgeage'] = 86_400\n\nThis cookbook has a set of configuration options for jail.conf\n\n* default['fail2ban']['ignoreip'] = '127.0.0.1/8'\n* default['fail2ban']['findtime'] = 600\n* default['fail2ban']['bantime'] = 300\n* default['fail2ban']['maxretry'] = 5\n* default['fail2ban']['backend'] = 'polling'\n* default['fail2ban']['email'] = 'root@localhost'\n* default['fail2ban']['sendername'] = 'Fail2Ban'\n* default['fail2ban']['action'] = 'action_'\n* default['fail2ban']['banaction'] = 'iptables-multiport'\n* default['fail2ban']['mta'] = 'sendmail'\n* default['fail2ban']['protocol'] = 'tcp'\n* default['fail2ban']['chain'] = 'INPUT'\n\nThis cookbook makes use of a hash to compile the jail.local-file and filter config files:\n\n```\ndefault['fail2ban']['services'] = {\n  'ssh' => {\n        \"enabled\" => \"true\",\n        \"port\" => \"ssh\",\n        \"filter\" => \"sshd\",\n        \"logpath\" => node['fail2ban']['auth_log'],\n        \"maxretry\" => \"6\"\n     },\n  'smtp' => {\n        \"enabled\" => \"true\",\n        \"port\" => \"smtp\",\n        \"filter\" => \"smtp\",\n        \"logpath\" => node['fail2ban']['auth_log'],\n        \"maxretry\" => \"6\"\n     }\n}\n```\n\nThe following attributes can be used per service:\n\n\n* enabled\n* port\n* filter\n* logpath\n* maxretry\n* protocol\n* banaction\n* bantime\n\nCreating custom fail2ban filters:\n\n```\ndefault['fail2ban']['filters'] = {\n  'nginx-proxy' => {\n        \"failregex\" => [\"^<HOST> -.*GET http.*\"],\n        \"ignoreregex\" => []\n     },\n}\n```\n\n\n\nParticular those related to rsyslog\n=====\n\nIf you are using rsyslog parameter \"$RepeatedMsgReduction on\" in rsyslog.conf file\nthen you can get \"Last message repeated N times\" in system log file (for example auth.log).\nAnd it will affect the work of fail2ban, so that fail2ban will not work because the internal counter maxretry will not extend their\nThen you can change parameter \"$RepeatedMsgReduction off\" in rsyslog.conf file for maximum accuracy of maximum failed login attempts\n\nThis rsyslog parameter is default ON for ubuntu 12.04 LTS for example.\n\nLicense and Author\n==================\n```\nAuthor:: Joshua Timberman (<joshua@chef.io>)\n\nCopyright:: 2009-2016, Chef Software, Inc\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "oracle",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "suse",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum-epel",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "default": "Installs and configures fail2ban"
+  }
+}

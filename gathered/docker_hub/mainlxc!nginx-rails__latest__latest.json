@@ -1,0 +1,166 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mainlxc/nginx-rails",
+    "repository_url": "https://hub.docker.com/v2/repositories/mainlxc/nginx-rails",
+    "tags_url": "https://hub.docker.com/v2/repositories/mainlxc/nginx-rails/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mainlxc/nginx-rails/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mainlxc/nginx-rails/autobuild",
+    "user": "mainlxc",
+    "name": "nginx-rails",
+    "namespace": "mainlxc",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 175,
+    "last_updated": "2016-10-15T09:40:18.931190Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 476031176,
+        "id": 2400798,
+        "repository": 592804,
+        "creator": 195289,
+        "last_updater": 195289,
+        "last_updated": "2016-10-15T09:40:18.590670Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "asokani/docker-nginx-rails"
+  },
+  "name": "mainlxc/nginx-rails Docker container",
+  "description": "nginx-rails",
+  "readme": null,
+  "dockerfile": "FROM mainlxc/base\nMAINTAINER Asokani \"https://github.com/asokani\"\n\nRUN add-apt-repository -y ppa:chris-lea/nginx-devel\n\nRUN apt-get update && \\\n   apt-get -y install nginx-full libreadline-dev libffi-dev\n\nRUN git clone https://github.com/sstephenson/rbenv.git /usr/local/rbenv\nRUN git clone https://github.com/sstephenson/ruby-build /usr/local/rbenv/plugins/ruby-build\n#RUN git clone https://github.com/ianheggie/rbenv-binstubs.git /usr/local/rbenv/plugins/rbenv-binstubs\n\nENV PATH /usr/local/rbenv/shims:/usr/local/rbenv/bin:$PATH\nENV RBENV_ROOT /usr/local/rbenv\nRUN eval \"$(rbenv init -)\"\n\nRUN rbenv install 2.3.0\nRUN rbenv global 2.3.0\n\nENV RBENV_VERSION 2.3.0\nRUN gem install bundler\n\nRUN rbenv rehash \n\nRUN chown www-manage:www-user -R /usr/local/rbenv/ && chmod -R g+rX /usr/local/rbenv/ && find /usr/local/rbenv -type d -exec chmod g+s {} \\;\nRUN echo 'export PATH=\"/usr/local/rbenv/bin:$PATH\"\\nexport RBENV_ROOT=\"/usr/local/rbenv\"\\neval \"$(rbenv init -)\"' >> ~www-user/.bashrc\nRUN echo 'export PATH=\"/usr/local/rbenv/bin:$PATH\"\\nexport RBENV_ROOT=\"/usr/local/rbenv\"\\neval \"$(rbenv init -)\"' >> ~www-manage/.bashrc\nRUN echo 'gem: --no-rdoc --no-ri' >> ~www-manage/.gemrc\n\nUSER root\n\n# nginx\nRUN mkdir /etc/sv/nginx\nRUN ln -s /etc/sv/nginx /etc/service/\nADD nginx.sh /etc/sv/nginx/run\nADD nginx-ssl.conf /etc/nginx/ssl.conf\nRUN rm -rf /etc/nginx/conf.d\nRUN sed -i -e 's/user www-data;/user www-user;/' /etc/nginx/nginx.conf\nRUN sed -i -e 's/http[[:space:]]*{/http {\\nserver_names_hash_bucket_size 128;\\ninclude \\/etc\\/nginx\\/ssl.conf;/' /etc/nginx/nginx.conf\nRUN echo \"sv restart nginx\" >> /etc/cron.weekly/letsencrypt.sh\n\n# unicorn\nRUN mkdir -p /var/log/unicorn && chown www-user:www-user /var/log/unicorn\nRUN mkdir -p /var/log/rails && touch /var/log/rails/production.log && chown -R www-user:www-user /var/log/rails\nRUN chmod 770 /var/log/rails && chmod 660 /var/log/rails/production.log\nRUN mkdir /etc/sv/unicorn\nRUN mkdir /etc/sv/unicorn/log\nRUN mkdir /var/log/unicorn-run && chown www-user:www-user /var/log/unicorn-run\nRUN ln -s /etc/sv/unicorn /etc/service/\nADD unicorn.sh /etc/sv/unicorn/run\nADD unicorn-log.sh /etc/sv/unicorn/log/run\nADD unicorn-reload.sh /usr/bin/unicorn-reload.sh\nRUN echo \"www-manage ALL = NOPASSWD: /usr/bin/unicorn-reload.sh\" > /etc/sudoers.d/unicorn\n\n# custom init\nRUN rm -f /etc/service/sshd/down\n\nRUN apt-get -y install graphicsmagick python-setuptools \\\n        python-dev build-essential\nRUN easy_install xlsx2csv\n\n\nEXPOSE 80 22 443\n\nCMD [\"/sbin/my_init\"]\n\nRUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "nginx.sh",
+        "dest": "/etc/sv/nginx/run"
+      },
+      {
+        "source": "nginx-ssl.conf",
+        "dest": "/etc/nginx/ssl.conf"
+      },
+      {
+        "source": "unicorn.sh",
+        "dest": "/etc/sv/unicorn/run"
+      },
+      {
+        "source": "unicorn-log.sh",
+        "dest": "/etc/sv/unicorn/log/run"
+      },
+      {
+        "source": "unicorn-reload.sh",
+        "dest": "/usr/bin/unicorn-reload.sh"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "add-apt-repository -y ppa:chris-lea/nginx-devel",
+      "apt-get update &&    apt-get -y install nginx-full libreadline-dev libffi-dev",
+      "git clone https://github.com/sstephenson/rbenv.git /usr/local/rbenv",
+      "git clone https://github.com/sstephenson/ruby-build /usr/local/rbenv/plugins/ruby-build",
+      "eval \"$(rbenv init -)\"",
+      "rbenv install 2.3.0",
+      "rbenv global 2.3.0",
+      "gem install bundler",
+      "rbenv rehash ",
+      "chown www-manage:www-user -R /usr/local/rbenv/ && chmod -R g+rX /usr/local/rbenv/ && find /usr/local/rbenv -type d -exec chmod g+s {} \\;",
+      "echo 'export PATH=\"/usr/local/rbenv/bin:$PATH\"\\nexport RBENV_ROOT=\"/usr/local/rbenv\"\\neval \"$(rbenv init -)\"' >> ~www-user/.bashrc",
+      "echo 'export PATH=\"/usr/local/rbenv/bin:$PATH\"\\nexport RBENV_ROOT=\"/usr/local/rbenv\"\\neval \"$(rbenv init -)\"' >> ~www-manage/.bashrc",
+      "echo 'gem: --no-rdoc --no-ri' >> ~www-manage/.gemrc",
+      "mkdir /etc/sv/nginx",
+      "ln -s /etc/sv/nginx /etc/service/",
+      "rm -rf /etc/nginx/conf.d",
+      "sed -i -e 's/user www-data;/user www-user;/' /etc/nginx/nginx.conf",
+      "sed -i -e 's/http[[:space:]]*{/http {\\nserver_names_hash_bucket_size 128;\\ninclude \\/etc\\/nginx\\/ssl.conf;/' /etc/nginx/nginx.conf",
+      "echo \"sv restart nginx\" >> /etc/cron.weekly/letsencrypt.sh",
+      "mkdir -p /var/log/unicorn && chown www-user:www-user /var/log/unicorn",
+      "mkdir -p /var/log/rails && touch /var/log/rails/production.log && chown -R www-user:www-user /var/log/rails",
+      "chmod 770 /var/log/rails && chmod 660 /var/log/rails/production.log",
+      "mkdir /etc/sv/unicorn",
+      "mkdir /etc/sv/unicorn/log",
+      "mkdir /var/log/unicorn-run && chown www-user:www-user /var/log/unicorn-run",
+      "ln -s /etc/sv/unicorn /etc/service/",
+      "echo \"www-manage ALL = NOPASSWD: /usr/bin/unicorn-reload.sh\" > /etc/sudoers.d/unicorn",
+      "rm -f /etc/service/sshd/down",
+      "apt-get -y install graphicsmagick python-setuptools         python-dev build-essential",
+      "easy_install xlsx2csv",
+      "apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+    ],
+    "workdir": [],
+    "from": "mainlxc/base",
+    "maintainer": "Asokani \"https://github.com/asokani\"",
+    "env": {
+      "PATH": "/usr/local/rbenv/shims:/usr/local/rbenv/bin:$PATH",
+      "RBENV_ROOT": "/usr/local/rbenv",
+      "RBENV_VERSION": "2.3.0"
+    },
+    "user": "root",
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/asokani/docker-nginx-rails.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/asokani/docker-nginx-rails",
+  "docker_repository": "mainlxc/nginx-rails",
+  "docker_image": "mainlxc/nginx-rails",
+  "parameters_schema": {
+    "PATH": {
+      "default": "/usr/local/rbenv/shims:/usr/local/rbenv/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RBENV_ROOT": {
+      "default": "/usr/local/rbenv",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RBENV_VERSION": {
+      "default": "2.3.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mainlxc/nginx-rails",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/mainlxc/nginx-rails",
+    "https://hub.docker.com/v2/repositories/mainlxc/nginx-rails",
+    "https://github.com/asokani/docker-nginx-rails.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/mainlxc/nginx-rails",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

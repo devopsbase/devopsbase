@@ -1,0 +1,106 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/webgpu/rabbitmq",
+    "repository_url": "https://hub.docker.com/v2/repositories/webgpu/rabbitmq",
+    "tags_url": "https://hub.docker.com/v2/repositories/webgpu/rabbitmq/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/webgpu/rabbitmq/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/webgpu/rabbitmq/autobuild",
+    "user": "webgpu",
+    "name": "rabbitmq",
+    "namespace": "webgpu",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 37,
+    "last_updated": "2016-03-13T23:32:30.112137Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 92921781,
+        "id": 2003698,
+        "repository": 528410,
+        "creator": 635256,
+        "last_updater": 635256,
+        "last_updated": "2016-03-13T23:32:29.714463Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "hwuligans/wgx-rabbitmq-dockerfile"
+  },
+  "name": "webgpu/rabbitmq Docker container",
+  "description": "rabbitmq",
+  "readme": "tutum-docker-rabbitmq\n=====================\n\n[![Deploy to Tutum](https://s.tutum.co/deploy-to-tutum.svg)](https://dashboard.tutum.co/stack/deploy/)\n\nBase docker image to run a RabbitMQ server\n\n\nUsage\n-----\n\nTo create the image `tutum/rabbitmq`, execute the following command on the tutum-rabbitmq folder:\n\n\tsudo docker build -t tutum/rabbitmq .\n\n\nRunning the RabbitMQ server\n---------------------------\n\nRun the following command to start rabbitmq:\n\n\tdocker run -d -p 5672:5672 -p 15672:15672 tutum/rabbitmq\n\nThe first time that you run your container, a new random password will be set.\nTo get the password, check the logs of the container by running:\n\n\tdocker logs <CONTAINER_ID>\n\nYou will see an output like the following:\n\n\t========================================================================\n\tYou can now connect to this RabbitMQ server using, for example:\n\n            curl --user admin:5elsT6KtjrqV  http://<host>:<port>/api/vhosts\n\n\tPlease remember to change the above password as soon as possible!\n\t========================================================================\n\nIn this case, `5elsT6KtjrqV` is the password set.\nYou can then connect to RabbitMQ:\n\n        curl --user admin:5elsT6KtjrqV  http://<host>:<port>/api/vhosts\n\nDone!\n\n\nSetting a specific password for the admin account\n-------------------------------------------------\n\nIf you want to use a preset password instead of a randomly generated one, you can\nset the environment variable `RABBITMQ_PASS` to your specific password when running the container:\n\n\tdocker run -d -p 5672:5672 -p 15672:15672 -e RABBITMQ_PASS=\"mypass\" tutum/rabbitmq\n\nYou can now test your new admin password:\n\n        curl --user admin:mypass  http://<host>:<port>/api/vhosts\n\n\nRunning a RabbitMQ cluster\n--------------------------\n\nTo run a cluster with all the DNS-Reachable Host, you have to set `RABBITMQ_USE_LONGNAME`\nand `HOSTNAME` on first server :\n\n```\ndocker run -d \\\n -p 5672:5672 -p 15672:15672 -p 35197:35197 -p 4369:4369 -p 25672:25672 \\\n -e HOSTNAME=node1.host.io \\\n -e RABBITMQ_USE_LONGNAME=true \\\n tutum/rabbitmq\n```\n\nAnd add `CLUSTER_WITH` for the others nodes :\n\n```\ndocker run -d \\\n -p 5672:5672 -p 15672:15672 -p 35197:35197 -p 4369:4369 -p 25672:25672 \\\n -e HOSTNAME=node2.host.io \\\n -e RABBITMQ_USE_LONGNAME=true \\\n -e CLUSTER_WITH=node1.host.io \\\n tutum/rabbitmq\n```\nRabbitMQ cluster stack file with Tutum\n------------------------------------\n\n```\nrabbitmq-master:\n  image: tutum/rabbitmq\nrabbitmq-slave:\n  image: tutum/rabbitmq\n  environment:\n    - CLUSTER_WITH=rabbitmq-master-1\n  links:\n    - rabbitmq-master\n```\n",
+  "dockerfile": "FROM ubuntu:trusty\nMAINTAINER Abdul Dakkak \"dakkak@illinois.edu\"\n\n# Install RabbitMQ\nRUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F7B8CEA6056E8E56 && \\\n    echo \"deb http://www.rabbitmq.com/debian/ testing main\" >> /etc/apt/sources.list && \\\n    apt-get update && \\\n    apt-get install --no-install-recommends -y rabbitmq-server pwgen && \\\n    rabbitmq-plugins enable rabbitmq_management && \\\n    rabbitmq-plugins enable rabbitmq_stomp && \\\n    rabbitmq-plugins enable rabbitmq_web_stomp && \\\n    apt-get clean && \\\n    rm -rf /var/lib/apt/lists/*\n\nRUN echo \"ERLANGCOOKIE\" > /var/lib/rabbitmq/.erlang.cookie\nRUN chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie\nRUN chmod 400 /var/lib/rabbitmq/.erlang.cookie\n\nVOLUME /var/lib/rabbitmq\n\n# Add scripts\nADD run.sh /run.sh\nADD set_rabbitmq_password.sh /set_rabbitmq_password.sh\nRUN chmod 755 ./*.sh\n\nEXPOSE 5672 15672 15674 61613 25672\nCMD [\"/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "run.sh",
+        "dest": "/run.sh"
+      },
+      {
+        "source": "set_rabbitmq_password.sh",
+        "dest": "/set_rabbitmq_password.sh"
+      }
+    ],
+    "expose": [
+      5672
+    ],
+    "volume": [
+      "/var/lib/rabbitmq"
+    ],
+    "run": [
+      "apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F7B8CEA6056E8E56 &&     echo \"deb http://www.rabbitmq.com/debian/ testing main\" >> /etc/apt/sources.list &&     apt-get update &&     apt-get install --no-install-recommends -y rabbitmq-server pwgen &&     rabbitmq-plugins enable rabbitmq_management &&     rabbitmq-plugins enable rabbitmq_stomp &&     rabbitmq-plugins enable rabbitmq_web_stomp &&     apt-get clean &&     rm -rf /var/lib/apt/lists/*",
+      "echo \"ERLANGCOOKIE\" > /var/lib/rabbitmq/.erlang.cookie",
+      "chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie",
+      "chmod 400 /var/lib/rabbitmq/.erlang.cookie",
+      "chmod 755 ./*.sh"
+    ],
+    "workdir": [],
+    "from": "ubuntu:trusty",
+    "maintainer": "Abdul Dakkak \"dakkak@illinois.edu\"",
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "git@bitbucket.org:hwuligans/wgx-rabbitmq-dockerfile.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/hwuligans/wgx-rabbitmq-dockerfile",
+  "docker_repository": "webgpu/rabbitmq",
+  "docker_image": "webgpu/rabbitmq",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5672
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "webgpu/rabbitmq",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/webgpu/rabbitmq",
+    "https://hub.docker.com/v2/repositories/webgpu/rabbitmq",
+    "git@bitbucket.org:hwuligans/wgx-rabbitmq-dockerfile.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/webgpu/rabbitmq",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,133 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/fusengine/apache-php",
+    "repository_url": "https://hub.docker.com/v2/repositories/fusengine/apache-php",
+    "tags_url": "https://hub.docker.com/v2/repositories/fusengine/apache-php/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/fusengine/apache-php/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/fusengine/apache-php/autobuild",
+    "user": "fusengine",
+    "name": "apache-php",
+    "namespace": "fusengine",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 345,
+    "last_updated": "2016-10-06T20:43:34.225696Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 295850235,
+        "id": 3068723,
+        "repository": 421174,
+        "creator": 246526,
+        "last_updater": 246526,
+        "last_updated": "2016-10-06T20:43:28.829947Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "fusengine/docker-images"
+  },
+  "name": "fusengine/apache-php Docker container",
+  "description": "This is a apache-php is good to run to dev on OS X",
+  "readme": "![Alt text](http://www.fusengine.ch/img/php7-apache.svg)\n========================================================\n\nThis is to good run to php-apache2 on OSX this containt adminer to connect on database. This packages containt apache2 and php7\n\nBlackfire\n---------\n\nYou want use blackfire disable on dockerfile line `# If you want need Blackfire`:\n\n```\n# If you want need Blackfire\n RUN curl -A \"Docker\" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/55\\\n    && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp \\\n    && mv /tmp/blackfire-*.so `php -r \"echo ini_get('extension_dir');\"`/blackfire.so \\\n    && echo \"extension=blackfire.so\\nblackfire.agent_socket=\\${BLACKFIRE_PORT}\" > /etc/php5/apache2/conf.d/blackfire.ini\n\n```\n\nDirectory and volume\n--------------------\n\n`/app/web` this is directory work. if you want a beautiful repertory list on apaxy user `volume:/app/web`\n\n```\nVOLUME :\n  /app/web\n  /etc/apache2/sites-enabled\n  /var/log/apache2\n```\n\nExpose port 80 22\n\n```\nEXPOSE : 80\n```\n\nif you have any correction please suggest me Thanks for use that.\n\n&copy; 2016 [Fusengine](http://fusengine.com)\n",
+  "dockerfile": "FROM labengine/ubuntu\nMAINTAINER Fusengine <info@fusengine.ch>\n\n# FIX Apache/PHP write permissions to the app\nENV OSX_BOOT2DOCKER_ID 1000\nENV OSX_BOOT2DOCKER_GID 50\nENV OSX_BOOT2DOCKER_ID 1000\nENV ADMINER_VERSION 4.2.5\n\n# Fix write permissions Apache/PHP\nRUN usermod -u ${OSX_BOOT2DOCKER_ID} www-data && \\\n    usermod -G staff www-data\nRUN groupmod -g $(($OSX_BOOT2DOCKER_GID + 10000)) $(getent group $OSX_BOOT2DOCKER_GID | cut -d: -f1)\nRUN groupmod -g ${OSX_BOOT2DOCKER_GID} staff\n\n# Add buildpack\nCOPY scripts/install_bundle.sh /root/install_bundle.sh\nRUN chmod +x /root/install_bundle.sh\n\n# Run buildpack\nRUN ./root/install_bundle.sh\n\n# Add apaxy\nCOPY config/apaxy/ /app\n\n# Add Latest Adminer\nADD https://www.adminer.org/static/download/${ADMINER_VERSION}/adminer-${ADMINER_VERSION}.php /app/adminer.php\nRUN chmod 777 /app/adminer.php\n\n# Add conf files to work /app\nCOPY config/sites-enable/000-default.conf /etc/apache2/sites-enabled/\nCOPY config/sites-available/000-default.conf /etc/apache2/sites-available/\nCOPY config/apache2.conf /etc/apache2/\n\n# Add image configuration and scripts\nCOPY scripts/start_apache.sh /start_apache.sh\nRUN chmod +x /start_apache.sh\n\n# Volume\nVOLUME [\"/etc/apache2/sites-enabled\", \"/var/log/apache2\", \"/app/web\"]\n\n# Work directory\nWORKDIR /app/web\n\n# Expose port\nEXPOSE 80\n\n#start apache2\nCMD [\"/start_apache.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "https://www.adminer.org/static/download/${ADMINER_VERSION}/adminer-${ADMINER_VERSION}.php",
+        "dest": "/app/adminer.php"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/etc/apache2/sites-enabled\", \"/var/log/apache2\", \"/app/web\"]"
+    ],
+    "run": [
+      "usermod -u ${OSX_BOOT2DOCKER_ID} www-data &&     usermod -G staff www-data",
+      "groupmod -g $(($OSX_BOOT2DOCKER_GID + 10000)) $(getent group $OSX_BOOT2DOCKER_GID | cut -d: -f1)",
+      "groupmod -g ${OSX_BOOT2DOCKER_GID} staff",
+      "chmod +x /root/install_bundle.sh",
+      "./root/install_bundle.sh",
+      "chmod 777 /app/adminer.php",
+      "chmod +x /start_apache.sh"
+    ],
+    "workdir": [
+      "/app/web"
+    ],
+    "from": "labengine/ubuntu",
+    "maintainer": "Fusengine <info@fusengine.ch>",
+    "env": {
+      "OSX_BOOT2DOCKER_ID": "1000",
+      "OSX_BOOT2DOCKER_GID": "50",
+      "ADMINER_VERSION": "4.2.5"
+    },
+    "copy": "scripts/start_apache.sh /start_apache.sh",
+    "cmd": "[\"/start_apache.sh\"]"
+  },
+  "source_repository_url": "https://github.com/fusengine/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/fusengine/docker-images",
+  "docker_repository": "fusengine/apache-php",
+  "docker_image": "fusengine/apache-php",
+  "parameters_schema": {
+    "OSX_BOOT2DOCKER_ID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OSX_BOOT2DOCKER_GID": {
+      "default": "50",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ADMINER_VERSION": {
+      "default": "4.2.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "fusengine/apache-php",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/fusengine/apache-php",
+    "https://hub.docker.com/v2/repositories/fusengine/apache-php",
+    "https://github.com/fusengine/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/fusengine/apache-php",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

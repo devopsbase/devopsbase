@@ -1,0 +1,96 @@
+{
+  "name": "rackspace_apache_php Chef cookbook",
+  "chef_cookbook_name": "rackspace_apache_php",
+  "revision": "0.2.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/rackspace_apache_php",
+    "https://supermarket.chef.io/cookbooks/rackspace_apache_php/download",
+    "https://supermarket.chef.io/cookbooks/rackspace_apache_php/versions/0.2.1",
+    "https://supermarket.chef.io/cookbooks/rackspace_apache_php/versions/0.2.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/rackspace_apache_php/versions/0.2.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/rackspace_apache_php",
+    "https://supermarket.chef.io/api/v1/cookbooks/rackspace_apache_php/versions/0.2.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Provider/HP",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/rackspace_apache_php",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/rackspace_apache_php/versions/0.2.1/download",
+  "deprecated": false,
+  "created": "2015-04-13T10:37:15.287Z",
+  "updated": "2015-11-02T14:35:16.959Z",
+  "description": "Installs/Configures rackspace_apache_php",
+  "maintainer": {
+    "name": "rackops",
+    "email": "rackspace-cookbooks@rackspace.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 952773,
+  "downloads_count_revision": 3923,
+  "repository_url": "https://github.com/rackspace-cookbooks/rackspace_apache_php",
+  "issues_url": "https://github.com/rackspace-cookbooks/rackspace_apache_php/issues",
+  "chef_source_url": "https://github.com/rackspace-cookbooks/rackspace_apache_php",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "[![Circle CI](https://circleci.com/gh/rackspace-cookbooks/rackspace_apache_php.svg?style=svg)](https://circleci.com/gh/rackspace-cookbooks/rackspace_apache_php)\n\n# rackspace_apache_php-cookbook\n\nA cookbook to provide a web server able to serve php pages with Apache and PHP fpm.\nIt relies on [apache2 cookbook](https://github.com/svanzoest-cookbooks/apache2/) and [php-fpm](https://github.com/yevgenko/cookbook-php-fpm). Those cookbooks are pinned on well known working minor version to prevent breaking changes.\nIn addition (even if this is not a requirement), the cookbook will install php packages through [PHP cookbook](https://github.com/opscode-cookbooks/php). Indeed most of the time you will need `php::default` in your role which will conflict with the `php-fpm` package if they are different.\nYou can disable the installation of php packages with `node['rackspace_apache_php']['php_packages_install']['enable']`.\n\n## Supported Platforms\n\n* Centos 6.6\n* Ubuntu 12.04\n* Ubuntu 14.04 [(only PHP 5.5 and 5.6)](https://github.com/oerdnj/deb.sury.org/issues/58#issuecomment-92246112)\n\n## Attributes\n\n* `node['rackspace_apache_php']['php_version']` : Which PHP version to install, default to PHP 5.6\n* `node['rackspace_apache_php']['php-fpm']['default_pool']['enable']` : Should it enable a default PHP-FPM pool which listens on a unix socket, defaults to 'true' (change it to false if you want to manage your own PHP-FPM pools)\n* `node['rackspace_apache_php']['php_handler']['enable']` : Should it enable Apache PHP handler (applied in \"conf.d\", so it will be available in EVERY vhost, if you want to manage your own handler configuration, set this attribute to false)\n* `node['rackspace_apache_php']['php_handler']['cookbook']` : Where to find the handler configuration , default to `rackspace_apache_php cookbook`\n* `node['rackspace_apache_php']['php_handler']['template']` : Where to find the handler configuration , default to `php-handler.conf.erb`\n\n## Usage\n\nPlace a dependency on the rackspace_apache_php cookbook in your cookbook's metadata.rb\n```\ndepends 'rackspace_apache_php'\n```\nThen, add `rackspace_apache_php::default` to your runlist\n\n```\n# myrecipe.rb\ninclude_recipe 'rackspace_apache_php::default'\n```\n\nor\n\n```\n# roles/myrole.rb\nname \"myrole\"\ndescription \"apache and php role\"\nrun_list(\n  \"rackspace_apache_php::default\"\n)\n```\n\nYou can change any of the `apache2`,`php-fpm` and `php` cookbook attributes to tune rackspace_apache_php configuration.\n** However you should not change ** `['php-fpm']['package_name']`,`['php-fpm']['service_name']` or `['php']['packages']` (as they are part of this cookbook logic) without checking it works.\n\n## In scope\n\nThe goal of this library is to do the basic configuration to serve PHP pages through Apache. It will only configure `apache2` and the default php handler, users are free to configure their vhost if they need anything more specific.\n\nMore in details it : \n\n* Installs and configure Apache2 web server\n* Installs and configure php-fpm\n* Installs and configure php\n* Configures Apache2 to serve php pages through php-fpm (in conf.d)\n* Gets the correct packages and change the configuration according to the php/apache version \n\n## Out of scope\n\nVirtual Host are not managed by this cookbook, the configuration provided by this cookbook should not prevent users to extend php or php-fpm configuration. \nAs many features as possible should have a flag to enable/disable them, it will allow to enjoy some parts of the work done by this cookbook (get the correct packages by example) but still be able to configure your own php-fpm pools.\n\n\n### Examples\n#### Apache and PHP 5.5\n\n```\nnode.default['rackspace_apache_php']['php_version'] = '5.5'\ninclude_recipe 'rackspace_apache_php::default'\n```\n\n#### Apache and PHP 5.6\n\n```\ninclude_recipe 'rackspace_apache_php::default'\n```\n\n#### Apache and PHP 5.6 without default PHP handler and default PHP-FPM pool\n\nYou will have to add your own Vhost to configure the handler, here is an example using a `web_app` resource and the `apache_conf` definition from the upstream apache2 cookbook to create a virtual host and the Apache configuration necessary to handle php requests (templates not provided). It also leverages the `['php-fpm']['pools']` attribute from the upstream php-fpm cookbook to create a custom defined php-fpm pool listening on a socket. Although not provided below, the templates for the `apache_conf` definition and the `web_app` resource should contain the necessary directives to pass requestes for php files to the php-fpm pool.\n\n```\nnode.default['rackspace_apache_php']['php_handler']['enable'] = false\nnode.default['rackspace_apache_php']['php-fpm']['default_pool']['enable'] = false\n\n# Create a php-fpm pool through the attribute exposed from upstream\nnode.default['php-fpm']['pools'] = {\n  override: {\n    enable: 'true',\n    process_manager: 'dynamic',\n    max_requests: 5000\n  }\n}\n\ninclude_recipe 'rackspace_apache_php::default'\n\n# Create your own php-handler \napache_conf 'my-php-handler' do\n  source 'my-php-handler.conf.erb'\n  cookbook 'my-cookbook'\n  enable true\nend\n\n# Create a virtual host to serve pages\nweb_app \"my_site\" do\n  server_name node['hostname']\n  server_aliases [node['fqdn'], \"my-site.example.com\"]\n  docroot \"/srv/www/my_site\"\n  cookbook 'my-cookbook'\n  php_socket '/var/run/php-fpm-override.sock'\nend\n\n```\n\n## References\n\n* [Apache2 cookbook](https://github.com/svanzoest-cookbooks/apache2)\n* [PHP-fpm cookbook](https://github.com/yevgenko/cookbook-php-fpm)\n* [PHP cookbook](https://github.com/opscode-cookbooks/php)\n\n\n## Contributing\n\n1. Fork the repository on Github\n2. Create a named feature branch (i.e. `add-new-recipe`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request\n\n## License and Authors\n\nAuthor:: Julien Berard (julien.berard@rackspace.co.uk), Kostas Georgakopoulos (kostas.georgakopoulos@rackspace.co.uk)\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apache2",
+      "revision": "= 3.1.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef-sugar",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/php",
+      "revision": "= 1.5.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/php-fpm",
+      "revision": "= 0.7.4",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum-ius",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

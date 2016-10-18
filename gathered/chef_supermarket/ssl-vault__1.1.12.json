@@ -1,0 +1,59 @@
+{
+  "name": "ssl-vault Chef cookbook",
+  "chef_cookbook_name": "ssl-vault",
+  "revision": "1.1.12",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/ssl-vault",
+    "https://supermarket.chef.io/cookbooks/ssl-vault/download",
+    "https://supermarket.chef.io/cookbooks/ssl-vault/versions/1.1.12",
+    "https://supermarket.chef.io/cookbooks/ssl-vault/versions/1.1.12/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/ssl-vault/versions/1.1.12",
+    "https://supermarket.chef.io/api/v1/cookbooks/ssl-vault",
+    "https://supermarket.chef.io/api/v1/cookbooks/ssl-vault/versions/1.1.12/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Networking",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Test",
+    "Type/Middleware/Data Store"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/ssl-vault",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/ssl-vault/versions/1.1.12/download",
+  "deprecated": false,
+  "created": "2014-02-05T20:11:26.000Z",
+  "updated": "2015-10-26T18:12:48.661Z",
+  "description": "SSL key & certificate storage in chef-vault.",
+  "maintainer": {
+    "name": "ampledata",
+    "email": "gba@onbeep.com"
+  },
+  "license": "The MIT License (MIT)",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 10,
+  "downloads_count": 7993530,
+  "downloads_count_revision": 804157,
+  "repository_url": "https://github.com/onbeep-cookbooks/ssl-vault",
+  "issues_url": "https://github.com/onbeep-cookbooks/ssl-vault/issues",
+  "chef_source_url": "https://github.com/onbeep-cookbooks/ssl-vault",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "ssl-vault\n===\nManages SSL Keys, Certs and Chains using the \n[chef-vault](https://github.com/opscode-cookbooks/chef-vault) Cookbook, itself\na wrapper for the [chef-vault](https://github.com/Nordstrom/chef-vault) Gem.\n\nSSL Keys, Certs and Chains are stored in Chef Encrypted Data Bags using Chef\nVault and are only accessible to clients using their existing public keys.\n\nMore information on the Chef Vault security model can be found on [Justin Timberman's Blog](http://jtimberman.housepub.org/blog/2013/09/10/managing-secrets-with-chef-vault/) or [Andrew Jaquith's Blog](http://www.markerbench.com/blog/2013/10/06/chef-3rd-course/).\n\nThis Cookbook is derived from [Maciej Pasternacki's](https://github.com/mpasternacki) [ssl-key-vault](https://github.com/3ofcoins/chef-cookbook-ssl-key-vault) Cookbook.\n\n\nRequirements\n---\n1. [chef-vault](https://github.com/Nordstrom/chef-vault) plugin for Knife,\navailable as a Ruby Gem: `gem install chef-vault`\n2. A SSL certificate and private key.\n\n\nAttributes\n---\n- `node['ssl-vault']['certificates']` - List of certificates to install, as\n  determined by the IDs of Encrypted Data Bag Items. \n  i.e. `['example.com', 'www.example.com']`\n  Can be set per Node, so as to limit vectors.\n\nThe following Attributes are set or unset by default, and are available for \ncustomization by you, the user:\n- `['ssl-vault']['certificate_directory']` - String name of directory into \n  which to deposit the certificate(s) [and chain file(s)].\n- `['ssl-vault']['private_key_directory']` - String name of directory into \n  which to deposit the private key(s) [and PEM file(s)].\n- `['ssl-vault']['private_key_file']` - String name of private key file.\n- `['ssl-vault']['data_bag_key_rex']` - Regular Expression of Data Bag Key \n  ID(s).\n- `['ssl-vault']['data_bag_key_replacement_str']` - String replacement \n  character for IDs that don't match `data_bag_key_rex`.\n- `['ssl-vault']['private_key_file']` - String name of private key file.\n- `['ssl-vault']['certificate_file']` - String name of certificate file.\n- `['ssl-vault']['pem_file']` - String name of PEM file.\n- `['ssl-vault']['combined_chain_file']` - String name of combined chain file.\n- `['ssl-vault']['combined_chain_pem_file']` - String name of combined chain\n  PEM file.\n\nThe following Attribute overrides `['chef-vault']['version']`'s Attribute:\n- `['chef-vault']['version']` - String version of chef-vault Gem to install.\n\n\nData Bag Structure\n---\n\n- The encrypted data bag must be named `ssl-vault`.\n\n- The item name should be the CN of the certificate with the configured\n    replacements applied\n  (default replacement: underscores for dots, `www_example_com`).\n\n- The value should be a json hash with the following keys:\n    - `certificate`: the certificate in pem format\n    - `key`: the key in pem format\n    - `chain_certificates`: array of intermediate ca certificates [optional]\n\n\nRecipes\n---\nThis Cookbook provides several Recipes:\n\n- `default.rb` - **Use this Recipe**. Includes remaining Recipes and \n  `chef-vault` Cookbook.\n- `certificate_directory.rb` - Creates certificate (and chain) directory.\n- `certificate_file.rb` - Creates certificate file.\n- `combined_chain_file.rb` - Creates combined chain file.\n- `combined_chain_pem_file.rb` - Creates combined chain PEM file.\n- `pem_file.rb` - Creates PEM file.\n- `private_key_directory.rb` - Creates private key (and PEM) directory.\n- `private_key_file.rb` - Creates private key file.\n\n\nUsage\n===\nInclude this Cookbook in your Node's Run List, along with setting the Node\nAttributes for the certificates and keys you wish to install, and encrypting\nthose certificates and keys.\n\nOverview\n---\n1. Aquire an SSL certificate and private key file.\n2. Store the SSL certificate and private key file in an Encrypted Data Bag.\n3. Encrypt the SSL certificate and private key using Chef Vault.\n4. Include the certificate's Common Name (CN) in a Node's Attributes.\n\n\nExample\n---\nGiven the SSL certificate and key file for `example.com`:\n\n1. Create a Data Bag Item containing the SSL certificate and private key:\n\n        ruby -rjson -e 'puts JSON[Hash[Hash[*ARGV].map { |k,v| [k, File.read(v)] }]]' -- \\\n            certificate example.com.cert \\\n            key example.com.key \\\n            > example.com.json\n\n2. Encrypt the new Data Bag Item using the Client's public key:\n\n        knife vault create ssl-vault example_com --mode client \\\n            --search 'QUERY' --admins '' \\\n            --json example.com.json\n\n       Either add Chef server's admin API users to the `--admins`, or make\n       the key otherwise accessible to yourself in future (e.g. with\n       [knife-briefcase](https://github.com/3ofcoins/knife-briefcase/)).\n\n3. Add `example.com` to a Node's `['ssl-vault']['certificates']` Attribute:\n\n        node['ssl-vault']['certificates'] = ['example.com']\n\n4. Add `recipe[ssl-vault]` to Node's Run List.\n5. The key will be stored in `/etc/ssl/private/example.com.key`, and\ncertificate in `/etc/ssl/certs/example.com.cert`.\n\n\nAuthor\n===\n- Author:: Maciej Pasternacki (<maciej@3ofcoins.net>) ([ssl-key-vault](https://github.com/3ofcoins/chef-cookbook-ssl-key-vault))\n- Author:: Greg Albrecht (<gba@onbeep.com>) ([ssl-vault](https://github.com/onbeep-cookbooks/ssl-vault))\n\nCopyright\n===\nCopyright 2014 OnBeep, Inc.\nPortions Copyright (C) 2013 Maciej Pasternacki <maciej@3ofcoins.net>\n\nLicense\n===\nThe MIT License (MIT)\n\nSource\n===\nhttps://github.com/onbeep-cookbooks/ssl-vault\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef-vault",
+      "revision": "~> 1.0.4",
+      "self_resolve": true
+    }
+  ]
+}

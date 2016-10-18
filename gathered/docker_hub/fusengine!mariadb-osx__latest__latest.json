@@ -1,0 +1,128 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/fusengine/mariadb-osx",
+    "repository_url": "https://hub.docker.com/v2/repositories/fusengine/mariadb-osx",
+    "tags_url": "https://hub.docker.com/v2/repositories/fusengine/mariadb-osx/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/fusengine/mariadb-osx/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/fusengine/mariadb-osx/autobuild",
+    "user": "fusengine",
+    "name": "mariadb-osx",
+    "namespace": "fusengine",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 285,
+    "last_updated": "2016-10-06T20:41:21.302460Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 232217086,
+        "id": 3068777,
+        "repository": 422392,
+        "creator": 246526,
+        "last_updater": 246526,
+        "last_updated": "2016-10-06T20:41:20.957934Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "fusengine/docker-images"
+  },
+  "name": "fusengine/mariadb-osx Docker container",
+  "description": "Mariadb image good to mount volumes on OS X",
+  "readme": "![Alt text](http://fusengine.ch/img/mariadb.svg)\n================================================\n\nBase docker image to run a MariaDB database server is good to mount volumes on OSX :)\n\nUsage\n-----\n\nTo run the image and bind to port 3306:\n\n```\n    docker run -d -p 3306:3306 fusengine/mariadb\n```\n\nThis user and password is preset to ENV\n\n```\nENV:\n  MARIADB_PASS root\n  MARIADB_USER root\n```\n\n```\n    docker logs <CONTAINER_ID>\n```\n\nYou will see an output like the following:\n\n```\n========================================================================\n        You can now connect to this MariaDB Server using:\n\n        mysql -user: root password: root -h<host> -P<port>\n\nWant change passeword go to env and change pass 'root' and user 'root'\n            MariaDB user: 'root' and password: 'root'\n========================================================================\n```\n\nSetting a specific password and specific user\n---------------------------------------------\n\nIf you want to use a preset password instead of a random generated one, you can set the environment variable `MARIADB_PASS` to your specific password when running the container:\n\n```\n    docker run -d -p 3306:3306 -e MARIADB_PASS=\"mypass\" MARIADB_USER=\"mypass\" fusengine/mariadb\n```\n\nMounting the database file volume from other containers\n-------------------------------------------------------\n\nOne way to persist the database data is to store database files in another container. To do so, first create a container that holds database files:\n\n```\ndocker run -d -v /var/lib/mysql --name db_vol -p 22:22 labengine/ubuntu-upstart\n```\n\nThis will create a new ssh-enabled container and use its folder `/var/lib/mysql` to store MariaDB database files. You can specify any name of the container by using `--name` option, which will be used in next step.\n\nAfter this you can start your MariaDB image using volumes in the container created above (put the name of container in `--volumes-from`\\)\n\n```\ndocker run -d --volumes-from db_vol -p 3306:3306 fusengine/mariadb\n```\n\n&copy; 2016 [Fusengine](http://fusengine.com)\n",
+  "dockerfile": "FROM labengine/ubuntu:14.04.4\nMAINTAINER Fusengine <info@fusengine.ch>\n\n#Added to avoid in container connection to the database with mysql client error message \"TERM environment variable not set\"\nENV TERM dumb\nENV MARIADB_VERSION 10.1\nENV MARIADB_PASS root\nENV MARIADB_USER root\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\nRUN groupadd -r mysql && useradd -r -g mysql mysql\n\n# to add data on OSX\nRUN usermod -u 1000 mysql\n\n# scripts base to run MariaDB\nCOPY scripts/ /root\nRUN chmod 775 /root/*.sh\n\n# Run install packages\nRUN ./root/install_mariadb.sh\n\n# Add VOLUMEs to allow backup of config and databases\nVOLUME  [\"/etc/mysql\", \"/var/lib/mysql\"]\n\n# EXPOSE port\nEXPOSE 3306\n\nCMD [\"/root/start_mariadb.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      " [\"/etc/mysql\", \"/var/lib/mysql\"]"
+    ],
+    "run": [
+      "groupadd -r mysql && useradd -r -g mysql mysql",
+      "usermod -u 1000 mysql",
+      "chmod 775 /root/*.sh",
+      "./root/install_mariadb.sh"
+    ],
+    "workdir": [],
+    "from": "labengine/ubuntu:14.04.4",
+    "maintainer": "Fusengine <info@fusengine.ch>",
+    "env": {
+      "TERM": "dumb",
+      "MARIADB_VERSION": "10.1",
+      "MARIADB_PASS": "root",
+      "MARIADB_USER": "root"
+    },
+    "copy": "scripts/ /root",
+    "cmd": "[\"/root/start_mariadb.sh\"]"
+  },
+  "source_repository_url": "https://github.com/fusengine/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/fusengine/docker-images",
+  "docker_repository": "fusengine/mariadb-osx",
+  "docker_image": "fusengine/mariadb-osx",
+  "parameters_schema": {
+    "TERM": {
+      "default": "dumb",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MARIADB_VERSION": {
+      "default": "10.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MARIADB_PASS": {
+      "default": "root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MARIADB_USER": {
+      "default": "root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "fusengine/mariadb-osx",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/fusengine/mariadb-osx",
+    "https://hub.docker.com/v2/repositories/fusengine/mariadb-osx",
+    "https://github.com/fusengine/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/fusengine/mariadb-osx",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

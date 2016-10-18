@@ -1,0 +1,95 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/wingedkiwi/ubuntu-baseimage",
+    "repository_url": "https://hub.docker.com/v2/repositories/wingedkiwi/ubuntu-baseimage",
+    "tags_url": "https://hub.docker.com/v2/repositories/wingedkiwi/ubuntu-baseimage/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/wingedkiwi/ubuntu-baseimage/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/wingedkiwi/ubuntu-baseimage/autobuild",
+    "user": "wingedkiwi",
+    "name": "ubuntu-baseimage",
+    "namespace": "wingedkiwi",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1449,
+    "last_updated": "2016-10-13T21:32:11.638898Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "master",
+        "full_size": 81283361,
+        "id": 871382,
+        "repository": 317621,
+        "creator": 351223,
+        "last_updater": 263232,
+        "last_updated": "2016-10-13T21:32:11.334658Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "wingedkiwi/ubuntu-baseimage"
+  },
+  "name": "wingedkiwi/ubuntu-baseimage Docker container",
+  "description": " A minimal Ubuntu base image that is Predictable and stays Up To Date.",
+  "readme": "# A minimal Ubuntu base image that is Predictable and stays Up To Date\n\n[![](https://badge.imagelayers.io/wingedkiwi/ubuntu-baseimage:master.svg)](https://imagelayers.io/?images=wingedkiwi/ubuntu-baseimage:master 'Get your own badge on imagelayers.io')\n\n\n_ubuntu-baseimage_ is a docker base image based on the work of [phusion/baseimage-docker](https://github.com/phusion/baseimage-docker) and inherits the following features:\n\n  * [A correct Init system solving the PID 1 problem](https://blog.phusion.nl/2015/01/20/docker-and-the-pid-1-zombie-reaping-problem/).\n  * Scripts in `/etc/my_init.d/` are started in lexical order.\n  * `rc.local` is executed after the _Init Scripts_.\n  * Fixes APT incompatibilities with Docker See https://github.com/dotcloud/docker/issues/1024.\n  * A mechansim to simplify work with _Environment Variables_.\n  * Provides a `cron` and `syslog-ng` with `logotate` daemon per default.\n  * Ability to define additonal daemons in `/etc/service`.\n  * Lightweight sudo alternative at `/sbin/setuser`\n\nMoreover _ubuntu-baseimage_ brings the following improvements:\n\n * Provides an [Automated Build](https://hub.docker.com/r/wingedkiwi/ubuntu-baseimage/) that stays up to date and\n eleminates the need to run `apt-get upgrade`. (See [dockerfile best-practices](https://docs.docker.com/articles/dockerfile_best-practices/#run))\n * Services are started in lexical order.\n * Services are terminated in reverse lexical order.\n * User command is executed after all services has been started.\n * If a `check` script for a service is provided, the init daemon will wait until service is fully started.\n * `/sbin/my_init` in `Dockerfile` is defined as `ENTRYPOINT` instead as `CMD`.\n\nChanges due to personal choice:\n\n * Removes sshd service as it is not essential (see [nsenter](https://blog.docker.com/tag/nsenter/)).\n\n_ubuntu-baseimage_ introduces backward-incompatible changes to [phusion/baseimage-docker](https://github.com/phusion/baseimage-docker).\n\n## The problems _ubuntu-baseimage_ tries to solve\n\nEven though [phusion/baseimage-docker](https://github.com/phusion/baseimage-docker) claims that it _does everything right_, it still leaves us with some unsolved problems:\n\n  * The image is not updated regularly (Last push was 2 months ago, whereas _Ubuntu_ base Image was pushed 8 days ago. Status from 10th Sep 2015). Moreover it advocates the use of `apt-get upgrade` which is contrary to [dockerfile best-practices](https://docs.docker.com/articles/dockerfile_best-practices/#run))\n  * Naturally services/daemons depend on each other. _phusion/baseimage-docker_ starts and stops all daemons at the same time causing unpredictable behavior and failure.\n  * _phusion/baseimage-docker_ executes the user provided command without knowing if the required services/daemons are up and running.\n\n_ubuntu-baseimage_ solves the above problems using an [Automated Build](https://hub.docker.com/r/wingedkiwi/ubuntu-baseimage/) and a predictable boot and shutdown mechanism.\n\n## Using _ubuntu-baseimage_ as base image\n\n * [Getting started](#getting_started)\n * [Adding additional daemons](#adding_additional_daemons)\n    * [Starting order](#starting_order)\n    * [Wait until daemon is fully up](#wait_until)\n * [Disable daemons](#disable_daemons)\n * [Running scripts during container startup](#running_startup_scripts)\n * [Environment variables](#environment_variables)\n    * [Centrally defining your own environment variables](#envvar_central_definition)\n        * [Environment variable dumps](#envvar_dumps)\n        * [Modifying environment variables](#modifying_envvars)\n        * [Security](#envvar_security)\n * [Upgrading the operating system inside the container](#upgrading_os)\n\n<a name=\"getting_started\"></a>\n### Getting started\n\nThe image is called `wingedkiwi/ubuntu-baseimage`, and is available on the [Docker registry](https://hub.docker.com/r/wingedkiwi/ubuntu-baseimage/).\n\n    # Use wingedkiwi/ubuntu-baseimage as base image.\n    FROM wingedkiwi/ubuntu-baseimage:<VERSION>\n\n    # Put your own build instructions here.\n\n    # Clean up APT when done.\n    RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n    # Run your command or leave empty if only the daemons should be started.\n    CMD [\"your_command\"]\n\n<a name=\"adding_additional_daemons\"></a>\n### Adding additional daemons\n\nYou can add additional daemons (e.g. your own app) to the image by creating runit entries. You only have to write a small shell script which runs your daemon, and runit will keep it up and running for you, restarting it when it crashes, etc.\n\nThe shell script must be called `run`, must be executable, and is to be placed in the directory `/etc/service/<NAME>`.\n\nHere's an example showing you how a memcached server runit entry can be made.\n\nIn `memcached.sh` (make sure this file is chmod +x):\n\n    #!/bin/sh\n    # `/sbin/setuser memcache` runs the given command as the user `memcache`.\n    # If you omit that part, the command will be run as root.\n    exec /sbin/setuser memcache /usr/bin/memcached >>/var/log/memcached.log 2>&1\n\nIn `Dockerfile`:\n\n    RUN mkdir /etc/service/30-memcached\n    ADD memcached.sh /etc/service/30-memcached/run\n\nNote that the shell script must run the daemon **without letting it daemonize/fork it**. Usually, daemons provide a command line flag or a config file option for that.\n\n<a name=\"starting_order\"></a>\n#### Starting order\nDaemons are started in lexical order. System services are defined as `10-syslog-ng`, `10-syslog-forwarder` and `20-cron`, so you can define your daemons e.g. starting with 30 to start your daemon after the system services.\n\n<a name=\"wait_until\"></a>\n#### Wait until daemon is fully up\nYou can add a `check` script to make the _Init System_ wait until daemon is fully up.\n\nExample `memcached-check.sh` file:\n\n    #!/bin/bash\n    if [ $memcached_is_up = true ]; then\n        exit 0\n    fi\n    exit 1\n\nAnd in `Dockerfile`:\n\n    ADD memcached-check.sh /etc/service/30-memcached/check\n\n<a name=\"disable_daemons\"></a>\n### Disable Daemons\nAny daemon can be disabled by adding a `disabled` file to the corresponding service folder.\n\n    RUN touch /etc/service/30-memcached/disabled\n\n<a name=\"running_startup_scripts\"></a>\n### Running scripts during container startup\n\nThe _ubuntu-baseimage_ init system, `/sbin/my_init`, runs the following scripts during startup, in the following order:\n\n * All executable scripts in `/etc/my_init.d`, if this directory exists. The scripts are run in lexicographic order.\n * The script `/etc/rc.local`, if this file exists.\n\nAll scripts must exit correctly, e.g. with exit code 0. If any script exits with a non-zero exit code, the booting will fail.\n\nThe following example shows how you can add a startup script. This script simply logs the time of boot to the file /tmp/boottime.txt.\n\nIn `logtime.sh` (make sure this file is chmod +x):\n\n    #!/bin/sh\n    date > /tmp/boottime.txt\n\nIn `Dockerfile`:\n\n    RUN mkdir -p /etc/my_init.d\n    ADD logtime.sh /etc/my_init.d/logtime.sh\n\n<a name=\"environment_variables\"></a>\n### Environment variables\n\nIf you use `/sbin/my_init` as the main container command, then any environment variables set with `docker run --env` or with the `ENV` command in the Dockerfile, will be picked up by `my_init`. These variables will also be passed to all child processes, including `/etc/my_init.d` startup scripts, Runit and Runit-managed services. There are however a few caveats you should be aware of:\n\n * Environment variables on Unix are inherited on a per-process basis. This means that it is generally not possible for a child process to change the environment variables of other processes.\n * Because of the aforementioned point, there is no good central place for defining environment variables for all applications and services. Debian has the `/etc/environment` file but it only works in some situations.\n * Some services change environment variables for child processes. Nginx is one such example: it removes all environment variables unless you explicitly instruct it to retain them through the `env` configuration option. If you host any applications on Nginx then they will not see the environment variables that were originally passed by Docker.\n\n`my_init` provides a solution for all these caveats.\n\n<a name=\"envvar_central_definition\"></a>\n#### Centrally defining your own environment variables\n\nDuring startup, before running any [startup scripts](#running_startup_scripts), `my_init` imports environment variables from the directory `/etc/container_environment`. This directory contains files who are named after the environment variable names. The file contents contain the environment variable values. This directory is therefore a good place to centrally define your own environment variables, which will be inherited by all startup scripts and Runit services.\n\nFor example, here's how you can define an environment variable from your Dockerfile:\n\n    RUN echo Apachai Hopachai > /etc/container_environment/MY_NAME\n\nYou can verify that it works, as follows:\n\n    $ docker run -t -i <YOUR_NAME_IMAGE> /sbin/my_init -- bash -l\n    ...\n    *** Running bash -l...\n    # echo $MY_NAME\n    Apachai Hopachai\n\n**Handling newlines**\n\nIf you've looked carefully, you'll notice that the 'echo' command actually prints a newline. Why does $MY_NAME not contain a newline then? It's because `my_init` strips the trailing newline, if any. If you intended on the value having a newline, you should add *another* newline, like this:\n\n    RUN echo -e \"Apachai Hopachai\\n\" > /etc/container_environment/MY_NAME\n\n<a name=\"envvar_dumps\"></a>\n#### Environment variable dumps\n\nWhile the previously mentioned mechanism is good for centrally defining environment variables, it by itself does not prevent services (e.g. Nginx) from changing and resetting environment variables from child processes. However, the `my_init` mechanism does make it easy for you to query what the original environment variables are.\n\nDuring startup, right after importing environment variables from `/etc/container_environment`, `my_init` will dump all its environment variables (that is, all variables imported from `container_environment`, as well as all variables it picked up from `docker run --env`) to the following locations, in the following formats:\n\n * `/etc/container_environment`\n * `/etc/container_environment.sh` - a dump of the environment variables in Bash format. You can source the file directly from a Bash shell script.\n * `/etc/container_environment.json` - a dump of the environment variables in JSON format.\n\nThe multiple formats makes it easy for you to query the original environment variables no matter which language your scripts/apps are written in.\n\nHere is an example shell session showing you how the dumps look like:\n\n    $ docker run -t -i \\\n      --env FOO=bar --env HELLO='my beautiful world' \\\n      wingedkiwi/ubuntu-baseimage:<VERSION> bash -l\n    ...\n    *** Running bash -l...\n    # ls /etc/container_environment\n    FOO  HELLO  HOME  HOSTNAME  PATH  TERM  container\n    # cat /etc/container_environment/HELLO; echo\n    my beautiful world\n    # cat /etc/container_environment.json; echo\n    {\"TERM\": \"xterm\", \"container\": \"lxc\", \"HOSTNAME\": \"f45449f06950\", \"HOME\": \"/root\", \"PATH\": \"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\", \"FOO\": \"bar\", \"HELLO\": \"my beautiful world\"}\n    # source /etc/container_environment.sh\n    # echo $HELLO\n    my beautiful world\n\n<a name=\"modifying_envvars\"></a>\n#### Modifying environment variables\n\nIt is even possible to modify the environment variables in `my_init` (and therefore the environment variables in all child processes that are spawned after that point in time), by altering the files in `/etc/container_environment`. After each time `my_init` runs a [startup script](#running_startup_scripts), it resets its own environment variables to the state in `/etc/container_environment`, and re-dumps the new environment variables to `container_environment.sh` and `container_environment.json`.\n\nBut note that:\n\n * modifying `container_environment.sh` and `container_environment.json` has no effect.\n * Runit services cannot modify the environment like that. `my_init` only activates changes in `/etc/container_environment` when running startup scripts.\n\n<a name=\"envvar_security\"></a>\n#### Security\n\nBecause environment variables can potentially contain sensitive information, `/etc/container_environment` and its Bash and JSON dumps are by default owned by root, and accessible only by the `docker_env` group (so that any user added this group will have these variables automatically loaded).\n\nIf you are sure that your environment variables don't contain sensitive data, then you can also relax the permissions on that directory and those files by making them world-readable:\n\n    RUN chmod 755 /etc/container_environment\n    RUN chmod 644 /etc/container_environment.sh /etc/container_environment.json\n\n<a name=\"upgrading_os\"></a>\n### Upgrading the operating system inside the container\n\nUpgrading inside the container would violate docker best practices. _ubuntu-baseimage_ is always kept up to date using an [Automated Build](https://hub.docker.com/r/wingedkiwi/ubuntu-baseimage/) on Docker Hub. Simply rebuild your container using this base image.\n\n",
+  "dockerfile": "FROM ubuntu:14.04\nMAINTAINER Chi Vinh Le <cvl@chinet.info>\n\nADD . /bd_build\n\nRUN /bd_build/prepare.sh && \\\n    /bd_build/system_services.sh && \\\n    /bd_build/utilities.sh && \\\n    /bd_build/cleanup.sh\n\nENTRYPOINT [\"/sbin/my_init\", \"--\"]\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": ".",
+        "dest": "/bd_build"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "/bd_build/prepare.sh &&     /bd_build/system_services.sh &&     /bd_build/utilities.sh &&     /bd_build/cleanup.sh"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "Chi Vinh Le <cvl@chinet.info>",
+    "entrypoint": "[\"/sbin/my_init\", \"--\"]"
+  },
+  "source_repository_url": "https://github.com/wingedkiwi/ubuntu-baseimage.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/wingedkiwi/ubuntu-baseimage",
+  "docker_repository": "wingedkiwi/ubuntu-baseimage",
+  "docker_image": "wingedkiwi/ubuntu-baseimage",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "wingedkiwi/ubuntu-baseimage",
+  "revision": "master",
+  "uris": [
+    "https://hub.docker.com/r/wingedkiwi/ubuntu-baseimage",
+    "https://hub.docker.com/v2/repositories/wingedkiwi/ubuntu-baseimage",
+    "https://github.com/wingedkiwi/ubuntu-baseimage.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/VM Image/AMI",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu"
+  ],
+  "info_url": "https://hub.docker.com/r/wingedkiwi/ubuntu-baseimage",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

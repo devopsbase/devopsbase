@@ -1,0 +1,44 @@
+{
+  "name": "attrbagger Chef cookbook",
+  "chef_cookbook_name": "attrbagger",
+  "revision": "0.2.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/attrbagger",
+    "https://supermarket.chef.io/cookbooks/attrbagger/download",
+    "https://supermarket.chef.io/cookbooks/attrbagger/versions/0.2.1",
+    "https://supermarket.chef.io/cookbooks/attrbagger/versions/0.2.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/attrbagger/versions/0.2.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/attrbagger",
+    "https://supermarket.chef.io/api/v1/cookbooks/attrbagger/versions/0.2.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/attrbagger",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/attrbagger/versions/0.2.1/download",
+  "deprecated": false,
+  "created": "2013-09-02T22:41:39.000Z",
+  "updated": "2013-09-03T02:42:54.000Z",
+  "description": "Gets attributes from data bags.",
+  "maintainer": {
+    "name": "meatballhat",
+    "email": "github+attrbagger-cookbook@modcloth.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 2436399,
+  "downloads_count_revision": 1218270,
+  "repository_url": "https://github.com/modcloth-cookbooks/attrbagger",
+  "issues_url": "https://github.com/modcloth-cookbooks/attrbagger",
+  "chef_source_url": "https://github.com/modcloth-cookbooks/attrbagger",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "`attrbagger` Cookbook\n=====================\n\nGet attributes from data bags.\n\nSomewhat fancy.\n\nRequirements\n------------\n\nAttrbagger does not depend on any other cookbooks.  It works with both\n`chef-solo` and `chef-client` by using `data_bag_item`.\n\nAttributes\n----------\n\n#### `attrbagger::default`\n<table>\n  <tr>\n    <th>Key</th><th>Type</th><th>Description</th><th>Default</th>\n  </tr>\n  <tr>\n    <td><tt>node['attrbagger']['autoload']</tt></td>\n    <td><tt>Boolean</tt></td>\n    <td>\n        Used when including the default recipe to decide whether or\n        not to autoload attributes.\n    </td>\n    <td><tt>true</tt></td>\n  </tr>\n  <tr>\n    <td><tt>node['attrbagger']['precedence_level']</tt></td>\n    <td><tt>Boolean</tt></td>\n    <td>\n        The default precedence level to use when not specified in each\n        <tt>Hash</tt> of <tt>node['attrbagger']['configs']</tt>.\n    </td>\n    <td><tt>:override</tt></td>\n  </tr>\n  <tr>\n    <td><tt>node['attrbagger']['configs']</tt></td>\n    <td><tt>Hash</tt></td>\n    <td>\n        The <tt>Hash</tt> structure requires unique string keys representing the\n        targets of each merged \"data bag cascade\" in a <tt>::</tt>-separated\n        format to denote nesting, e.g. <tt>first::second</tt>.  The value of\n        each key must be a <tt>Hash</tt> with an optional <tt>precedence_level</tt>\n        key (default <tt>override</tt>) and a required <tt>bag_cascade</tt> key.\n        The value of the <tt>bag_cascade</tt> key must be an <tt>Array</tt> containing\n        strings representing the cascade of attributes that will be\n        loaded.  The only type of resource currently supported is\n        <tt>data_bag_item</tt>, e.g.\n        <tt>'bag_cascade' => ['data_bag_item[a::b]', 'data_bag_item[c::d]']</tt>.\n    </td>\n    <td><tt>{}</tt></td>\n  </tr>\n</table>\n\nUsage\n-----\n\nAttrbagger may be used either as a library or by including the\n`recipe[attrbagger::default]` in one's `run_list`.\n\nWhen used as a library, the `Attrbagger` class may be used via its\n`.autoload!` class method, or by creating a new instance and using the\n`#load_config` instance method.  Both require injection of the\n`run_context`, which is available in any recipe as `self.run_context`.\nSee the Attrbagger tests for more usage examples.\n\nInclusion of `recipe[attrbagger::default]` in the `run_list` will result\nin the `node['attrbagger']['configs']` hash being walked and merged into\nthe node's attribute precedence level specified via each hash's\n`precedence_level` attribute (defaulting to\n`node['attrbagger']['precedence_level']`.\n\nAn example role using attrbagger to load application-specific\nconfiguration from a base, custom, and dynamic environment-specific data\nbag, as well as loading mail service configuration might look like this:\n\n``` ruby\n\n    name 'attrbagger_example'\n    description 'Attrbagger example role'\n\n    default_attributes(\n      'deployment_env' => 'demo',\n      'attrbagger' => {\n        'configs' => {\n          'example_app' => {\n            'precedence_level' => 'override',\n            'bag_cascade' => [\n              'data_bag_item[applications::base::example_app]',\n              'data_bag_item[applications::example_app]',\n              \"data_bag_item[applications::config_<%= node['deployment_env'] %>::example_app]\"\n            ]\n          },\n          'services::mail' => {\n            'precedence_level' => 'default',\n            'bag_cascade' => [\n              'data_bag_item[services::mail]'\n            ]\n          }\n        }\n      },\n      'example_app' => {\n        'awesome' => true\n      },\n      'mail' => {\n        'host' => 'localhost',\n        'port' => 25\n      }\n    )\n\n    run_list(\n      'recipe[attrbagger]',\n      # ... other stuff\n    )\n\n```\n\nThis would result in the following actions:\n\n- Load `data_bag_item('applications', 'base')` and merge its `example_app`\nhash with `node.default['example_app']`, then assign the result to\n`node.override['example_app']`\n- Load `data_bag_item('applications', 'example_app')` and merge the\nentire data bag contents (except for builtin attributes like `id` and\n`chef_type`) with `node.default['example_app']`, then assign the result\nto `node.override['example_app']`.\n- Load `data_bag_item('applications', 'config_demo')` and merge its `example_app`\nhash with `node.default['example_app']`, then assign the result to\n`node.override['example_app']`\n- Load `data_bag_item('services', 'mail')` and merge the entire data bag\ncontents (except for builtin attributes like `id` and `chef_type`) with\n`node.default['services']['mail']`, then assign the result to\n`node.default['services']['mail']`.\n\nContributing\n------------\n\n[See CONTRIBUTING.md](https://github.com/modcloth-cookbooks/attrbagger/blob/master/CONTRIBUTING.md)\n\nLicense\n-------\n\n[See LICENSE.md](https://github.com/modcloth-cookbooks/attrbagger/blob/master/LICENSE.md)\n\nAuthors\n-------\n\n[See AUTHORS.md](https://github.com/modcloth-cookbooks/attrbagger/blob/master/AUTHORS.md)\n"
+}

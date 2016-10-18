@@ -1,0 +1,97 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/opencpu/fedora",
+    "repository_url": "https://hub.docker.com/v2/repositories/opencpu/fedora",
+    "tags_url": "https://hub.docker.com/v2/repositories/opencpu/fedora/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/opencpu/fedora/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/opencpu/fedora/autobuild",
+    "user": "opencpu",
+    "name": "fedora",
+    "namespace": "opencpu",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 434,
+    "last_updated": "2016-09-25T09:52:49.128801Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 793762382,
+        "id": 86005,
+        "repository": 105707,
+        "creator": 55786,
+        "last_updater": 55786,
+        "last_updated": "2016-09-25T09:52:48.792142Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "jeroenooms/opencpu-server"
+  },
+  "name": "opencpu/fedora Docker container",
+  "description": "Stable version of opencpu for Fedora",
+  "readme": "OpenCPU on Docker\n=================\n\nThis directory contains dockerfiles based on various platforms. Containers are automatically published at [dockerhub](https://hub.docker.com/u/opencpu/).\n\n\nHow to use\n----------\n\nDocker version 1.0 or higher is required on the host. The containers expose 3 ports: either 80 or 8004 can be used for HTTP, and port 443 can be used for HTTPS. Depending in which ports are mapped (via the `-p` flag), you can access:\n\n    http://localhost/ocpu/\n    http://localhost:8004/ocpu/\n    https://localhost/ocpu/\n\nThe examples below assume that we use the [opencpu/base](https://registry.hub.docker.com/u/opencpu/base/) container. To start as the server as an executable\n\n    docker run -t -p 80:80 -p 8004:8004 opencpu/base\n\nAlternatively, to start in background as a daemon:\n\n    docker run -t -d -p 80:80 -p 8004:8004 opencpu/base\n\nAlternatively, to start with an interactive shell:\n\n    docker run -t -i -p 80:80 -p 8004:8004 opencpu/base sh -c 'service opencpu restart && /bin/bash'\n\nOpenCPU and RStudio\n-------------------\n\nThe [opencpu/rstudio](https://registry.hub.docker.com/u/opencpu/rstudio/) container runs an installation with both `opencpu` and `rstudio-server`. For example:\n\n    docker run -t -p 80:80 -p 8004:8004 opencpu/rstudio\n\nApache is automatically setup to proxy the `/rstudio/` path to the rstudio server:\n\n    http://localhost/ocpu/\n    http://localhost/rstudio/\n    http://localhost:8004/ocpu/\n    http://localhost:8004/rstudio/\n\nIt seems like rstudio server currelty needs a restart (`rstudio-server restart`) after initiating the container.\n\nPortmapping\n-----------\n\nEach `-p from:to` command maps a port from the container to the host. Not all ports are required. For example if you only want to use port 8004 (because the host has something else running on port 80) simply use:\n\n    docker run -t -p 8004:8004 opencpu/base\n\nNote that **http does not support cross-port redirects**. I.e. mapping `-p 1234:8004` won't work. It might look like it works because it connects, but the http headers (e.g. Location) will contain an incorrect server address. This has nothing to do with docker or opencpu, it is how http works. To proxy http to another host or port you need to use a reverse proxy server that rewrites the headers such as nginx.\n\nSecurity\n--------\n\nDocker has its own security model and disables other Linux based security modules such as AppArmor or SELinux. So be aware that the execution environment of the OpenCPU API within the container is entirely unrestricted.\n\nHelp and Feedback\n-----------------\n\nI am new to this too, so please share your questions, problems and suggestions on the [mailing list](https://www.opencpu.org/help.html) or [twitter](https://twitter.com/opencpu).\n",
+  "dockerfile": "FROM fedora:23\n\nRUN \\\n  yum update -y && \\\n  yum upgrade -y && \\\n  yum install -y wget  && \\\n  cd /etc/yum.repos.d/ && \\\n  wget http://download.opensuse.org/repositories/home:jeroenooms:opencpu-1.6/Fedora_23/home:jeroenooms:opencpu-1.6.repo && \\\n  yum install -y opencpu\n\nRUN \\\n  wget https://download2.rstudio.org/rstudio-server-rhel-0.99.896-x86_64.rpm && \\\n  yum install -y --nogpgcheck rstudio-server-rhel-0.99.896-x86_64.rpm && \\\n  rm rstudio-server-rhel-0.99.896-x86_64.rpm\n\n# Apache ports\nEXPOSE 80\nEXPOSE 443\nEXPOSE 8004\n\n# Define default command.\nCMD service httpd restart && rstudio-server restart && tail -F /var/log/opencpu/apache_access.log\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80,
+      443,
+      8004
+    ],
+    "volume": [],
+    "run": [
+      "  yum update -y &&   yum upgrade -y &&   yum install -y wget  &&   cd /etc/yum.repos.d/ &&   wget http://download.opensuse.org/repositories/home:jeroenooms:opencpu-1.6/Fedora_23/home:jeroenooms:opencpu-1.6.repo &&   yum install -y opencpu",
+      "  wget https://download2.rstudio.org/rstudio-server-rhel-0.99.896-x86_64.rpm &&   yum install -y --nogpgcheck rstudio-server-rhel-0.99.896-x86_64.rpm &&   rm rstudio-server-rhel-0.99.896-x86_64.rpm"
+    ],
+    "workdir": [],
+    "from": "fedora:23",
+    "cmd": "service httpd restart && rstudio-server restart && tail -F /var/log/opencpu/apache_access.log"
+  },
+  "source_repository_url": "https://github.com/jeroenooms/opencpu-server.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/jeroenooms/opencpu-server",
+  "docker_repository": "opencpu/fedora",
+  "docker_image": "opencpu/fedora",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80,
+        443,
+        8004
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "opencpu/fedora",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/opencpu/fedora",
+    "https://hub.docker.com/v2/repositories/opencpu/fedora",
+    "https://github.com/jeroenooms/opencpu-server.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/opencpu/fedora",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

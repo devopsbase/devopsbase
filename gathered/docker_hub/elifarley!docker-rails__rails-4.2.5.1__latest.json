@@ -1,0 +1,126 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/elifarley/docker-rails",
+    "repository_url": "https://hub.docker.com/v2/repositories/elifarley/docker-rails",
+    "tags_url": "https://hub.docker.com/v2/repositories/elifarley/docker-rails/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/elifarley/docker-rails/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/elifarley/docker-rails/autobuild",
+    "user": "elifarley",
+    "name": "docker-rails",
+    "namespace": "elifarley",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 338,
+    "last_updated": "2016-08-09T19:30:13.866938Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "rails-4.2.5.1",
+        "full_size": 259002316,
+        "id": 2659121,
+        "repository": 635000,
+        "creator": 197467,
+        "last_updater": 197467,
+        "last_updated": "2016-08-09T19:30:13.508817Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "ruby-2.3.0",
+        "full_size": 246177470,
+        "id": 2658527,
+        "repository": 635000,
+        "creator": 197467,
+        "last_updater": 197467,
+        "last_updated": "2016-08-09T19:26:51.412545Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "rails-dev",
+        "full_size": 287999149,
+        "id": 2659517,
+        "repository": 635000,
+        "creator": 197467,
+        "last_updater": 197467,
+        "last_updated": "2016-04-21T14:33:20.205005Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "elifarley/docker-rails"
+  },
+  "name": "elifarley/docker-rails Docker container",
+  "description": "rails development and production images",
+  "readme": "# docker-rails",
+  "dockerfile": "FROM elifarley/docker-rails:ruby-2.3.0\nMAINTAINER Elifarley Cruz <elifarley@gmail.com>\n\nENV RAILS_VERSION 4.2.5.1\n\nRUN gem --config-file .gemrc install rails --version \"$RAILS_VERSION\" && \\\ngem --config-file .gemrc install puma --version 3.1.0 && \\\n  rm -rf \"$GEM_HOME\"/cache\n\nCOPY puma.rb /etc/\nCOPY $_USER-service.sh $_USER.sh $HOME/\n# Possible rocker bug: $HOME is empty\nRUN chmod -R 700 /etc/my_init.d && echo \"$HOME\" > /etc/container_environment/HOME && \\\n  printf '#!/bin/bash\\ntar -jxf vendor.tbz -C \"$HOME\"/vendor' > /etc/my_init.d/01-vendor-cache.sh\n\nONBUILD COPY Gemfile* ./\n#ONBUILD MOUNT vendor:/app/vendor\nONBUILD COPY vendor /app/vendor\nONBUILD RUN bundle install --no-cache --jobs 4 --retry 3 --local && \\\n  rm -rf \"./gem-home\"/cache && \\\n  tar -cjf vendor.tbz -C vendor --exclude=*.gem . && \\\n  du -hs vendor.tbz\n\nONBUILD RUN mkdir -p /etc/service/app && mv /app/app-service.sh /etc/service/app/run && chmod +x /etc/service/app/run\nONBUILD COPY . /app/\nONBUILD RUN chown -R nobody:nogroup /app ; chmod -f +x app.sh; \\\nif test -f crontab; then \\\n  chown app:crontab crontab && chmod 600 crontab && \\\n  mv crontab /var/spool/cron/crontabs/app; \\\nfi; \\\nif test -f db-migrate.sh; then \\\n  chown root:root db-migrate.sh && chmod 700 db-migrate.sh && \\\n  mv db-migrate.sh /etc/my_init.d/90-db-migrate.sh; \\\nfi\n\nONBUILD EXPOSE 8080\n\n#ONBUILD ATTACH [\"/bin/bash\"]\n\n#PUSH elifarley/docker-rails:rails-4.2.5.1\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "gem --config-file .gemrc install rails --version \"$RAILS_VERSION\" && gem --config-file .gemrc install puma --version 3.1.0 &&   rm -rf \"$GEM_HOME\"/cache",
+      "chmod -R 700 /etc/my_init.d && echo \"$HOME\" > /etc/container_environment/HOME &&   printf '#!/bin/bash\\ntar -jxf vendor.tbz -C \"$HOME\"/vendor' > /etc/my_init.d/01-vendor-cache.sh"
+    ],
+    "workdir": [],
+    "from": "elifarley/docker-rails:ruby-2.3.0",
+    "maintainer": "Elifarley Cruz <elifarley@gmail.com>",
+    "env": {
+      "RAILS_VERSION": "4.2.5.1"
+    },
+    "copy": "$_USER-service.sh $_USER.sh $HOME/",
+    "onbuild": "EXPOSE 8080"
+  },
+  "source_repository_url": "https://github.com/elifarley/docker-rails.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/elifarley/docker-rails",
+  "docker_repository": "elifarley/docker-rails",
+  "docker_image": "elifarley/docker-rails",
+  "parameters_schema": {
+    "RAILS_VERSION": {
+      "default": "4.2.5.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "elifarley/docker-rails",
+  "revision": "rails-4.2.5.1",
+  "uris": [
+    "https://hub.docker.com/r/elifarley/docker-rails",
+    "https://hub.docker.com/v2/repositories/elifarley/docker-rails",
+    "https://github.com/elifarley/docker-rails.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Mode/Executable/Image"
+  ],
+  "info_url": "https://hub.docker.com/r/elifarley/docker-rails",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

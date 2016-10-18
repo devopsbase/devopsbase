@@ -1,0 +1,147 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/theascone/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/theascone/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/theascone/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/theascone/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/theascone/owncloud/autobuild",
+    "user": "theascone",
+    "name": "owncloud",
+    "namespace": "theascone",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 44,
+    "last_updated": "2015-11-25T20:30:59.034817Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 376352483,
+        "id": 1421907,
+        "repository": 414812,
+        "creator": 289721,
+        "last_updater": 289721,
+        "last_updated": "2015-11-25T20:31:03.608610Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "theascone/docker_owncloud"
+  },
+  "name": "theascone/owncloud Docker container",
+  "description": "Dockerize Owncloud",
+  "readme": "# docker_owncloud\nDockerize Owncloud\n",
+  "dockerfile": "FROM debian:jessie\n\n# install packages\n\nRUN apt-get update\n\nRUN apt-get -y install \\\n  supervisor \\\n  ca-certificates \\\n  curl \\\n  bzip2 \\\n  --no-install-recommends\n\nRUN apt-get -y install \\\n  nginx \\\n  --no-install-recommends\n\nRUN apt-get -y install \\\n  php5-fpm \\\n  php5 \\\n  php5-json \\\n  php5-gd \\\n  php5-mysql \\\n  php5-curl \\\n  php5-intl \\\n  php5-mcrypt \\\n  php5-ldap \\\n  php5-imap \\\n  php5-gmp \\\n  php-apc \\\n  php5-apcu \\\n  php5-memcached \\\n  php5-redis \\\n  php5-imagick \\\n  php5-dev \\\n  php-pear \\\n  --no-install-recommends\n\nRUN apt-get -y install \\\n  libav-tools \\\n  libreoffice \\\n  --no-install-recommends\n\nRUN apt-get -y clean\nRUN apt-get -y autoclean\nRUN apt-get -y autoremove\n\nRUN pecl install htscanner-1.0.0\n\n# download owncloud\n\nENV OWNCLOUD_VERSION 8.2.1\nENV OWNCLOUD_PATH '/usr/share/nginx/html'\nENV OWNCLOUD_DATA_PATH '/var/owncloud_data'\n\nRUN rm /usr/share/nginx/html/index.html\nRUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys E3036906AD9F30807351FAC32D5D5E97F6978A26\nRUN curl -fsSL -o owncloud.tar.bz2 \"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2\"\nRUN curl -fsSL -o owncloud.tar.bz2.asc \"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2.asc\"\nRUN gpg --verify owncloud.tar.bz2.asc\nRUN rm owncloud.tar.bz2.asc\n\nRUN mkdir $OWNCLOUD_DATA_PATH\n\n# add files\n\nADD setup.sh /root/\n\nADD supervisord.conf /etc/supervisord.conf\n\nADD owncloud /etc/nginx/sites-available/\nRUN ln -s /etc/nginx/sites-available/owncloud /etc/nginx/sites-enabled/\nRUN rm /etc/nginx/sites-enabled/default\n\nADD www.conf /root/\nRUN cat /root/www.conf >> /etc/php5/fpm/pool.d/www.conf\nRUN rm /root/www.conf\n\nEXPOSE 80\nVOLUME [\"/usr/share/nginx/html/\", \"/var/owncloud_data\"]\nCMD [\"/usr/bin/supervisord\", \"-c\", \"/etc/supervisord.conf\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "setup.sh",
+        "dest": "/root/"
+      },
+      {
+        "source": "supervisord.conf",
+        "dest": "/etc/supervisord.conf"
+      },
+      {
+        "source": "owncloud",
+        "dest": "/etc/nginx/sites-available/"
+      },
+      {
+        "source": "www.conf",
+        "dest": "/root/"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/usr/share/nginx/html/\", \"/var/owncloud_data\"]"
+    ],
+    "run": [
+      "apt-get update",
+      "apt-get -y install   supervisor   ca-certificates   curl   bzip2   --no-install-recommends",
+      "apt-get -y install   nginx   --no-install-recommends",
+      "apt-get -y install   php5-fpm   php5   php5-json   php5-gd   php5-mysql   php5-curl   php5-intl   php5-mcrypt   php5-ldap   php5-imap   php5-gmp   php-apc   php5-apcu   php5-memcached   php5-redis   php5-imagick   php5-dev   php-pear   --no-install-recommends",
+      "apt-get -y install   libav-tools   libreoffice   --no-install-recommends",
+      "apt-get -y clean",
+      "apt-get -y autoclean",
+      "apt-get -y autoremove",
+      "pecl install htscanner-1.0.0",
+      "rm /usr/share/nginx/html/index.html",
+      "gpg --keyserver ha.pool.sks-keyservers.net --recv-keys E3036906AD9F30807351FAC32D5D5E97F6978A26",
+      "curl -fsSL -o owncloud.tar.bz2 \"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2\"",
+      "curl -fsSL -o owncloud.tar.bz2.asc \"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2.asc\"",
+      "gpg --verify owncloud.tar.bz2.asc",
+      "rm owncloud.tar.bz2.asc",
+      "mkdir $OWNCLOUD_DATA_PATH",
+      "ln -s /etc/nginx/sites-available/owncloud /etc/nginx/sites-enabled/",
+      "rm /etc/nginx/sites-enabled/default",
+      "cat /root/www.conf >> /etc/php5/fpm/pool.d/www.conf",
+      "rm /root/www.conf"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "env": {
+      "OWNCLOUD_VERSION": "8.2.1",
+      "OWNCLOUD_PATH": "'/usr/share/nginx/html'",
+      "OWNCLOUD_DATA_PATH": "'/var/owncloud_data'"
+    },
+    "cmd": "[\"/usr/bin/supervisord\", \"-c\", \"/etc/supervisord.conf\"]"
+  },
+  "source_repository_url": "https://github.com/theascone/docker_owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/theascone/docker_owncloud",
+  "docker_repository": "theascone/owncloud",
+  "docker_image": "theascone/owncloud",
+  "parameters_schema": {
+    "OWNCLOUD_VERSION": {
+      "default": "8.2.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OWNCLOUD_PATH": {
+      "default": "'/usr/share/nginx/html'",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OWNCLOUD_DATA_PATH": {
+      "default": "'/var/owncloud_data'",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "theascone/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/theascone/owncloud",
+    "https://hub.docker.com/v2/repositories/theascone/owncloud",
+    "https://github.com/theascone/docker_owncloud.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/theascone/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,58 @@
+{
+  "name": "privacy_services_manager Chef cookbook",
+  "chef_cookbook_name": "privacy_services_manager",
+  "revision": "1.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/privacy_services_manager",
+    "https://supermarket.chef.io/cookbooks/privacy_services_manager/download",
+    "https://supermarket.chef.io/cookbooks/privacy_services_manager/versions/1.0.0",
+    "https://supermarket.chef.io/cookbooks/privacy_services_manager/versions/1.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/privacy_services_manager/versions/1.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/privacy_services_manager",
+    "https://supermarket.chef.io/api/v1/cookbooks/privacy_services_manager/versions/1.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Operating System/macOS",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/privacy_services_manager",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/privacy_services_manager/versions/1.0.0/download",
+  "deprecated": false,
+  "created": "2015-07-30T20:01:00.505Z",
+  "updated": "2015-10-12T04:26:14.621Z",
+  "description": "Configures Mac OS X Accessibility, Calendar, Contacts, iCloud, Location Services and Reminders",
+  "maintainer": {
+    "name": "dhoer",
+    "email": "dennis.hoer@gmail.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 71398,
+  "downloads_count_revision": 23965,
+  "repository_url": "https://github.com/dhoer/chef-privacy_services_manager",
+  "issues_url": "https://github.com/dhoer/chef-privacy_services_manager/issues",
+  "chef_source_url": "https://github.com/dhoer/chef-privacy_services_manager",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Privacy Services Manager Cookbook\n\n[![Cookbook Version](http://img.shields.io/cookbook/v/privacy_services_manager.svg?style=flat-square)][cookbook]\n[![Build Status](http://img.shields.io/travis/dhoer/chef-privacy_services_manager.svg?style=flat-square)][travis]\n[![GitHub Issues](http://img.shields.io/github/issues/dhoer/chef-privacy_services_manager.svg?style=flat-square)]\n[github]\n\n[cookbook]: https://supermarket.chef.io/cookbooks/privacy_services_manager\n[travis]: https://travis-ci.org/dhoer/chef-privacy_services_manager\n[github]: https://github.com/dhoer/chef-privacy_services_manager/issues\n\n\nConfigures Mac OS X Accessibility, Calendar, Contacts, iCloud, Location Services and Reminders using \nUniversity of Utah, Marriott Library, Apple Support's \n[privacy_services_manager](https://github.com/univ-of-utah-marriott-library-apple/privacy_services_manager).\n\n## Requirements\n\n- Chef 11 or higher\n\n### Platforms\n\n- Mac OS X - Mountain Lion (10.8) or higher\n\n## Usage\n\nThis cookbook wraps University of Utah, Marriott Library, Apple Support's \n[privacy_services_manager](https://github.com/univ-of-utah-marriott-library-apple/privacy_services_manager).  \nPlease read their documentation thoroughly before using this cookbook.\n\n### Actions\n\nThere are four actions available:\n\n- `add`  Creates an entry for the specified application and enable the application for the service.\n- `enable` Effectively just calls `add`, ensuring that the application has been added and enabled.\n- `remove` Deletes the application's entry within the service. There will no longer be a record of that \napplication therein.\n- `disable` Leaves the application's record intact, but will disallow the application from utilizing the \ngiven service.\n\n### Attributes\n\n- `services` There are six services that can be modified:\n  - `accessibility` deals with behind-the-scenes systems that Apple believes require extra privileges to enable. \nApplications that interface with your computer experience, such as BetterSnapTool or the Steam in-game overlay, \nrequire access through this service. These privileges must be granted by a privileged user via sudo.\n  - `calendar` is the service responsible for allowing applications to inject events into your calendar. This can be \nused to schedule recurring events, among other things.\n  - `contacts` handles requests to access a user's address book. Many web browsers use this to store login information \nfor various websites. This service is handled on a per-user basis, so any user has the ability to modify this service \nfor themselves.\n  - `icloud` manages access to a user's iCloud storage and settings. Examples would be any text editing application \nthat is able to save to your iCloud, such as TextEdit or iA Writer. Because of the nature of this request (access to \na user's personal files and settings).\n  - `location` manages any application that desires to report on your physical location. Apple's own Maps application \nwill request access to this, as well as web browsers once you visit a website that asks for your location (such as \nGoogle Maps). \n  - `reminders` gives an application the ability to access your Reminders (which are usually handled manually via the \nReminders application).\n- `template`\tModify privacy services for Apple's User Template. Only applies to certain services.\n- `forceroot`\tForce the script to allow the creation/modification of the root user's own TCC database file.\n- `admin`\tEnable administrative override to modify services for non-bundled applications. \n- `log_dest` Redirect logging to the specified file.\n- `user` Modify privacy services for a specific user named \"user\". \n- `language` \tWhen changing privacy services for the Apple's User Template, modify the lang template. \n(Apple provides many User Template folder for different languages.)\n\nNote the `user`, `template`, and `language` flags only affect those services which use the TCC system, i.e. `contacts`, \n`icloud`, and `accessibility`. Providing these options for Location Services will have no effect.\n\n### Examples\n\n#### Add an application to your own contacts service permissions\n\nMost web browsers will ask you for permission to look at your contacts. \n\nLet's add Safari as a trusted application for vagrant user:\n\n```ruby\nprivacy_services_manager 'grant safari access to contacts' do\n  service 'contacts'\n  user 'vagrant'\n  applications ['com.apple.Safari']\n  action :add\nend\n```\n\n#### Add an application to the global location service permissions\n\nFor this part of the walkthrough we will be adding Apple's Maps application to \nLocation Services, but know that the process is the same for Accessibility.\n\nFirst, because Location Services is handled a bit differently under-the-hood, we have to enable the system globally. \n\n```ruby\nprivacy_services_manager 'enable location services globally' do\n  service 'location'\n  action :enable\nend\n```\n\nNow we will add Maps to the database. To do this, simply do:\n\n```ruby\nprivacy_services_manager 'add location services for maps' do\n  service 'location'\n  applications ['maps']\n  action :add\nend\n```\n\n## Getting Help\n\n- Ask specific questions on [Stack Overflow](http://stackoverflow.com/questions/tagged/chef-privacy_services_manager).\n- Report bugs and discuss potential features in\n[Github issues](https://github.com/dhoer/chef-privacy_services_manager/issues).\n\n## Contributing\n\nPlease refer to [CONTRIBUTING](https://github.com/dhoer/chef-privacy_services_manager/blob/master/CONTRIBUTING.md).\n\n## License\n\nMIT - see the accompanying [LICENSE](https://github.com/dhoer/chef-privacy_services_manager/blob/master/LICENSE.md) \nfile for details.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "mac_os_x",
+      "revision": ">= 10.8",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/dmg",
+      "revision": "~> 2.2",
+      "self_resolve": true
+    }
+  ]
+}

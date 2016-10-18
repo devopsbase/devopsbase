@@ -1,0 +1,148 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/hoist/rabbitmq-cluster",
+    "repository_url": "https://hub.docker.com/v2/repositories/hoist/rabbitmq-cluster",
+    "tags_url": "https://hub.docker.com/v2/repositories/hoist/rabbitmq-cluster/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/hoist/rabbitmq-cluster/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/hoist/rabbitmq-cluster/autobuild",
+    "user": "hoist",
+    "name": "rabbitmq-cluster",
+    "namespace": "hoist",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 66279,
+    "last_updated": "2016-03-20T00:52:17.122888Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 240425002,
+        "id": 1177663,
+        "repository": 371195,
+        "creator": 452996,
+        "last_updater": 22808,
+        "last_updated": "2016-03-20T00:52:15.723414Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "beta",
+        "full_size": 232073085,
+        "id": 1189499,
+        "repository": 371195,
+        "creator": 452996,
+        "last_updater": 452996,
+        "last_updated": "2015-10-26T22:04:57.231779Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "hoist/rabbitmq-cluster"
+  },
+  "name": "hoist/rabbitmq-cluster Docker container",
+  "description": "Hoist's RabbitMQ Cluster Image",
+  "readme": "# rabbitmq-cluster [![](https://badge.imagelayers.io/totem/rabbitmq-cluster:develop.svg)](https://imagelayers.io/?images=totem/rabbitmq-cluster:develop 'Get your own badge on imagelayers.io')\n\nRabbitmq Cluster using Docker.\n\n## Status\nIn Testing\n\n## Requirements\n- Docker 1.2 +\n- Etcd 0.4.6 +\n\n## Features\n- Automatic seed node detection using etcd (Seed node will initialize the settings for cluster).\n- rabbitmq.conf file for automatic cluster initialization using etcd discovery.\n- hosts file initialization using etcd discovery.\n- Centralized logging using syslog.\n- Random Erlang Cookie for the cluster.\n\n## Creating cluster (different machines)\nAssuming that there are 2 machines (machine-1, machine-2), with data directory\nat /data (you may choose different path). You may deploy all nodes at once using command:\n\n```\nRABBITMQ_USER=<rabbitmq_user>\nRABBITMQ_PASSWORD=<rabbitmq_password>\nsudo docker run --rm -P -p 5672:5672 -p 25672:25672 -p 4369:4369 -p 44001:44001 --name node1 -e HOST_IP=$COREOS_PRIVATE_IPV4 -e RABBITMQ_USER=$RABBITMQ_USER -e RABBITMQ_PASSWORD=$RABBITMQ_PASSWORD -v /dev/log:/dev/log -v /data:/var/lib/rabbitmq  totem/rabbitmq-cluster\n```  \n\nwhere $COREOS_PRIVATE_IPV4 is the private IP address for the host. \n(If using ec2, ensure that machines can talk to each other on ports: 4369, 5672, 35197)\n35197)\n\n## Proxying Cluster using Yoda\nIf you are using dynamic proxy like yoda (that supports tcp) for port 5672, you may \nneed to add additional port binding in Yoda proxy. \ne.g.: -p 5673:5672\n\nTo configure yoda with tcp listeners and sidekick discovery, see [Yoda Proxy](https://github.com/totem/yoda-proxy) \nand [Yoda Discover](https://github.com/totem/yoda-discover)\n\n",
+  "dockerfile": "FROM totem/python-base:3.4-trusty-b2\n\nENV DEBIAN_FRONTEND noninteractive\n\n#Install Supervisor\nRUN pip install supervisor==3.1.2 supervisor-stdout\n\n\n# Install RabbitMQ.\nRUN \\\n  wget -qO - http://www.rabbitmq.com/rabbitmq-signing-key-public.asc | apt-key add - && \\\n  wget https://github.com/rabbitmq/rabbitmq-server/releases/download/rabbitmq_v3_5_7/rabbitmq-server_3.5.7-1_all.deb && \\\n  echo \"deb http://www.rabbitmq.com/debian/ testing main\" > /etc/apt/sources.list.d/rabbitmq.list && \\\n  apt-get update && \\\n  sudo dpkg -i rabbitmq-server_3.5.7-1_all.deb || true && \\\n  DEBIAN_FRONTEND=noninteractive sudo apt-get install -f -y && \\\n  apt-get clean && \\\n  rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* && \\\n  rabbitmq-plugins enable rabbitmq_management && \\\n  echo \"[{rabbit, [{loopback_users, []}]}].\" > /etc/rabbitmq/rabbitmq.config\n\n#Install delayed message exchange plugin\nRUN curl -L http://www.rabbitmq.com/community-plugins/v3.5.x/rabbitmq_delayed_message_exchange-0.0.1-rmq3.5.x-9bf265e4.ez -o /usr/lib/rabbitmq/lib/rabbitmq_server-3.5.7/plugins/rabbitmq_delayed_message_exchange.ez && rabbitmq-plugins enable rabbitmq_delayed_message_exchange\n\n#Confd\nENV CONFD_VERSION 0.6.2\nRUN curl -L https://github.com/kelseyhightower/confd/releases/download/v$CONFD_VERSION/confd-${CONFD_VERSION}-linux-amd64 -o /usr/local/bin/confd && \\\n    chmod 555 /usr/local/bin/confd\n\n#Etcdctl\nENV ETCDCTL_VERSION v0.4.6\nRUN curl -L https://github.com/coreos/etcd/releases/download/$ETCDCTL_VERSION/etcd-$ETCDCTL_VERSION-linux-amd64.tar.gz -o /tmp/etcd-$ETCDCTL_VERSION-linux-amd64.tar.gz && \\\n    cd /tmp && gzip -dc etcd-$ETCDCTL_VERSION-linux-amd64.tar.gz | tar -xof - && \\\n    cp -f /tmp/etcd-$ETCDCTL_VERSION-linux-amd64/etcdctl /usr/local/bin && \\\n    rm -rf /tmp/etcd-$ETCDCTL_VERSION-linux-amd64.tar.gz\n\n#Configure Rabbitmq\nRUN sed --follow-symlinks \\\n    -e 's/-rabbit error_logger.*/-rabbit error_logger tty \\\\/' \\\n    -e 's/-rabbit sasl_error_logger.*/-rabbit sasl_error_logger tty \\\\/' \\\n    -e 's/-sasl sasl_error_logger.*/-sasl sasl_error_logger tty \\\\/' \\\n    -i  /usr/lib/rabbitmq/bin/rabbitmq-server\n\n#Supervisor Config\nRUN mkdir -p /var/log/supervisor\nADD etc/supervisor /etc/supervisor\nRUN ln -sf /etc/supervisor/supervisord.conf /etc/supervisord.conf\n\n#Confd Defaults\nADD etc/confd /etc/confd\n\n#Add custom scipts\nADD bin /usr/local/bin\nRUN chmod -R +x /usr/local/bin\n\n# Define mount points.\nVOLUME [\"/var/lib/rabbitmq\"]\n\nEXPOSE 5672 44001 15672 25672 4369\n\nENTRYPOINT [\"/usr/local/bin/supervisord-wrapper.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "etc/supervisor",
+        "dest": "/etc/supervisor"
+      },
+      {
+        "source": "etc/confd",
+        "dest": "/etc/confd"
+      },
+      {
+        "source": "bin",
+        "dest": "/usr/local/bin"
+      }
+    ],
+    "expose": [
+      5672
+    ],
+    "volume": [
+      "[\"/var/lib/rabbitmq\"]"
+    ],
+    "run": [
+      "pip install supervisor==3.1.2 supervisor-stdout",
+      "  wget -qO - http://www.rabbitmq.com/rabbitmq-signing-key-public.asc | apt-key add - &&   wget https://github.com/rabbitmq/rabbitmq-server/releases/download/rabbitmq_v3_5_7/rabbitmq-server_3.5.7-1_all.deb &&   echo \"deb http://www.rabbitmq.com/debian/ testing main\" > /etc/apt/sources.list.d/rabbitmq.list &&   apt-get update &&   sudo dpkg -i rabbitmq-server_3.5.7-1_all.deb || true &&   DEBIAN_FRONTEND=noninteractive sudo apt-get install -f -y &&   apt-get clean &&   rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* &&   rabbitmq-plugins enable rabbitmq_management &&   echo \"[{rabbit, [{loopback_users, []}]}].\" > /etc/rabbitmq/rabbitmq.config",
+      "curl -L http://www.rabbitmq.com/community-plugins/v3.5.x/rabbitmq_delayed_message_exchange-0.0.1-rmq3.5.x-9bf265e4.ez -o /usr/lib/rabbitmq/lib/rabbitmq_server-3.5.7/plugins/rabbitmq_delayed_message_exchange.ez && rabbitmq-plugins enable rabbitmq_delayed_message_exchange",
+      "curl -L https://github.com/kelseyhightower/confd/releases/download/v$CONFD_VERSION/confd-${CONFD_VERSION}-linux-amd64 -o /usr/local/bin/confd &&     chmod 555 /usr/local/bin/confd",
+      "curl -L https://github.com/coreos/etcd/releases/download/$ETCDCTL_VERSION/etcd-$ETCDCTL_VERSION-linux-amd64.tar.gz -o /tmp/etcd-$ETCDCTL_VERSION-linux-amd64.tar.gz &&     cd /tmp && gzip -dc etcd-$ETCDCTL_VERSION-linux-amd64.tar.gz | tar -xof - &&     cp -f /tmp/etcd-$ETCDCTL_VERSION-linux-amd64/etcdctl /usr/local/bin &&     rm -rf /tmp/etcd-$ETCDCTL_VERSION-linux-amd64.tar.gz",
+      "sed --follow-symlinks     -e 's/-rabbit error_logger.*/-rabbit error_logger tty \\\\/'     -e 's/-rabbit sasl_error_logger.*/-rabbit sasl_error_logger tty \\\\/'     -e 's/-sasl sasl_error_logger.*/-sasl sasl_error_logger tty \\\\/'     -i  /usr/lib/rabbitmq/bin/rabbitmq-server",
+      "mkdir -p /var/log/supervisor",
+      "ln -sf /etc/supervisor/supervisord.conf /etc/supervisord.conf",
+      "chmod -R +x /usr/local/bin"
+    ],
+    "workdir": [],
+    "from": "totem/python-base:3.4-trusty-b2",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "CONFD_VERSION": "0.6.2",
+      "ETCDCTL_VERSION": "v0.4.6"
+    },
+    "entrypoint": "[\"/usr/local/bin/supervisord-wrapper.sh\"]"
+  },
+  "source_repository_url": "https://github.com/hoist/rabbitmq-cluster.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/hoist/rabbitmq-cluster",
+  "docker_repository": "hoist/rabbitmq-cluster",
+  "docker_image": "hoist/rabbitmq-cluster",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CONFD_VERSION": {
+      "default": "0.6.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ETCDCTL_VERSION": {
+      "default": "v0.4.6",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5672
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "hoist/rabbitmq-cluster",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/hoist/rabbitmq-cluster",
+    "https://hub.docker.com/v2/repositories/hoist/rabbitmq-cluster",
+    "https://github.com/hoist/rabbitmq-cluster.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/hoist/rabbitmq-cluster",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

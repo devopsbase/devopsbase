@@ -1,0 +1,147 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/larizzo/openhab-perl",
+    "repository_url": "https://hub.docker.com/v2/repositories/larizzo/openhab-perl",
+    "tags_url": "https://hub.docker.com/v2/repositories/larizzo/openhab-perl/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/larizzo/openhab-perl/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/larizzo/openhab-perl/autobuild",
+    "user": "larizzo",
+    "name": "openhab-perl",
+    "namespace": "larizzo",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 118,
+    "last_updated": "2016-08-09T18:48:52.501342Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 718813838,
+        "id": 3934324,
+        "repository": 810595,
+        "creator": 966515,
+        "last_updater": 966515,
+        "last_updated": "2016-08-09T18:48:52.116574Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "larizzo/docker-openhab-perl"
+  },
+  "name": "larizzo/openhab-perl Docker container",
+  "description": "Docker Container with the OpenHAB 1.8.3, Oracle Java 8, curl and Perl.",
+  "readme": "# OpenHAB Dockerfile\n\n\nDocker Container with the OpenHAB 1.8.3, Java8 and Perl.\n\nRun contnainer with\n\n    docker run -itd -p 8080:8080 larizzo/openhab\n\n## Container Parametrization\nThere are several parameters that can be passed to the container for configuring OpenHAB.\n\n### Debug mode\nBy default this container starts in normal mode. To start in debug mode (more log output), add environment parameter \"debug\". Example:\n\n    docker run -it -e debug=true larizzo/openhab\n\n### Mounting Config directory\nThis probably will be the most used parametrization in order to store the configuration persistent to your local disk. There are two ways to do this, in private docker containers I always recommend the host volume mappings over data volumes.\nMount a configuration directory on the host:\n\n    docker run -itd -v /config/dir/on/host:/opt/openhab/configurations larizzo/openhab\n\n### Configuring Bindings\nFor Performance Reasons no Bindings are activated by default but they are delivered for configuration with the OpenHAB image. All binding jars are available inside the container at /opt/openhab-all-bindings.\nTo activate bindings place a file in /opt/openhab/configurations (usually via volume-mounting) called \"bindings.list\" and just list any binding without version part line per line.\nExample:\n\n    org.openhab.binding.milight\n    org.openhab.io.squeezeserver\n    \n\nRUN ln -s org.openhab.binding.milight-1.8.0.jar /opt/openhab/addons/org.openhab.binding.milight-$OPENHAB_VERSION.jar\n\nOf course it's also possible to copy or move a addon directly to /opt/openhab/addons.\n\n## Access to OpenHAB\nAfter launching the container, HABMin is reachable at:\n\nhttp://<host>:8080/habmin\n",
+  "dockerfile": "FROM ubuntu:14.04\nMAINTAINER shawn.rizzoli@larizzo.net\n\nENV OPENHAB_VERSION=1.8.3\nENV OPENHAB_DIR=/opt/openhab\nENV BINDINGS_DIR=/opt/openhab-all-bindings\nENV DESIGNER_DIR=/opt/openhab-designer\nENV HABMIN_DIR=$OPENHAB_DIR/webapps/habmin\nENV JAVA_HOME /usr/lib/jvm/java-8-oracle\nENV PATH $JAVA_HOME/bin:$PATH\n\n# Initial update and install of dependency that can add apt-repos\nRUN apt-get -y update && apt-get install -y software-properties-common python-software-properties\n\n# Add global apt repos\nRUN add-apt-repository -y \"deb http://archive.ubuntu.com/ubuntu precise universe\" && \\\n    add-apt-repository -y \"deb http://archive.ubuntu.com/ubuntu precise main restricted universe multiverse\" && \\\n    add-apt-repository -y \"deb http://archive.ubuntu.com/ubuntu precise-updates main restricted universe multiverse\" && \\\n    add-apt-repository -y \"deb http://archive.ubuntu.com/ubuntu precise-backports main restricted universe multiverse\" && \\\n    add-apt-repository -y ppa:webupd8team/java\n\n# Install\nRUN apt-get update && \\\n    apt-get upgrade -y && \\\n    apt-get install -y build-essential && \\\n    apt-get install -y software-properties-common && \\\n    apt-get install -y byobu curl git htop man unzip vim wget hping3 perl liblwp-protocol-https-perl libjson-perl libgetopt-long-descriptive-perl\n      \n\n# Install oracle-java8\nRUN (echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections) && apt-get install -y oracle-java8-installer oracle-java8-set-default\n\n# Cleanup\nRUN rm -rf /var/lib/apt/lists/* && \\\n    rm -rf /var/cache/*\n\n# Install OpenHAB\nRUN mkdir -p $OPENHAB_DIR \\\n\t&& wget https://bintray.com/artifact/download/openhab/bin/distribution-$OPENHAB_VERSION-runtime.zip \\\n\t&& unzip distribution-$OPENHAB_VERSION-runtime.zip -d $OPENHAB_DIR \\\n\t&& rm distribution-$OPENHAB_VERSION-runtime.zip \\\n\t&& mkdir -p $OPENHAB_DIR/logs\n\t\n# Extract Bindings\nRUN mkdir -p $BINDINGS_DIR \\\n\t&& wget https://bintray.com/artifact/download/openhab/bin/distribution-$OPENHAB_VERSION-addons.zip \\\n\t&& unzip distribution-$OPENHAB_VERSION-addons.zip -d $BINDINGS_DIR \\\n\t&& rm distribution-$OPENHAB_VERSION-addons.zip\n\n# Install OpenHAB Designer Linux which can be started via X11\n#RUN mkdir -p $DESIGNER_DIR \\\n#\t&& wget https://bintray.com/artifact/download/openhab/bin/distribution-$OPENHAB_VERSION-designer-linux64bit.zip \\\n#\t&& unzip distribution-$OPENHAB_VERSION-designer-linux64bit.zip -d $DESIGNER_DIR \\\n#\t&& rm distribution-$OPENHAB_VERSION-designer-linux64bit.zip\n\n# Install HabMin\nRUN mkdir -p $HABMIN_DIR \\\n\t&& wget https://github.com/cdjackson/HABmin/archive/master.zip \\\n\t&& unzip master.zip \\\n\t&& mv HABmin-master/* $HABMIN_DIR \\\n\t&& rm -r HABmin-master master.zip \\\n\t&& mv $HABMIN_DIR/addons/*.jar $OPENHAB_DIR/addons\n\n\nCOPY files/ /opt/\nRUN chmod +x /opt/*.sh\n\n\nCMD [\"/opt/start-openhab-docker.sh\"]\nEXPOSE 8080\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "apt-get -y update && apt-get install -y software-properties-common python-software-properties",
+      "add-apt-repository -y \"deb http://archive.ubuntu.com/ubuntu precise universe\" &&     add-apt-repository -y \"deb http://archive.ubuntu.com/ubuntu precise main restricted universe multiverse\" &&     add-apt-repository -y \"deb http://archive.ubuntu.com/ubuntu precise-updates main restricted universe multiverse\" &&     add-apt-repository -y \"deb http://archive.ubuntu.com/ubuntu precise-backports main restricted universe multiverse\" &&     add-apt-repository -y ppa:webupd8team/java",
+      "apt-get update &&     apt-get upgrade -y &&     apt-get install -y build-essential &&     apt-get install -y software-properties-common &&     apt-get install -y byobu curl git htop man unzip vim wget hping3 perl liblwp-protocol-https-perl libjson-perl libgetopt-long-descriptive-perl",
+      "(echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections) && apt-get install -y oracle-java8-installer oracle-java8-set-default",
+      "rm -rf /var/lib/apt/lists/* &&     rm -rf /var/cache/*",
+      "mkdir -p $OPENHAB_DIR \t&& wget https://bintray.com/artifact/download/openhab/bin/distribution-$OPENHAB_VERSION-runtime.zip \t&& unzip distribution-$OPENHAB_VERSION-runtime.zip -d $OPENHAB_DIR \t&& rm distribution-$OPENHAB_VERSION-runtime.zip \t&& mkdir -p $OPENHAB_DIR/logs",
+      "mkdir -p $BINDINGS_DIR \t&& wget https://bintray.com/artifact/download/openhab/bin/distribution-$OPENHAB_VERSION-addons.zip \t&& unzip distribution-$OPENHAB_VERSION-addons.zip -d $BINDINGS_DIR \t&& rm distribution-$OPENHAB_VERSION-addons.zip",
+      "mkdir -p $HABMIN_DIR \t&& wget https://github.com/cdjackson/HABmin/archive/master.zip \t&& unzip master.zip \t&& mv HABmin-master/* $HABMIN_DIR \t&& rm -r HABmin-master master.zip \t&& mv $HABMIN_DIR/addons/*.jar $OPENHAB_DIR/addons",
+      "chmod +x /opt/*.sh"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "shawn.rizzoli@larizzo.net",
+    "env": {
+      "OPENHAB_VERSION": "1.8.3",
+      "OPENHAB_DIR": "/opt/openhab",
+      "BINDINGS_DIR": "/opt/openhab-all-bindings",
+      "DESIGNER_DIR": "/opt/openhab-designer",
+      "HABMIN_DIR": "$OPENHAB_DIR/webapps/habmin",
+      "JAVA_HOME": "/usr/lib/jvm/java-8-oracle",
+      "PATH": "$JAVA_HOME/bin:$PATH"
+    },
+    "copy": "files/ /opt/",
+    "cmd": "[\"/opt/start-openhab-docker.sh\"]"
+  },
+  "source_repository_url": "https://github.com/larizzo/docker-openhab-perl.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/larizzo/docker-openhab-perl",
+  "docker_repository": "larizzo/openhab-perl",
+  "docker_image": "larizzo/openhab-perl",
+  "parameters_schema": {
+    "OPENHAB_VERSION": {
+      "default": "1.8.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OPENHAB_DIR": {
+      "default": "/opt/openhab",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BINDINGS_DIR": {
+      "default": "/opt/openhab-all-bindings",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DESIGNER_DIR": {
+      "default": "/opt/openhab-designer",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HABMIN_DIR": {
+      "default": "$OPENHAB_DIR/webapps/habmin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_HOME": {
+      "default": "/usr/lib/jvm/java-8-oracle",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$JAVA_HOME/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "larizzo/openhab-perl",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/larizzo/openhab-perl",
+    "https://hub.docker.com/v2/repositories/larizzo/openhab-perl",
+    "https://github.com/larizzo/docker-openhab-perl.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Type/Middleware/Runtime/Perl"
+  ],
+  "info_url": "https://hub.docker.com/r/larizzo/openhab-perl",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

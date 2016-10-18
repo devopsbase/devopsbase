@@ -1,0 +1,116 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/monostream/jenkins-slave",
+    "repository_url": "https://hub.docker.com/v2/repositories/monostream/jenkins-slave",
+    "tags_url": "https://hub.docker.com/v2/repositories/monostream/jenkins-slave/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/monostream/jenkins-slave/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/monostream/jenkins-slave/autobuild",
+    "user": "monostream",
+    "name": "jenkins-slave",
+    "namespace": "monostream",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 447,
+    "last_updated": "2016-09-23T21:18:02.025915Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 259383447,
+        "id": 1988018,
+        "repository": 524729,
+        "creator": 508635,
+        "last_updater": 508635,
+        "last_updated": "2016-09-23T21:17:58.978093Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "monocloud/docker"
+  },
+  "name": "monostream/jenkins-slave Docker container",
+  "description": "This is a basic container to be used as a Jenkins slave build node.",
+  "readme": "fork from evarga/jenkins-slave\n\nThis container contains the basic stuff needed to be used as a Jenkins slave build node. For more information what it contains, please, visit the documentation for the Jenkins Docker plugin. Having a ready container makes using the aforementioned plugin easier.\n\nP.S. The password for the 'jenkins' user is set to 'jenkins'. See the Dockerfile source code below.",
+  "dockerfile": "# Pull base image.\nFROM debian:latest\n\nMAINTAINER Dominik Hahn <dominik@monostream.com>\n\n# Install SSH server\nRUN apt-get update -q && apt-get -y -q upgrade && apt-get install -y -q openssh-server\nRUN sed -i 's|session    required     pam_loginuid.so|session    optional     pam_loginuid.so|g' /etc/pam.d/sshd\nRUN mkdir -p /var/run/sshd\n\n# Install JDK 7 & git client\nRUN apt-get install -y openjdk-7-jdk git\n\n# Add user jenkins to the image\nRUN adduser --quiet jenkins\n# Set password for the jenkins user (you may want to alter this).\nRUN echo \"jenkins:jenkins\" | chpasswd\n\n# Define rancher compose version\nENV RANCHER_COMPOSE_VERSION v0.9.0\n\n# Download and install rancher compose\nRUN apt-get update -q \\\n\t&& apt-get upgrade -y -q \\\n\t&& apt-get install -y -q --no-install-recommends ca-certificates tar wget \\\n\t&& wget -O /tmp/rancher-compose-linux-amd64-${RANCHER_COMPOSE_VERSION}.tar.gz \"https://github.com/rancher/rancher-compose/releases/download/${RANCHER_COMPOSE_VERSION}/rancher-compose-linux-amd64-${RANCHER_COMPOSE_VERSION}.tar.gz\" \\\n\t&& tar -xf /tmp/rancher-compose-linux-amd64-${RANCHER_COMPOSE_VERSION}.tar.gz -C /tmp \\\n\t&& mv /tmp/rancher-compose-${RANCHER_COMPOSE_VERSION}/rancher-compose /usr/local/bin/rancher-compose \\\n\t&& rm -R /tmp/rancher-compose-linux-amd64-${RANCHER_COMPOSE_VERSION}.tar.gz /tmp/rancher-compose-${RANCHER_COMPOSE_VERSION}\\\n\t&& chmod +x /usr/local/bin/rancher-compose\n\n# Expose SSH port\nEXPOSE 22\n\n# Cleanup image\nRUN apt-get -yqq autoremove && \\\n\t\tapt-get -yqq clean && \\\n\t\trm -rf /var/lib/apt/lists/* /var/cache/*\n\n# Link /tmp to Jenkins home directory\nRUN rm -r -f $JENKINS_HOME/tmp\nRUN ln -s /tmp $JENKINS_HOME/tmp\nONBUILD RUN chmod -R jenkins:jenkins $JENKINS_HOME\n\n# Standard cmd\nCMD [\"/usr/sbin/sshd\", \"-D\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      22
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update -q && apt-get -y -q upgrade && apt-get install -y -q openssh-server",
+      "sed -i 's|session    required     pam_loginuid.so|session    optional     pam_loginuid.so|g' /etc/pam.d/sshd",
+      "mkdir -p /var/run/sshd",
+      "apt-get install -y openjdk-7-jdk git",
+      "adduser --quiet jenkins",
+      "echo \"jenkins:jenkins\" | chpasswd",
+      "apt-get update -q \t&& apt-get upgrade -y -q \t&& apt-get install -y -q --no-install-recommends ca-certificates tar wget \t&& wget -O /tmp/rancher-compose-linux-amd64-${RANCHER_COMPOSE_VERSION}.tar.gz \"https://github.com/rancher/rancher-compose/releases/download/${RANCHER_COMPOSE_VERSION}/rancher-compose-linux-amd64-${RANCHER_COMPOSE_VERSION}.tar.gz\" \t&& tar -xf /tmp/rancher-compose-linux-amd64-${RANCHER_COMPOSE_VERSION}.tar.gz -C /tmp \t&& mv /tmp/rancher-compose-${RANCHER_COMPOSE_VERSION}/rancher-compose /usr/local/bin/rancher-compose \t&& rm -R /tmp/rancher-compose-linux-amd64-${RANCHER_COMPOSE_VERSION}.tar.gz /tmp/rancher-compose-${RANCHER_COMPOSE_VERSION}\t&& chmod +x /usr/local/bin/rancher-compose",
+      "apt-get -yqq autoremove && \t\tapt-get -yqq clean && \t\trm -rf /var/lib/apt/lists/* /var/cache/*",
+      "rm -r -f $JENKINS_HOME/tmp",
+      "ln -s /tmp $JENKINS_HOME/tmp"
+    ],
+    "workdir": [],
+    "from": "debian:latest",
+    "maintainer": "Dominik Hahn <dominik@monostream.com>",
+    "env": {
+      "RANCHER_COMPOSE_VERSION": "v0.9.0"
+    },
+    "onbuild": "RUN chmod -R jenkins:jenkins $JENKINS_HOME",
+    "cmd": "[\"/usr/sbin/sshd\", \"-D\"]"
+  },
+  "source_repository_url": "git@bitbucket.org:monocloud/docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/monocloud/docker",
+  "docker_repository": "monostream/jenkins-slave",
+  "docker_image": "monostream/jenkins-slave",
+  "parameters_schema": {
+    "RANCHER_COMPOSE_VERSION": {
+      "default": "v0.9.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        22
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "monostream/jenkins-slave",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/monostream/jenkins-slave",
+    "https://hub.docker.com/v2/repositories/monostream/jenkins-slave",
+    "git@bitbucket.org:monocloud/docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Build",
+    "Type/Devopsware/Integration/Jenkins",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://hub.docker.com/r/monostream/jenkins-slave",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

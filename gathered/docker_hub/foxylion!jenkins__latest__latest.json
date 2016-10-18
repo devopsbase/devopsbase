@@ -1,0 +1,154 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/foxylion/jenkins",
+    "repository_url": "https://hub.docker.com/v2/repositories/foxylion/jenkins",
+    "tags_url": "https://hub.docker.com/v2/repositories/foxylion/jenkins/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/foxylion/jenkins/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/foxylion/jenkins/autobuild",
+    "user": "foxylion",
+    "name": "jenkins",
+    "namespace": "foxylion",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 80,
+    "last_updated": "2016-10-11T20:06:02.642783Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 357458114,
+        "id": 5054577,
+        "repository": 938786,
+        "creator": 118312,
+        "last_updater": 118312,
+        "last_updated": "2016-10-11T20:06:00.635862Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "lts",
+        "full_size": 357077943,
+        "id": 5072946,
+        "repository": 938786,
+        "creator": 118312,
+        "last_updater": 118312,
+        "last_updated": "2016-10-11T20:03:10.030275Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.23",
+        "full_size": 357319897,
+        "id": 5060849,
+        "repository": 938786,
+        "creator": 118312,
+        "last_updater": 118312,
+        "last_updated": "2016-09-28T13:54:01.669974Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "lts-2.7",
+        "full_size": 356939706,
+        "id": 5076926,
+        "repository": 938786,
+        "creator": 118312,
+        "last_updater": 118312,
+        "last_updated": "2016-09-28T13:42:46.640988Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "foxylion/docker-jenkins"
+  },
+  "name": "foxylion/jenkins Docker container",
+  "description": "Jenkins 2 with automated setup to support for Docker pipelines and preconfigured authentication.",
+  "readme": "# docker-jenkins\n\nThis project aims to build a pre-configured Docker image for Jenkins 2.\n\n![Jenkins+Docker Logo](https://raw.githubusercontent.com/foxylion/docker-jenkins/master/documentation/logo.png)\n\nThe image provides all required plugins to run a fully Docker enabled Jenkins\nwith multiple docker based slaves and support for the Docker Pipeline plugin.\n\n## Quickstart\n\nIf you want start testing the Jenkins directly. Just ensure you've\n[Vagrant](https://www.vagrantup.com) installed, clone the repository and\ncall `vagrant up`. Now you can access your Jenkins on http://10.111.0.10/.\n\n## The Docker Images\n\nThere are two Docker images on Docker Hub, one is the Jenkins master and one the\nJenkins slave.\n\n### Jenkins Master [![Docker Stars](https://img.shields.io/docker/stars/foxylion/jenkins.svg?style=flat-square)](https://hub.docker.com/r/foxylion/jenkins/) [![Docker Pulls](https://img.shields.io/docker/pulls/foxylion/jenkins.svg?style=flat-square)](https://hub.docker.com/r/foxylion/jenkins/)\n\n***The latest image can be found on [Docker Hub](https://hub.docker.com/r/foxylion/jenkins/).***\n\nThe Jenkins master image provides a preconfigured version of Jenkins 2 with all\nrequired plugins to run Docker based builds in a Pipeline. It also brings the new\nBlueocean pipeline view.\n\nA Jenkins master should expose the HTTP port and the slave communication port.\n\n```bash\ndocker run -d --name jenkins -p 80:8080 -p 50000:50000 \\\n           -v /var/lib/jenkins:/var/jenkins_home \\\n           foxylion/jenkins\n```\n\n- This will start a new Jenkins master\n- It will listen on Port 80 for any HTTP requests\n- Authentication is only possible using credentials (default: admin/admin)\n- All configuration will be saved into `/var/lib/jenkins`\n\nRemoving the `-v` will prevent the Docker container from writing anything to\nthe host file system but may result in data loss when the container is removed.\n\n### Jenkins Slave [![Docker Stars](https://img.shields.io/docker/stars/foxylion/jenkins-slave.svg?style=flat-square)](https://hub.docker.com/r/foxylion/jenkins-slave/) [![Docker Pulls](https://img.shields.io/docker/pulls/foxylion/jenkins-slave.svg?style=flat-square)](https://hub.docker.com/r/foxylion/jenkins-slave/)\n\n***The latest image can be found on [Docker Hub](https://hub.docker.com/r/foxylion/jenkins-slave/).***\n\nThe Jenkins slave image provides a configurable version of the Jenkins slave. It\nsupports authentication using credentials or the JNLP slave secret. It is also\npossible to create a slave nodes automatically when the slave container is\nstarted, the slave node will then automatically removed when the container is\nstopped.\n\n```bash\ndocker run -d \\\n           -v /home/jenkins:/home/jenkins \\\n           -v /var/run/docker.sock:/var/run/docker.sock\n           -e JENKINS_URL=https://jenkins.mycompany.com\n           foxylion/jenkins-slave\n```\n\nBy default the slave will automatically create a temporary Jenkins node. The name\nwill consist of the prefix `docker-slave` and the container hostname.\n\nThere are some environment variables to customize the slave behavior.\n\n| ENV var | Description | Default |\n| ------- | ----------- | ------- |\n| `JENKINS_URL` | The URL where your Jenkins can be reached via HTTP. | `http://jenkins` |\n| `JENKINS_SLAVE_ADDRESS` | An alternative address used to connect to the Jenkins server when starting the TCP connection, it will override the address provided by the Jenkins master. | `-` |\n| `JENKINS_USER` | The user used for authentication against Jenkins master. | `admin` |\n| `JENKINS_PASS` | The password used for authentication against Jenkins master. | `admin` |\n| `SLAVE_NAME` | The name of the Jenkins node (must match a existing node). When left empty, the slave name will be generated. | `-` |\n| `SLAVE_SECRET` | Will use the provided JNLP secret instead of user/password authentication. | `-` |\n| `SLAVE_EXECUTORS` | Defines how many executors the slave should provide. | `1` |\n| `SLAVE_LABELS`| Defines which labels the slave should have. Separete them using a space. | `docker` |\n| `SLAVE_WORING_DIR`| Define a custom working directory when it is not possible to use `-w` at `docker run` command. | `-` |\n| `CLEAN_WORKING_DIR` | When set to `true` the slave will clean the working directory on startup. This can help to prevent failed builds due to stored configuration in the working directory. | `true` |\n\n#### Temporary Slaves\n\nThe temporary slaves feature is enabled when leaving the `SLAVE_NAME` environment\nvariable empty. The slave will automatically create a new Jenkins node with a\ngenerated slave name. After the shutdown of the slave the Jenkins node will be\ndeleted. If this behavior is unwanted use a persistent slave.\n\n#### Persistent Slaves\n\nRunning a slave without automatically creating a Jenkins node, but using JNLP slave authentication.\n\n*Note:* It's important to set the *Remote root directory* of your slave to `/home/jenkins`.\n\n```bash\ndocker run -d \\\n           -v /home/jenkins:/home/jenkins \\\n           -v /var/run/docker.sock:/var/run/docker.sock\n           -e JENKINS_URL=http://jenkins.mycompany.com\n           -e SLAVE_NAME=docker-slave-028\n           foxylion/jenkins-slave\n```\n\n#### Varying *Remote root directory*\n\nBy default the Jenkins slave requires `/home/jenkins` to be mounted with the\nequivalent directory on the Docker host.\n\n**Note:** A different directory path on the host will result in failing builds.\n[Read more (chapter: \"Running build steps inside containers\")](https://go.cloudbees.com/docs/cloudbees-documentation/cje-user-guide/chapter-docker-workflow.html)\n\nIf you need to use a different directory on your Docker host you can pass that\ninformation when starting the Docker container.\n\n```bash\ndocker run -d \\\n           -w /tmp/jenkins-slave\n           -v /tmp/jenkins-slave:/tmp/jenkins-slave \\\n           -v /var/run/docker.sock:/var/run/docker.sock\n           -e JENKINS_URL=http://jenkins.mycompany.com\n           foxylion/jenkins-slave\n```\n\n## Read More\n\nThere are some useful links to get started using Jenkins pipelines in combination\nwith docker.\n\n- [First step with Jenkins pipelines. Includes steps, stages, stash, docker](https://dzone.com/refcardz/continuous-delivery-with-jenkins-workflow)\n- [Overview on Jenkins pipeline, including links to documentation, etc.](https://wilsonmar.github.io/jenkins2-pipeline/)\n",
+  "dockerfile": "FROM jenkinsci/jenkins:2.23\n\nRUN /usr/local/bin/install-plugins.sh git matrix-auth workflow-aggregator docker-workflow blueocean credentials-binding\n\nENV JENKINS_USER admin\nENV JENKINS_PASSWORD admin\n\n# Skip initial setup\nENV JAVA_OPTS -Djenkins.install.runSetupWizard=false\n\nCOPY executors.groovy /usr/share/jenkins/ref/init.groovy.d/\nCOPY default-user.groovy /usr/share/jenkins/ref/init.groovy.d/\n\nVOLUME /var/jenkins_home\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "/var/jenkins_home"
+    ],
+    "run": [
+      "/usr/local/bin/install-plugins.sh git matrix-auth workflow-aggregator docker-workflow blueocean credentials-binding"
+    ],
+    "workdir": [],
+    "from": "jenkinsci/jenkins:2.23",
+    "env": {
+      "JENKINS_USER": "admin",
+      "JENKINS_PASSWORD": "admin",
+      "JAVA_OPTS": "-Djenkins.install.runSetupWizard"
+    },
+    "copy": "default-user.groovy /usr/share/jenkins/ref/init.groovy.d/"
+  },
+  "source_repository_url": "https://github.com/foxylion/docker-jenkins.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/foxylion/docker-jenkins",
+  "docker_repository": "foxylion/jenkins",
+  "docker_image": "foxylion/jenkins",
+  "parameters_schema": {
+    "JENKINS_USER": {
+      "default": "admin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_PASSWORD": {
+      "default": "admin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_OPTS": {
+      "default": "-Djenkins.install.runSetupWizard",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "foxylion/jenkins",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/foxylion/jenkins",
+    "https://hub.docker.com/v2/repositories/foxylion/jenkins",
+    "https://github.com/foxylion/docker-jenkins.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Integration/Jenkins",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/User Management"
+  ],
+  "info_url": "https://hub.docker.com/r/foxylion/jenkins",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

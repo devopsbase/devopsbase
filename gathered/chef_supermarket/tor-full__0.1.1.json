@@ -1,0 +1,54 @@
+{
+  "name": "tor-full Chef cookbook",
+  "chef_cookbook_name": "tor-full",
+  "revision": "0.1.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/tor-full",
+    "https://supermarket.chef.io/cookbooks/tor-full/download",
+    "https://supermarket.chef.io/cookbooks/tor-full/versions/0.1.1",
+    "https://supermarket.chef.io/cookbooks/tor-full/versions/0.1.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/tor-full/versions/0.1.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/tor-full",
+    "https://supermarket.chef.io/api/v1/cookbooks/tor-full/versions/0.1.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/tor-full",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/tor-full/versions/0.1.1/download",
+  "deprecated": false,
+  "created": "2014-11-09T13:35:53.141Z",
+  "updated": "2015-02-07T20:24:41.313Z",
+  "description": "Installs/Configures tor",
+  "maintainer": {
+    "name": "freethenation",
+    "email": "rpklafter@yahoo.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 1829178,
+  "downloads_count_revision": 712543,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "tor-full Cookbook\n============\nInstalls and configures tor on a node\n\nRequirements\n------------\nDepends on `tor` package on debian or ubuntu and `tor-core` on centos and redhat\n\nAttributes\n----------\n\n```ruby\n#######################################\n# General config section\n#######################################\n#The directory for keeping all the keys/etc\ndefault['tor']['DataDirectory'] = \"/var/lib/tor\"\n#The minimum log level to log. Possible values include debug, info, notice, warn, and err.\ndefault['tor']['MinLogLevel'] = \"notice\"\n#Where logs should be written. Valid values include a path to a file or \"syslog\"\ndefault['tor']['LogDestination'] = \"/var/log/tor/log\"\n#List of 'address:port' to open tor socks proxy on. Defaults to disabled\n#Example: ['127.0.0.1:9050'] opens socks proxy on 9050 accessible to only the local machine\ndefault['tor']['SocksPorts'] = []\n#######################################\n# Hidden Services config section\n#######################################\n#Desc: hidden services tor should expose\n#Example:\n#default['tor']['hiddenServices'] = {\n# 'HIDDEN_SERVICE_NAME':{\n#   'HiddenServiceDir' => '/var/lib/tor/some_service/', #default is /var/lib/tor/HIDDEN_SERVICE_NAME/\n#   'HiddenServicePorts' => ['80 127.0.0.1:80'] #x y:z says to redirect requests on port x to the address y:z\n#}\ndefault['tor']['HiddenServices'] = {}\n#######################################\n# Relay config section\n#######################################\n#if true tor will act as a relay\ndefault['tor']['relay']['enabled'] = false\n#What port to advertise for incoming Tor connections\ndefault['tor']['relay']['ORPort'] = '9001'\n#The IP address or full DNS name for incoming connections to your relay.\ndefault['tor']['relay']['Address'] = nil\n#If you have multiple network interfaces, you can specify one for outgoing traffic to use\ndefault['tor']['relay']['OutboundBindAddress'] = nil\n#A handle for your relay, so people don't have to refer to it by key\ndefault['tor']['relay']['Nickname'] = \"IDidntEditTheConfig\"\n#Limit how much relayed traffic you will allow in kilobytes (not bits)\ndefault['tor']['relay']['RelayBandwidthRate'] = nil\n#Limit how much relayed traffic you will allow for bursts in kilobytes (not bits)\ndefault['tor']['relay']['RelayBandwidthBurst'] = nil\n#ContactInfo you can be reached at\n#Example: \"0xFFFFFFFF Random Person nobody AT example dot com\"\ndefault['tor']['relay']['ContactInfo'] = nil\n#Sets the exit node policy for tor defaults to no exit\n#Exampe: ['accept *:6660-6667','reject *:*'] # allow irc ports but no more\ndefault['tor']['relay']['ExitPolicy'] = ['reject *:*']\n#Set to 1 to run a bridge relay\ndefault['tor']['relay']['BridgeRelay'] = 0\n#Set to 0 to run a private bridge relay\ndefault['tor']['relay']['PublishServerDescriptor'] = 1\n#If true tor relay will server as a directory mirror\ndefault['tor']['relay']['Directory'] = false\n#\"address:port\" from which to mirror directory information\ndefault['tor']['relay']['DirPort'] = \"9030\"\n#If you run more than one tor node add keyids for other tor nodes\ndefault['tor']['relay']['MyFamily'] = []\n```\n\nRecipes\n-----\n#### tor-full::default\nInstalls Tor and enables Tor service. By default it will not open a socks proxy, offer a hidden service,\nor act as a relay.\n\n\n### tor-full::relay\nInstalls Tor and configs Tor to be a relay. By default the relay will not be an exit or directory.\nMake sure to read through the attributes section for relays above.\n\nExamples\n-----\n### Open local socks port\nThe example role below opens a Tor socks proxy on port 9050 available to localhost only\n\n```ruby\nname \"torproxy\"\nrun_list(\"recipe[tor-full]\")\noverride_attributes(\n  \"tor\" => {\n    \"SocksPorts\" => [\"127.0.0.1:9050\"]\n  }\n)\n```\n\n### Hidden service on port 80\nThe example role below serves a website on port 80 as a hidden service. \n\n```ruby\nname \"torservice\"\nrun_list(\"recipe[tor-full]\")\noverride_attributes(\n  \"tor\" => {\n    \"hiddenServices\" => {\n      \"hidden_web_service\" => {\n       \"HiddenServicePorts\" => [\"80 127.0.0.1:8080\"]\n       #requests on port 80 are redirected to localhost port 8080\n      }\n    }\n  }\n)\n```\n\nNote: The `tor-full` recipe will write the hidden service's hostname to the attribute `node.tor.hiddenServices.HIDDEN_SERVICE_NAME.hostname` after node convergence.\n\n### Tor Relay\nThe node config below sets up a Tor relay. The relay is a directory and an exit\nfor IRC (ports 6660 & 6667).\n\n```json\n{\n  \"run_list\": [\n    \"recipe[tor-full::relay]\"\n  ],\n  \"tor\": { \n    \"relay\": {\n      \"Address\":\"tor.icyego.com\",\n      \"Nickname\":\"IcyEgo\",\n      \"RelayBandwidthRate\":\"1000\",\n      \"RelayBandwidthBurst\":\"1100\",\n      \"ContactInfo\":\"ContactInfo 0x04FAC2E9CC21424A Richard Klafter <rpklafter@yahoo.com>\",\n      \"Directory\":true,\n      \"ExitPolicy\":[\"accept *:6660-6667\",\"reject *:*\"]\n    }\n  }\n}\n\n```\n\nNote: you can make `recipe[tor-full]` behave like `recipe[tor-full::relay]` by \nsetting the attribute `tor.relay.enabled = true`.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ]
+}

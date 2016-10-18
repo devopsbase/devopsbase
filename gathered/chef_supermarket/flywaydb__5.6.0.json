@@ -1,0 +1,76 @@
+{
+  "name": "flywaydb Chef cookbook",
+  "chef_cookbook_name": "flywaydb",
+  "revision": "5.6.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/flywaydb",
+    "https://supermarket.chef.io/cookbooks/flywaydb/download",
+    "https://supermarket.chef.io/cookbooks/flywaydb/versions/5.6.0",
+    "https://supermarket.chef.io/cookbooks/flywaydb/versions/5.6.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/flywaydb/versions/5.6.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/flywaydb",
+    "https://supermarket.chef.io/api/v1/cookbooks/flywaydb/versions/5.6.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Data Store"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/flywaydb",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/flywaydb/versions/5.6.0/download",
+  "deprecated": false,
+  "created": "2016-02-04T22:27:09.014Z",
+  "updated": "2016-08-24T23:55:59.300Z",
+  "description": "Installs and configures flywaydb database migration tool",
+  "maintainer": {
+    "name": "dhoer",
+    "email": "dennis.hoer@gmail.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 2,
+  "downloads_count": 2723,
+  "downloads_count_revision": 47,
+  "repository_url": "https://github.com/dhoer/chef-flywaydb",
+  "issues_url": "https://github.com/dhoer/chef-flywaydb/issues",
+  "chef_source_url": "https://github.com/dhoer/chef-flywaydb",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Flywaydb Cookbook\n\n[![Cookbook Version](http://img.shields.io/cookbook/v/flywaydb.svg?style=flat-square)][supermarket]\n[![linux](http://img.shields.io/travis/dhoer/chef-flywaydb/master.svg?label=linux&style=flat-square)][linux]\n[![win](https://img.shields.io/appveyor/ci/dhoer/chef-flywaydb/master.svg?label=windows&style=flat-square)][win]\n\n[supermarket]: https://supermarket.chef.io/cookbooks/flywaydb\n[linux]: https://travis-ci.org/dhoer/chef-flywaydb\n[win]: https://ci.appveyor.com/project/dhoer/chef-flywaydb\n\nInstalls [flywaydb](http://flywaydb.org) (v4.0.3) and allows for execution of flyway commands via resource \nactions.  \n\nBy default, the MariaDB Connector/J driver that ships with flywaydb is used.  Set the \n`node['flywaydb']['mariadb']['version']` attribute to install a MariaDB Connector/J driver version other \nthan the one that ships with flywaydb.\n\n## Requirements\n\n- Chef 11+\n\n### Platforms\n\n- CentOS/RedHat\n- Debian/Ubuntu\n- Windows\n\n## Usage\n\nUse migrate, info, validate, baseline, or repair actions to _install_ \nflywaydb (if not installed) and _execute_ associated flyway command. \nAn install action is also available if you just want to install \nflywaydb but not execute any flyway commands.\n\n### Attributes\n\n* `flyway_conf` - Configuration path or settings to copy or \ncreate `conf/flyway.conf`.  The flyway.conf file will be \nregenerated for each flywaydb execution and will be blanked out if \nflyway_conf is nil to prevent alt_conf from inadvertently inheriting \nits settings. Settings in alt_conf override settings in flyway.conf. \nSettings in params override all settings. Default: `nil`.\n* `alt_conf` -  Alternative configuration path or settings. An array\ncontaining paths and/or settings is also supported.  Each path and \nsettings are written as `conf/#{name}[_#{i + 1}].conf` \nwhere name is the resource name and i is the index in array. Each item \nin array will result in an independent execution of Flyway. Settings in \nalt_conf override settings in flyway.conf. Settings in params override \nall settings. Default: `nil`. \n* `params` - Command-line parameters to pass to flyway command. \nSettings in params override all settings. Default: `{}`.\n* `mysql_driver` - MariaDB Connector/J driver is the default driver \nfor *jdbc:mysql:* connections.  Set to true to download and install \nMySQL Connector/J driver under `drivers` directory. This will then \nbecome the default driver for *jdbc:mysql:* connections. \nDefault: `false`.\n* `name` - Name of the alternative conf file when alt_conf is defined. \nDefaults to resource block name.\n* `install_dir` - The base install directory. Default Linux: `/opt` \nWindows: `ENV['SYSTEMDRIVE']`.\n* `debug` - Print debug output during execution of flyway commands. \nDefault: `false`.\n* `user` -  The owner of flywaydb. Creates a flyway user when nil or uses \nvalue passed in. Default `nil`.\n* `group` - The group of flywaydb. Creates flyway or modifies Administrators \ngroup when nil (or set to Administrators on Windows for backwards \ncompatibility) or uses value passed in. Default `nil`.\n* `password` - Required only on Windows Servers that throw 'The \npassword does not meet the password policy requirements.' error when \ncreating flyway user. Default: `nil`.\n* `sensitive` - Suppress logging the Flyway command executed to hide \nsensitive information but still log Flyway stdout and stderr to \nChef-client.  Writing of conf files will also be suppressed when\nexecuting with Chef-client versions that support sensitive. \nDefault: `true`.\n* `timeout` - Number of seconds to wait on flyway process before \nraising an Exception. Default: `259_200` (72hrs).\n\n### Examples\n\n#### Single migration using settings\n\n```ruby\nflywaydb 'myapp' do\n  flyway_conf(\n    url: 'jdbc:mysql/localhost/mydb',\n    user: 'root',\n    locations: 'filesystem:/opt/myapp/db/migration',\n    cleanDisabled: true\n  )\n  action :migrate\nend\n```\n\n#### Single migration using file path\n\n```ruby\nflywaydb 'myapp' do\n  flyway_conf(\n    '/opt/myapp/db/flyway.conf'\n  )\n  action :migrate\nend\n```\n\n#### Multiple migrations using settings   \n\n```ruby\nflywaydb 'myapp' do\n  flyway_conf(\n    user: 'root',\n    url: 'jdbc:mysql/localhost/mysql'\n  )\n  alt_conf([\n    {\n      schemas: 'custA',\n      locations: 'filesystem:/opt/myapp/db/migration/core,/opt/myapp/db/migration/custA'\n    },\n    {\n       schemas: 'custB',\n       locations: 'filesystem:/opt/myapp/db/migration/core,/opt/myapp/db/migration/custB'\n    }\n  ])\n  params(\n    password: password   \n  )\n  action :migrate\nend\n```\n\n#### Multiple migrations using file paths\n\n```ruby\nflywaydb 'myapp' do\n  flyway_conf(\n    '/opt/myapp/db/flyway.conf'\n  )\n  alt_conf([\n    '/opt/myapp/db/custA.conf',\n    '/opt/myapp/db/custB.conf'\n  ])\n  params(\n    password: password   \n  )\n  action :migrate\nend\n```\n\n## ChefSpec Matchers\n\nThis cookbook includes custom [ChefSpec](https://github.com/sethvargo/chefspec) matchers you can use to test \nyour own cookbooks.\n\nExample Matcher Usage\n\n```ruby\nexpect(chef_run).to migrate_flywaydb('flyway').with(\n  flyway_conf: {\n      'user' => 'root',\n      'url' => 'jdbc:mysql://localhost/mysql'\n  }\n  alt_conf: [\n    {\n      'schemas' => 'custA',\n      'locations' => 'filesystem:/opt/myapp/db/migration/core,/opt/myapp/db/migration/custA'\n    },\n    {\n      'schemas' => 'custB',\n      'locations' => 'filesystem:/opt/myapp/db/migration/core,/opt/myapp/db/migration/custB'\n    }\n  ],\n  params: {\n      'password' => 'password'\n  }\n  debug: false,\n  sensitive: true\n)\n```\n      \nCookbook Matchers\n\n- migrate_flywaydb(resource_name)\n- clean_flywaydb(resource_name)\n- baseline_flywaydb(resource_name)\n- info_flywaydb(resource_name)\n- repair_flywaydb(resource_name)\n- validate_flywaydb(resource_name)\n- install_flywaydb(resource_name)\n\n## Getting Help\n\n- Ask specific questions on [Stack Overflow](http://stackoverflow.com/questions/tagged/flyway).\n- Report bugs and discuss potential features in [Github issues](https://github.com/dhoer/chef-flywaydb/issues).\n\n## Contributing\n\nPlease refer to [CONTRIBUTING](https://github.com/dhoer/chef-flywaydb/blob/master/CONTRIBUTING.md).\n\n## License\n\nMIT - see the accompanying [LICENSE](https://github.com/dhoer/chef-flywaydb/blob/master/LICENSE.md) file for details.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "windows",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ]
+}

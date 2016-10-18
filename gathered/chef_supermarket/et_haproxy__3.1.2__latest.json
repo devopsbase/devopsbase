@@ -1,0 +1,101 @@
+{
+  "name": "et_haproxy Chef cookbook",
+  "chef_cookbook_name": "et_haproxy",
+  "revision": "3.1.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/et_haproxy",
+    "https://supermarket.chef.io/cookbooks/et_haproxy/download",
+    "https://supermarket.chef.io/cookbooks/et_haproxy/versions/3.1.2",
+    "https://supermarket.chef.io/cookbooks/et_haproxy/versions/3.1.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/et_haproxy/versions/3.1.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/et_haproxy",
+    "https://supermarket.chef.io/api/v1/cookbooks/et_haproxy/versions/3.1.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Web Servers",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/et_haproxy",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/et_haproxy/versions/3.1.2/download",
+  "deprecated": false,
+  "created": "2014-06-26T18:08:48.522Z",
+  "updated": "2014-06-26T18:08:48.763Z",
+  "description": "Installs/Configures et_haproxy",
+  "maintainer": {
+    "name": "eherot",
+    "email": "eric.herot@evertrue.com"
+  },
+  "license": "All rights reserved",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 1275232,
+  "downloads_count_revision": 1275232,
+  "repository_url": "https://github.com/evertrue/et_haproxy-cookbook",
+  "issues_url": "https://github.com/evertrue/et_haproxy-cookbook/issues",
+  "chef_source_url": "https://github.com/evertrue/et_haproxy-cookbook",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# et_haproxy cookbook\n\n[![Build Status](https://travis-ci.org/evertrue/et_haproxy-cookbook.svg?branch=master)](https://travis-ci.org/evertrue/et_haproxy-cookbook)\n\nThis cookbook installs and configures the haproxy load balancer according to rules defined in node defintions.\n\n# Requirements\n\n- `openssl` - Requires the \"openssl\" cookbook for generating random passwords.\n\n# Usage\n\nIt is recommended that you wrap this cookbook with a \"wrapper\" application-specific cookbook by creating said cookbook, then using include_recipe in recipes/default.rb to reference this recipe.  Specific rules should then be added to the attributes in that cookbook.  See: http://devopsanywhere.blogspot.com/2012/11/how-to-write-reusable-chef-cookbooks.html\n\nYou should not need to write any recipe code (other than the aforementioned `include_recipe` line) in order to make this cookbook work.\n\n# Rules Attributes\n\nAt the heart of how to configure a rule in this cookbook are the rules attributes.  These attributes take the form of {key1 => {subkey => value, key2 => {subkey=>value}} hashes and consist of frontend rules, backend rules, and application rules to tie them together (See: http://code.google.com/p/haproxy-docs/wiki/Proxies): \n\n### Frontend Rules\n```\nset['haproxy']['frontends'] = {\n  \"main\" => {\n    \"port\" => \"8080\",\n    \"ssl\" => false,\n    \"x_forwarded_for\" => true,\n    \"applications\" => [\n      \"contactsapi-prod\",\n      \"authapi-prod\"\n    ]\n  },\n  \"main_ssl\" => {\n    \"port\" => \"8443\",\n    \"ssl\" => true,\n    \"x_forwarded_for\" => true,\n    \"applications\" => [\n      \"contactsapi-prod\",\n      \"authapi-prod\"\n    ]\n  }\n}\n```\nThese define haproxy \"listeniners.\"  Each must have a unique port/ip pair.  In the current revision of this cookbook, only ports can be specified.  Haproxy will always listen on all available IPs.  \n\n- `port` - Sets the port that this listener listens on.\n- `ssl` - This does not actually enable SSL, but instead identifies the listener as one where it is known that the connection is encrypted (i.e. because it is behind an SSL-enabled Elastic Load Balancer).  This is used in concert with \"SSL-Required\" rules (see below) to make sure that apps requiring SSL are always routed through the SSL channel.  The \"X-Forwarded-Proto: https\" is also appended.\n- `x_forwarded_for` - Appends the X-Forwarded-For header to incoming requests.  This allows properly configured internal hosts to log the \"real\" source IP of the connection.\n- `applications` - An array consisting of the names of the applications for which this frontend should contain routing rules.  Note that for an application to be redirected from a non-SSL frontend to an SSL frontend, its name must still appear on this list in order for the redirect rules to be generated.\n\n### Application Rules\n```\nset[\"haproxy\"][\"applications\"] = {\n  \"contactsapi-prod\" => {\n    \"endpoint\" => \"contactsapi.evertrue.com\",\n    \"ssl_enabled\" => true,\n    \"ssl_required\" => true,\n    \"backend\" => \"contactsapi-prod\"\n  },\n  \"authapi-prod\" => {\n    \"endpoint\" => \"auth.evertrue.com\",\n    \"ssl_enabled\" => true,\n    \"ssl_required\" => true,\n    \"backend\" => \"authapi-prod\"\n  }\n}\n```\nUnlike the frontend and backend rules, these rules do not affect a specific part of the haproxy configuration file.  Instead, they provide useful information about each application to be used in any place where the application is referenced.  The sub-properties are:\n\n- `endpoint` - The hostname that the loadbalancer will use to identify requests for this application.  Routing is done based on the combination of where the connection came in (which frontend) and this hostname.\n- `ssl_enabled` - Should people be able to connect to this app using HTTPS.\n- `ssl_required` - Non-SSL requests for this app should be directed to the HTTPS URL.\n- `backend` - Which backend to use to serve requests for this app.\n\n### Backend Rules\n```\nset['haproxy']['backends'] = {\n  \"contactsapi-prod\" => {\n    \"balance_algorithm\" => \"roundrobin\",\n    \"check_req\" => {\n      \"method\" => \"OPTIONS\",\n      \"url\" => \"/contacts/\"\n    },\n    \"servers\" => [\n      \"name\" => \"prod-et-api-contacts\",\n      \"fqdn\" => \"10.0.113.143\",\n      \"port\" => \"8080\",\n      \"options\" => []\n    ]\n  },\n  \"authapi-prod\" => {\n    \"balance_algorithm\" => \"roundrobin\",\n    \"check_req\" => {\n      \"method\" => \"OPTIONS\",\n      \"url\" => \"/\"\n    },\n    \"servers\" => [\n      {\n        \"name\" => \"prod-et-api-auth\",\n        \"fqdn\" => \"10.0.113.87\",\n        \"port\" => \"8080\",\n        \"options\" => []\n      }\n    ]\n  }\n}\n```\nThese define the haproxy \"backends\" (obviously).  These are generally server clusters that can host one or many applications based on the routing defined in the \"application\" attributes.  Each backend consists of some options, a check method, and a server list:\n\n- `balance_algorithm` - How to achieve the loadbalancing.  (See: http://code.google.com/p/haproxy-docs/wiki/balance)\n- `check_req` - This is optional, but if undefined, servers will not be checked for availability (instead, availability will just be assumed--potentially with negative ramifications for end-users in production).  Sub-options for this include:\n\t- `method` - The HTTP method to use for the check (Defaults to OPTIONS, because it is a very lightweight query method requiring no content to be transferred).\n\t- `url` - Really a URI (e.g. /status).  Should be self-explanatory.\n- `servers` - An array consisting of server definitions containing the following attributes:\n\t- `name` - An identifier for the individual server.  Used on the HAProxy stats page and also by the haproxy socket remote control system to identify specific servers to be enabled/disabled. (See: http://code.google.com/p/haproxy-docs/wiki/UnixSocketCommands)\n\t- `fqdn` - FQDN or IP that HAProxy should use to connect to the server.\n\t- `port` - port used to connect to the server.\n\t- `options` - Any additional server options to append to the server line (See: http://code.google.com/p/haproxy-docs/wiki/ServerOptions).\n\n# Config Attributes\n\n<table>\n  <tr>\n    <th>Key</th>\n    <th>Type</th>\n    <th>Description</th>\n    <th>Default</th>\n  </tr>\n  <tr>\n    <td><tt>['haproxy']['syslog']['host']</tt></td>\n    <td>String (IP or FQDN)</td>\n    <td>The Syslog host.</td>\n    <td><tt>127.0.0.1</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['haproxy']['syslog']['facility']</tt></td>\n    <td>String</td>\n    <td>The Syslog facility.</td>\n    <td><tt>local0</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['haproxy']['global']['maxconn']</tt></td>\n    <td>String (well, a number in quotes, really)</td>\n    <td>The GLOBAL maximum number of concurrent connections the frontend will accept to serve. Excess connections will be queued by the system in the socket's listen queue and will be served once a connection closes.  (See: http://code.google.com/p/haproxy-docs/wiki/maxconn)</td>\n    <td><tt>100000 (seconds)</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['haproxy']['defaults']['timeout']</tt></td>\n    <td>Hash</td>\n    <td>This is actually broken into three sub-attributes: connect (See: http://code.google.com/p/haproxy-docs/wiki/timeout_connect), client (See: http://code.google.com/p/haproxy-docs/wiki/timeout_client), and server (See: http://code.google.com/p/haproxy-docs/wiki/timeout_server).</td>\n    <td><tt>{ \"connect\" => \"10000\", \"client\" => \"300000\", \"server\" => \"300000\" }</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['haproxy']['defaults']['maxconn']</tt></td>\n    <td>String (well, a number in quotes, really)</td>\n    <td>The DEFAULT maximum number of concurrent connections the frontend will accept to serve. Excess connections will be queued by the system in the socket's listen queue and will be served once a connection closes.  (See: http://code.google.com/p/haproxy-docs/wiki/maxconn)</td>\n    <td><tt>60000</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['haproxy']['stats']</tt></td>\n    <td>Hash</td>\n    <td>A set of parameters consisting of `uri` (see: http://code.google.com/p/haproxy-docs/wiki/stats_uri), `port` (just the port number), `admin_user` (see: http://code.google.com/p/haproxy-docs/wiki/stats_auth).  The stats password is auto-generated by  OpenSSL upon install.</td>\n    <td><tt>{ 'uri' => \"/stats\", 'port' => '8069', 'admin_user' => 'admin' }</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['haproxy']['monitor_uri']</tt></td>\n    <td>String</td>\n    <td>A URI that will simply return a 200 OK whenever the haproxy server is up.  A good thing to point ELB at when deployed in EC2. (See: http://code.google.com/p/haproxy-docs/wiki/monitor_uri)</td>\n    <td><tt>/status</tt></td>\n  </tr>\n</table>\n\n# Additional gotchas\n\nBe *VERY* careful editing the http error files.  They have a *mix* of LF and CRLF line terminators and it has to stay that way or some proxies and servers may experience hanging issues.\n\n# Author\n\nAuthor:: Eric Herot @ EverTrue, Inc. (<eric.herot@evertrue.com>)\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/openssl",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/logrotate",
+      "revision": ">= 1.5.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/et_fog",
+      "revision": "= 1.0.5",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/stunnel",
+      "revision": "= 2.0.4",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/certificate",
+      "revision": "= 0.5.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/newrelic-ng",
+      "revision": "~> 0.4.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/sudo",
+      "revision": "~> 2.5.2",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/et_users",
+      "revision": "~> 1.4",
+      "self_resolve": true
+    }
+  ]
+}

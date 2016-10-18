@@ -1,0 +1,121 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/redhatqe/pulp-automation",
+    "repository_url": "https://hub.docker.com/v2/repositories/redhatqe/pulp-automation",
+    "tags_url": "https://hub.docker.com/v2/repositories/redhatqe/pulp-automation/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/redhatqe/pulp-automation/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/redhatqe/pulp-automation/autobuild",
+    "user": "redhatqe",
+    "name": "pulp-automation",
+    "namespace": "redhatqe",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 59,
+    "last_updated": "2015-09-15T14:41:45.726867Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 143503452,
+        "id": 199032,
+        "repository": 182880,
+        "creator": 279323,
+        "last_updater": 149139,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "RedHatQE/pulp-automation"
+  },
+  "name": "redhatqe/pulp-automation Docker container",
+  "description": "",
+  "readme": "Pulp-Automation\n===============\n\nSome pulp API/CLI testing automation\n\nContents:\n---------\n/deploy - thereis an ~~ansible and~~ ec2 pulp deployment\n\nansible deployment (temporarily) moved to https://github.com/peterlacko/pulp-automation-ci\n\n/tests  - pulp api/cli testcases\n\n/pulp_auto - our library\n\n\nRequirements for running:\n-------------------------\n\nPlease make sure that before running setup.py you have `python2.7, python-devel, m2crypto and gcc installed`!\n\n    python ./setup.py install\n\n\nBasic usage:\n------------\n\nTo run tests:\n\n* `cd pulp-automation; cp tests/inventory.yaml ./` and update the template as needed (visit the file for instructions)\n* To run all tests:\n\n        nosetests -vs\n    \n* To run a particular test:\n\n        nosetests -vs tests/test_1_login.py\n\nAll testcases should pass. If something fails it means that:\n* there is a regression bug,\n* some bugs are on_qa state and expected failure decorator(used to mark automated BZ tests as pass) should be removed,\n* there is a problem in the framework\n\n\nTo do test coverage:\n--------------------\n* set up [remote python tracing](https://github.com/RedHatQE/python-moncov)\n* run test cases while collecting coverage records\n* visit  `.coveragerc`\n* [generate coverage stats](https://github.com/RedHatQE/python-moncov/wiki/coverage-with-python-files-over-sshfs) \n\nDocker usage\n------------\nTo run, set the env variable `PULPHOST` to override packaged `inventory.yaml` entries:\n`docker run -it -e PULPHOST=pulp.example.com redhatqe/pulp-automation:latest`\nThe default pulp hostname used in the inventory is `pulp.example.com`\nSetting up hostnames resolution should also make the tests run.\n\nThe pulp-automation image uses a volume--workdir to run nosetest in.\nYou can find the test results in the workdir counterpart on your docker host, such as:\n`/mnt/sda1/var/lib/docker/vfs/dir/<container ID>/`\nHaving run the container, you should find e.g. `nosetests.xml` inside, which you could feed to your `Jenkins` server.\n\nThe pulp-automation image repo is hosted on the [Docker Hub](https://registry.hub.docker.com/u/redhatqe/pulp-automation/)\n \n",
+  "dockerfile": "FROM fedora:20\n\nMAINTAINER Pulp QE <pulp-list@redhat.com>\n\n# install deps\nRUN yum update -y && yum install -y python-ecdsa python-devel python-nose m2crypto gcc file dnf python-pip PyYAML python-qpid python-requests python-plumbum python-paramiko python-rpyc && yum clean all\n\n# these deps aren't available in Fedora at the correct version, or at all\nRUN pip install gevent\nRUN pip install stitches\nRUN pip install requestbin\nRUN pip install pinocchio\n\n# add source\nADD pulp_auto /src/pulp_auto\nADD tests /src/tests\nADD setup.py /src/setup.py\n\n# install!\nRUN pip install --no-index /src/\n\n# stuff that will configure and run the tests\nVOLUME /pulp_auto/\nWORKDIR /pulp_auto/\nADD tests/ /pulp_auto/tests\nADD docker/geninventory.py /usr/local/bin/geninventory\nADD docker/inventory.yml /pulp_auto/inventory.yml\n# \"expand\" PULPHOST env, if set\nCMD geninventory && nosetests -vs --with-xunit --with-outputsave --save-directory=logs\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "pulp_auto",
+        "dest": "/src/pulp_auto"
+      },
+      {
+        "source": "tests",
+        "dest": "/src/tests"
+      },
+      {
+        "source": "setup.py",
+        "dest": "/src/setup.py"
+      },
+      {
+        "source": "tests/",
+        "dest": "/pulp_auto/tests"
+      },
+      {
+        "source": "docker/geninventory.py",
+        "dest": "/usr/local/bin/geninventory"
+      },
+      {
+        "source": "docker/inventory.yml",
+        "dest": "/pulp_auto/inventory.yml"
+      }
+    ],
+    "expose": [],
+    "volume": [
+      "/pulp_auto/"
+    ],
+    "run": [
+      "yum update -y && yum install -y python-ecdsa python-devel python-nose m2crypto gcc file dnf python-pip PyYAML python-qpid python-requests python-plumbum python-paramiko python-rpyc && yum clean all",
+      "pip install gevent",
+      "pip install stitches",
+      "pip install requestbin",
+      "pip install pinocchio",
+      "pip install --no-index /src/"
+    ],
+    "workdir": [
+      "/pulp_auto/"
+    ],
+    "from": "fedora:20",
+    "maintainer": "Pulp QE <pulp-list@redhat.com>",
+    "cmd": "geninventory && nosetests -vs --with-xunit --with-outputsave --save-directory=logs"
+  },
+  "source_repository_url": "https://github.com/RedHatQE/pulp-automation.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/RedHatQE/pulp-automation",
+  "docker_repository": "redhatqe/pulp-automation",
+  "docker_image": "redhatqe/pulp-automation",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "redhatqe/pulp-automation",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/redhatqe/pulp-automation",
+    "https://hub.docker.com/v2/repositories/redhatqe/pulp-automation",
+    "https://github.com/RedHatQE/pulp-automation.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/RedHat"
+  ],
+  "info_url": "https://hub.docker.com/r/redhatqe/pulp-automation",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

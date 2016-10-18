@@ -1,0 +1,186 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/panubo/python-bureaucrat",
+    "repository_url": "https://hub.docker.com/v2/repositories/panubo/python-bureaucrat",
+    "tags_url": "https://hub.docker.com/v2/repositories/panubo/python-bureaucrat/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/panubo/python-bureaucrat/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/panubo/python-bureaucrat/autobuild",
+    "user": "panubo",
+    "name": "python-bureaucrat",
+    "namespace": "panubo",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 9246,
+    "last_updated": "2016-09-07T00:27:27.415501Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "3.4",
+        "full_size": 185567851,
+        "id": 2040998,
+        "repository": 534146,
+        "creator": 318420,
+        "last_updater": 318420,
+        "last_updated": "2016-09-07T00:27:26.976936Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.7",
+        "full_size": 174775357,
+        "id": 2041024,
+        "repository": 534146,
+        "creator": 318420,
+        "last_updater": 318420,
+        "last_updated": "2016-09-07T00:24:53.916245Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "all",
+        "full_size": 269589461,
+        "id": 2041004,
+        "repository": 534146,
+        "creator": 318420,
+        "last_updater": 318420,
+        "last_updated": "2016-09-07T00:22:18.217931Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.5",
+        "full_size": 191750973,
+        "id": 2041040,
+        "repository": 534146,
+        "creator": 318420,
+        "last_updater": 318420,
+        "last_updated": "2016-09-07T00:18:42.896475Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 269589609,
+        "id": 2040987,
+        "repository": 534146,
+        "creator": 318420,
+        "last_updater": 318420,
+        "last_updated": "2016-09-07T00:16:05.957878Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "panubo/docker-python-bureaucrat"
+  },
+  "name": "panubo/python-bureaucrat Docker container",
+  "description": "Python 2.7, 3.4 & 3.5 App w/ Bureaucrat init support",
+  "readme": "# Python 2.7, 3.4 & 3.5 App w/ Bureaucrat init support\n\nThis container uses [panubo/python](https://hub.docker.com/r/panubo/python/) which has the latest [Python](http://python.org) versions built from source. \n\nThis container is used to support runtime Python application deployment with the use of [voltgrid.py](https://github.com/voltgrid/voltgrid-pie) and [Bureaucrat](https://github.com/adlibre/python-bureaucrat).\n\nAn empty [virtualenv](https://github.com/pypa/virtualenv) is provided for each Python version.\n\nAlternatively you can use this container as a base for your own Dockerfile.\n\n## Example Projects\n\nSee [Voltgrid Django Example](https://github.com/voltgrid/voltgrid-django-example).\n\n## Build\n\n    docker build -t panuno/python-bureaucrat:2.7 2.7\n    docker build -t panuno/python-bureaucrat:3.4 3.4\n    docker build -t panuno/python-bureaucrat:3.5 3.5\n    docker build -t panuno/python-bureaucrat:all all\n",
+  "dockerfile": "# Panubo: Python App w/ Bureaucrat init support\n\nFROM panubo/python:2.7\nMAINTAINER Andrew Cutler <andrew@voltgrid.com>\n\n# Need a consistent uid for underprivileged web user\nRUN groupadd www --gid 48 && \\\n    useradd www --uid 48 --gid 48 -d /srv/www && mkdir /srv/log && \\\n    chown -R www:www /srv\n\n# Git SSH Setup\nRUN mkdir /root/.ssh && \\\n    chmod 700 /root/.ssh && \\\n    echo -e \"Host *\\n\\tStrictHostKeyChecking no\\n\" >> /root/.ssh/config && \\\n    mkdir /srv/git && \\\n    chown root:root /srv/git\n\nUSER www\n\n# Create Virtualenv Python  w/ bureaucrat installed\nENV ENV_OPTS='--no-site-packages --distribute --no-wheel' BUREAUCRAT=git+https://github.com/adlibre/python-bureaucrat.git#egg=bureaucrat\nRUN for PYTHON in 2.7; do cd /srv && export PYTHON_BINARY=\"/usr/local/bin/python${PYTHON}\" && \\\n    curl --silent https://raw.githubusercontent.com/adlibre/python-bootstrap/master/bootstrap.sh | bash -s ve${PYTHON//./} $BUREAUCRAT && \\\n    echo 'OLDIFS=$IFS; IFS=$'\"'\\\\n'\"'; for l in $(cat /srv/env 2> /dev/null); do eval export echo '\"'\\${l}'\"'; done; IFS=$OLDIFS' >> /srv/ve${PYTHON//./}/bin/activate; done\n\nUSER root\n\n# Add Volt Grid .py / .conf\nADD voltgrid.conf /usr/local/etc/voltgrid.conf\nADD https://raw.githubusercontent.com/voltgrid/voltgrid-pie/master/voltgrid.py /usr/local/bin/voltgrid.py\nRUN chmod 755 /usr/local/bin/voltgrid.py && chmod 644 /usr/local/etc/voltgrid.conf\n\nWORKDIR /srv/git\nVOLUME [\"/srv/log\"]\nEXPOSE 8000\nCMD [\"/usr/local/bin/voltgrid.py\", \"/srv/ve27/bin/bureaucrat\", \"init\", \"--no-create-pid\", \"--venv\", \"/srv/ve27\", \"--envfile\", \"/srv/env\", \"--app\", \"/srv/git\", \"--logpath\", \"-\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "voltgrid.conf",
+        "dest": "/usr/local/etc/voltgrid.conf"
+      },
+      {
+        "source": "https://raw.githubusercontent.com/voltgrid/voltgrid-pie/master/voltgrid.py",
+        "dest": "/usr/local/bin/voltgrid.py"
+      }
+    ],
+    "expose": [
+      8000
+    ],
+    "volume": [
+      "[\"/srv/log\"]"
+    ],
+    "run": [
+      "groupadd www --gid 48 &&     useradd www --uid 48 --gid 48 -d /srv/www && mkdir /srv/log &&     chown -R www:www /srv",
+      "mkdir /root/.ssh &&     chmod 700 /root/.ssh &&     echo -e \"Host *\\n\\tStrictHostKeyChecking no\\n\" >> /root/.ssh/config &&     mkdir /srv/git &&     chown root:root /srv/git",
+      "for PYTHON in 2.7; do cd /srv && export PYTHON_BINARY=\"/usr/local/bin/python${PYTHON}\" &&     curl --silent https://raw.githubusercontent.com/adlibre/python-bootstrap/master/bootstrap.sh | bash -s ve${PYTHON//./} $BUREAUCRAT &&     echo 'OLDIFS=$IFS; IFS=$'\"'\\\\n'\"'; for l in $(cat /srv/env 2> /dev/null); do eval export echo '\"'\\${l}'\"'; done; IFS=$OLDIFS' >> /srv/ve${PYTHON//./}/bin/activate; done",
+      "chmod 755 /usr/local/bin/voltgrid.py && chmod 644 /usr/local/etc/voltgrid.conf"
+    ],
+    "workdir": [
+      "/srv/git"
+    ],
+    "from": "panubo/python:2.7",
+    "maintainer": "Andrew Cutler <andrew@voltgrid.com>",
+    "user": "root",
+    "env": {
+      "ENV_OPTS": "'--no-site-packages",
+      "--distribute": "--no-wheel'",
+      "BUREAUCRAT": "git+https://github.com/adlibre/python-bureaucrat.git#egg"
+    },
+    "cmd": "[\"/usr/local/bin/voltgrid.py\", \"/srv/ve27/bin/bureaucrat\", \"init\", \"--no-create-pid\", \"--venv\", \"/srv/ve27\", \"--envfile\", \"/srv/env\", \"--app\", \"/srv/git\", \"--logpath\", \"-\"]"
+  },
+  "source_repository_url": "https://github.com/panubo/docker-python-bureaucrat.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/panubo/docker-python-bureaucrat",
+  "docker_repository": "panubo/python-bureaucrat",
+  "docker_image": "panubo/python-bureaucrat",
+  "parameters_schema": {
+    "ENV_OPTS": {
+      "default": "'--no-site-packages",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "--distribute": {
+      "default": "--no-wheel'",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUREAUCRAT": {
+      "default": "git+https://github.com/adlibre/python-bureaucrat.git#egg",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "panubo/python-bureaucrat",
+  "revision": "3.4",
+  "uris": [
+    "https://hub.docker.com/r/panubo/python-bureaucrat",
+    "https://hub.docker.com/v2/repositories/panubo/python-bureaucrat",
+    "https://github.com/panubo/docker-python-bureaucrat.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python"
+  ],
+  "info_url": "https://hub.docker.com/r/panubo/python-bureaucrat",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

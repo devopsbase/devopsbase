@@ -1,0 +1,105 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/webstream/php-apache",
+    "repository_url": "https://hub.docker.com/v2/repositories/webstream/php-apache",
+    "tags_url": "https://hub.docker.com/v2/repositories/webstream/php-apache/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/webstream/php-apache/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/webstream/php-apache/autobuild",
+    "user": "webstream",
+    "name": "php-apache",
+    "namespace": "webstream",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 356,
+    "last_updated": "2016-09-19T03:52:50.262394Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 249525058,
+        "id": 2906019,
+        "repository": 671282,
+        "creator": 320546,
+        "last_updater": 320546,
+        "last_updated": "2016-09-19T03:52:49.925997Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "webstream-framework/Build"
+  },
+  "name": "webstream/php-apache Docker container",
+  "description": "webstream php and apache build.",
+  "readme": "# Build\nThis repository is exists the files for building and testing for docker.  \nTo build a disposable environment that middleware is included in the cloud and on-premises environment you can run the test. This repository and [DockerHub repository](https://hub.docker.com/u/webstream/) is in cooperation \"Automated Build\".\n\n## Usage for build\n```shell\n$> sudo docker build -t webstream/memcached .\n$> sudo docker build -t webstream/redis .\n$> sudo docker build -t webstream/mysql .\n$> sudo docker build -t webstream/postgres .\n$> sudo docker build -t webstream/php-apache .\n```\n\nor\n\n```shell\n$> sudo docker pull webstream/memcached\n$> sudo docker pull webstream/redis\n$> sudo docker pull webstream/mysql\n$> sudo docker pull webstream/postgres\n$> sudo docker pull webstream/php-apache\n```\n\n## Usage for run\nmemcached\n```shell\n$> sudo docker run --name memcached -p 21211:11211 -d webstream/memcached\n```\n\nredis\n```shell\n$> sudo docker run --name redis -p 16379:6379 -d webstream/redis\n```\n\nmysql\n```shell\n$> sudo docker run --name mysql -p 3307:3307 -e MYSQL_DATABASE=sandbox -e MYSQL_USER=mysql -e MYSQL_PASSWORD=mysql -e MYSQL_ROOT_PASSWORD=root -d webstream/mysql\n```\n\npostgres\n```shell\n$> sudo docker run --name postgres -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -d webstream/postgres\n```\n\nphp-apache\n```shell\n$> sudo docker run -itd -p 80:80 --link memcached:memcached --link redis:redis --link mysql:mysql --link postgres:postgres --name php-apache webstream/php-apache\n```\n\n## Dockerfile URL\n* [Dockerfile(memcached)](https://github.com/webstream-framework/Build/blob/master/memcached/Dockerfile)\n* [Dockerfile(redis)](https://github.com/webstream-framework/Build/blob/master/redis/Dockerfile)\n* [Dockerfile(mysql)](https://github.com/webstream-framework/Build/blob/master/mysql/Dockerfile)\n* [Dockerfile(postgres)](https://github.com/webstream-framework/Build/blob/master/postgres/Dockerfile)\n* [Dockerfile(php-apache)](https://github.com/webstream-framework/Build/tree/master/php-apache)\n\n## License\nLicensed under the MIT\nhttp://www.opensource.org/licenses/mit-license.php\n",
+  "dockerfile": "FROM php:7.0.8-apache\nMAINTAINER Ryuichi Tanaka <mapserver2007@gmail.com>\n\nADD setup.sql /tmp/setup.sql\nADD composer.json /var/www/html/composer.json\n\nRUN apt-get update && apt-get install -y \\\n  git \\\n  zip \\\n  libpq-dev \\\n  libmemcached-dev \\\n  redis-server \\\n  postgresql-9.4 \\\n  postgresql-contrib-9.4 \\\n  sqlite3 \\\n  php5-mysql\n\nRUN git clone https://github.com/php-memcached-dev/php-memcached.git -b php7 && \\\n  cd php-memcached && \\\n  phpize && \\\n  ./configure && \\\n  make && \\\n  make install\n\nRUN git clone https://github.com/phpredis/phpredis.git -b php7 && \\\n  cd phpredis && \\\n  phpize && \\\n  ./configure && \\\n  make && \\\n  make install\n\nRUN sqlite3 /tmp/sandbox.db < /tmp/setup.sql && chmod 777 /tmp/sandbox.db && \\\n  a2enmod rewrite && \\\n  pecl install apcu && \\\n  docker-php-ext-install pdo_mysql pdo_pgsql mbstring && \\\n  docker-php-ext-enable apcu opcache memcached redis\n\nRUN ( \\\n  echo \"opcache.enable_cli=1\"; \\\n  ) > /usr/local/etc/php/conf.d/opcache-recommended.ini\n\nRUN curl -s http://getcomposer.org/installer | php && \\\n  mv -f composer.phar /usr/bin/composer && \\\n  cd /var/www/html && composer install && \\\n  rm -rf /var/lib/apt/lists/* && rm -rf /tmp/pear && rm -rf php-memcached && rm -rf phpredis &&  \\\n  apt-get clean -y && apt-get autoclean -y\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "setup.sql",
+        "dest": "/tmp/setup.sql"
+      },
+      {
+        "source": "composer.json",
+        "dest": "/var/www/html/composer.json"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y   git   zip   libpq-dev   libmemcached-dev   redis-server   postgresql-9.4   postgresql-contrib-9.4   sqlite3   php5-mysql",
+      "git clone https://github.com/php-memcached-dev/php-memcached.git -b php7 &&   cd php-memcached &&   phpize &&   ./configure &&   make &&   make install",
+      "git clone https://github.com/phpredis/phpredis.git -b php7 &&   cd phpredis &&   phpize &&   ./configure &&   make &&   make install",
+      "sqlite3 /tmp/sandbox.db < /tmp/setup.sql && chmod 777 /tmp/sandbox.db &&   a2enmod rewrite &&   pecl install apcu &&   docker-php-ext-install pdo_mysql pdo_pgsql mbstring &&   docker-php-ext-enable apcu opcache memcached redis",
+      "(   echo \"opcache.enable_cli=1\";   ) > /usr/local/etc/php/conf.d/opcache-recommended.ini",
+      "curl -s http://getcomposer.org/installer | php &&   mv -f composer.phar /usr/bin/composer &&   cd /var/www/html && composer install &&   rm -rf /var/lib/apt/lists/* && rm -rf /tmp/pear && rm -rf php-memcached && rm -rf phpredis &&    apt-get clean -y && apt-get autoclean -y"
+    ],
+    "workdir": [],
+    "from": "php:7.0.8-apache",
+    "maintainer": "Ryuichi Tanaka <mapserver2007@gmail.com>"
+  },
+  "source_repository_url": "https://github.com/webstream-framework/Build.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/webstream-framework/Build",
+  "docker_repository": "webstream/php-apache",
+  "docker_image": "webstream/php-apache",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "webstream/php-apache",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/webstream/php-apache",
+    "https://hub.docker.com/v2/repositories/webstream/php-apache",
+    "https://github.com/webstream-framework/Build.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Devopsware/Build",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/webstream/php-apache",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

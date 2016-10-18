@@ -1,0 +1,138 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/bios/docker-owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/bios/docker-owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/bios/docker-owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/bios/docker-owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/bios/docker-owncloud/autobuild",
+    "user": "bios",
+    "name": "docker-owncloud",
+    "namespace": "bios",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 9,
+    "pull_count": 654,
+    "last_updated": "2016-08-17T12:40:24.955067Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 326184937,
+        "id": 54049,
+        "repository": 90081,
+        "creator": 137112,
+        "last_updater": 137112,
+        "last_updated": "2016-08-17T12:40:24.632687Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9.0.4",
+        "full_size": 312502428,
+        "id": 3923787,
+        "repository": 90081,
+        "creator": 137112,
+        "last_updater": 137112,
+        "last_updated": "2016-07-20T14:26:33.108969Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "tsgoff/docker-owncloud"
+  },
+  "name": "bios/docker-owncloud Docker container",
+  "description": "latest ownCloud 8, CentOS, Nginx, fpm",
+  "readme": "owncloud\n========\n\nhttps://registry.hub.docker.com/u/bios/docker-owncloud/\n\n**Docker image to start a ownCloud container with CentOS, Nginx, fpm**\n\noptional with linked MySQL/Postgres Container or external MySQL. Default is SQLite.\n\nQuickstart\n----------\n\n    docker run -d bios/docker-owncloud\nNow you have a running ownCloud Container with SQLite\n\nOptions\n-------\n\n - OC_RELATIV_URL_ROOT='/my/owncloud'\n - FQDN='my.owncloud.tld'\n - SSL_SELFSIGNED='true'\n - SSL_PROTOCOLS='TLSv1 TLSv1.1 TLSv1.2'\n - SSL_CIPHERS='AES256+EECDH:AES256+EDH'\n - DB_PREFIX='oc_'\n - DB_HOST='mysql01.owncloud.tld'\n - DB_USER='owncloud'\n - DB_PASSWORD='mysecretpassword'\n - DB_NAME='owncloud'\n\nLinking to MySQL Container\n--------------------------\n\n    docker run --name ownmysql -e MYSQL_ROOT_PASSWORD=mysecretpassword -d mysql\n    docker run --name owncloud -d -e DB_PREFIX='oc_' \\\n    --link ownmysql:mysql bios/docker-owncloud\n\nLinking to PostgreSQL Container\n-------------------------------\n\n    docker run --name ownpostgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres\n    docker exec ownpostgres sed -i '/IPv4 local connections/a host    all             all             172.17.42.1/32          trust' \\\n    /var/lib/postgresql/data/pg_hba.conf\n    docker restart ownpostgres\n    docker run --name owncloud -d -e DB_PREFIX='oc_' \\\n    --link ownpostgres:postgres bios/docker-owncloud\n\nExternal MySQL Server\n---------------------\n    docker run --name owncloud --dns 8.8.8.8 \\\n    -e DB_HOST='mysql01.owncloud.tld' \\\n    -e DB_USER='owncloud' \\\n    -e DB_PASSWORD='password' \\\n    -e DB_NAME='owncloud' \\\n    -e DB_PREFIX='_oc' -d bios/docker-owncloud\n\nExample\n-------\nExample with linked MySQL, custom path, custom SSL version / ciphers and custom FQDN\n\n    docker run --name owncloud --dns 8.8.4.4 -d \\\n    -v /data/owncloud:/data \\\n    -e SSL_SELFSIGNED='true' \\\n    -e DB_PREFIX='oc_' \\\n    -e SSL_PROTOCOLS='TLSv1 TLSv1.1 TLSv1.2' \\\n    -e SSL_CIPHERS='AES256+EECDH:AES256+EDH' \\\n    -e OC_RELATIV_URL_ROOT='/oc' \\\n    -e FQDN='my.hostname.tld' -p 443:443 --link ownmysql:mysql bios/docker-owncloud\n\nocc usage\n---------\nInstall php to use occ\n\n    docker exec owncloud yum -y install php56 php56-php-pdo php56-mysqlnd-qc-panel php56-php-mysqlnd php56-php-gd php56-php-mbstring \n    docker exec owncloud sudo -u nginx /usr/bin/php56 /usr/share/nginx/owncloud/oc/occ status\n\n\nUpgrade\n--------------------------\n\n    docker stop owncloud \n    docker rename owncloud owncloud_backup \n    docker pull bios/docker-owncloud:latest \n    -> do a new docker run\n    -> do a occ upgrade\n",
+  "dockerfile": "\n\n# Centos OwnCloud latest \n\nFROM centos:centos6 \nMAINTAINER Tobias Sgoff\n\nRUN yum -y update\nRUN yum -y install epel-release\nRUN yum -y install http://rpms.famillecollet.com/enterprise/remi-release-6.rpm\n\nRUN yum -y install nginx wget tar bzip2 unzip sudo\nRUN yum -y install php-fpm php-gd php-mysqlnd php-pgsql php-mbstring php-xml php-ldap --enablerepo=remi\nRUN sed -i 's/user = apache/user = nginx/' /etc/php-fpm.d/www.conf\nRUN sed -i 's/group = apache/group = nginx/' /etc/php-fpm.d/www.conf\nRUN yum -y update --enablerepo=remi\nRUN chown nginx:nginx /var/lib/php/session/\n\nRUN wget https://download.owncloud.org/download/community/owncloud-latest.zip\nRUN unzip owncloud-latest.zip\nRUN mv owncloud /usr/share/nginx/\nRUN chown -R nginx:nginx /usr/share/nginx/owncloud\nRUN rm owncloud-latest.zip \nADD default.conf /etc/nginx/conf.d/default.conf \n\nRUN echo \"env[HOSTNAME] = $HOSTNAME\" >> /etc/php-fpm.d/www.conf\nRUN echo \"env[PATH] = /usr/local/bin:/usr/bin:/bin\" >> /etc/php-fpm.d/www.conf\nRUN echo \"env[TMP] = /tmp\" >> /etc/php-fpm.d/www.conf\nRUN echo \"env[TMPDIR] = /tmp\" >> /etc/php-fpm.d/www.conf\nRUN echo \"env[TEMP] = /tmp\" >> /etc/php-fpm.d/www.conf\n\n\nRUN service nginx start && service php-fpm start\n\nADD init.sh /init.sh\nRUN chmod +x /init.sh\n\nEXPOSE 80\n\nCMD [\"/init.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "default.conf",
+        "dest": "/etc/nginx/conf.d/default.conf"
+      },
+      {
+        "source": "init.sh",
+        "dest": "/init.sh"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "yum -y update",
+      "yum -y install epel-release",
+      "yum -y install http://rpms.famillecollet.com/enterprise/remi-release-6.rpm",
+      "yum -y install nginx wget tar bzip2 unzip sudo",
+      "yum -y install php-fpm php-gd php-mysqlnd php-pgsql php-mbstring php-xml php-ldap --enablerepo=remi",
+      "sed -i 's/user = apache/user = nginx/' /etc/php-fpm.d/www.conf",
+      "sed -i 's/group = apache/group = nginx/' /etc/php-fpm.d/www.conf",
+      "yum -y update --enablerepo=remi",
+      "chown nginx:nginx /var/lib/php/session/",
+      "wget https://download.owncloud.org/download/community/owncloud-latest.zip",
+      "unzip owncloud-latest.zip",
+      "mv owncloud /usr/share/nginx/",
+      "chown -R nginx:nginx /usr/share/nginx/owncloud",
+      "rm owncloud-latest.zip ",
+      "echo \"env[HOSTNAME] = $HOSTNAME\" >> /etc/php-fpm.d/www.conf",
+      "echo \"env[PATH] = /usr/local/bin:/usr/bin:/bin\" >> /etc/php-fpm.d/www.conf",
+      "echo \"env[TMP] = /tmp\" >> /etc/php-fpm.d/www.conf",
+      "echo \"env[TMPDIR] = /tmp\" >> /etc/php-fpm.d/www.conf",
+      "echo \"env[TEMP] = /tmp\" >> /etc/php-fpm.d/www.conf",
+      "service nginx start && service php-fpm start",
+      "chmod +x /init.sh"
+    ],
+    "workdir": [],
+    "from": "centos:centos6 ",
+    "maintainer": "Tobias Sgoff",
+    "cmd": "[\"/init.sh\"]"
+  },
+  "source_repository_url": "https://github.com/tsgoff/docker-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/tsgoff/docker-owncloud",
+  "docker_repository": "bios/docker-owncloud",
+  "docker_image": "bios/docker-owncloud",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "bios/docker-owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/bios/docker-owncloud",
+    "https://hub.docker.com/v2/repositories/bios/docker-owncloud",
+    "https://github.com/tsgoff/docker-owncloud.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Test",
+    "Type/Infrastructure/Operating System/Linux/CentOS",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/bios/docker-owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

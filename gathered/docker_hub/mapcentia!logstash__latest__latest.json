@@ -1,0 +1,142 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mapcentia/logstash",
+    "repository_url": "https://hub.docker.com/v2/repositories/mapcentia/logstash",
+    "tags_url": "https://hub.docker.com/v2/repositories/mapcentia/logstash/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mapcentia/logstash/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mapcentia/logstash/autobuild",
+    "user": "mapcentia",
+    "name": "logstash",
+    "namespace": "mapcentia",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 157,
+    "last_updated": "2016-10-06T20:56:35.618583Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 274805243,
+        "id": 2368933,
+        "repository": 534732,
+        "creator": 212475,
+        "last_updater": 212475,
+        "last_updated": "2016-10-06T20:56:35.240724Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "master",
+        "full_size": 269208749,
+        "id": 2368892,
+        "repository": 534732,
+        "creator": 212475,
+        "last_updater": 212475,
+        "last_updated": "2016-03-20T22:01:02.521060Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "mapcentia/dockerfiles"
+  },
+  "name": "mapcentia/logstash Docker container",
+  "description": "Logstash 2.1 for indexing Apache or Nginx access logs with client IP geo-location.",
+  "readme": "# dockerfiles\n",
+  "dockerfile": "FROM java:8-jre\n\n# Install supervisor\nRUN apt-get -y update\nRUN apt-get -y install supervisor\n\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4\n\n# Logstash\nENV LOGSTASH_MAJOR 2.3\n\nRUN echo \"deb http://packages.elasticsearch.org/logstash/${LOGSTASH_MAJOR}/debian stable main\" > /etc/apt/sources.list.d/logstash.list\n\nRUN set -x \\\n\t&& apt-get update \\\n\t&& apt-get install -y logstash \\\n\t&& rm -rf /var/lib/apt/lists/*\n\n# Install Node.js\nRUN curl -sL https://deb.nodesource.com/setup_0.12 | bash -\nRUN apt-get -y install nodejs\n\n# Add the Nodejs proxy\nADD nodejs/* /root/server/\n\n# Install packages\nRUN cd /root/server &&\\\n\tnpm install\n\n# Install package for geo-location\nRUN cd /etc/logstash &&\\\n\tcurl -O \"http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz\" &&\\\n\tgunzip GeoLiteCity.dat.gz\n\n# Expose Logstash and the Nodejs proxy\nEXPOSE 5043 1338\n\n# Add the logstash configuration\nADD logstash-apache.conf /root/\n\n# Add Supervisor config and run the deamon\nADD conf/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf\n\n# Make a dir for the certificate\nRUN mkdir /certs\n\nCOPY entrypoint.sh /entrypoint.sh\nRUN chmod +x /entrypoint.sh\nENTRYPOINT [\"/entrypoint.sh\"]\n\nVOLUME [\"/var/lib/elasticsearch/data\", \"/var/log\"]\n\nCMD [\"/usr/bin/supervisord\", \"-c\", \"/etc/supervisor/conf.d/supervisord.conf\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "nodejs/*",
+        "dest": "/root/server/"
+      },
+      {
+        "source": "logstash-apache.conf",
+        "dest": "/root/"
+      },
+      {
+        "source": "conf/supervisor/supervisord.conf",
+        "dest": "/etc/supervisor/conf.d/supervisord.conf"
+      }
+    ],
+    "expose": [
+      5043
+    ],
+    "volume": [
+      "[\"/var/lib/elasticsearch/data\", \"/var/log\"]"
+    ],
+    "run": [
+      "apt-get -y update",
+      "apt-get -y install supervisor",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4",
+      "echo \"deb http://packages.elasticsearch.org/logstash/${LOGSTASH_MAJOR}/debian stable main\" > /etc/apt/sources.list.d/logstash.list",
+      "set -x \t&& apt-get update \t&& apt-get install -y logstash \t&& rm -rf /var/lib/apt/lists/*",
+      "curl -sL https://deb.nodesource.com/setup_0.12 | bash -",
+      "apt-get -y install nodejs",
+      "cd /root/server &&\tnpm install",
+      "cd /etc/logstash &&\tcurl -O \"http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz\" &&\tgunzip GeoLiteCity.dat.gz",
+      "mkdir /certs",
+      "chmod +x /entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "java:8-jre",
+    "env": {
+      "LOGSTASH_MAJOR": "2.3"
+    },
+    "copy": "entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"/usr/bin/supervisord\", \"-c\", \"/etc/supervisor/conf.d/supervisord.conf\"]"
+  },
+  "source_repository_url": "https://github.com/mapcentia/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mapcentia/dockerfiles",
+  "docker_repository": "mapcentia/logstash",
+  "docker_image": "mapcentia/logstash",
+  "parameters_schema": {
+    "LOGSTASH_MAJOR": {
+      "default": "2.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5043
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mapcentia/logstash",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/mapcentia/logstash",
+    "https://hub.docker.com/v2/repositories/mapcentia/logstash",
+    "https://github.com/mapcentia/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/CLI",
+    "Type/Devopsware/Logging/Logstash",
+    "Type/Middleware/Web Server/Nginx",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/mapcentia/logstash",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

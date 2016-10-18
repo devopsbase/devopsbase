@@ -1,0 +1,57 @@
+{
+  "name": "smartmontools Chef cookbook",
+  "chef_cookbook_name": "smartmontools",
+  "revision": "1.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/smartmontools",
+    "https://supermarket.chef.io/cookbooks/smartmontools/download",
+    "https://supermarket.chef.io/cookbooks/smartmontools/versions/1.0.0",
+    "https://supermarket.chef.io/cookbooks/smartmontools/versions/1.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/smartmontools/versions/1.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/smartmontools",
+    "https://supermarket.chef.io/api/v1/cookbooks/smartmontools/versions/1.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/smartmontools",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/smartmontools/versions/1.0.0/download",
+  "deprecated": false,
+  "created": "2011-08-27T22:23:17.000Z",
+  "updated": "2015-02-27T22:16:24.719Z",
+  "description": "Installs/Configures smartmontools",
+  "maintainer": {
+    "name": "jtimberman",
+    "email": "cookbooks@housepub.org"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 6,
+  "downloads_count": 1558979,
+  "downloads_count_revision": 1219697,
+  "repository_url": "http://github.com/jtimberman/smartmontools-cookbook",
+  "issues_url": "https://github.com/jtimberman/smartmontools-cookbook/issues",
+  "chef_source_url": "http://github.com/jtimberman/smartmontools-cookbook",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nInstalls and configures smartmontools.\n\nThis cookbook will install the smartmontools package and enable the service. It will also configure default email reports.\n\nRequirements\n============\n\n## Platform:\n\nTested on Ubuntu 10.04. Should work on Debian 6.0+ or Ubuntu 10.04+.\n\nAttributes\n==========\n\n* `node['smartmontools']['smartd_opts']` - sets the value for the `smartd_opts` in /etc/default/smartmontools. Default is \"\", which leaves the option commented.\n* `node['smartmontools']['start_smartd']` - whether to start smartd service in /etc/default/smartmontools. Default is \"yes\".\n* `node['smartmontools']['devices']` - Array of devices to monitor with the options used in smartd.conf. Default is []. See __Usage__.\n* `node['smartmontools']['device_opts']` - If set, these options will be used by default in /etc/smartd.conf for each of the `devices` above. Default is \"-H -l error -l selftest\".\n* `node['smartmontools']['run_d']` - Array of scripts to drop off in `/etc/smartmontools/run.d`. Default is [\"10mail\"].\n\nTemplates\n=========\n\n/etc/smartd.conf\n----\n\n**Note**: The default /etc/smartd.conf configuration file from the package itself does not recommend using DEVICESCAN, despite it being enabled by default. The template will only use DEVICESCAN if `node['smartmontools']['devices']` is not set.\n\nThe template for this file will iterate over the `node['smartmontools']['devices']` attribute and write the configuration out. Each device will get the same options from `node['smartmontools']['device_opts']`. See __Future Plans__ below.\n\n/etc/default/smartmontools\n----\n\nStarts smartd by default using `node['smartmontools']['start_smartd']`. The `enable_smart` option is not recommended by smartmontools per the comment and is not managed via the template. Modify your local copy of the template if you wish to change this.\n\nCookbook Files\n==============\n\n/etc/smartmontools/run.d/*\n----\n\nEach filename in the array `node['smartmontools']['run_d']` will be dropped off via a cookbook file. By default the only one is 10mail, which exists, and came from the package. These files should be in `files/default`.\n\nUsage\n=====\n\nBy default, the recipe is not set up to monitor any particular devices in smartd.conf, and will use DEVICESCAN. Set the attribute `node['smartmontools']['devices']` to monitor a specific list of disk devices. This should be an array. A default set of options will be used for all disks from the `node['smartmontools']['device_opts']` attribute.\n\nFor example:\n\n    name \"base\"\n    ...\n    default_attributes(\n      \"smartmontools\" => {\n        \"devices\" => ['sda','sdb','sr0'],\n        \"device_opts\" => \"-H -l error -l selftest -m root@example.com\"\n      }\n    )\n\nFor different kinds of hard drive configurations in your data center, use `default_attributes` in separate roles. For example if web servers have only a single internal disk, but database servers have two disks:\n\n    name \"webserver\"\n    ...\n    default_attributes(\n        \"smartmontools\" => {\n          \"devices\" => ['sda']\n        }\n    )\n\n    name \"database_server\n    ...\n    default_attributes(\n        \"smartmontools\" => {\n          \"devices\" => ['sda', \"sdb\"]\n        }\n    )\n\n\nFuture Plans\n============\n\nIn the future, I'd like to support devices being a hash with options for each device for more flexible configuration. If it is a hash, the key should be the device name, \"hda\", \"hdb\", etc, and the value should be the options.\n\n    {\n      \"hda\" => \"-a -o on -S on -s (S/../.././02|L/../../6/03)\",\n      \"hdb\" => \"-H -l error -l selftest -t -I 194\",\n      \"hdc\" => \"-a -I 194 -W 4,45,55 -R 5 -m admin@example.com\"\n    }\n\nI might use ohai's detected block devices and whether they are running. This can be a good way to determine candidates for monitoring with smartmontools. To find this information, you can use shef on your system.\n\n    % sudo shef\n    chef > node['block_device'].each {|k,v| puts \"/dev/#{k}\" if v['state']}\n    /dev/sda\n    /dev/sdb\n    /dev/sdc\n\nLicense and Author\n==================\n\nCopyright 2011, Joshua Timberman (<cookbooks@housepub.org>)\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 6.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 10.04",
+      "one_of_group": "os"
+    }
+  ]
+}

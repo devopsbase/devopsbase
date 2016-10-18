@@ -1,0 +1,113 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/solita/ubuntu-systemd",
+    "repository_url": "https://hub.docker.com/v2/repositories/solita/ubuntu-systemd",
+    "tags_url": "https://hub.docker.com/v2/repositories/solita/ubuntu-systemd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/solita/ubuntu-systemd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/solita/ubuntu-systemd/autobuild",
+    "user": "solita",
+    "name": "ubuntu-systemd",
+    "namespace": "solita",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 734,
+    "last_updated": "2016-10-13T21:30:54.361156Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 49870932,
+        "id": 2735559,
+        "repository": 647117,
+        "creator": 777161,
+        "last_updater": 777161,
+        "last_updated": "2016-10-13T21:30:54.049904Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "16.04",
+        "full_size": 49870923,
+        "id": 2735555,
+        "repository": 647117,
+        "creator": 777161,
+        "last_updater": 777161,
+        "last_updated": "2016-10-13T21:25:22.707775Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "solita/docker-systemd"
+  },
+  "name": "solita/ubuntu-systemd Docker container",
+  "description": "Ubuntu + systemd",
+  "readme": "# solita/ubuntu-systemd\n\nA Docker image based on `ubuntu` that runs `systemd` with a minimal set of\nservices.\n\n**This image is meant for development use only. We strongly recommend against\nrunning it in production!**\n\n## Supported tags\n\n* `latest`, `16.04`\n\n## But why?\n\nThe short answer: use `solita/ubuntu-systemd` for running applications that\nneed to be run in a full Ubuntu system and not on their own as PID 1.\n\nThe long answer: `solita/ubuntu-systemd` might be a better choice than the\nstock `ubuntu` image if one of the following is true:\n\n- You want to test a provisioning or deployment script that configures and\n  starts `systemd` services.\n\n- You want to run multiple services in the same container.\n\n- You want to solve the [the PID 1 zombie reaping problem](https://blog.phusion.nl/2015/01/20/docker-and-the-pid-1-zombie-reaping-problem/).\n\nIf you just want to run a single, short-lived process in a container, you\nshould probably use the stock `ubuntu` image instead.\n\n## Setup\n\nBefore you start your first `systemd` container, run the following command to\nset up your Docker host. It uses [special privileges](https://docs.docker.com/engine/reference/run/#/runtime-privilege-and-linux-capabilities)\nto create a cgroup hierarchy for `systemd`. We do this in a separate setup\nstep so we can run `systemd` in unprivileged containers.\n\n    docker run --rm --privileged -v /:/host solita/ubuntu-systemd setup\n\n## Running\n\nYou need to add a couple of flags to the `docker run` command to make `systemd`\nplay nice with Docker.\n\nWe must disable seccomp because `systemd` uses system calls that are not\nallowed by Docker's default seccomp profile:\n\n    --security-opt seccomp=unconfined\n\nTo an init process `SIGTERM` means \"restart\". We have to send `SIGRTMIN+3` to\ntell `systemd ` to shut down:\n\n    --stop-signal=SIGRTMIN+3\n\nUbuntu's `systemd` expects `/run` and `/run/lock` to be `tmpfs` file systems,\nbut it can't mount them itself in an unprivileged container:\n\n    --tmpfs /run\n    --tmpfs /run/lock\n\n`systemd` needs read-only access to the kernel's cgroup hierarchies:\n\n    -v /sys/fs/cgroup:/sys/fs/cgroup:ro\n\nAllocating a pseudo-TTY is not strictly necessary, but it gives us pretty\ncolor-coded logs that we can look at with `docker logs`:\n\n    -t\n\n## Testing\n\nThis image is useless as it's only meant to serve as a base for your own\nimages, but you can still create a container from it. First set up your Docker\nhost as described in Setup above. Then run the following command:\n\n    docker run -d --name systemd --security-opt seccomp=unconfined --stop-signal=SIGRTMIN+3 --tmpfs /run --tmpfs /run/lock -v /sys/fs/cgroup:/sys/fs/cgroup:ro -t solita/ubuntu-systemd\n\nCheck the logs to see if `systemd` started correctly:\n\n    docker logs systemd\n\nIf everything worked, the output should look like this:\n\n    systemd 229 running in system mode. (+PAM +AUDIT +SELINUX +IMA +APPARMOR +SMACK +SYSVINIT +UTMP +LIBCRYPTSETUP +GCRYPT +GNUTLS +ACL +XZ -LZ4 +SECCOMP +BLKID +ELFUTILS +KMOD -IDN)\n    Detected virtualization docker.\n    Detected architecture x86-64.\n\n    Welcome to Ubuntu 16.04 LTS!\n\n    Set hostname to <d5d4ebbf362a>.\n    Initializing machine ID from random generator.\n    [  OK  ] Created slice System Slice.\n    [  OK  ] Reached target Local File Systems.\n    [  OK  ] Reached target Paths.\n    [  OK  ] Listening on Journal Socket.\n    [  OK  ] Reached target Swap.\n    [  OK  ] Reached target Slices.\n             Starting Create Volatile Files and Directories...\n    [  OK  ] Listening on Journal Socket (/dev/log).\n    [  OK  ] Reached target Sockets.\n             Starting Journal Service...\n    [  OK  ] Started Journal Service.\n    [  OK  ] Started Create Volatile Files and Directories.\n    [  OK  ] Reached target System Initialization.\n    [  OK  ] Started Daily Cleanup of Temporary Directories.\n    [  OK  ] Reached target Timers.\n    [  OK  ] Reached target Basic System.\n             Starting Permit User Sessions...\n             Starting LSB: Set the CPU Frequency Scaling governor to \"ondemand\"...\n             Starting /etc/rc.local Compatibility...\n    [  OK  ] Started Permit User Sessions.\n    [  OK  ] Started /etc/rc.local Compatibility.\n    [  OK  ] Started LSB: Set the CPU Frequency Scaling governor to \"ondemand\".\n    [  OK  ] Reached target Multi-User System.\n\nShut down `systemd`:\n\n    docker stop systemd\n\nFinally check the logs to see if systemd shut down cleanly:\n\n    docker logs systemd\n\nA clean shutdown looks like this:\n\n    [  OK  ] Stopped target Multi-User System.\n             Stopping Permit User Sessions...\n             Stopping LSB: Set the CPU Frequency Scaling governor to \"ondemand\"...\n    [  OK  ] Stopped /etc/rc.local Compatibility.\n    [  OK  ] Stopped target Timers.\n    [  OK  ] Stopped Daily Cleanup of Temporary Directories.\n    [  OK  ] Stopped Permit User Sessions.\n    [  OK  ] Stopped LSB: Set the CPU Frequency Scaling governor to \"ondemand\".\n    [  OK  ] Stopped target Basic System.\n    [  OK  ] Stopped target Sockets.\n    [  OK  ] Stopped target Slices.\n    [  OK  ] Stopped target Paths.\n    [  OK  ] Stopped target System Initialization.\n    [  OK  ] Stopped Create Volatile Files and Directories.\n    [  OK  ] Reached target Shutdown.\n    Sending SIGTERM to remaining processes...\n    Sending SIGKILL to remaining processes...\n    Halting system.\n    Exiting container.\n\n## Known issues\n\nThere's [a bug](https://github.com/docker/docker/issues/22327) in Docker\nversions < 1.12.0 that randomly causes `/run` and `/run/lock` to be mounted in\nthe wrong order. In this case the output of `docker logs` looks like this:\n\n    Failed to mount tmpfs at /run/lock: Permission denied\n    [!!!!!!] Failed to mount API filesystems, freezing.\n    Freezing execution.\n\nIf this happens to you, `docker kill` the container (it won't listen for the\nshutdown signal) and start it again with `docker start`. Better luck next time!\n\n## License\n\nCopyright © 2016 [Solita](http://www.solita.fi). Licensed under [the MIT license](https://github.com/solita/docker-systemd/blob/master/LICENSE).\n",
+  "dockerfile": "FROM ubuntu:16.04\n\nENV container docker\n\n# Don't start any optional services except for the few we need.\nRUN find /etc/systemd/system \\\n         /lib/systemd/system \\\n         -path '*.wants/*' \\\n         -not -name '*journald*' \\\n         -not -name '*systemd-tmpfiles*' \\\n         -not -name '*systemd-user-sessions*' \\\n         -exec rm \\{} \\;\n\nRUN systemctl set-default multi-user.target\n\nCOPY setup /sbin/\n\nCMD [\"/sbin/init\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "find /etc/systemd/system          /lib/systemd/system          -path '*.wants/*'          -not -name '*journald*'          -not -name '*systemd-tmpfiles*'          -not -name '*systemd-user-sessions*'          -exec rm \\{} \\;",
+      "systemctl set-default multi-user.target"
+    ],
+    "workdir": [],
+    "from": "ubuntu:16.04",
+    "env": {
+      "container": "docker"
+    },
+    "copy": "setup /sbin/",
+    "cmd": "[\"/sbin/init\"]"
+  },
+  "source_repository_url": "https://github.com/solita/docker-systemd.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/solita/docker-systemd",
+  "docker_repository": "solita/ubuntu-systemd",
+  "docker_image": "solita/ubuntu-systemd",
+  "parameters_schema": {
+    "container": {
+      "default": "docker",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "solita/ubuntu-systemd",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/solita/ubuntu-systemd",
+    "https://hub.docker.com/v2/repositories/solita/ubuntu-systemd",
+    "https://github.com/solita/docker-systemd.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu"
+  ],
+  "info_url": "https://hub.docker.com/r/solita/ubuntu-systemd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

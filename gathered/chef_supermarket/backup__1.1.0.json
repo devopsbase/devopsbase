@@ -1,0 +1,54 @@
+{
+  "name": "backup Chef cookbook",
+  "chef_cookbook_name": "backup",
+  "revision": "1.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/backup",
+    "https://supermarket.chef.io/cookbooks/backup/download",
+    "https://supermarket.chef.io/cookbooks/backup/versions/1.1.0",
+    "https://supermarket.chef.io/cookbooks/backup/versions/1.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/backup/versions/1.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/backup",
+    "https://supermarket.chef.io/api/v1/cookbooks/backup/versions/1.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/backup",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/backup/versions/1.1.0/download",
+  "deprecated": false,
+  "created": "2012-07-24T23:50:02.000Z",
+  "updated": "2016-07-28T04:03:17.660Z",
+  "description": "Installs/Configures backup",
+  "maintainer": {
+    "name": "guilhemfr",
+    "email": "sysadmin@cramerdev.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": false,
+  "rating": null,
+  "followers_count": 16,
+  "downloads_count": 14247117,
+  "downloads_count_revision": 1100615,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "[![Build Status](https://travis-ci.org/cramerdev/backup-cookbook.png)](https://travis-ci.org/cramerdev/backup-cookbook)\n\n# Description\n\nUses the [Backup Ruby Gem](https://github.com/meskyanichi/backup) to perform backups.\n\n# Requirements\n\nTested on Ubuntu Linux with Ruby 1.9.3, but should run on any Unix with Ruby.\n\nRuby 1.8.7 and 1.9.2 are no longer supported.  If you require the support of\nolder Ruby versions, you should use v1.0.0 of this cookbook.  If you want to use\nv4 of the gem, you need to use this version.\n\n# Attributes\n\nSee `attributes/default.rb` for default vaules.\n\n* `node['backup']['config_path']` - Where backup configuration data will be stored. Defaults is `/etc/backup`\n* `node['backup']['log_path']` - Where backup logs will be stored. Defaults is `/var/log`\n* `node['backup']['model_path']` - Where backup models (definitions) are stored. Default is `node['backup']['config_path']/models`\n* `node['backup']['dependencies']` - An array of arrays of additional dependencies and optional versions needed for backups. The backup gem will inform you about these when the backup runs. (examples: `['fog']`, `[['fog', '1.4.0'], ['s3']]`)\n* `node['backup']['user']` - User that performs backups. Default is root\n* `node['backup']['group']` - Group that performs backups. Default is root\n* `node['backup']['version']` - Version of the Backup gem to be installed. The latest version of this cookbook should have the latest stable version of the gem\n* `node['backup']['server']` - Data about a centralized backup server. Used by the `backup_mount` resource. Default is an empty hash.\n* `node['backup']['server']['address']` - Address of the backup server.\n* `node['backup']['server']['root_path']` - Root path on the server where backups go.\n\n# Recipes\n\n## default\n\nThe default recipe installs the backup gem and its dependencies and sets up the basic configuration.\n\n# Resources and Providers\n\n## backup_model\n\nCreates a backup model with an optional `cron` schedule.\n\n### Actions\n\n* `:create` - Create a model. The default.\n* `:delete` - Delete a model\n\n### Attribute Parameters\n\n* The name attribute - A symbol used as the trigger name.\n* `description` - A description for the backup. Default is the same as the name.\n* `definition` - A string (best formed as a heredoc) defining the backup. Will be interpoleted and turned into a model file. Required.\n* `schedule` - A hash of times (minute, hour, day, month, weekday) that will be passed to a [`cron` resource](http://docs.opscode.com/chef/resources.html#cron).\n* `cron_options` - A hash of other options to be passed to the `cron` resource. Includes `:command` (will be set to the generated backup command by default), `:mailto`, `:path`, `:shell`, `:user`. Set `output_log` option to redirect output of the generated backup command  to the log file (by default this output will be ignored).\n\n### Example\n\nThis will create a model scheduled to back up a database daily:\n\n    backup_model :my_db do\n      description \"Back up my database\"\n\n      definition <<-DEF\n        split_into_chunks_of 4000\n\n        database MySQL do |db|\n          db.name = 'mydb'\n          db.username = 'myuser'\n          db.password = '#{node['mydb']['password']}' # will be interpolated\n        end\n\n        compress_with Gzip\n\n        store_with S3 do |s3|\n          s3.access_key_id = '#{node['aws']['access_key_id']}'\n          s3.secret_access_key = '#{node['aws']['secret_access_key']}'\n          s3.bucket = 'mybucket'\n        end\n      DEF\n\n      schedule({\n        :minute => 0,\n        :hour   => 0\n      })\n    end\n\n## backup_mount\n\nDefines an NFS mount to be used for backup storage and creates the necessary directories. Uses the `node['backup']['server']` attributes.\n\nThis fits a specific use case and may or may not be useful. It is intended to be used with the RSync::Local syncer and Local storage option.\n\n### Actions\n\n* `:enable` - Enables and mounts the device\n* `:disable` - Disables and unmounts the device\n\n### Attribute Parameters\n\n* Name attribute: The path where the mount will be placed.\n* `remote_path`: The path being accessed on the remote server\n\n### Example\n\nGiven the following attributes:\n\n* `node['backup']['server']['address'] = '192.168.0.2'`\n* `node['backup']['server']['root_path'] = 'volume1'`\n\nAnd this in the recipe:\n\n    backup_mount '/mnt/backup/myapp' do\n      remote_path '/backups/myapp' # Will be prefixed with with the `node['backup']['server']['root_path']` if it is set.\n    end\n\nwill create an NFS mount at /mnt/backup/myapp with the device 192.168.0.2:/volume1/backups/myapp.\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/cron",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/gem_specific_install",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

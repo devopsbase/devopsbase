@@ -1,0 +1,116 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dylanlindgren/docker-mariadb",
+    "repository_url": "https://hub.docker.com/v2/repositories/dylanlindgren/docker-mariadb",
+    "tags_url": "https://hub.docker.com/v2/repositories/dylanlindgren/docker-mariadb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dylanlindgren/docker-mariadb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dylanlindgren/docker-mariadb/autobuild",
+    "user": "dylanlindgren",
+    "name": "docker-mariadb",
+    "namespace": "dylanlindgren",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 4,
+    "pull_count": 808,
+    "last_updated": "2015-11-13T17:49:05.941953Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 179201312,
+        "id": 39864,
+        "repository": 54054,
+        "creator": 61293,
+        "last_updater": 61293,
+        "last_updated": "2015-11-13T17:49:10.481459Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "dylanlindgren/docker-mariadb"
+  },
+  "name": "dylanlindgren/docker-mariadb Docker container",
+  "description": "Docker image for MariaDB",
+  "readme": "![Docker + MariaDB](https://cloud.githubusercontent.com/assets/6241518/4245631/8db69fba-3a3c-11e4-8294-244919e4af7c.jpg)\n\ndocker-mariadb is a CentOS-based Docker image for MariaDB containers.\n\n## Getting the image\nThis image is published in the [Docker Hub](https://registry.hub.docker.com/). Simply run the below command to get it on your machine:\n\n```bash\ndocker pull dylanlindgren/docker-mariadb\n```\n## Understanding the image\nThis image adheres to the principle of having a Docker container for each process.\n\nAll data is redirected to the `/data/mariadb/data` location and when this is mapped to the host using the `-v` switch then the container is completely disposable.\n\nThe startup script (which is the containers default entrypoint) checks `/data/mariadb`, and if it's empty it initialises it by running the `/usr/bin/mysql_install_db` command, and then runs `/usr/bin/mysqld_safe` with an initial SQL file which ensures the database is securely configured for remote access. If the `/data/mariadb` folder contains data then it just runs `/usr/bin/mysqld_safe`.\n\nThe steps that are performed to secure the database were taken from [howtolamp.com](http://howtolamp.com/lamp/mysql/5.6/securing/). In summary the script:\n\n- Deletes anonymous users\n- Deletes full access to the `test` database\n- Deletes full access to databases beginning in `test`\n- Deletes the `test` database\n- Sets the `root` password as `abc123` **Note - you should change this!!**\n- Creates a `docker` user with full permissions to all databases from all hosts with the password `docker` **Note - you should change this**\n\n## Creating and running the container\nTo create and run the container:\n```bash\ndocker run --privileged=true -v /data/mariadb:/data/mariadb:rw -p 3306:3306 -d --name mariadb dylanlindgren/docker-mariadb\n```\n - `-p` publishes the container's 3306 port to 3306 on the host\n - `--name` sets the name of the container (useful when starting/stopping).\n - `-v` maps the `/data/mariadb` folder as read/write (rw).\n - `-d` runs the container as a daemon\n\nTo stop the container:\n```bash\ndocker stop mariadb\n```\n\nTo start the container again:\n```bash\ndocker start mariadb\n```\n### Running as a Systemd service\nTo run this container as a service on a [Systemd](http://www.freedesktop.org/wiki/Software/systemd/) based distro (e.g. CentOS 7), create a unit file under `/etc/systemd/system` called `mariadb.service` with the below contents\n```bash\n[Unit]\nDescription=MariaDB Docker container (dylanlindgren/docker-mariadb)\nAfter=docker.service\nRequires=docker.service\n\n[Service]\nTimeoutStartSec=0\nExecStartPre=-/usr/bin/docker stop mariadb\nExecStartPre=-/usr/bin/docker rm mariadb\nExecStartPre=-/usr/bin/docker pull dylanlindgren/docker-mariadb\nExecStart=/usr/bin/docker run --privileged=true -v /data/mariadb:/data/mariadb:rw -p 3306:3306 --name mariadb dylanlindgren/docker-mariadb\nExecStop=/usr/bin/docker stop mariadb\n\n[Install]\nWantedBy=multi-user.target\n```\nThen you can start/stop/restart the container with the regular Systemd commands e.g. `systemctl start mariadb.service`.\n\nTo automatically start the container when you restart enable the unit file with the command `systemctl enable mariadb.service`.\n",
+  "dockerfile": "FROM centos:centos7\n\nMAINTAINER \"Dylan Lindgren\" <dylan.lindgren@gmail.com>\n\n# Install MariaDB\nADD config/MariaDB.repo /etc/yum.repos.d/MariaDB.repo\nRUN yum update -y\nRUN yum install -y MariaDB-server MariaDB-client\n\n# Configure MariaDB\nADD config/my.cnf /etc/my.cnf\n\n# All the MariaDB data that you'd want to backup will be redirected here\nRUN mkdir /data\nVOLUME [\"/data/mariadb\"]\n\n# Port 3306 is where MariaDB listens on\nEXPOSE 3306\n\n# These scripts will be used to launch MariaDB and configure it\n# securely if no data exists in /data/mariadb\nADD config/mariadb-start.sh /opt/bin/mariadb-start.sh \nADD config/mariadb-setup.sql /opt/bin/mariadb-setup.sql\nRUN chmod u=rwx /opt/bin/mariadb-start.sh\nRUN chown mysql:mysql /opt/bin/mariadb-start.sh /opt/bin/mariadb-setup.sql /data/mariadb\n\n# run all subsequent commands as the mysql user\nUSER mysql\n\nENTRYPOINT [\"/opt/bin/mariadb-start.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "config/MariaDB.repo",
+        "dest": "/etc/yum.repos.d/MariaDB.repo"
+      },
+      {
+        "source": "config/my.cnf",
+        "dest": "/etc/my.cnf"
+      },
+      {
+        "source": "config/mariadb-start.sh",
+        "dest": "/opt/bin/mariadb-start.sh"
+      },
+      {
+        "source": "config/mariadb-setup.sql",
+        "dest": "/opt/bin/mariadb-setup.sql"
+      }
+    ],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      "[\"/data/mariadb\"]"
+    ],
+    "run": [
+      "yum update -y",
+      "yum install -y MariaDB-server MariaDB-client",
+      "mkdir /data",
+      "chmod u=rwx /opt/bin/mariadb-start.sh",
+      "chown mysql:mysql /opt/bin/mariadb-start.sh /opt/bin/mariadb-setup.sql /data/mariadb"
+    ],
+    "workdir": [],
+    "from": "centos:centos7",
+    "maintainer": "\"Dylan Lindgren\" <dylan.lindgren@gmail.com>",
+    "user": "mysql",
+    "entrypoint": "[\"/opt/bin/mariadb-start.sh\"]"
+  },
+  "source_repository_url": "https://github.com/dylanlindgren/docker-mariadb.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/dylanlindgren/docker-mariadb",
+  "docker_repository": "dylanlindgren/docker-mariadb",
+  "docker_image": "dylanlindgren/docker-mariadb",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dylanlindgren/docker-mariadb",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/dylanlindgren/docker-mariadb",
+    "https://hub.docker.com/v2/repositories/dylanlindgren/docker-mariadb",
+    "https://github.com/dylanlindgren/docker-mariadb.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/dylanlindgren/docker-mariadb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

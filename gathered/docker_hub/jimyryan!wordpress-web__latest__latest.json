@@ -1,0 +1,137 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jimyryan/wordpress-web",
+    "repository_url": "https://hub.docker.com/v2/repositories/jimyryan/wordpress-web",
+    "tags_url": "https://hub.docker.com/v2/repositories/jimyryan/wordpress-web/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jimyryan/wordpress-web/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jimyryan/wordpress-web/autobuild",
+    "user": "jimyryan",
+    "name": "wordpress-web",
+    "namespace": "jimyryan",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 725,
+    "last_updated": "2016-04-29T15:03:08.732148Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 98150153,
+        "id": 2372941,
+        "repository": 588544,
+        "creator": 345050,
+        "last_updater": 345050,
+        "last_updated": "2016-04-29T15:02:46.675587Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "JimyRyan/wordpress-web"
+  },
+  "name": "jimyryan/wordpress-web Docker container",
+  "description": "Docker image of wordpress with latest nginx web server (made to work with the wordpress-app image)",
+  "readme": "# wordpress-web\nDocker image of wordpress with latest nginx web server (made to work with the wordpress-app image)\n",
+  "dockerfile": "# Debian\nFROM nginx:latest \nMAINTAINER JimyRyan\n\n#################################################################################\n#################################################################################\n#                                                                               #\n#                [START :: TIMEZONE, LOCALE & UPDATE / UPGRADE]                 #\n#                                                                               #\n#################################################################################\n\nRUN apt-get update -y \\\n    && apt-get install -y locales\n\n# Set locale and timezone \nENV LANGUAGE fr_FR.UTF-8\nENV LANG fr_FR.UTF-8\nENV LC_ALL fr_FR.UTF-8\nENV TZ Europe/Paris\n\n# Change locale and timezone \nRUN set -x \\\n    && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \\\n    && sed -i -e 's/# '$LANG' UTF-8/'$LANG' UTF-8/' /etc/locale.gen \\\n    && locale-gen \\\n    && update-locale LANG=$LANG \\\n    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \\\n    && echo $TZ > /etc/timezone\n\n# Update distribution\nRUN apt-get update \\\n    && apt-get upgrade -y\n\n#################################################################################\n#                                                                               #\n#                   [END :: TIMEZONE, LOCALE & UPDATE / UPGRADE]                #\n#                                                                               #\n#################################################################################\n#################################################################################\n\n  \n# nginx config\nENV NGINX_MAIN_DOMAIN example.com\nENV NGINX_DOMAINS_STRING_PARAM www.example.com example.com\n\n# Copy all nginx config files\n# Note from Docker doc (https://docs.docker.com/engine/reference/builder/#add)\n# > If <src> is a directory, the entire contents of the directory are copied, including filesystem metadata.\n# > Note: The directory itself is not copied, just its contents.\nADD data/etc/nginx /etc/nginx/\n\n# Delete the default config file\n# Change the file extention \".conf\" to \".conf.template\"\nRUN set -e \\\n\t&& rm -rf /etc/nginx/conf.d/default.conf \\\n\t&& for file in /etc/nginx/conf.d/*.conf; do mv \"$file\" \"$file.template\"; done\n\n# Copy the startup script\nCOPY data/config-and-start.sh /opt/\n\n# Apply good right\nRUN set -e \\\n\t&& chmod u+x /opt/config-and-start.sh \\\n\t&& chmod -R 644 /etc/nginx/*\n\t\nCMD /opt/config-and-start.sh\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "data/etc/nginx",
+        "dest": "/etc/nginx/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update -y     && apt-get install -y locales",
+      "set -x     && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen     && sed -i -e 's/# '$LANG' UTF-8/'$LANG' UTF-8/' /etc/locale.gen     && locale-gen     && update-locale LANG=$LANG     && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime     && echo $TZ > /etc/timezone",
+      "apt-get update     && apt-get upgrade -y",
+      "set -e \t&& rm -rf /etc/nginx/conf.d/default.conf \t&& for file in /etc/nginx/conf.d/*.conf; do mv \"$file\" \"$file.template\"; done",
+      "set -e \t&& chmod u+x /opt/config-and-start.sh \t&& chmod -R 644 /etc/nginx/*"
+    ],
+    "workdir": [],
+    "from": "nginx:latest ",
+    "maintainer": "JimyRyan",
+    "env": {
+      "LANGUAGE": "fr_FR.UTF-8",
+      "LANG": "fr_FR.UTF-8",
+      "LC_ALL": "fr_FR.UTF-8",
+      "TZ": "Europe/Paris",
+      "NGINX_MAIN_DOMAIN": "example.com",
+      "NGINX_DOMAINS_STRING_PARAM": "www.example.com"
+    },
+    "copy": "data/config-and-start.sh /opt/",
+    "cmd": "/opt/config-and-start.sh"
+  },
+  "source_repository_url": "https://github.com/JimyRyan/wordpress-web.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/JimyRyan/wordpress-web",
+  "docker_repository": "jimyryan/wordpress-web",
+  "docker_image": "jimyryan/wordpress-web",
+  "parameters_schema": {
+    "LANGUAGE": {
+      "default": "fr_FR.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "fr_FR.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LC_ALL": {
+      "default": "fr_FR.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TZ": {
+      "default": "Europe/Paris",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NGINX_MAIN_DOMAIN": {
+      "default": "example.com",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NGINX_DOMAINS_STRING_PARAM": {
+      "default": "www.example.com",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jimyryan/wordpress-web",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jimyryan/wordpress-web",
+    "https://hub.docker.com/v2/repositories/jimyryan/wordpress-web",
+    "https://github.com/JimyRyan/wordpress-web.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Test",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/jimyryan/wordpress-web",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

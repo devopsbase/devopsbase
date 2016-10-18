@@ -1,0 +1,245 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/travix/haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/travix/haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/travix/haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/travix/haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/travix/haproxy/autobuild",
+    "user": "travix",
+    "name": "haproxy",
+    "namespace": "travix",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 57564,
+    "last_updated": "2016-09-19T15:03:13.662299Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1.6.6-r0",
+        "full_size": 2980359,
+        "id": 3809977,
+        "repository": 662179,
+        "creator": 100853,
+        "last_updater": 100853,
+        "last_updated": "2016-09-19T15:03:13.358381Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.6.6-r1-dev",
+        "full_size": 2966346,
+        "id": 4502264,
+        "repository": 662179,
+        "creator": 100853,
+        "last_updater": 100853,
+        "last_updated": "2016-08-25T09:42:38.966470Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.6.6-r1",
+        "full_size": 2966343,
+        "id": 4008072,
+        "repository": 662179,
+        "creator": 100853,
+        "last_updater": 100853,
+        "last_updated": "2016-08-25T08:40:29.255254Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.6.2-r0",
+        "full_size": 2957897,
+        "id": 2840885,
+        "repository": 662179,
+        "creator": 100853,
+        "last_updater": 100853,
+        "last_updated": "2016-06-20T18:51:06.895625Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 66602105,
+        "id": 2840937,
+        "repository": 662179,
+        "creator": 100853,
+        "last_updater": 100853,
+        "last_updated": "2016-04-29T11:49:20.812760Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "Travix-International/docker-haproxy"
+  },
+  "name": "travix/haproxy Docker container",
+  "description": "Haproxy container for tls termination inside a Kubernetes pod",
+  "readme": "# travix/haproxy\n\n[HAProxy](http://www.haproxy.org/) load balancer\n\n[![Stars](https://img.shields.io/docker/stars/travix/haproxy.svg)](https://hub.docker.com/r/travix/haproxy/)\n[![Pulls](https://img.shields.io/docker/pulls/travix/haproxy.svg)](https://hub.docker.com/r/travix/haproxy/)\n[![License](https://img.shields.io/github/license/Travix-International/docker-haproxy.svg)](https://github.com/Travix-International/docker-haproxy/blob/master/LICENSE)\n\n# Usage\n\nTo run this docker container use the following command\n\n```sh\ndocker run -d travix/haproxy:latest\n```\n\n# Environment variables\n\nIn order to configure the haproxy load balancer for providing ssl on port 443 for your gocd server you can use the following environment variables\n\n| Name                 | Description                                                               | Default value |\n| -------------------- | ------------------------------------------------------------------------- | ------------- |\n| OFFLOAD_TO_PORT      | The http port the actual application inside the Kubernetes pod listens to | 5000          |\n| SSL_CERTIFICATE_NAME | The pem filename for the ssl certificate used on port 443                 | ssl.pem       |\n\n```sh\ndocker run -d \\\n    -e \"OFFLOAD_TO_PORT=8153\" \\\n    -e \"SSL_CERTIFICATE_NAME=yourdomain.com.pem\" \\\n    travix/haproxy:latest\n```\n\n# Mounting volumes\n\nIn order to keep your ssl certificate outside of the container on the host machine you can mount the following directory\n\n| Directory         | Description               | Importance                             |\n| ----------------- | ------------------------- | -------------------------------------- |\n| /etc/ssl/private/ | SSL certificates          | Store the files in a Kubernetes secret |\n\nStart the container like this to mount the directories\n\n```sh\ndocker run -d \\\n    -e \"OFFLOAD_TO_PORT=8153\" \\\n    -e \"SSL_CERTIFICATE_NAME=yourdomain.com.pem\" \\\n    -v /mnt/persistent-disk/gocd-haproxy/ssl-private:/etc/ssl/private\n    travix/gocd-haproxy:latest\n```",
+  "dockerfile": "FROM travix/base-alpine:3.3\n\nMAINTAINER Travix\n\n# build time environment variables\nENV HAPROXY_VERSION=1.6.6-r0\n\n# install haproxy\nRUN apk --update add \\\n      haproxy=$HAPROXY_VERSION \\\n    && rm /var/cache/apk/*\n\nADD haproxy.cfg /etc/haproxy/haproxy.cfg\nADD ssl.pem /etc/ssl/private/ssl.pem\n\n# expose ports\nEXPOSE 80 81 82 443\n\n# Define working directory\nWORKDIR /etc/haproxy\n\n# runtime environment variables\nENV OFFLOAD_TO_HOST=\"localhost\" \\\n    OFFLOAD_TO_PORT=\"5000\" \\\n    DIRECT_HOST_NAME=\"directhostname\" \\\n    SSL_CERTIFICATE_NAME=\"ssl.pem\" \\\n    HEALT_CHECK_PATH=\"/healthz\" \\\n    HEALT_CHECK_VERB=\"HEAD\" \\\n    WHITELIST_CIDRS=\"0.0.0.0/0\" \\\n    TLS_SETTINGS=\"no-sslv3 no-tls-tickets force-tlsv12\" \\\n    TIMEOUT_CONNECT=\"5000\" \\\n    TIMEOUT_CLIENT=\"50000\" \\\n    TIMEOUT_SERVER=\"50000\"\n\n# define default command\nCMD sed -i -e \"s/localhost:5000/${OFFLOAD_TO_HOST}:${OFFLOAD_TO_PORT}/\" /etc/haproxy/haproxy.cfg; \\\n    sed -i -e \"s/directhostname/${DIRECT_HOST_NAME}/\" /etc/haproxy/haproxy.cfg; \\\n    sed -i -e \"s/ssl.pem/${SSL_CERTIFICATE_NAME}/\" /etc/haproxy/haproxy.cfg; \\\n    sed -i -e \"s/option httpchk HEAD/option httpchk ${HEALT_CHECK_VERB}/\" /etc/haproxy/haproxy.cfg; \\\n    sed -i -e \"s:/healthz:${HEALT_CHECK_PATH}:\" /etc/haproxy/haproxy.cfg; \\\n    sed -i -e \"s:WHITELIST_CIDRS:${WHITELIST_CIDRS}:\" /etc/haproxy/haproxy.cfg; \\\n    sed -i -e \"s:TLS_SETTINGS:${TLS_SETTINGS}:\" /etc/haproxy/haproxy.cfg; \\\n    sed -i -e \"s:timeout connect 5000:timeout connect ${TIMEOUT_CONNECT}:\" /etc/haproxy/haproxy.cfg; \\\n    sed -i -e \"s:timeout client  50000:timeout client  ${TIMEOUT_CLIENT}:\" /etc/haproxy/haproxy.cfg; \\\n    sed -i -e \"s:timeout server  50000:timeout server  ${TIMEOUT_SERVER}:\" /etc/haproxy/haproxy.cfg; \\\n    exec haproxy -db -f /etc/haproxy/haproxy.cfg;",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "haproxy.cfg",
+        "dest": "/etc/haproxy/haproxy.cfg"
+      },
+      {
+        "source": "ssl.pem",
+        "dest": "/etc/ssl/private/ssl.pem"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apk --update add       haproxy=$HAPROXY_VERSION     && rm /var/cache/apk/*"
+    ],
+    "workdir": [
+      "/etc/haproxy"
+    ],
+    "from": "travix/base-alpine:3.3",
+    "maintainer": "Travix",
+    "env": {
+      "HAPROXY_VERSION": "1.6.6-r0",
+      "OFFLOAD_TO_HOST": "\"localhost\"",
+      "": "",
+      "OFFLOAD_TO_PORT": "\"5000\"",
+      "DIRECT_HOST_NAME": "\"directhostname\"",
+      "SSL_CERTIFICATE_NAME": "\"ssl.pem\"",
+      "HEALT_CHECK_PATH": "\"/healthz\"",
+      "HEALT_CHECK_VERB": "\"HEAD\"",
+      "WHITELIST_CIDRS": "\"0.0.0.0/0\"",
+      "TLS_SETTINGS": "\"no-sslv3",
+      "no-tls-tickets": "force-tlsv12\"",
+      "TIMEOUT_CONNECT": "\"5000\"",
+      "TIMEOUT_CLIENT": "\"50000\"",
+      "TIMEOUT_SERVER": "\"50000\""
+    },
+    "cmd": "sed -i -e \"s/localhost:5000/${OFFLOAD_TO_HOST}:${OFFLOAD_TO_PORT}/\" /etc/haproxy/haproxy.cfg;     sed -i -e \"s/directhostname/${DIRECT_HOST_NAME}/\" /etc/haproxy/haproxy.cfg;     sed -i -e \"s/ssl.pem/${SSL_CERTIFICATE_NAME}/\" /etc/haproxy/haproxy.cfg;     sed -i -e \"s/option httpchk HEAD/option httpchk ${HEALT_CHECK_VERB}/\" /etc/haproxy/haproxy.cfg;     sed -i -e \"s:/healthz:${HEALT_CHECK_PATH}:\" /etc/haproxy/haproxy.cfg;     sed -i -e \"s:WHITELIST_CIDRS:${WHITELIST_CIDRS}:\" /etc/haproxy/haproxy.cfg;     sed -i -e \"s:TLS_SETTINGS:${TLS_SETTINGS}:\" /etc/haproxy/haproxy.cfg;     sed -i -e \"s:timeout connect 5000:timeout connect ${TIMEOUT_CONNECT}:\" /etc/haproxy/haproxy.cfg;     sed -i -e \"s:timeout client  50000:timeout client  ${TIMEOUT_CLIENT}:\" /etc/haproxy/haproxy.cfg;     sed -i -e \"s:timeout server  50000:timeout server  ${TIMEOUT_SERVER}:\" /etc/haproxy/haproxy.cfg;     exec haproxy -db -f /etc/haproxy/haproxy.cfg;"
+  },
+  "source_repository_url": "https://github.com/Travix-International/docker-haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Travix-International/docker-haproxy",
+  "docker_repository": "travix/haproxy",
+  "docker_image": "travix/haproxy",
+  "parameters_schema": {
+    "HAPROXY_VERSION": {
+      "default": "1.6.6-r0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OFFLOAD_TO_HOST": {
+      "default": "\"localhost\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OFFLOAD_TO_PORT": {
+      "default": "\"5000\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DIRECT_HOST_NAME": {
+      "default": "\"directhostname\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_CERTIFICATE_NAME": {
+      "default": "\"ssl.pem\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HEALT_CHECK_PATH": {
+      "default": "\"/healthz\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HEALT_CHECK_VERB": {
+      "default": "\"HEAD\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WHITELIST_CIDRS": {
+      "default": "\"0.0.0.0/0\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TLS_SETTINGS": {
+      "default": "\"no-sslv3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "no-tls-tickets": {
+      "default": "force-tlsv12\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TIMEOUT_CONNECT": {
+      "default": "\"5000\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TIMEOUT_CLIENT": {
+      "default": "\"50000\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TIMEOUT_SERVER": {
+      "default": "\"50000\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "travix/haproxy",
+  "revision": "1.6.6-r0",
+  "uris": [
+    "https://hub.docker.com/r/travix/haproxy",
+    "https://hub.docker.com/v2/repositories/travix/haproxy",
+    "https://github.com/Travix-International/docker-haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Orchestration/Cluster-based/Kubernetes",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/travix/haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

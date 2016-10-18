@@ -1,0 +1,201 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/funkygibbon/nginx-pagespeed",
+    "repository_url": "https://hub.docker.com/v2/repositories/funkygibbon/nginx-pagespeed",
+    "tags_url": "https://hub.docker.com/v2/repositories/funkygibbon/nginx-pagespeed/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/funkygibbon/nginx-pagespeed/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/funkygibbon/nginx-pagespeed/autobuild",
+    "user": "funkygibbon",
+    "name": "nginx-pagespeed",
+    "namespace": "funkygibbon",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 7,
+    "pull_count": 827,
+    "last_updated": "2016-10-16T16:09:38.133597Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 166721438,
+        "id": 634974,
+        "repository": 266054,
+        "creator": 321323,
+        "last_updater": 321323,
+        "last_updated": "2016-10-16T16:09:37.710672Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "xenial",
+        "full_size": 166721177,
+        "id": 5085218,
+        "repository": 266054,
+        "creator": 321323,
+        "last_updater": 321323,
+        "last_updated": "2016-10-16T15:51:07.986978Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "trusty",
+        "full_size": 193721401,
+        "id": 5084280,
+        "repository": 266054,
+        "creator": 321323,
+        "last_updater": 321323,
+        "last_updated": "2016-10-16T15:41:17.259595Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "funkygibbing/docker"
+  },
+  "name": "funkygibbon/nginx-pagespeed Docker container",
+  "description": "nginx + ngx_pagespeed + openssl on docker-friendly Ubuntu, customisable by environment variables",
+  "readme": "# Nginx + Pagespeed + OpenSSL\n\n![Nginx 1.11.4](https://img.shields.io/badge/nginx-1.11.4-brightgreen.svg) ![ngx_pagespeed 1.11.33.4](https://img.shields.io/badge/pagespeed-1.11.33.4-brightgreen.svg) ![OpenSSL 1.0.2i](https://img.shields.io/badge/OpenSSL-1.0.2i-brightgreen.svg)\n\n\nBuilt on [funkygibbon/ubuntu](https://registry.hub.docker.com/u/funkygibbon/ubuntu/), a lightly modified Ubuntu Xenial [Phusion Base Image](https://phusion.github.io/baseimage-docker/).\n\n\n```bash\ndocker run -v \"/path/to/www:/app/www\" -p \"80:80\" -p \"443:443\" funkygibbon/nginx-pagespeed\n```\n\nFiles are served from `/app/www/`, SSL certificates are generated in `/etc/nginx/ssl`, `/etc/nginx/sites-enabled/*` is searched for virtual hosts.\n\nNginx is configured with sane security defaults for out-of-the-box webservice, highly configurable by environment variables and is compiled from mainline source.\n\n### Service configuration via ENV\n\nNginx is configurable via environment variables, which are re-applied to the configuration on service start, so you can adjust server parameters at container start with:\n\n```bash\ndocker run -e \"UPLOAD_MAX_SIZE=50M\" funkygibbon/nginx-pagespeed\n```\n\nA minimal docker-compose.yml file:\n\n```yml\nversion: '2'\nservices:\n  app:\n   image: funkygibbon/nginx-pagespeed\n    ports:\n      - \"80:80\"\n      - \"443:443\"\n    volumes:\n      - /path/to/www:/app/www\n```\n\n##### Variables\n\nvariable | default | description\n-------- | ------- | ---\nAPP_USER | nginx | Service user name\nAPP_GROUP | nginx | Service group name\nUPLOAD_MAX_SIZE | 30M | Sets `nginx_client_max_body_size`\nNGINX_MAX_WORKER_PROCESSES | 8 | Sets `worker_processes`, defaults to largest of eight, or the number available cores\nCHOWN_APP_DIR | false | If true `chown` `/app/www` as `APP_USER:APP_GROUP`\n\n\n### Security\n\nNginx is compiled from mainline source according to Ubuntu compile flags, with the following modifications:\n- OpenSSL 1.0.2 sources - https://www.openssl.org/source/\n- Google Pagespeed nginx module - https://github.com/pagespeed/ngx_pagespeed/releases\n- headers-more nginx module - https://github.com/openresty/headers-more-nginx-module/tags\n- `http_ssi_module` and `http_autoindex_module` disabled\n\nHTTPS is configured using modern sane defaults, including\n- Mozilla's intermediate profile - see https://wiki.mozilla.org/Security/Server_Side_TLS\n- SSLv2 and SSLv3 are disabled, TLSv1 TLSv2 and TLSv3 are enabled\n- Automatic generation of a 2048bit DH parameter file if one is not provided\n- Self-signed SSL certificates are generated on first container start, and stored in `/etc/nginx/ssl/default.key` `/etc/nginx/ssl/default.crt`.  To install your own certificates I recommend bind-mounting `ssl` and `sites-enabled` folders.\n- @todo LetsEncrypt!\n\n### On service start\n\n- nginx user is set to `${APP_USER:-$DEFAULT_APP_USER}` (default is nginx)\n- creates user and group from `{APP_USER:-$DEFAULT_APP_USER}:${APP_GROUP:-$DEFAULT_APP_GROUP}`, some sanity checks for matching UID / GID in the event that user/group already exists\n- if `${CHOWN_APP_DIR:-$DEFAULT_CHOWN_APP_DIR}` is true, `chown -R ${APP_USER:-$DEFAULT_APP_USER}:${APP_GROUP:-$DEFAULT_APP_GROUP} /app/www`  (default false)\n- `worker_processes` is set to the number of available processor cores and adjusts `/etc/nginx/nginx.conf` to match, up to a maximum number of cores `${NGINX_MAX_WORKER_PROCESSES:-$DEFAULT_MAX_WORKER_PROCESSES}`\n- `client_max_body_size` is set to `${UPLOAD_MAX_SIZE:-$DEFAULT_UPLOAD_MAX_SIZE}`\n",
+  "dockerfile": "FROM funkygibbon/ubuntu:xenial\n\nEXPOSE 80\nEXPOSE 443\n\n# http://nginx.org/en/download.html\nENV NGINX_VERSION 1.11.4\n\n# https://github.com/pagespeed/ngx_pagespeed/releases\nENV PAGESPEED_VERSION 1.11.33.4\n\n# https://github.com/openresty/headers-more-nginx-module/tags\nENV HEADERS_MORE_VERSION 0.31\n\n# https://www.openssl.org/source\nENV OPENSSL_VERSION 1.0.2i\n\nRUN useradd -r -s /usr/sbin/nologin nginx && mkdir -p /var/log/nginx /var/cache/nginx && \\\n\tapt-get update && \\\n\tapt-get -y --no-install-recommends install wget git-core autoconf automake libtool build-essential zlib1g-dev libpcre3-dev libxslt1-dev libxml2-dev libgd2-xpm-dev libgeoip-dev libgoogle-perftools-dev libperl-dev && \\\n\techo \"Downloading nginx v${NGINX_VERSION} from http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz ...\" && wget -qO - http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar zxf - -C /tmp && \\\n\techo \"Downloading headers-more v${HEADERS_MORE_VERSION} from https://github.com/openresty/headers-more-nginx-module/archive/v${HEADERS_MORE_VERSION}.tar.gz ...\" && wget -qO - https://github.com/openresty/headers-more-nginx-module/archive/v${HEADERS_MORE_VERSION}.tar.gz | tar zxf - -C /tmp && \\\n\techo \"Downloading ngx_pagespeed v${PAGESPEED_VERSION} from https://github.com/pagespeed/ngx_pagespeed/archive/v${PAGESPEED_VERSION}-beta.tar.gz...\" && wget -qO - https://github.com/pagespeed/ngx_pagespeed/archive/v${PAGESPEED_VERSION}-beta.tar.gz | tar zxf - -C /tmp && \\\n\techo \"Downloading pagespeed psol v${PAGESPEED_VERSION} from https://dl.google.com/dl/page-speed/psol/${PAGESPEED_VERSION}.tar.gz...\" && wget -qO - https://dl.google.com/dl/page-speed/psol/${PAGESPEED_VERSION}.tar.gz | tar xzf  - -C /tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta && \\\n\techo \"Downloading openssl v${OPENSSL_VERSION} from https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz ...\" && wget -qO - https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz | tar xzf  - -C /tmp && \\\n#\techo \"Installing libbrotli (latest) from https://github.com/bagder/libbrotli ...\" && git clone https://github.com/bagder/libbrotli /tmp/libbrotli && cd /tmp/libbrotli && ./autogen.sh && ./configure && make && make install && \\\n#    echo \"Downloading ngx-brotli (latest) from https://github.com/google/ngx_brotli ...\" && git clone https://github.com/google/ngx_brotli /tmp/ngx_brotli && \\\n\tcd /tmp/nginx-${NGINX_VERSION} && \\\n\t./configure \\\n\t\t--prefix=/etc/nginx  \\\n\t\t--sbin-path=/usr/sbin/nginx  \\\n\t\t--conf-path=/etc/nginx/nginx.conf  \\\n\t\t--error-log-path=/var/log/nginx/error.log \\\n\t\t--http-log-path=/var/log/nginx/access.log \\\n\t\t--pid-path=/var/run/nginx.pid \\\n\t\t--lock-path=/var/run/nginx.lock \\\n\t\t--http-client-body-temp-path=/var/cache/nginx/client_temp \\\n\t\t--http-proxy-temp-path=/var/cache/nginx/proxy_temp \\\n\t\t--http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp  \\\n\t\t--http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp  \\\n\t\t--http-scgi-temp-path=/var/cache/nginx/scgi_temp  \\\n\t\t--user=nginx  \\\n\t\t--group=nginx  \\\n\t\t--with-http_ssl_module  \\\n\t\t--with-http_realip_module  \\\n\t\t--with-http_addition_module  \\\n\t\t--with-http_sub_module  \\\n\t\t--with-http_dav_module  \\\n\t\t--with-http_flv_module  \\\n\t\t--with-http_mp4_module  \\\n\t\t--with-http_gunzip_module  \\\n\t\t--with-http_gzip_static_module  \\\n\t\t--with-http_random_index_module  \\\n\t\t--with-http_secure_link_module \\\n\t\t--with-http_stub_status_module  \\\n\t\t--with-http_auth_request_module  \\\n\t\t--without-http_autoindex_module \\\n\t\t--without-http_ssi_module \\\n\t\t--with-threads  \\\n\t\t--with-stream  \\\n\t\t--with-stream_ssl_module  \\\n\t\t--with-mail  \\\n\t\t--with-mail_ssl_module  \\\n\t\t--with-file-aio  \\\n\t\t--with-http_v2_module \\\n\t\t--with-cc-opt='-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2'  \\\n\t\t--with-ld-opt='-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,--as-needed' \\\n\t\t--with-ipv6 \\\n\t\t--with-pcre-jit \\\n\t\t--with-openssl=/tmp/openssl-${OPENSSL_VERSION} \\\n        --add-module=/tmp/headers-more-nginx-module-${HEADERS_MORE_VERSION} \\\n#        --add-module=/tmp/ngx_brotli \\\n\t\t--add-module=/tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta  && \\\n\tmake && \\\n\tmake install && \\\n\tapt-get purge -yqq automake autoconf libtool git-core build-essential zlib1g-dev libpcre3-dev libxslt1-dev libxml2-dev libgd2-xpm-dev libgeoip-dev libgoogle-perftools-dev libperl-dev && \\\n\tapt-get autoremove -yqq && \\\n\tapt-get clean && \\\n\trm -Rf /tmp/* /var/tmp/* /var/lib/apt/lists/*\n\nENV DEFAULT_APP_USER app\nENV DEFAULT_APP_GROUP app\nENV DEFAULT_APP_UID 1000\nENV DEFAULT_APP_GID 1000\nENV DEFAULT_UPLOAD_MAX_SIZE 30M\nENV DEFAULT_NGINX_MAX_WORKER_PROCESSES 8\nENV DEFAULT_CHOWN_APP_DIR true\n\nENV SSL_ENABLED true\n\nCOPY . /app\n\nRUN chmod 750 /app/bin/*.sh\n\nRUN /app/bin/init_nginx.sh\n\nCMD [\"/sbin/my_init\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80,
+      443
+    ],
+    "volume": [],
+    "run": [
+      "useradd -r -s /usr/sbin/nologin nginx && mkdir -p /var/log/nginx /var/cache/nginx && \tapt-get update && \tapt-get -y --no-install-recommends install wget git-core autoconf automake libtool build-essential zlib1g-dev libpcre3-dev libxslt1-dev libxml2-dev libgd2-xpm-dev libgeoip-dev libgoogle-perftools-dev libperl-dev && \techo \"Downloading nginx v${NGINX_VERSION} from http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz ...\" && wget -qO - http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar zxf - -C /tmp && \techo \"Downloading headers-more v${HEADERS_MORE_VERSION} from https://github.com/openresty/headers-more-nginx-module/archive/v${HEADERS_MORE_VERSION}.tar.gz ...\" && wget -qO - https://github.com/openresty/headers-more-nginx-module/archive/v${HEADERS_MORE_VERSION}.tar.gz | tar zxf - -C /tmp && \techo \"Downloading ngx_pagespeed v${PAGESPEED_VERSION} from https://github.com/pagespeed/ngx_pagespeed/archive/v${PAGESPEED_VERSION}-beta.tar.gz...\" && wget -qO - https://github.com/pagespeed/ngx_pagespeed/archive/v${PAGESPEED_VERSION}-beta.tar.gz | tar zxf - -C /tmp && \techo \"Downloading pagespeed psol v${PAGESPEED_VERSION} from https://dl.google.com/dl/page-speed/psol/${PAGESPEED_VERSION}.tar.gz...\" && wget -qO - https://dl.google.com/dl/page-speed/psol/${PAGESPEED_VERSION}.tar.gz | tar xzf  - -C /tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta && \techo \"Downloading openssl v${OPENSSL_VERSION} from https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz ...\" && wget -qO - https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz | tar xzf  - -C /tmp && #\techo \"Installing libbrotli (latest) from https://github.com/bagder/libbrotli ...\" && git clone https://github.com/bagder/libbrotli /tmp/libbrotli && cd /tmp/libbrotli && ./autogen.sh && ./configure && make && make install && #    echo \"Downloading ngx-brotli (latest) from https://github.com/google/ngx_brotli ...\" && git clone https://github.com/google/ngx_brotli /tmp/ngx_brotli && \tcd /tmp/nginx-${NGINX_VERSION} && \t./configure \t\t--prefix=/etc/nginx  \t\t--sbin-path=/usr/sbin/nginx  \t\t--conf-path=/etc/nginx/nginx.conf  \t\t--error-log-path=/var/log/nginx/error.log \t\t--http-log-path=/var/log/nginx/access.log \t\t--pid-path=/var/run/nginx.pid \t\t--lock-path=/var/run/nginx.lock \t\t--http-client-body-temp-path=/var/cache/nginx/client_temp \t\t--http-proxy-temp-path=/var/cache/nginx/proxy_temp \t\t--http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp  \t\t--http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp  \t\t--http-scgi-temp-path=/var/cache/nginx/scgi_temp  \t\t--user=nginx  \t\t--group=nginx  \t\t--with-http_ssl_module  \t\t--with-http_realip_module  \t\t--with-http_addition_module  \t\t--with-http_sub_module  \t\t--with-http_dav_module  \t\t--with-http_flv_module  \t\t--with-http_mp4_module  \t\t--with-http_gunzip_module  \t\t--with-http_gzip_static_module  \t\t--with-http_random_index_module  \t\t--with-http_secure_link_module \t\t--with-http_stub_status_module  \t\t--with-http_auth_request_module  \t\t--without-http_autoindex_module \t\t--without-http_ssi_module \t\t--with-threads  \t\t--with-stream  \t\t--with-stream_ssl_module  \t\t--with-mail  \t\t--with-mail_ssl_module  \t\t--with-file-aio  \t\t--with-http_v2_module \t\t--with-cc-opt='-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2'  \t\t--with-ld-opt='-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,--as-needed' \t\t--with-ipv6 \t\t--with-pcre-jit \t\t--with-openssl=/tmp/openssl-${OPENSSL_VERSION}         --add-module=/tmp/headers-more-nginx-module-${HEADERS_MORE_VERSION} #        --add-module=/tmp/ngx_brotli \t\t--add-module=/tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta  && \tmake && \tmake install && \tapt-get purge -yqq automake autoconf libtool git-core build-essential zlib1g-dev libpcre3-dev libxslt1-dev libxml2-dev libgd2-xpm-dev libgeoip-dev libgoogle-perftools-dev libperl-dev && \tapt-get autoremove -yqq && \tapt-get clean && \trm -Rf /tmp/* /var/tmp/* /var/lib/apt/lists/*",
+      "chmod 750 /app/bin/*.sh",
+      "/app/bin/init_nginx.sh"
+    ],
+    "workdir": [],
+    "from": "funkygibbon/ubuntu:xenial",
+    "env": {
+      "NGINX_VERSION": "1.11.4",
+      "PAGESPEED_VERSION": "1.11.33.4",
+      "HEADERS_MORE_VERSION": "0.31",
+      "OPENSSL_VERSION": "1.0.2i",
+      "DEFAULT_APP_USER": "app",
+      "DEFAULT_APP_GROUP": "app",
+      "DEFAULT_APP_UID": "1000",
+      "DEFAULT_APP_GID": "1000",
+      "DEFAULT_UPLOAD_MAX_SIZE": "30M",
+      "DEFAULT_NGINX_MAX_WORKER_PROCESSES": "8",
+      "DEFAULT_CHOWN_APP_DIR": "true",
+      "SSL_ENABLED": "true"
+    },
+    "copy": ". /app",
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/funkygibbing/docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/funkygibbing/docker",
+  "docker_repository": "funkygibbon/nginx-pagespeed",
+  "docker_image": "funkygibbon/nginx-pagespeed",
+  "parameters_schema": {
+    "NGINX_VERSION": {
+      "default": "1.11.4",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PAGESPEED_VERSION": {
+      "default": "1.11.33.4",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HEADERS_MORE_VERSION": {
+      "default": "0.31",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OPENSSL_VERSION": {
+      "default": "1.0.2i",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEFAULT_APP_USER": {
+      "default": "app",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEFAULT_APP_GROUP": {
+      "default": "app",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEFAULT_APP_UID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEFAULT_APP_GID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEFAULT_UPLOAD_MAX_SIZE": {
+      "default": "30M",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEFAULT_NGINX_MAX_WORKER_PROCESSES": {
+      "default": "8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEFAULT_CHOWN_APP_DIR": {
+      "default": "true",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_ENABLED": {
+      "default": "true",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80,
+        443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "funkygibbon/nginx-pagespeed",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/funkygibbon/nginx-pagespeed",
+    "https://hub.docker.com/v2/repositories/funkygibbon/nginx-pagespeed",
+    "https://github.com/funkygibbing/docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/funkygibbon/nginx-pagespeed",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

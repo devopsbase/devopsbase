@@ -1,0 +1,149 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/ccfoss/kibana",
+    "repository_url": "https://hub.docker.com/v2/repositories/ccfoss/kibana",
+    "tags_url": "https://hub.docker.com/v2/repositories/ccfoss/kibana/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/ccfoss/kibana/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/ccfoss/kibana/autobuild",
+    "user": "ccfoss",
+    "name": "kibana",
+    "namespace": "ccfoss",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 8,
+    "last_updated": "2016-10-11T04:07:42.202279Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 216211481,
+        "id": 5365809,
+        "repository": 970617,
+        "creator": 1148622,
+        "last_updater": 1148622,
+        "last_updated": "2016-10-11T04:07:41.815278Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "rc1",
+        "full_size": 216211429,
+        "id": 5365736,
+        "repository": 970617,
+        "creator": 1148622,
+        "last_updater": 1148622,
+        "last_updated": "2016-10-11T03:48:49.280906Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "CCF-Core/Kibana"
+  },
+  "name": "ccfoss/kibana Docker container",
+  "description": "Kibana rc1with x-pack",
+  "readme": "# Kibana\n\nThis release contains the x-pack 5 rc1. It also accepts a input of KIBANA_IP to update the bind address. Note that by default this release of Kibana binds to the loopback address.\n\ndocker run -d -p 5601:5601 --dns=10.0.5.97 -e KIBANA_IP=0.0.0.0 -e ELASTICSEARCH_URL=http://elasticsearch.service.consul:9200 ccfoss/kibana:rc1\n\nnote that 0.0.0.0 binds to all interfaces\n",
+  "dockerfile": "FROM debian:jessie\n\n# add our user and group first to make sure their IDs get assigned consistently\nRUN groupadd -r kibana && useradd -r -m -g kibana kibana\n\nRUN apt-get update && apt-get install -y \\\n\t\tca-certificates \\\n\t\twget \\\n\t--no-install-recommends && rm -rf /var/lib/apt/lists/*\n\n# grab gosu for easy step-down from root\nENV GOSU_VERSION 1.7\nRUN set -x \\\n\t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \\\n\t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \\\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n\t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\n\t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu \\\n\t&& gosu nobody true\n\n# grab tini for signal processing and zombie killing\nENV TINI_VERSION v0.9.0\nRUN set -x \\\n\t&& wget -O /usr/local/bin/tini \"https://github.com/krallin/tini/releases/download/$TINI_VERSION/tini\" \\\n\t&& wget -O /usr/local/bin/tini.asc \"https://github.com/krallin/tini/releases/download/$TINI_VERSION/tini.asc\" \\\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys 6380DC428747F6C393FEACA59A84159D7001A4E5 \\\n\t&& gpg --batch --verify /usr/local/bin/tini.asc /usr/local/bin/tini \\\n\t&& rm -r \"$GNUPGHOME\" /usr/local/bin/tini.asc \\\n\t&& chmod +x /usr/local/bin/tini \\\n\t&& tini -h\n\n# https://www.elastic.co/guide/en/kibana/4.4/setup.html#kibana-apt\n# https://packages.elasticsearch.org/GPG-KEY-elasticsearch\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4\n\nENV KIBANA_MAJOR 5.0\nENV KIBANA_VERSION 5.0.0-rc1\n\nRUN set -x \\\n        && apt-get update \\\n        && wget -O /tmp/kibana-5.0.0-rc1-amd64.deb \"https://artifacts.elastic.co/downloads/kibana/kibana-5.0.0-rc1-amd64.deb\"\n\nRUN set -x \\\n        && dpkg -i /tmp/kibana-5.0.0-rc1-amd64.deb \n\nRUN set -x \\\n        && /usr/share/kibana/bin/kibana-plugin install x-pack\n\nRUN set -x \\\n\n# ensure the default configuration is useful when using --link\n\t&& sed -ri \"s!^(\\#\\s*)?(elasticsearch\\.url:).*!\\2 'http://elasticsearch:9200'!\" /etc/kibana/kibana.yml \\\n\t&& grep -q 'elasticsearch:9200' /etc/kibana/kibana.yml\n\nENV PATH /usr/share/kibana/bin:$PATH\n\nCOPY docker-entrypoint.sh /\n\nRUN /bin/chmod +x /docker-entrypoint.sh\n\nEXPOSE 5601\nENTRYPOINT [\"/docker-entrypoint.sh\"]\nCMD [\"kibana\"]\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5601
+    ],
+    "volume": [],
+    "run": [
+      "groupadd -r kibana && useradd -r -m -g kibana kibana",
+      "apt-get update && apt-get install -y \t\tca-certificates \t\twget \t--no-install-recommends && rm -rf /var/lib/apt/lists/*",
+      "set -x \t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \t&& export GNUPGHOME=\"$(mktemp -d)\" \t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu \t&& gosu nobody true",
+      "set -x \t&& wget -O /usr/local/bin/tini \"https://github.com/krallin/tini/releases/download/$TINI_VERSION/tini\" \t&& wget -O /usr/local/bin/tini.asc \"https://github.com/krallin/tini/releases/download/$TINI_VERSION/tini.asc\" \t&& export GNUPGHOME=\"$(mktemp -d)\" \t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys 6380DC428747F6C393FEACA59A84159D7001A4E5 \t&& gpg --batch --verify /usr/local/bin/tini.asc /usr/local/bin/tini \t&& rm -r \"$GNUPGHOME\" /usr/local/bin/tini.asc \t&& chmod +x /usr/local/bin/tini \t&& tini -h",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4",
+      "set -x         && apt-get update         && wget -O /tmp/kibana-5.0.0-rc1-amd64.deb \"https://artifacts.elastic.co/downloads/kibana/kibana-5.0.0-rc1-amd64.deb\"",
+      "set -x         && dpkg -i /tmp/kibana-5.0.0-rc1-amd64.deb ",
+      "set -x         && /usr/share/kibana/bin/kibana-plugin install x-pack",
+      "set -x ",
+      "/bin/chmod +x /docker-entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "env": {
+      "GOSU_VERSION": "1.7",
+      "TINI_VERSION": "v0.9.0",
+      "KIBANA_MAJOR": "5.0",
+      "KIBANA_VERSION": "5.0.0-rc1",
+      "PATH": "/usr/share/kibana/bin:$PATH"
+    },
+    "copy": "docker-entrypoint.sh /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"kibana\"]"
+  },
+  "source_repository_url": "git@github.com:CCF-Core/Kibana.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/CCF-Core/Kibana",
+  "docker_repository": "ccfoss/kibana",
+  "docker_image": "ccfoss/kibana",
+  "parameters_schema": {
+    "GOSU_VERSION": {
+      "default": "1.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TINI_VERSION": {
+      "default": "v0.9.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIBANA_MAJOR": {
+      "default": "5.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIBANA_VERSION": {
+      "default": "5.0.0-rc1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/usr/share/kibana/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5601
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "ccfoss/kibana",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/ccfoss/kibana",
+    "https://hub.docker.com/v2/repositories/ccfoss/kibana",
+    "git@github.com:CCF-Core/Kibana.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/ccfoss/kibana",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

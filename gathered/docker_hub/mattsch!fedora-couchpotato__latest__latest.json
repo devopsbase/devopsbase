@@ -1,0 +1,155 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mattsch/fedora-couchpotato",
+    "repository_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-couchpotato",
+    "tags_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-couchpotato/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-couchpotato/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-couchpotato/autobuild",
+    "user": "mattsch",
+    "name": "fedora-couchpotato",
+    "namespace": "mattsch",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 322,
+    "last_updated": "2016-09-07T12:37:22.435997Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 237405442,
+        "id": 820471,
+        "repository": 306195,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-09-07T12:37:21.994562Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "23",
+        "full_size": 182202892,
+        "id": 1385702,
+        "repository": 306195,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-09-07T12:32:19.524029Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "24",
+        "full_size": 210438972,
+        "id": 3750306,
+        "repository": 306195,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-09-07T12:30:14.916051Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "22",
+        "full_size": 196831809,
+        "id": 820475,
+        "repository": 306195,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-08-15T22:30:17.934670Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "mattsch/fedora-couchpotato"
+  },
+  "name": "mattsch/fedora-couchpotato Docker container",
+  "description": "Fedora Couchpotato",
+  "readme": "# Fedora CouchPotato Docker Container\n\nDocker container for [CouchPotato](https://couchpota.to/) using Fedora.\n\n## Usage\n\nCreate with defaults:\n\n```bash\ndocker create -v /path/to/config/dir:/config \\\n    -v /path/to/storage/dir:/storage \\\n    -v /etc/localtime:/etc/localtime:ro \\\n    -p 5050:5050 --name=couchpotato mattsch/fedora-couchpotato\n```\n\nCreate with a custom uid/gid for the couchpotato daemon:\n\n```bash\ndocker create -v /path/to/config/dir:/config \\\n    -v /path/to/storage/dir:/storage \\\n    -v /etc/localtime:/etc/localtime:ro \\\n    -e LUID=1234 -e LGID=1234 \\\n    -p 5050:5050 --name=couchpotato mattsch/fedora-couchpotato\n```\n\n",
+  "dockerfile": "FROM mattsch/fedora-rpmfusion:latest\nMAINTAINER Matthew Schick <matthew.schick@gmail.com>\n\n# Install required packages\nRUN dnf install -yq git \\\n                    procps-ng \\\n                    python-lxml \\\n                    pyOpenSSL \\\n                    tar \\\n                    unrar && \\\n    dnf clean all\n\n# Set uid/gid (override with the '-e' flag), 1000/1000 used since it's the\n# default first uid/gid on a fresh Fedora install\nENV LUID=1000 LGID=1000\n\n# Create the couchpotato user/group\nRUN groupadd -g $LGID couchpotato && \\\n    useradd -c 'CouchPotato User' -s /bin/bash -m -d /opt/couchpotato -g $LGID -u $LUID couchpotato\n    \n# Grab the installer, do the thing\nRUN git clone -q https://github.com/RuudBurger/CouchPotatoServer.git /opt/couchpotato/app && \\\n    chown -R couchpotato:couchpotato /opt/couchpotato/app\n\n# Need a config and storage volume, expose proper port\nVOLUME /config /storage\nEXPOSE 5050\n\n# Add script to copy default config if one isn't there and start couchpotato\nCOPY run-couchpotato.sh /bin/run-couchpotato.sh\n \n# Run our script\nCMD [\"/bin/run-couchpotato.sh\"]\n\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5050
+    ],
+    "volume": [
+      "/config /storage"
+    ],
+    "run": [
+      "dnf install -yq git                     procps-ng                     python-lxml                     pyOpenSSL                     tar                     unrar &&     dnf clean all",
+      "groupadd -g $LGID couchpotato &&     useradd -c 'CouchPotato User' -s /bin/bash -m -d /opt/couchpotato -g $LGID -u $LUID couchpotato",
+      "git clone -q https://github.com/RuudBurger/CouchPotatoServer.git /opt/couchpotato/app &&     chown -R couchpotato:couchpotato /opt/couchpotato/app"
+    ],
+    "workdir": [],
+    "from": "mattsch/fedora-rpmfusion:latest",
+    "maintainer": "Matthew Schick <matthew.schick@gmail.com>",
+    "env": {
+      "LUID": "1000",
+      "LGID": "1000"
+    },
+    "copy": "run-couchpotato.sh /bin/run-couchpotato.sh",
+    "cmd": "[\"/bin/run-couchpotato.sh\"]"
+  },
+  "source_repository_url": "https://github.com/mattsch/fedora-couchpotato.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mattsch/fedora-couchpotato",
+  "docker_repository": "mattsch/fedora-couchpotato",
+  "docker_image": "mattsch/fedora-couchpotato",
+  "parameters_schema": {
+    "LUID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LGID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5050
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mattsch/fedora-couchpotato",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/mattsch/fedora-couchpotato",
+    "https://hub.docker.com/v2/repositories/mattsch/fedora-couchpotato",
+    "https://github.com/mattsch/fedora-couchpotato.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/mattsch/fedora-couchpotato",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

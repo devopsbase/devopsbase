@@ -1,0 +1,137 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/toxix/debian-rails",
+    "repository_url": "https://hub.docker.com/v2/repositories/toxix/debian-rails",
+    "tags_url": "https://hub.docker.com/v2/repositories/toxix/debian-rails/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/toxix/debian-rails/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/toxix/debian-rails/autobuild",
+    "user": "toxix",
+    "name": "debian-rails",
+    "namespace": "toxix",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 237,
+    "last_updated": "2016-04-05T01:36:00.554500Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 284533069,
+        "id": 81299,
+        "repository": 130537,
+        "creator": 188285,
+        "last_updater": 188285,
+        "last_updated": "2016-04-05T01:36:00.233321Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "dev",
+        "full_size": 331147008,
+        "id": 81291,
+        "repository": 130537,
+        "creator": 188285,
+        "last_updater": 188285,
+        "last_updated": "2016-04-04T23:56:37.019148Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "toxix/docker_debian_rails"
+  },
+  "name": "toxix/debian-rails Docker container",
+  "description": "Debian based Ruby on Rails incl. imagemagick and vips",
+  "readme": "# docker_debian_rails\nDocker file for Ruby on Rails based on Debian. \n \nIncluding support for imagemagick and vips.\nPostgres or mysql libs are installed as well.\n\n\n\n## Using it for your rails application\nPut this docker file in your rails root directory (or modify it to your needs):\n```\n# rails_root_dir/Docker\n\nFROM toxix/rails_vips\n# Define working directory.\nWORKDIR /app\n\nADD Gemfile /app/\nADD Gemfile.lock /app/\n\nENV GEM_HOME /gems/\n# todo: move bundle install into an startup script. This is usefull because gems can be in a seperate docker volume and change at runtime\nRUN bundle install\n\nADD . /app\n\nVOLUME [\"/gems\", \"/app\"]\n\n# Define default command.\nCMD /start_rails.sh\n\n# Expose ports.\nEXPOSE 8080\n```\n\nCompile yor docker image with ```docker build [rails_root_directory]``` where '[rails_root_directory]' is the path to your rails root directory. Run your fresh image with docker and have fun.\n\n\nIf you consider to use PhantomJs, check out the dev-branch.\n",
+  "dockerfile": "# Dockerfile that create a base image for installing and running Ruby on Rails applications:\n# includes support for postgres, mysql, vips and imagemagic\n\n\nFROM debian:stable\n\nENV RUBY_MAJOR 2.2\nENV RUBY_VERSION 2.2.0\n\nRUN echo 'gem: --no-document --no-rdoc --no-ri' > /etc/gemrc\n\n# Install dependencys for ruby and bundler\n# git is only needed if bundled gemfile contains a git reposetory to be complete this is also installed\nRUN    apt-get update \\\n    && DEBIAN_FRONTEND=noninteractive apt-get install -qq build-essential curl libffi-dev libgdbm-dev libncurses-dev libreadline6-dev libssl-dev libyaml-dev zlib1g-dev git \\\n    && apt-get clean -qq \\\n    && rm -rf /var/lib/{apt,dpkg,cache,log}/\n\n# Install Ruby\nRUN    mkdir -p /tmp/ruby \\\n    && curl -L \"http://cache.ruby-lang.org/pub/ruby/$RUBY_MAJOR/ruby-$RUBY_VERSION.tar.bz2\" \\\n    | tar -xjC /tmp/ruby --strip-components=1 \\\n    && cd /tmp/ruby \\\n    && ./configure --disable-install-doc \\\n    && make \\\n    && make install \\\n    && gem update --system \\\n    && rm -r /tmp/ruby\n\n# Install Bundler\nRUN gem install --no-document --no-ri --no-rdoc bundler\n\n\n\n# vips, imagemagic and their dependencys consumes ~500MB !? :( so compiling them. \n# Install build dependencys for imagemagic and vips\nRUN    apt-get update -qq \\\n    && DEBIAN_FRONTEND=noninteractive apt-get install -qq pkg-config libglib2.0-dev libxml2-dev libexif-dev libjpeg-dev libtiff5-dev libpng12-dev liblcms2-dev liborc-0.4-dev libfftw3-dev \\\n    && apt-get clean -qq \\\n    && rm -rf /var/lib/{apt,dpkg,cache,log}/\n\n\n# Install imagemagic\n#  compiling from source because don't want the dependencys of x11 (alternative to apt-get install libmagickwand-dev)\n#  there is also an bugreport to this dependencys: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=470671\n#  ldconfig is needed to not have: error while loading shared libraries: libMagickCore.so.4\n#  apt-get install pkg-config libpng12-0 libtiff5 liblcms2-2 libjpeg8\nRUN    mkdir /tmp/im -p \\\n    && curl -L http://www.imagemagick.org/download/ImageMagick.tar.gz | tar -xzC /tmp/im --strip-components=1 \\\n    && cd /tmp/im \\\n    && ./configure --disable-docs \\\n    && make \\\n    && make install \\\n    && rm -r /tmp/im \\\n    && ldconfig /usr/local/lib\n#    && ln -s /usr/local/include/ImageMagick-6/magick /usr/local/include/magick \\\n#    && ln -s /usr/local/include/ImageMagick-6/wand /usr/local/include/wand\n\n# Install VIPS\n#  compiling from source because don't want the dependencys of x11 (alternative to apt-get install libvips-dev)\n#  apt-get install libglib2.0-0 libxml2 libexif12 libjpeg8 libtiff5 libpng12-0 liblcms2-2 liborc-0.4-0 libfftw3-3\nRUN    mkdir -p /tmp/vips \\\n    && curl -L http://www.vips.ecs.soton.ac.uk/supported/current/vips-8.2.1.tar.gz | tar -xzC /tmp/vips --strip-components=1  \\\n    && cd /tmp/vips \\\n    && ./configure --disable-docs \\\n    && make \\\n    && make install \\\n    && rm -r /tmp/vips\n\n\n# install postgres and mysql libs\nRUN    apt-get -qq update \\\n    && DEBIAN_FRONTEND=noninteractive apt-get install -qq libpq-dev libmysqlclient-dev  \\\n    && apt-get clean -qq \\\n    && rm -rf /var/lib/{apt,dpkg,cache,log}/\n\n# RUN bundle config path /ruby_gems/\n# docker run --name ruby_gems_2-1 --volume /ruby_gems scratch true\n\n# Add startupscript for Rails include a run of bundler\nADD start_rails.sh /\n\nCMD [ \"irb\" ]\n\n# Publish port 80\n# EXPOSE 80\n\n\n#######################################\n# Install Development / Testing tools #\n#######################################\n\nENV PHANTOM_JS phantomjs-1.9.7-linux-x86_64\n\n# Install dependencys for PhantomJS, sqlite3 and npm/bower\nRUN    apt-get update \\\n    && DEBIAN_FRONTEND=noninteractive apt-get install -qq build-essential chrpath libssl-dev libxft-dev libfreetype6 libfreetype6-dev libfontconfig1 libfontconfig1-dev curl sqlite3 libsqlite3-dev nodejs npm\\\n    && apt-get clean -qq \\\n    && rm -rf /var/lib/{apt,dpkg,cache,log}/\n\n# Download and install PhantomJS\nRUN curl -L \"https://bitbucket.org/ariya/phantomjs/downloads/$PHANTOM_JS.tar.bz2\" \\\n        | tar -xjC /usr/local/share/ \\\n    && ln -sf /usr/local/share/$PHANTOM_JS/bin/phantomjs /usr/local/share/phantomjs \\\n    && ln -sf /usr/local/share/$PHANTOM_JS/bin/phantomjs /usr/local/bin/phantomjs \\\n    && ln -sf /usr/local/share/$PHANTOM_JS/bin/phantomjs /usr/bin/phantomjs\n    \n# install bower\n# First alias nodejs with node\nRUN ln -s /usr/bin/nodejs /usr/bin/node\nRUN npm install -g bower\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "start_rails.sh",
+        "dest": "/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "echo 'gem: --no-document --no-rdoc --no-ri' > /etc/gemrc",
+      "   apt-get update     && DEBIAN_FRONTEND=noninteractive apt-get install -qq build-essential curl libffi-dev libgdbm-dev libncurses-dev libreadline6-dev libssl-dev libyaml-dev zlib1g-dev git     && apt-get clean -qq     && rm -rf /var/lib/{apt,dpkg,cache,log}/",
+      "   mkdir -p /tmp/ruby     && curl -L \"http://cache.ruby-lang.org/pub/ruby/$RUBY_MAJOR/ruby-$RUBY_VERSION.tar.bz2\"     | tar -xjC /tmp/ruby --strip-components=1     && cd /tmp/ruby     && ./configure --disable-install-doc     && make     && make install     && gem update --system     && rm -r /tmp/ruby",
+      "gem install --no-document --no-ri --no-rdoc bundler",
+      "   apt-get update -qq     && DEBIAN_FRONTEND=noninteractive apt-get install -qq pkg-config libglib2.0-dev libxml2-dev libexif-dev libjpeg-dev libtiff5-dev libpng12-dev liblcms2-dev liborc-0.4-dev libfftw3-dev     && apt-get clean -qq     && rm -rf /var/lib/{apt,dpkg,cache,log}/",
+      "   mkdir /tmp/im -p     && curl -L http://www.imagemagick.org/download/ImageMagick.tar.gz | tar -xzC /tmp/im --strip-components=1     && cd /tmp/im     && ./configure --disable-docs     && make     && make install     && rm -r /tmp/im     && ldconfig /usr/local/lib",
+      "   mkdir -p /tmp/vips     && curl -L http://www.vips.ecs.soton.ac.uk/supported/current/vips-8.2.1.tar.gz | tar -xzC /tmp/vips --strip-components=1      && cd /tmp/vips     && ./configure --disable-docs     && make     && make install     && rm -r /tmp/vips",
+      "   apt-get -qq update     && DEBIAN_FRONTEND=noninteractive apt-get install -qq libpq-dev libmysqlclient-dev      && apt-get clean -qq     && rm -rf /var/lib/{apt,dpkg,cache,log}/",
+      "   apt-get update     && DEBIAN_FRONTEND=noninteractive apt-get install -qq build-essential chrpath libssl-dev libxft-dev libfreetype6 libfreetype6-dev libfontconfig1 libfontconfig1-dev curl sqlite3 libsqlite3-dev nodejs npm    && apt-get clean -qq     && rm -rf /var/lib/{apt,dpkg,cache,log}/",
+      "curl -L \"https://bitbucket.org/ariya/phantomjs/downloads/$PHANTOM_JS.tar.bz2\"         | tar -xjC /usr/local/share/     && ln -sf /usr/local/share/$PHANTOM_JS/bin/phantomjs /usr/local/share/phantomjs     && ln -sf /usr/local/share/$PHANTOM_JS/bin/phantomjs /usr/local/bin/phantomjs     && ln -sf /usr/local/share/$PHANTOM_JS/bin/phantomjs /usr/bin/phantomjs",
+      "ln -s /usr/bin/nodejs /usr/bin/node",
+      "npm install -g bower"
+    ],
+    "workdir": [],
+    "from": "debian:stable",
+    "env": {
+      "RUBY_MAJOR": "2.2",
+      "RUBY_VERSION": "2.2.0",
+      "PHANTOM_JS": "phantomjs-1.9.7-linux-x86_64"
+    },
+    "cmd": "[ \"irb\" ]"
+  },
+  "source_repository_url": "https://github.com/toxix/docker_debian_rails.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/toxix/docker_debian_rails",
+  "docker_repository": "toxix/debian-rails",
+  "docker_image": "toxix/debian-rails",
+  "parameters_schema": {
+    "RUBY_MAJOR": {
+      "default": "2.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RUBY_VERSION": {
+      "default": "2.2.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PHANTOM_JS": {
+      "default": "phantomjs-1.9.7-linux-x86_64",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "toxix/debian-rails",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/toxix/debian-rails",
+    "https://hub.docker.com/v2/repositories/toxix/debian-rails",
+    "https://github.com/toxix/docker_debian_rails.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Mode/Executable/Image",
+    "Mode/CLI",
+    "Type/Infrastructure/Operating System/Linux/Debian"
+  ],
+  "info_url": "https://hub.docker.com/r/toxix/debian-rails",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,119 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mlf4aiur/cassandra",
+    "repository_url": "https://hub.docker.com/v2/repositories/mlf4aiur/cassandra",
+    "tags_url": "https://hub.docker.com/v2/repositories/mlf4aiur/cassandra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mlf4aiur/cassandra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mlf4aiur/cassandra/autobuild",
+    "user": "mlf4aiur",
+    "name": "cassandra",
+    "namespace": "mlf4aiur",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 58,
+    "last_updated": "2015-06-12T01:34:16.145975Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 247307150,
+        "id": 186482,
+        "repository": 162047,
+        "creator": 176304,
+        "last_updater": 176304,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "2.1.6-1",
+        "full_size": 247307449,
+        "id": 186472,
+        "repository": 162047,
+        "creator": 176304,
+        "last_updater": 176304,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "mlf4aiur/dockerfiles"
+  },
+  "name": "mlf4aiur/cassandra Docker container",
+  "description": "Docker image for running Apache Cassandra cluster",
+  "readme": "Docker container for Cassandra\r\n==============================\r\n\r\nStart Cassandra cluster with OpsCenter\r\n--------------------------------------\r\n\r\n    # Start OpsCenter\r\n    docker run -d --name opscenter -p 8888:8888 mlf4aiur/opscenter\r\n\r\n    # Start Cassandra seed node\r\n    docker run -d --name cass_seed mlf4aiur/cassandra\r\n\r\n    opscenter_ip=$(docker inspect -f '{{ .NetworkSettings.IPAddress }}' opscenter)\r\n    seed_ip=$(docker inspect -f '{{ .NetworkSettings.IPAddress }}' cass_seed)\r\n\r\n    # Start Cassandra cluster\r\n    for n in {2..3}\r\n    do\r\n        docker run -d --name cass_${n} -e \"SEED_IP=${seed_ip}\" mlf4aiur/cassandra\r\n    done\r\n\r\n    # Setup Opscenter cluster\r\n    sleep 40\r\n\r\n    curl \\\r\n      -X POST \\\r\n      -d \\\r\n      \"{\r\n          \\\"cassandra\\\": {\r\n            \\\"seed_hosts\\\": \\\"${seed_ip}\\\"\r\n          },\r\n          \\\"cassandra_metrics\\\": {},\r\n          \\\"jmx\\\": {\r\n            \\\"port\\\": \\\"7199\\\"\r\n          }\r\n      }\" http://${opscenter_ip}:8888/cluster-configs\r\n\r\nStop cassandra inside the container\r\n-----------------------------------\r\n\r\n    docker exec -t -i cass_3 supervisorctl stop cassandra\r\n\r\n",
+  "dockerfile": "# Version 2.1.6-1\n\nFROM java:openjdk-8-jre\n\nMAINTAINER Kevin Li <mlf4aiur@gmail.com>\n\nRUN DEBIAN_FRONTEND=noninteractive apt-get update \\\n    && apt-get install -y -q --no-install-recommends curl \\\n    && echo \"deb http://debian.datastax.com/community stable main\" > /etc/apt/sources.list.d/cassandra.sources.list \\\n    && curl -s -L http://debian.datastax.com/debian/repo_key | apt-key add - \\\n    && apt-get update \\\n    && apt-get install -y -q --no-install-recommends \\\n        sudo \\\n        supervisor \\\n        sysstat \\\n        dsc21 \\\n        datastax-agent \\\n    && rm -rf /var/lib/apt/lists/*\n\n# RUN apt-get install cassandra-tools  # Optional utilities\n\nENV SEED_IP 127.0.0.1\n\nVOLUME [\"/var/lib/cassandra/\"]\n\nCOPY docker-entrypoint.sh /\nCOPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf\n\nENTRYPOINT [\"/docker-entrypoint.sh\"]\n\nEXPOSE 7199 7000 7001 9160 9042\n\nCMD [\"/usr/bin/supervisord\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      7199
+    ],
+    "volume": [
+      "[\"/var/lib/cassandra/\"]"
+    ],
+    "run": [
+      "DEBIAN_FRONTEND=noninteractive apt-get update     && apt-get install -y -q --no-install-recommends curl     && echo \"deb http://debian.datastax.com/community stable main\" > /etc/apt/sources.list.d/cassandra.sources.list     && curl -s -L http://debian.datastax.com/debian/repo_key | apt-key add -     && apt-get update     && apt-get install -y -q --no-install-recommends         sudo         supervisor         sysstat         dsc21         datastax-agent     && rm -rf /var/lib/apt/lists/*"
+    ],
+    "workdir": [],
+    "from": "java:openjdk-8-jre",
+    "maintainer": "Kevin Li <mlf4aiur@gmail.com>",
+    "env": {
+      "SEED_IP": "127.0.0.1"
+    },
+    "copy": "supervisord.conf /etc/supervisor/conf.d/supervisord.conf",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"/usr/bin/supervisord\"]"
+  },
+  "source_repository_url": "https://github.com/mlf4aiur/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mlf4aiur/dockerfiles",
+  "docker_repository": "mlf4aiur/cassandra",
+  "docker_image": "mlf4aiur/cassandra",
+  "parameters_schema": {
+    "SEED_IP": {
+      "default": "127.0.0.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        7199
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mlf4aiur/cassandra",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/mlf4aiur/cassandra",
+    "https://hub.docker.com/v2/repositories/mlf4aiur/cassandra",
+    "https://github.com/mlf4aiur/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/mlf4aiur/cassandra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

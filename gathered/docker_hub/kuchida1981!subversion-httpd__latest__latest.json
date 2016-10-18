@@ -1,0 +1,128 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kuchida1981/subversion-httpd",
+    "repository_url": "https://hub.docker.com/v2/repositories/kuchida1981/subversion-httpd",
+    "tags_url": "https://hub.docker.com/v2/repositories/kuchida1981/subversion-httpd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kuchida1981/subversion-httpd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kuchida1981/subversion-httpd/autobuild",
+    "user": "kuchida1981",
+    "name": "subversion-httpd",
+    "namespace": "kuchida1981",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 79,
+    "last_updated": "2016-07-28T16:35:21.187219Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 78450154,
+        "id": 3972362,
+        "repository": 815292,
+        "creator": 963073,
+        "last_updater": 963073,
+        "last_updated": "2016-07-28T16:35:20.846399Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "kuchida1981/dockerfile-subversion-httpd"
+  },
+  "name": "kuchida1981/subversion-httpd Docker container",
+  "description": "service a subversion with apache2.",
+  "readme": "# Subversion on Apache2 (HTTP)\n\nSubversionをサービスとして動かすためのイメージです.\nApache2に提供させるサービスとしています.\n\n## Description\n\n* Ubuntuのオフィシャルイメージをベースにしています\n* 複数リポジトリの作成に対応しています\n* 認証にはBASIC認証を用いています\n* 認証可能なユーザだけが, リポジトリの閲覧と変更を行えます\n\n## Usage\n\nDockerホストの10080番ポートを使って,\n`tools` リポジトリを作成するコンテナを作成/開始します.\n\n使うユーザ/パスワード `username/secret` です.\n\n```\n# docker run --rm --name local-svn -p 10080:80 \\\n-e SVN_DEFAULT_USER=\"username\" \\\n-e SVN_DEFAULT_USER_PASSWD=\"secret\" \\\n-e SVN_DEFAULT_REPOSITORY=\"tools\" \\\nkuchida1981/subversion-httpd\n```\n\nバックグラウンドで立ち上げたい場合には, オプション `--rm` の代わりに,\n`-d` を指定します.\n\nDockerサービスが起動した時点で立ち上がるようにしたい場合は,\nオプション `--restart=unless-stopped` を加えます.\n\nコンテナが起動したら, 次のことを確認してください.\n\n* `http://127.0.0.1:10080` へアクセスし,\n  リポジトリ一覧が表示され, `tools` リポジトリが含まれる\n\n* `http://127.0.0.1:10080/tools` でリポジトリをチェックアウトできる\n\n* チェックアウトしたリポジトリに加えた変更をコミットできる\n\n### リポジトリを追加する\n\nここでは `tools2` という名前のリポジトリを新たに加える手順を示します.\n\nリポジトリを格納しているディレクトリは `/var/svn/repos` です.\nユーザ `www-data` に所有させているので,\nリポジトリを追加するためには, `www-data` 所有のリポジトリを作成する必要があります.\n\n起動中のコンテナにログインします.\n\n```\n# docker exec -it local-svn\n```\n\n`www-data` ユーザとしてログインします.\n\n```\n# su -s /bin/bash www-data\n```\n\nリポジトリを作成し, 必要なディレクトリを作ってコミットします.\n\n```\n$ svnadmin create /var/svn/repos/tools2\n$ svn mkdir file:///var/svn/repos/trunk \\\n    file:///var/svn/repos/branches \\\n    file:///var/svn/repos/tags \\\n    -m \"Create repository.\"\n```\n\n\n### リポジトリを利用可能なユーザを追加する.\n\nユーザ/パスワード `tonegawa/secret` というユーザを追加する手順を示します.\n\n起動中のコンテナにログインします.\n\n```\n# docker exec -it local-svn\n```\n\n`htpasswd` コマンドを用いて, BASIC認証できるユーザを追加します.\n\n```\n# htpasswd -cb /etc/subversion/passwd \\\n    tonegawa secret\n```\n\n\n## Environment variables\n\n変更可能な環境変数です.\n\n### `SVN_DEFAULT_USER`\n\nコンテナ作成時に追加するユーザのユーザ名です.\n指定しなければ, `default` ユーザを作成します.\n\n### `SVN_DEFAULT_USER_PASSWD`\n\nコンテナ作成時に追加するユーザのパスワードです.\n指定しなければパスワード `default` とします.\n\n### `SVN_DEFAULT_REPOSITORY`\n\nコンテナ作成時に作成するリポジトリの名前です.\n指定しなければ, `default` という名前のリポジトリを作成します.\n\n\n## Dockerイメージをビルドする\n\n`Dockerfile` からDockerイメージをビルドする手順です.\n\ngitリポジトリをクローンします.\n\n```\n$ git clone https://kuchida1981@bitbucket.org/kuchida1981/dockerfile-subversion-httpd.git subversion-httpd\n```\n\n`docker` コマンドでビルドします.\n`root` ユーザでログインできるなら, `sudo` は不要です.\n\n```\n$ sudo docker build -t subversion-httpd-debug subversion-httpd\n```\n\n\n## Examples\n\n会社のチーム内等でよく用いられる, redmine+subversion\nといった形態の開発体制は,\nオフィシャルイメージのredmineと組み合わせて実現できます.\n\ndocker-compose.yml でまとめて面倒みるサンプルです.\n\n```\nversion: '2'\nservices:\n        db:\n                image: postgres\n                environment:\n                        - POSTGRES_USER=redmine\n                        - POSTGRES_PASSWORD=secret\n                ports:\n                        - \"25432:5432\"\n                restart: unless-stopped\n        vcs:\n                image: kuchida1981/subversion-httpd\n                ports:\n                        - \"20080:80\"\n                environment:\n                        - SVN_DEFAULT_USER=kosuke\n                        - SVN_DEFAULT_USER_PASSWD=kosuke0\n                restart: unless-stopped\n        redmine:\n                image: redmine\n                links:\n                        - db\n                        - vcs\n                ports:\n                        - \"23000:3000\"\n                restart: unless-stopped\n```\n\nsubversion/httpをホストOSの20080番に,\nredmineのデフォルト3000番ポートをホストの23000番にポートフォワードしています.\nついでにメンテ用にpostgresqlのデフォルト 5432番もホストの25432番に転送しています.\n\n## License\n\n[MIT](https://github.com/tcnksm/tool/blob/master/LICENCE)\n\n\n## Author\n\n[Kosuke Uchida](https://bitbucket.org/kuchida1981/)\n",
+  "dockerfile": "# base image is Debian\nFROM debian\n\n# environment variables\nENV SVN_DEFAULT_USER=\"default\" \\\n    SVN_DEFAULT_USER_PASSWD=\"default\" \\\n    SVN_REPOSITORIES_DESCR=\"My repositories\" \\\n    SVN_DEFAULT_REPOSITORY=\"default\"\n\n# install packages\nRUN apt-get update \\\n&& apt-get install -y \\\n    apache2 \\\n    libapache2-svn \\\n    subversion \\\n&& apt-get clean \\\n&& rm -rf /var/lib/apt/lists/*\n\n# enable a svn module\nRUN a2enmod dav_svn\n\nEXPOSE 80\nCOPY ./*.sh /\nENTRYPOINT [\"/docker-entrypoint.sh\"]\nCMD [\"/apache2foreground.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y     apache2     libapache2-svn     subversion && apt-get clean && rm -rf /var/lib/apt/lists/*",
+      "a2enmod dav_svn"
+    ],
+    "workdir": [],
+    "from": "debian",
+    "env": {
+      "SVN_DEFAULT_USER": "\"default\"",
+      "": "SVN_DEFAULT_REPOSITORY",
+      "SVN_DEFAULT_USER_PASSWD": "\"default\"",
+      "SVN_REPOSITORIES_DESCR": "\"My",
+      "repositories\"": ""
+    },
+    "copy": "./*.sh /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"/apache2foreground.sh\"]"
+  },
+  "source_repository_url": "https://bitbucket.org/kuchida1981/dockerfile-subversion-httpd.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/kuchida1981/dockerfile-subversion-httpd",
+  "docker_repository": "kuchida1981/subversion-httpd",
+  "docker_image": "kuchida1981/subversion-httpd",
+  "parameters_schema": {
+    "SVN_DEFAULT_USER": {
+      "default": "\"default\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "SVN_DEFAULT_REPOSITORY",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SVN_DEFAULT_USER_PASSWD": {
+      "default": "\"default\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SVN_REPOSITORIES_DESCR": {
+      "default": "\"My",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "repositories\"": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kuchida1981/subversion-httpd",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/kuchida1981/subversion-httpd",
+    "https://hub.docker.com/v2/repositories/kuchida1981/subversion-httpd",
+    "https://bitbucket.org/kuchida1981/dockerfile-subversion-httpd.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Version Control/Subversion",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/kuchida1981/subversion-httpd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

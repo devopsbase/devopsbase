@@ -1,0 +1,105 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/eeacms/memcached",
+    "repository_url": "https://hub.docker.com/v2/repositories/eeacms/memcached",
+    "tags_url": "https://hub.docker.com/v2/repositories/eeacms/memcached/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/eeacms/memcached/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/eeacms/memcached/autobuild",
+    "user": "eeacms",
+    "name": "memcached",
+    "namespace": "eeacms",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 17006,
+    "last_updated": "2016-10-14T17:42:21.778856Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 67272348,
+        "id": 576696,
+        "repository": 257575,
+        "creator": 242262,
+        "last_updater": 170105,
+        "last_updated": "2016-10-14T17:42:21.344869Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.4",
+        "full_size": 69274067,
+        "id": 576697,
+        "repository": 257575,
+        "creator": 242262,
+        "last_updater": 170105,
+        "last_updated": "2016-02-23T16:44:35.718944Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "eea/eea.docker.memcached"
+  },
+  "name": "eeacms/memcached Docker container",
+  "description": "",
+  "readme": "## Memcached Docker image\n\nDocker images for memcached.\n\nThis image is generic, thus you can obviously re-use it within\nyour non-related EEA projects.\n\n\n### Supported tags and respective Dockerfile links\n\n  - `:latest` [*Dockerfile*](https://github.com/eea/eea.docker.memcached/blob/master/Dockerfile) (default)\n  - `:1.4` [*Dockerfile*](https://github.com/eea/eea.docker.memcached/blob/1.4/Dockerfile)\n\n### Changes\n\n - [CHANGELOG.md](https://github.com/eea/eea.docker.memcached/blob/master/CHANGELOG.md)\n\n### Base docker image\n\n - [hub.docker.com](https://registry.hub.docker.com/u/eeacms/memcached)\n\n\n### Source code\n\n  - [github.com](http://github.com/eea/eea.docker.memcached\n)\n\n\n### Installation\n\n1. Install [Docker](https://www.docker.com/).\n\n2. Install [Docker Compose](https://docs.docker.com/compose/).\n\n\n### Usage\n\n    $ git clone https://github.com/eea/eea.docker.memcached.git\n    $ cd eea.docker.memcached\n    $ docker-compose up -d\n    $ docker-compose logs\n\nor (without docker-compose)\n\n    $ docker run -d -e MEMCACHED_MEMORY=2048 eeacms/memcached\n\n\n## Supported environment variables ##\n\n* `MEMCACHED_MEMORY` Max memory to use for items in megabytes (default: 64 MB)\n* `MEMCACHED_TCP_PORT` TCP port number to listen on (default: 11211)\n* `MEMCACHED_THREADS` Number of threads to use (default: 4)\n* `MEMCACHED_CONNECTIONS` Max simultaneous connections (default: 1024)\n* `MEMCACHED_FACTOR` Chunk size growth factor (default: 1.25)\n* `MEMCACHED_DAEMON` Run as a demon\n* `MEMCACHED_UDP_PORT` UDP port number to listen on (default: 0)\n* `MEMCACHED_SOCKET_MASK` Access mask for UNIX socket, in octal (default: 0700)\n* `MEMCACHED_INTERFACE` Interface to listen on (default: INADDR_ANY, all addresses)\n* `MEMCACHED_MEMORY_EXHAUSTED` Return error on memory exhausted (rather than removing items)\n* `MEMCACHED_LOCK_PAGED_MEMORY` Lock down all paged memory\n* `MEMCACHED_VERBOSE` Verbose (print errors/warnings while in event loop)\n* `MEMCACHED_PID_FILE` Save PID in <file>, only used with -d option\n* `MEMCACHED_KEY_VALUE_FLAGS_SPACE` Minimum space allocated for key+value+flags (default: 48)\n* `MEMCACHED_LARGE_MEMORY_PAGES` Try to use large memory pages (if available)\n* `MEMCACHED_DELIMITER` The delimiter between key prefixes and IDs.\n* `MEMCACHED_MAX_REQUESTS_PER_EVENT` Maximum number of requests per event\n* `MEMCACHED_DISABLE_CAS` Disable use of CAS\n* `MEMCACHED_BACKLOG_QUEUE_LIMIT` Set the backlog queue limit (default: 1024)\n* `MEMCACHED_BIND_PROTOCOL` Binding protocol - one of ascii, binary, or auto (default)\n* `MEMCACHED_SLAB_PAGE_SIZE` Override the size of each slab page. Adjusts max item size (default: 1mb, min: 1k, max: 128m)\n\n\n## Copyright and license\n\nThe Initial Owner of the Original Code is European Environment Agency (EEA).\nAll Rights Reserved.\n\nThe Original Code is free software;\nyou can redistribute it and/or modify it under the terms of the GNU\nGeneral Public License as published by the Free Software Foundation;\neither version 2 of the License, or (at your option) any later\nversion.\n\n\n## Funding\n\n[European Environment Agency (EU)](http://eea.europa.eu)\n",
+  "dockerfile": "FROM memcached:1.4\n\nMAINTAINER \"European Environment Agency (EEA): IDM2 A-Team\" <eea-edw-a-team-alerts@googlegroups.com>\n\n# Install Chaperone\nUSER root\nRUN \\\n  apt-get update && \\\n  apt-get upgrade -y libc6 && \\\n  apt-get install -y --no-install-recommends python3-pip && \\\n  pip3 install chaperone && \\\n  rm -rf /var/lib/apt/lists/* && \\\n  apt-get clean && \\\n  rm -rf /tmp/* /var/tmp/*\n\n# Chaperone setup\nCOPY chaperone.conf /etc/chaperone.d/chaperone.conf\n\nUSER memcache\nENTRYPOINT [\"/usr/local/bin/chaperone\"]\nCMD [\"--user\", \"memcache\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "  apt-get update &&   apt-get upgrade -y libc6 &&   apt-get install -y --no-install-recommends python3-pip &&   pip3 install chaperone &&   rm -rf /var/lib/apt/lists/* &&   apt-get clean &&   rm -rf /tmp/* /var/tmp/*"
+    ],
+    "workdir": [],
+    "from": "memcached:1.4",
+    "maintainer": "\"European Environment Agency (EEA): IDM2 A-Team\" <eea-edw-a-team-alerts@googlegroups.com>",
+    "user": "memcache",
+    "copy": "chaperone.conf /etc/chaperone.d/chaperone.conf",
+    "entrypoint": "[\"/usr/local/bin/chaperone\"]",
+    "cmd": "[\"--user\", \"memcache\"]"
+  },
+  "source_repository_url": "https://github.com/eea/eea.docker.memcached.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/eea/eea.docker.memcached",
+  "docker_repository": "eeacms/memcached",
+  "docker_image": "eeacms/memcached",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "eeacms/memcached",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/eeacms/memcached",
+    "https://hub.docker.com/v2/repositories/eeacms/memcached",
+    "https://github.com/eea/eea.docker.memcached.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Cache/Memcached",
+    "Type/Middleware/Content Management"
+  ],
+  "info_url": "https://hub.docker.com/r/eeacms/memcached",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,94 @@
+{
+  "name": "td-agent Chef cookbook",
+  "chef_cookbook_name": "td-agent",
+  "revision": "0.0.3",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/td-agent",
+    "https://supermarket.chef.io/cookbooks/td-agent/download",
+    "https://supermarket.chef.io/cookbooks/td-agent/versions/0.0.3",
+    "https://supermarket.chef.io/cookbooks/td-agent/versions/0.0.3/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/td-agent/versions/0.0.3",
+    "https://supermarket.chef.io/api/v1/cookbooks/td-agent",
+    "https://supermarket.chef.io/api/v1/cookbooks/td-agent/versions/0.0.3/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/td-agent",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/td-agent/versions/0.0.3/download",
+  "deprecated": false,
+  "created": "2014-11-29T11:58:41.341Z",
+  "updated": "2016-07-08T08:52:33.086Z",
+  "description": "Installs/Configures td-agent",
+  "maintainer": {
+    "name": "yyuu",
+    "email": "k@treasure-data.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 6,
+  "downloads_count": 4328789,
+  "downloads_count_revision": 623738,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# DESCRIPTION\n\n[Opscode Chef](http://www.opscode.com/chef/) cookbook for td-agent (Treasure Data Agent). The release log of td-agent is available [here](http://help.treasure-data.com/kb/installing-td-agent-daemon/changelog-of-td-agent).\n\nNOTE: td-agent is open-sourced as [Fluentd project](http://github.com/fluent/). If you want to use stable version of Fluentd, using this cookbook is recommended.\n\n# INSTALLATION\n\n## Installing with Berkshelf\n\nThis cookbook is released on [Chef Supermarket](https://supermarket.chef.io/). You can install the cookbook with using [Berkshelf](http://berkshelf.com/).\n\n```sh\n$ echo 'cookbook \"td-agent\"' >> Berksfile\n$ berks install\n```\n\n## Installing with knife-github-cookbooks\n\nThe [knife-github-cookbooks](https://github.com/websterclay/knife-github-cookbooks) gem is a plugin for knife that supports installing cookbooks directly from a GitHub repository. To install with this plugin, please follow these steps:\n\n```sh\n$ gem install knife-github-cookbooks\n$ cd chef-repo\n$ knife cookbook github install treasure-data/chef-td-agent\n```\n\n## NOTICE\n\nThis cookbook may be used on Amazon Linux but we cannot guarantee if td-agent will work properly because\nAWS doesn't guarantee binary compatibility with RHEL (they aim to be \"as compatible as possible\").\nIf users encounter any compatibility issues with td-agent on Amazon Linux, they should contact AWS.\n\n# REQUIREMENTS\n\nThis cookbook has these external dependencies.\n\n* apt cookbook\n* yum cookbook\n\n# ATTRIBUTES\n\n## api\\_key\n\nAPI Key, and the Secret Key are required.\n\n* `node[:td_agent][:api_key]` (required)\n\n## plugins\n\nA list of fluentd plugins to install. The `fluent-plugin-` prefix is automatically added. Additional variables can be passed.\n\n- `node[:td_agent][:plugins]`\n\n### Example\n\nThis installs the latest version of `fluent-plugin-flowcounter` and version 0.0.9 of `fluent-plugin-rewrite`.\n\n```ruby\nnode[:td_agent][:plugins] = [\n  \"flowcounter\",\n  { \"rewrite\" => { \"version\" => \"0.0.9\" } }\n]\n```\n\n## version\n\nYou can install latest td-agent 2 using `version` attribute and major version.\n\n```ruby\nnode[:td_agent][:version] = '2'\n```\n\nYou can also specify full version.\n\n```ruby\nnode[:td_agent][:version] = '2.0.4'\n```\n\n## pinning\\_version and version\n\nIf `pinning_version` is true, then `versoin`s td-agent will be installed. The default `version` is latest version.\n\n* `node[:td_agent][:pinning_version]`\n* `node[:td_agent][:version]`\n\nIn this case, you should set full version to `node[:td_agent][:version]`.\n\n### Limitation\n\n`pinning_version` and `version` attributes are now available for `rpm` package.\nThe td-agent repository now use `reprepro` for building Deb repository.\n`reprepro` can not handle multiple versions of the same package.\n\n## uid\n\nUID of td-agent user. Automatically assigned by default.\n\n## gid\n\nGID of td-agent group. Automatically assigned by default.\n\n# RESOURCES / PROVIDERS\n\n## td\\_agent\\_gem\n\nInstalls a gem or fluentd plugin using the embedded `fluent-gem`\n\n### Actions\n\n| Action  | Description                                                                             |\n| ------- | --------------------------------------------------------------------------------------- |\n| install | Install the gem, optinally with a specific version. Default.                            |\n| upgrade | Upgrade to the latest gem                                                               |\n| remove  | Remove the gem                                                                          |\n| purge   | Purge the gem                                                                           |\n\n### Attributes\n\n| Attribute      | Description                                                                      |\n| -------------- | -------------------------------------------------------------------------------- |\n| package\\_name  |  Gem name. Defaults to `name`                                                    |\n| version        | Gem version. Installs the latest if none specified                               |\n| source         | Local .gem file                                                                  |\n| options        | Options passed to the gem command                                                |\n| gem\\_binary    | Override path to the gem command                                                 |\n| response\\_file | Not supported                                                                    |\n| plugin         | If true, no need to prefix the gem name w/ \"fluent-plugin-\". Defaults to `false` |\n\n### Examples\n\nThis installs `fluent-plugin-datacounter` (v0.2.0)\n\n```ruby\ntd_agent_gem \"datacounter\" do\n  version \"0.2.0\"\n  plugin true\nend\n```\n\nThis installs the latest version of `aws-sdk`\n\n```ruby\ntd_agent_gem \"aws-sdk\" do\n  plugin false\nend\n```\n\n## includes\n\nOptionally include `/etc/td-agent/conf.d/*.conf` files (i.e. symlinks, other recipes, etc.)\n\n* `node[:td_agent][:includes] = false`\n\n## default\\_config\n\nOptionally prevent `/etc/td-agent/td-agent.conf` from including default config.\n\n* `node[:td_agent][:default_config] = true`\n\n# USAGE\n\nThis is an example role file.\n\n```ruby\nname \"base\"\ndescription \"base server role.\"\nrun_list(\n  \"recipe[apt]\",\n  \"recipe[yum]\",\n  \"recipe[td-agent]\",\n)\noverride_attributes(\n  # for td-agent\n  :td_agent => {\n    :api_key => 'foo_bar_buz',\n    :plugins => [\n      'rewrite'\n    ]\n  }\n)\n```\n\n# HTTP API Options\n\n* `node[:td_agent][:in_http][:enable_api] = true`\n\nAccess to the API may be turend off by setting `enable_api` to `false`. This may be of particular use when \ntd-agent is being used on endpoint systems that are forwarding logs to a centralized td-agent server.\n\n# License\n\nCopyright 2014 Treasure Data, Inc.\n\nThe code is licensed under the Apache License 2.0 (see  LICENSE for details).\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "td-agent": "td-agent configuration"
+  },
+  "parameters": {
+    "td_agent/api_key": {
+      "display_name": "Treasure Data ApiKey",
+      "description": "ApiKey for Treasure Data Service",
+      "default": "",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    }
+  }
+}

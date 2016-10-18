@@ -1,0 +1,173 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/insecurity/golang-32bit-x87",
+    "repository_url": "https://hub.docker.com/v2/repositories/insecurity/golang-32bit-x87",
+    "tags_url": "https://hub.docker.com/v2/repositories/insecurity/golang-32bit-x87/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/insecurity/golang-32bit-x87/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/insecurity/golang-32bit-x87/autobuild",
+    "user": "insecurity",
+    "name": "golang-32bit-x87",
+    "namespace": "insecurity",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 84,
+    "last_updated": "2016-10-12T00:28:11.633078Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1.6.3",
+        "full_size": 357653058,
+        "id": 4426739,
+        "repository": 855186,
+        "creator": 1010333,
+        "last_updater": 1010333,
+        "last_updated": "2016-10-12T00:28:11.226313Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 357652410,
+        "id": 4426789,
+        "repository": 855186,
+        "creator": 1010333,
+        "last_updater": 1010333,
+        "last_updated": "2016-10-12T00:23:45.640599Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "jtof_fap/golang-32bit-x87"
+  },
+  "name": "insecurity/golang-32bit-x87 Docker container",
+  "description": "32Bit docker container for Golang compatible with old i386 architecture (x87).",
+  "readme": "# Golang 32bit-x87 Docker image #\nA container to run Golang on old architecture.\n\n- Node version: `1.6.3`\n\n### Purpose ###\n\nI have created this docker image in order to build and run the latest `Golang` version on an old 32bit server with athlon CPU (`i386/x87`: without SSE/SSE2 instructions) ...Fuck Yeah !!!...\n\nIndeed, all other 32bit Golang image doesn't work because they use the pre-builded [official Golang binaries](https://golang.org/dl/) compiled with standards x86 SSE/SSE2 instructions. When i run them => 'Illegal instruction' => Game over.\n\nThe Official compiled `Golang` binaries are used in many other images: docker, gitlab, etc.. which all failed in my 32bit-x87 architecture...\n\n### Official image 32 bits tweaks ###\n\nThis image is derivated from the official `golang 1.6.3` image with some tweaks and with the last source code instead of use the pre-builded \"Golang\" binaries:\n\n- [https://hub.docker.com/_/golang/](https://hub.docker.com/_/golang/)\n- [https://github.com/docker-library/golang/blob/master/1.6/wheezy/Dockerfile](https://github.com/docker-library/golang/blob/master/1.6/wheezy/Dockerfile)\n\nTo build this `go1.6.3-x87` version, I downloaded and compiled the `go1.4.3` version, then `go1.6.3` version with the following environment options:\n\n    GOARCH=386\n    GOOS=linux\n    GO386=387\n    GOARM=5\n\n### Rebuild your own golang-x.x.x-x87 ###\n\nDocker hub autobuild fail to compile golang 32bit on x64 architecure. This image just download and install my precompiled version of go1.6.3-x87. You can download or use in your images this version:\n\n- [https://bitbucket.org/jtof_fap/golang-32bit-x87/raw/master/go1.6.3-x87.tgz](https://bitbucket.org/jtof_fap/golang-32bit-x87/raw/master/go1.6.3-x87.tgz)\n\nIf you want to build your own version, use the following Dockerfile on a full 32bit machine:  \n\n- [https://bitbucket.org/jtof_fap/golang-32bit-x87/src/master/build/Dockerfile?fileviewer=file-view-default](https://bitbucket.org/jtof_fap/golang-32bit-x87/src/master/build/Dockerfile?fileviewer=file-view-default)\n\n\n    git clone git@bitbucket.org:jtof_fap/golang-32bit-x87.git\n    cd golang-32bit-x87/build\n    [modify $GOLANG_VERSION]\n    docker build -t \"golang-x87:x.x.x\" .\n    [share...]\n\n### Getting this image ###\n\n    docker pull insecurity/golang-32bit-x87:latest\n    docker pull insecurity/golang-32bit-x87:1.6.3\n\n### Rebuild this image ###\n\n    git clone git@bitbucket.org:jtof_fap/golang-32bit-x87.git\n    cd golang-32bit-x87\n    docker build -t \"golang-32bit-x87:latest\" .\n\n### Usage and documentation ###\n\nReports to the official `Golang` repository:\n\n- [https://hub.docker.com/_/golang/](https://hub.docker.com/_/golang/)\n\n",
+  "dockerfile": "FROM insecurity/debian-32bit:latest\nMAINTAINER Vecten Sebastien <jtof_fap@insecurity.fr>\n\n# Set variables\nENV GOLANG_DL_PATH /usr/local\nENV GOLANG_INST_PATH $GOLANG_DL_PATH/go\nENV GOLANG_VERSION 1.6.3\nENV GOLANG_URL https://bitbucket.org/jtof_fap/golang-32bit-x87/raw/master/go$GOLANG_VERSION-x87.tgz\n\n# 32Bit-x87 compatibility variables\nENV GOARCH 386  \nENV GOOS linux \nENV GO386 387\nENV GOARM 5\n\n# Install build dependencies\nRUN LC_ALL=C DEBIAN_FRONTEND=noninteractive \\\n  && apt-get update && apt-get install -y --no-install-recommends \\\n    ca-certificates \\\n    g++ \\\n    gcc \\\n    libc6-dev \\\n    make \\\n    curl \\\n  \n# Get Golang x87 compiled version \\\n  && cd $GOLANG_DL_PATH \\\n    && curl -fSsl $GOLANG_URL -o go$GOLANG_VERSION-x87.tgz \\\n    && tar -xzvf go$GOLANG_VERSION-x87.tgz \\\n    && rm go$GOLANG_VERSION-x87.tgz \\\n\n# Clean-up \\\n  && apt-get autoclean \\\n    && apt-get clean \\\n    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nENV GOROOT $GOLANG_INST_PATH/bin\nENV PATH $GOROOT:$PATH\n\nWORKDIR $GOLANG_INST_PATH\n\nCOPY go-wrapper /usr/local/bin/\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "LC_ALL=C DEBIAN_FRONTEND=noninteractive   && apt-get update && apt-get install -y --no-install-recommends     ca-certificates     g++     gcc     libc6-dev     make     curl   "
+    ],
+    "workdir": [
+      "$GOLANG_INST_PATH"
+    ],
+    "from": "insecurity/debian-32bit:latest",
+    "maintainer": "Vecten Sebastien <jtof_fap@insecurity.fr>",
+    "env": {
+      "GOLANG_DL_PATH": "/usr/local",
+      "GOLANG_INST_PATH": "$GOLANG_DL_PATH/go",
+      "GOLANG_VERSION": "1.6.3",
+      "GOLANG_URL": "https://bitbucket.org/jtof_fap/golang-32bit-x87/raw/master/go$GOLANG_VERSION-x87.tgz",
+      "GOARCH": "386",
+      "": "",
+      "GOOS": "linux",
+      "GO386": "387",
+      "GOARM": "5",
+      "GOROOT": "$GOLANG_INST_PATH/bin",
+      "PATH": "$GOROOT:$PATH"
+    },
+    "copy": "go-wrapper /usr/local/bin/"
+  },
+  "source_repository_url": "https://bitbucket.org/jtof_fap/golang-32bit-x87.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/jtof_fap/golang-32bit-x87",
+  "docker_repository": "insecurity/golang-32bit-x87",
+  "docker_image": "insecurity/golang-32bit-x87",
+  "parameters_schema": {
+    "GOLANG_DL_PATH": {
+      "default": "/usr/local",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOLANG_INST_PATH": {
+      "default": "$GOLANG_DL_PATH/go",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOLANG_VERSION": {
+      "default": "1.6.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOLANG_URL": {
+      "default": "https://bitbucket.org/jtof_fap/golang-32bit-x87/raw/master/go$GOLANG_VERSION-x87.tgz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOARCH": {
+      "default": "386",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOOS": {
+      "default": "linux",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GO386": {
+      "default": "387",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOARM": {
+      "default": "5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOROOT": {
+      "default": "$GOLANG_INST_PATH/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$GOROOT:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "insecurity/golang-32bit-x87",
+  "revision": "1.6.3",
+  "uris": [
+    "https://hub.docker.com/r/insecurity/golang-32bit-x87",
+    "https://hub.docker.com/v2/repositories/insecurity/golang-32bit-x87",
+    "https://bitbucket.org/jtof_fap/golang-32bit-x87.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Golang"
+  ],
+  "info_url": "https://hub.docker.com/r/insecurity/golang-32bit-x87",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

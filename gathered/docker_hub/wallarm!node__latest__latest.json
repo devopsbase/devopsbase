@@ -1,0 +1,116 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/wallarm/node",
+    "repository_url": "https://hub.docker.com/v2/repositories/wallarm/node",
+    "tags_url": "https://hub.docker.com/v2/repositories/wallarm/node/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/wallarm/node/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/wallarm/node/autobuild",
+    "user": "wallarm",
+    "name": "node",
+    "namespace": "wallarm",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 7243,
+    "last_updated": "2016-10-10T02:01:49.508731Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 104960267,
+        "id": 2038123,
+        "repository": 533769,
+        "creator": 639501,
+        "last_updater": 639501,
+        "last_updated": "2016-10-10T02:01:49.151463Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "test",
+        "full_size": 104950719,
+        "id": 2365980,
+        "repository": 533769,
+        "creator": 639501,
+        "last_updater": 639501,
+        "last_updated": "2016-10-09T21:02:03.582885Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "wallarm/docker-wallarm-node"
+  },
+  "name": "wallarm/node Docker container",
+  "description": "Wallarm Node",
+  "readme": "# What is Wallarm Node\n\nDocker container is another option to deploy Wallarm Node. As in the case of installation from the Linux package, Wallarm Node will operate as a reverse-proxy server which analyzes and passes through all the requests for protected application/API. \n\nThe container contains all Wallarm Node subsystems (it's a so-called fat container). Although it contradicts to Docker's ideology \"one process — one container\", it significantly simplifies Wallarm Node deployment keeping the \"one logical service — one container\" ideology.\n\n# 30-second start\n\nFor a quick start of Wallarm Node container you need:\n\n * **/path/to/license.key** — path to the license key (check it in the registration email) on the host machine;\n * **example.com** — protected site;\n * **deploy@example.com** — login for my.wallarm.com;\n * **very_secret** — password for my.wallarm.com.\n\nIn most simple case, all the Wallarm Node deployment is just executing command to run container with necessary parameters:\n\n ```\ndocker run -d -v /path/to/license.key:/etc/wallarm/license.key -e DEPLOY_USER=\"deploy@example.com\" -e DEPLOY_PASSWORD=\"very_secret\" -e NGINX_BACKEND=example.com -p 80:80 wallarm/node\n```\n\nAs a result, the container should be running, and the protected website should be available on server port 80. New Node should be registered at Wallarm Cloud. \n\nFor further configuration, place additional configuration files inside the container. \n\n\n# Connecting to the cloud\n\nEvery new Wallarm Node is required registering at Wallarm Cloud API. If you already tried out 30-second installation guide (abode), you're already familiar with one of the three following options: \n\n#### Autoregistration\n\nSet environment variables DEPLOY_USER, DEPLOY_PASSWORD with your credentials for my.wallarm.com. The container will automatically be registered in the cloud when you first start it.\n\nBy default, the container fails if one with that name exists already. To avoid it use the environment variable `DEPLOY_FORCE=true`.\n\n```\ndocker run -d -v /etc/wallarm/license.key -e DEPLOY_USER=\"deploy@example.com\" -e DEPLOY_PASSWORD=\"very_secret\" -e NGINX_BACKEND=93.184.216.34 wallarm/node\n```\n\n#### Using the known node credentials\n\nTo access the Wallarm Cloud each node uses its `uuid` and `secret` credentials. You can pass them into the environment variables `NODE_UUID` and `NODE_SECRET`.\n\n```\ndocker run -d -v /etc/wallarm/license.key -e \"NODE_UUID=00000000-0000-0000-0000-000000000000\" -e NODE_SECRET=\"0000000000000000000000000000000000000000000000000000000000000000\" -e NGINX_BACKEND=93.184.216.34 wallarm/node\n```\n\n#### Configuration file\n\nIf you already have a `node.yaml` (configuration file), pass it into the Docker container as an external volume:\n\n```\ndocker run -d -v /etc/wallarm/license.key -v /etc/wallarm/node.yaml -e NGINX_BACKEND=93.184.216.34 wallarm/node\n```\n\n\n# Nginx-wallarm configuration\n\nWallarm Node configuration is done via NGINX config file. To simplify this process in case of container, you can use environment variables  `NGINX_BACKEND` and `WALLARM_MODE`.\n\n#### Simplified mode\n\n* `NGINX_BACKEND` — backend address for all incoming requests.\nIf it doesn't have \"http://\" or \"https://\" prefix , then \"http://\" is used by default. Read more in proxy_pass.\n* `WALLARM_MODE` — nginx-wallarm mode. Read more in wallarm_mode.\n\n#### Configuration files\n\nDirectories used by nginx:\n* /etc/nginx-wallarm/conf.d — common settings\n* /etc/nginx-wallarm/sites-enabled — virtual host settings\n* /var/www/html — static files\n\n\n# In-memory storage (Tarantool) setup\n\nFor behaviour-based attack detection Wallarm Node uses in-memory storage to save requests for a particular timeframe. Tarantool settings are set with the following environmental variables\n\n* `SLAB_ALLOC_ARENA` — Memory size (in gigabytes) allocated for storing serialized requests.\n* `SLAB_ALLOC_MAXIMAL` — maximum size (in bytes) of the serialized request.\n\n\n# Log rotation\n\nLogs are written in the following directories:\n* /var/log/nginx-wallarm/ — nginx logs\n* /var/log/wallarm/ — various wallarm-specific subsystem logs \n\nBy default, they are rotated once a day. Changing the rotation parameters by environment variables is not provided — use configuration files in /etc/logrotate.d/ instead.\n\n# Monitoring settings\n\nNagios-compatible scripts for node monitoring are installed within the container. Details can be found in the documentation.\n\nScripts calling example:\n\n```\ndocker exec -it wallarm-node /usr/lib/nagios-plugins/check_wallarm_tarantool_timeframe -w 1800 -c 900\ndocker exec -it wallarm-node /usr/lib/nagios-plugins/check_wallarm_export_delay -w 120 -c 300\n```\n",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER Wallarm Support Team <support@wallarm.com>\n\nENV DEBIAN_FRONTEND noninteractive\n\nCOPY conf/sources.list /etc/apt/sources.list.d/wallarm-node.list\n\nRUN printf -- \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\nVersion: GnuPG v1.4.12 (GNU/Linux)\\n\\nmQINBFL1Xl4BEADEFCVumPx2W4hQJG+4RRS0Zjw503a0YKH8tKp3OEWIMKiWwWia\\nTcqxZghCZlm+MytwVmhX4pfEnkGyWdQTZOYosukTYqqYWnVEtqxTaep1k9JnUJ4r\\nHsBUXIbnkL01rjLAkCxTTCMPzfQJNsqESnjllX6Ov/DtEm7EvilWdkkVK9TPF/tD\\n0YwmIKz+nIR6Vylwy71f4hI6O2+91D5UJg/FardAner3rbIzYsRLgbAwx+5V8T9H\\nSVWcjwAknpXDll6mvwionS5Aq+0hSuSjjABcZ2D7EW955ecb2Ql4fOEJPdmUQ//p\\nHMHFgF85j4zwK5gfx9qLeTcmPxi1o14qmaKiZgfh7PxedScZP0VXN9B7Z9NFpo2Z\\nQHqcBAK23msd+wnT4QMkC0CMLpw6AM0KmyNDVrVlTCytucg0zLBTBojEwSW6EzMS\\nBVKip22qT4RelL3ykoHIHOoXbHPqSgdy+ba0A+gsfXmYHSOS/GjtNesgHTkUvyln\\niZXyCGCy3Rqt+QzBWB2wXr2zQ13GJpnLprvtrVLx+GX0oHk6hF21Vm4iCFiw3eE8\\ndI1y8wR2kDFjdwyduQPLXXPjt7aEdzCLoCaFRYju8k4jSGEaWa79jBvDer1fKhtH\\nUmMz7HLmRRfKCSuJqMRJCU9spknt7g4e33OkKQprU+4Y5V7gtpMq1O/ECQARAQAB\\ntEBXYWxsYXJtIERlYmlhbiBHTlUvTGludXggcGFja2FnZXMgcmVwb3NpdG9yeSA8\\nYWRtaW5Ad2FsbGFybS5jb20+iQI+BBMBAgAoBQJS9V5eAhsDBQkJZgGABgsJCAcD\\nAgYVCAIJCgsEFgIDAQIeAQIXgAAKCRAJY9VBcrhl/UWID/4pcIjqrzT3qM6SF9ow\\naPmvB311hzghrzc7z3IEWn4gKZDF1Z9YMgWovTKZ+/0j3xzk66jnmcA2xnYOpKXL\\nmrfiFC4QmQKbSoq4bKAiVx5q2nuUosxOUFODIvs5ORR4R75mW2I5f8aes/3+7vIx\\nDEt9aYMEqqV7bc6/87lCqGMNQ6przIgRo2sXpt0drtK3TagjNwlDqihd7lx3/7VR\\nt3G0Pi17rlfLGp4QjCeGoNmBRpLhM//USRR5J2sfFDFU09Zz/SV47/QMI2isUaeh\\nHoAm3JHzC2RUDt8gpzjTop+ill/8Xbwr6Lh3WGsWRCsTlKAl2V9I5EiX+Hr8bTKT\\nQG0pP1gBwnWb6zhThpBH+a303orsmu6GLOXjmTNjCNjlFdh8qW4+FgeZQuvC3m5o\\nQC/7JBYrwuZFHTfsgoZtSKAoyy4IFZUCK3kbwuZLeKPW8GSrfXmo6Z+y5DFYQZcW\\nTGpW+ogWrHJME8h0TmaID3fo3CVPX/MAhZfmeQy8Hb/NAw3/V7Dx5PWBguAbrNsw\\njnf5w78RChPiCjRvA7wqK6eRCuw9Lg+C2Crqa5M67AEGd9tOwE315L27lM9gViH+\\nPv4L0fJOtUsRyTftSx0nOLJF89XadRjmFVWZ5/1X8jaQ0vmNLTrSJw61vH6hS/oa\\nAZ/zmKdciNja23uQ5HK+nhIquQ==\\n=XjGi\\n-----END PGP PUBLIC KEY BLOCK-----\" | apt-key add - \\\n    && apt-get -y update && apt-get -y upgrade \\\n    && apt-get -y --no-install-recommends install \\\n        cron \\\n        logrotate \\\n        monitoring-plugins \\\n        supervisor \\\n        wallarm-node \\\n    && apt-get clean \\\n    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \\\n    && chown -R wallarm:wallarm /var/lib/wallarm-tarantool \\\n    && sed -i -e 's|/var/log/wallarm/brute\\.log|/var/log/wallarm/brute-detect\\.log|' /etc/logrotate.d/wallarm-common \\\n    && sed -i -e 's|/usr/share/wallarm-common/syncnode|/usr/share/wallarm-common/syncnode -c /etc/wallarm-dist/node.yaml|' /etc/cron.d/wallarm-node-nginx \\\n    && rm -rf /etc/wallarm/triggers.d/ \\\n    && mkdir -p /etc/wallarm-dist/triggers.d \\\n    && sed -i -e '\\@<Plugin syslog>@,\\@</Plugin>@ s/^/#/' /etc/collectd/collectd.conf\n\nCOPY conf/node.yaml /etc/wallarm-dist/\nCOPY scripts/trigger /etc/wallarm-dist/triggers.d/nginx\nCOPY scripts/init /usr/local/bin/\nCOPY conf/supervisord.conf /etc/supervisor/\nCOPY conf/logrotate.conf /etc/\n\nEXPOSE 80 443\n\nCMD [\"/usr/local/bin/init\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "printf -- \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\nVersion: GnuPG v1.4.12 (GNU/Linux)\\n\\nmQINBFL1Xl4BEADEFCVumPx2W4hQJG+4RRS0Zjw503a0YKH8tKp3OEWIMKiWwWia\\nTcqxZghCZlm+MytwVmhX4pfEnkGyWdQTZOYosukTYqqYWnVEtqxTaep1k9JnUJ4r\\nHsBUXIbnkL01rjLAkCxTTCMPzfQJNsqESnjllX6Ov/DtEm7EvilWdkkVK9TPF/tD\\n0YwmIKz+nIR6Vylwy71f4hI6O2+91D5UJg/FardAner3rbIzYsRLgbAwx+5V8T9H\\nSVWcjwAknpXDll6mvwionS5Aq+0hSuSjjABcZ2D7EW955ecb2Ql4fOEJPdmUQ//p\\nHMHFgF85j4zwK5gfx9qLeTcmPxi1o14qmaKiZgfh7PxedScZP0VXN9B7Z9NFpo2Z\\nQHqcBAK23msd+wnT4QMkC0CMLpw6AM0KmyNDVrVlTCytucg0zLBTBojEwSW6EzMS\\nBVKip22qT4RelL3ykoHIHOoXbHPqSgdy+ba0A+gsfXmYHSOS/GjtNesgHTkUvyln\\niZXyCGCy3Rqt+QzBWB2wXr2zQ13GJpnLprvtrVLx+GX0oHk6hF21Vm4iCFiw3eE8\\ndI1y8wR2kDFjdwyduQPLXXPjt7aEdzCLoCaFRYju8k4jSGEaWa79jBvDer1fKhtH\\nUmMz7HLmRRfKCSuJqMRJCU9spknt7g4e33OkKQprU+4Y5V7gtpMq1O/ECQARAQAB\\ntEBXYWxsYXJtIERlYmlhbiBHTlUvTGludXggcGFja2FnZXMgcmVwb3NpdG9yeSA8\\nYWRtaW5Ad2FsbGFybS5jb20+iQI+BBMBAgAoBQJS9V5eAhsDBQkJZgGABgsJCAcD\\nAgYVCAIJCgsEFgIDAQIeAQIXgAAKCRAJY9VBcrhl/UWID/4pcIjqrzT3qM6SF9ow\\naPmvB311hzghrzc7z3IEWn4gKZDF1Z9YMgWovTKZ+/0j3xzk66jnmcA2xnYOpKXL\\nmrfiFC4QmQKbSoq4bKAiVx5q2nuUosxOUFODIvs5ORR4R75mW2I5f8aes/3+7vIx\\nDEt9aYMEqqV7bc6/87lCqGMNQ6przIgRo2sXpt0drtK3TagjNwlDqihd7lx3/7VR\\nt3G0Pi17rlfLGp4QjCeGoNmBRpLhM//USRR5J2sfFDFU09Zz/SV47/QMI2isUaeh\\nHoAm3JHzC2RUDt8gpzjTop+ill/8Xbwr6Lh3WGsWRCsTlKAl2V9I5EiX+Hr8bTKT\\nQG0pP1gBwnWb6zhThpBH+a303orsmu6GLOXjmTNjCNjlFdh8qW4+FgeZQuvC3m5o\\nQC/7JBYrwuZFHTfsgoZtSKAoyy4IFZUCK3kbwuZLeKPW8GSrfXmo6Z+y5DFYQZcW\\nTGpW+ogWrHJME8h0TmaID3fo3CVPX/MAhZfmeQy8Hb/NAw3/V7Dx5PWBguAbrNsw\\njnf5w78RChPiCjRvA7wqK6eRCuw9Lg+C2Crqa5M67AEGd9tOwE315L27lM9gViH+\\nPv4L0fJOtUsRyTftSx0nOLJF89XadRjmFVWZ5/1X8jaQ0vmNLTrSJw61vH6hS/oa\\nAZ/zmKdciNja23uQ5HK+nhIquQ==\\n=XjGi\\n-----END PGP PUBLIC KEY BLOCK-----\" | apt-key add -     && apt-get -y update && apt-get -y upgrade     && apt-get -y --no-install-recommends install         cron         logrotate         monitoring-plugins         supervisor         wallarm-node     && apt-get clean     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*     && chown -R wallarm:wallarm /var/lib/wallarm-tarantool     && sed -i -e 's|/var/log/wallarm/brute\\.log|/var/log/wallarm/brute-detect\\.log|' /etc/logrotate.d/wallarm-common     && sed -i -e 's|/usr/share/wallarm-common/syncnode|/usr/share/wallarm-common/syncnode -c /etc/wallarm-dist/node.yaml|' /etc/cron.d/wallarm-node-nginx     && rm -rf /etc/wallarm/triggers.d/     && mkdir -p /etc/wallarm-dist/triggers.d     && sed -i -e '\\@<Plugin syslog>@,\\@</Plugin>@ s/^/#/' /etc/collectd/collectd.conf"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "Wallarm Support Team <support@wallarm.com>",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "copy": "conf/logrotate.conf /etc/",
+    "cmd": "[\"/usr/local/bin/init\"]"
+  },
+  "source_repository_url": "https://github.com/wallarm/docker-wallarm-node.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/wallarm/docker-wallarm-node",
+  "docker_repository": "wallarm/node",
+  "docker_image": "wallarm/node",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "wallarm/node",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/wallarm/node",
+    "https://hub.docker.com/v2/repositories/wallarm/node",
+    "https://github.com/wallarm/docker-wallarm-node.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://hub.docker.com/r/wallarm/node",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

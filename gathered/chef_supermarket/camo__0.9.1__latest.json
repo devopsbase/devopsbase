@@ -1,0 +1,103 @@
+{
+  "name": "camo Chef cookbook",
+  "chef_cookbook_name": "camo",
+  "revision": "0.9.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/camo",
+    "https://supermarket.chef.io/cookbooks/camo/download",
+    "https://supermarket.chef.io/cookbooks/camo/versions/0.9.1",
+    "https://supermarket.chef.io/cookbooks/camo/versions/0.9.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/camo/versions/0.9.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/camo",
+    "https://supermarket.chef.io/api/v1/cookbooks/camo/versions/0.9.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Image",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Proxy"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/camo",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/camo/versions/0.9.1/download",
+  "deprecated": false,
+  "created": "2012-11-10T20:57:33.000Z",
+  "updated": "2015-05-10T01:46:15.857Z",
+  "description": "Configures camo - a small http proxy to simplify routing images through an SSL host",
+  "maintainer": {
+    "name": "svanzoest",
+    "email": "sander+cookbooks@vanzoest.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": true,
+  "rating": null,
+  "followers_count": 2,
+  "downloads_count": 3007812,
+  "downloads_count_revision": 288300,
+  "repository_url": "https://github.com/svanzoest-cookbooks/camo",
+  "issues_url": "https://github.com/svanzoest-cookbooks/camo/issues",
+  "chef_source_url": "https://github.com/svanzoest-cookbooks/camo",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "camo cookbook\n================\n[![Cookbook Version](https://img.shields.io/cookbook/v/camo.svg?style=flat)](https://supermarket.chef.io/cookbooks/camo)\n[![Dependency Status](http://img.shields.io/gemnasium/svanzoest-cookbooks/camo.svg?style=flat)](https://gemnasium.com/svanzoest-cookbooks/camo)\n[![Build Status](https://travis-ci.org/svanzoest-cookbooks/camo.png?branch=master)](https://travis-ci.org/svanzoest-cookbooks/camo)\n[![Join the chat at https://gitter.im/svanzoest-cookbooks/camo](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/svanzoest-cookbooks/camo?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)\n\nDescription\n===========\n\nInstalls [Camo](https://github.com/atmos/camo/) - a small http proxy to simplify routing images through an SSL host\n\nRequirements\n============\n\nThe dependencies are assumed to be downloaded from the [Chef Supermarket](https://supermarket.chef.io/) cookbook repository.\n\n* [nodejs](https://supermarket.chef.io/cookbooks/nodejs/) cookbook\n* [git](https://supermarket.chef.io/cookbooks/git/) cookbook\n* [runit](https://supermarket.chef.io/cookbooks/runit/) cookbook\n\nUsage\n=====\n\nUsually you would run this behind a web server proxy, such as `apache2`, `nginx`, `varnish` etc.\n\nIn a [wrapper cookbook](https://www.chef.io/blog/2013/12/03/doing-wrapper-cookbooks-right/) add this cookbook as a dependency and include the default recipe\n\n```ruby\ninclude_recipe 'camo::default'\n```\n\nThen add any attributes below that you will want to change to the defaults you use internally. Specifically you should override `camo.key` at a minimum.\nDepending on your use case, you may want to add a recipe in your wrapper cookbook that deals with the web server proxy setup.\n\nAttributes\n==========\n\n## General \n\n* `node['camo']['user'] = \"camo\"` - user to run camo as, the cookbook will create the user if it does not exist.\n* `node['camo']['group'] = \"users\"` - group used on directory creation.\n* `node['camo']['install_method'] = 'deploy_revision'` - method for installing camo: either `package` or `deploy_revision`.\n* `node['camo']['init_style']` - attempts to pick the platform default, but otherwise can be defined as `upstart`, `systemd` or `runit`\n\n## Configuration\n\nThese are configuration parameters that will be passed directly to camo via the init scripts.\nPlease see the [camo documentation](https://github.com/atmos/camo#configuration) for more details on these attributes.\n\n* `node['camo']['port'] = 8081`\n* `node['camo']['header_via'] = nil`\n* `node['camo']['key'] = '0x24FEEDFACEDEADBEEFCAFE'`\n* `node['camo']['logging'] = \"disabled\"`\n* `node['camo']['length_limit'] = 5242880`\n* `node['camo']['max_redirects'] = 4`\n* `node['camo']['socket_timeout'] = 10`\n* `node['camo']['timing_allow_origin'] = nil`\n* `node['camo']['hostname'] = \"unknown\"`\n* `node['camo']['keep_alive'] = false`\n\n## Init Style: Systemd\n\n* `node['camo']['systemd']['env_path'] = '/etc/sysconfig'`\n\n## Install Method: Deploy Revision\n\nThis install methods installs directly from source. It is highly recommended that if you use this method that you specify a particular `camo.branch` and\nyour own fork via `camo.repo`. This will minimize impact of changes by upstream that you do not control.\n\n* `node['camo']['path'] = \"/srv/camo\"` - location where to install camo\n* `node['camo']['deploy_user'] = \"root\"` - user who will run git and own the deployed repo.\n* `node['camo']['deploy_group'] = \"users\"` - group who will own the deployed repo.\n* `node['camo']['deploy_migrate'] = false` - do not run `deploy_revision` migrations\n* `node['camo']['deploy_action'] = \"deploy\"` - action to pass to the `deploy_revision` resource.\n* `node['camo']['repo'] = \"git://github.com/atmos/camo.git\"` - location of the camo git repo.\n* `node['camo']['branch'] = \"master\"` - the branch or tag to clone\n\n# Development\n\nWe have written unit tests using [chefspec](http://code.sethvargo.com/chefspec/) and integration tests in [serverspec](http://serverspec.org/) executed via [test-kitchen](http://kitchen.ci). Much of the tooling around this cookbook is exposed via guard and test kitchen, so it is highly recommended to learn more about those tools. The easiest way to get started is to install the [Chef Development Kit](https://downloads.chef.io/chef-dk/)\n\n## Running tests\n\nThe following commands will run the tests:\n\n```\nchef exec bundle install\nchef exec rubocop\nchef exec foodcritic .\nchef exec rspec\nchef exec kitchen test default-ubuntu-1404\nchef exec kitchen test default-centos-70\n```\n\nThe above will do ruby style ([rubocop](https://github.com/bbatsov/rubocop)) and cookbook style ([foodcritic](http://www.foodcritic.io/)) checks followed by rspec unit tests ensuring proper cookbook operation. Integration tests will be run next on two separate linux platforms (Ubuntu 14.04 LTS Precise 64-bit and CentOS 7.0). Please run the tests on any pull requests that you are about to submit and write tests for defects or new features to ensure backwards compatibility and a stable cookbook that we can all rely upon.\n\n## Running tests continuously with guard\n\nThis cookbook is also setup to run the checks while you work via the [guard gem](http://guardgem.org/).\n\n```\nbundle install\nbundle exec guard start\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 7.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 12.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 6.6",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 6.6",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/nodejs",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/git",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/runit",
+      "revision": "~> 1.5.12",
+      "self_resolve": true
+    }
+  ]
+}

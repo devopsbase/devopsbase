@@ -1,0 +1,96 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/sgn0/couchbase",
+    "repository_url": "https://hub.docker.com/v2/repositories/sgn0/couchbase",
+    "tags_url": "https://hub.docker.com/v2/repositories/sgn0/couchbase/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/sgn0/couchbase/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/sgn0/couchbase/autobuild",
+    "user": "sgn0",
+    "name": "couchbase",
+    "namespace": "sgn0",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 82,
+    "last_updated": "2016-07-12T21:24:34.714932Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 208408692,
+        "id": 3579876,
+        "repository": 765014,
+        "creator": 816439,
+        "last_updater": 816439,
+        "last_updated": "2016-07-12T21:24:31.490779Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "mindjolt/docker-images"
+  },
+  "name": "sgn0/couchbase Docker container",
+  "description": "Couchbase",
+  "readme": "# Docker Images Repository\n",
+  "dockerfile": "FROM couchbase:4.5.0\nMAINTAINER Jesus Lopez, jesus@sgn.com\n\n# Increase Admin UI document edit limit\nRUN sed -i 's/docBytesLimit: 2500,/docBytesLimit: 1048576,/' /opt/couchbase/lib/ns_server/erlang/lib/ns_server/priv/public/js/documents.js\n\n# Fetch wait-for-it.sh. Using a commit hash to avoid future breakage.\nWORKDIR /usr/local/bin\nRUN curl -fsO https://raw.githubusercontent.com/vishnubob/wait-for-it/55c54a5abdfb32637b563b28cc088314b162195e/wait-for-it.sh && \\\n    chmod 755 wait-for-it.sh\n\n# Init buckets\nWORKDIR /root\nCOPY start-couchbase.sh .\nRUN CB_USER=root \\\n    CB_PASSWORD=secret \\\n    set -ex; \\\n    ./start-couchbase.sh; \\\n    wait-for-it.sh localhost:8091 -s -t 90; \\\n    couchbase-cli cluster-init -clocalhost --cluster-ramsize=256 --cluster-index-ramsize=256 --cluster-username=$CB_USER --cluster-password=$CB_PASSWORD --services=data,index,query --index-storage-setting=memopt; \\\n    couchbase-cli bucket-create -clocalhost -u$CB_USER -p$CB_PASSWORD --bucket=default --bucket-type=couchbase --bucket-ramsize=128 --bucket-replica=0 --enable-flush=1 --wait; \\\n    couchbase-cli bucket-create -clocalhost -u$CB_USER -p$CB_PASSWORD --bucket=admin --bucket-type=couchbase --bucket-ramsize=128 --bucket-replica=0 --enable-flush=1 --wait; \\\n    couchbase-server -k; \\\n    sleep 15; \\\n    tar czpf couchbase.tgz -C /opt/couchbase/var --exclude=lib/couchbase/logs .; \\\n    rm start-couchbase.sh\n\nCOPY run.sh .\nENTRYPOINT [ \"./run.sh\" ]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "sed -i 's/docBytesLimit: 2500,/docBytesLimit: 1048576,/' /opt/couchbase/lib/ns_server/erlang/lib/ns_server/priv/public/js/documents.js",
+      "curl -fsO https://raw.githubusercontent.com/vishnubob/wait-for-it/55c54a5abdfb32637b563b28cc088314b162195e/wait-for-it.sh &&     chmod 755 wait-for-it.sh",
+      "CB_USER=root     CB_PASSWORD=secret     set -ex;     ./start-couchbase.sh;     wait-for-it.sh localhost:8091 -s -t 90;     couchbase-cli cluster-init -clocalhost --cluster-ramsize=256 --cluster-index-ramsize=256 --cluster-username=$CB_USER --cluster-password=$CB_PASSWORD --services=data,index,query --index-storage-setting=memopt;     couchbase-cli bucket-create -clocalhost -u$CB_USER -p$CB_PASSWORD --bucket=default --bucket-type=couchbase --bucket-ramsize=128 --bucket-replica=0 --enable-flush=1 --wait;     couchbase-cli bucket-create -clocalhost -u$CB_USER -p$CB_PASSWORD --bucket=admin --bucket-type=couchbase --bucket-ramsize=128 --bucket-replica=0 --enable-flush=1 --wait;     couchbase-server -k;     sleep 15;     tar czpf couchbase.tgz -C /opt/couchbase/var --exclude=lib/couchbase/logs .;     rm start-couchbase.sh"
+    ],
+    "workdir": [
+      "/usr/local/bin",
+      "/root"
+    ],
+    "from": "couchbase:4.5.0",
+    "maintainer": "Jesus Lopez, jesus@sgn.com",
+    "copy": "run.sh .",
+    "entrypoint": "[ \"./run.sh\" ]"
+  },
+  "source_repository_url": "https://github.com/mindjolt/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mindjolt/docker-images",
+  "docker_repository": "sgn0/couchbase",
+  "docker_image": "sgn0/couchbase",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "sgn0/couchbase",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/sgn0/couchbase",
+    "https://hub.docker.com/v2/repositories/sgn0/couchbase",
+    "https://github.com/mindjolt/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Document-oriented/Couchbase",
+    "Type/Middleware/Data Store/Document-oriented/HBase"
+  ],
+  "info_url": "https://hub.docker.com/r/sgn0/couchbase",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

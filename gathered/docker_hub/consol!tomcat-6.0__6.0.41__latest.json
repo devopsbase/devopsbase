@@ -1,0 +1,157 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/consol/tomcat-6.0",
+    "repository_url": "https://hub.docker.com/v2/repositories/consol/tomcat-6.0",
+    "tags_url": "https://hub.docker.com/v2/repositories/consol/tomcat-6.0/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/consol/tomcat-6.0/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/consol/tomcat-6.0/autobuild",
+    "user": "consol",
+    "name": "tomcat-6.0",
+    "namespace": "consol",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 6,
+    "pull_count": 1379,
+    "last_updated": "2015-11-14T02:42:04.475417Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "6.0.41",
+        "full_size": 272723908,
+        "id": 31574,
+        "repository": 33527,
+        "creator": 59069,
+        "last_updater": 489087,
+        "last_updated": "2015-11-14T02:42:10.001192Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 259711571,
+        "id": 31581,
+        "repository": 33527,
+        "creator": 59069,
+        "last_updater": 489087,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "6.0.43",
+        "full_size": 259711581,
+        "id": 31579,
+        "repository": 33527,
+        "creator": 59069,
+        "last_updater": 489087,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "ConSol/docker-appserver"
+  },
+  "name": "consol/tomcat-6.0 Docker container",
+  "description": "Tomcat 6.0.43, 8080, \"admin/admin\"",
+  "readme": "## Apache Tomcat 6.0\n\nA simple docker build for installing a vanilla Tomcat 6.0 below\n*/opt/tomcat*. It comes out of the box and is intended for use for\nintegration testing.\n\n\nDuring startup a directory specified by the environment variable `DEPLOY_DIR`\n(*/maven* by default) is checked for .war files. If there\nare any, they are linked into the *webapps/* directory for automatic\ndeployment. This plays nicely with the Docker maven plugin from\nhttps://github.com/rhuss/docker-maven-plugin/ and its 'assembly' mode which\ncan automatically create Docker data container with Maven artifacts\nexposed from a directory */maven*\n\n\n\nThis image will enable a Jolokia agent during startup which can be reached\nby default within the container at port 8778.\n\nThe environment variable `$JOLOKIA_OFF` can be set so that the agent won't start.\n\nMore information about Jolokia configuration options can be found at\n[jolokia/java-jolokia](https://registry.hub.docker.com/u/jolokia/java-jolokia)\n\n\nFeatures:\n\n* Tomcat Version: **6.0.44**\n* Java Version: **OpenJDK 1.7.0_79 (7u79-2.5.5-1~deb8u)** (base image: *jolokia/java-jolokia:7*)\n* Port: **8080**\n* User **admin** (Password: **admin**) has been added to access the admin\n  applications */host-manager* and */manager*)\n* Documentation and examples have been removed\n* Command: `/opt/tomcat/bin/deploy-and-run.sh` which links .war files from */maven* to \n  */opt/tomcat/webapps* and then calls `catalina.sh run`\n* Sets `-Djava.security.egd=file:/dev/./urandom` for faster startup times\n  (though a bit less secure)\n",
+  "dockerfile": "FROM jolokia/java-jolokia:7\n\nMAINTAINER roland@jolokia.org\n\nEXPOSE 8080 8778\n\nENV TOMCAT_VERSION 6.0.44\nENV DEPLOY_DIR /maven\n\n\n# Get and Unpack Tomcat\nRUN wget http://archive.apache.org/dist/tomcat/tomcat-6/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz -O /tmp/catalina.tar.gz && tar xzf /tmp/catalina.tar.gz -C /opt && ln -s /opt/apache-tomcat-${TOMCAT_VERSION} /opt/tomcat && rm /tmp/catalina.tar.gz\n\n# Add roles\nADD tomcat-users.xml /opt/apache-tomcat-${TOMCAT_VERSION}/conf/\n\n# Jolokia config\nADD jolokia.properties /opt/jolokia/jolokia.properties\n\n# Startup script\nADD deploy-and-run.sh /opt/apache-tomcat-${TOMCAT_VERSION}/bin/\n\n# Remove unneeded apps\nRUN rm -rf /opt/tomcat/webapps/examples /opt/tomcat/webapps/docs \n\nVOLUME [\"/opt/tomcat/logs\", \"/opt/tomcat/work\", \"/opt/tomcat/temp\", \"/tmp/hsperfdata_root\" ]\n\nENV CATALINA_HOME /opt/tomcat\nENV PATH $PATH:$CATALINA_HOME/bin\n\nCMD /opt/tomcat/bin/deploy-and-run.sh\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "tomcat-users.xml",
+        "dest": "/opt/apache-tomcat-${TOMCAT_VERSION}/conf/"
+      },
+      {
+        "source": "jolokia.properties",
+        "dest": "/opt/jolokia/jolokia.properties"
+      },
+      {
+        "source": "deploy-and-run.sh",
+        "dest": "/opt/apache-tomcat-${TOMCAT_VERSION}/bin/"
+      }
+    ],
+    "expose": [
+      8080
+    ],
+    "volume": [
+      "[\"/opt/tomcat/logs\", \"/opt/tomcat/work\", \"/opt/tomcat/temp\", \"/tmp/hsperfdata_root\" ]"
+    ],
+    "run": [
+      "wget http://archive.apache.org/dist/tomcat/tomcat-6/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz -O /tmp/catalina.tar.gz && tar xzf /tmp/catalina.tar.gz -C /opt && ln -s /opt/apache-tomcat-${TOMCAT_VERSION} /opt/tomcat && rm /tmp/catalina.tar.gz",
+      "rm -rf /opt/tomcat/webapps/examples /opt/tomcat/webapps/docs "
+    ],
+    "workdir": [],
+    "from": "jolokia/java-jolokia:7",
+    "maintainer": "roland@jolokia.org",
+    "env": {
+      "TOMCAT_VERSION": "6.0.44",
+      "DEPLOY_DIR": "/maven",
+      "CATALINA_HOME": "/opt/tomcat",
+      "PATH": "$PATH:$CATALINA_HOME/bin"
+    },
+    "cmd": "/opt/tomcat/bin/deploy-and-run.sh"
+  },
+  "source_repository_url": "https://github.com/ConSol/docker-appserver.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/ConSol/docker-appserver",
+  "docker_repository": "consol/tomcat-6.0",
+  "docker_image": "consol/tomcat-6.0",
+  "parameters_schema": {
+    "TOMCAT_VERSION": {
+      "default": "6.0.44",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEPLOY_DIR": {
+      "default": "/maven",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CATALINA_HOME": {
+      "default": "/opt/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:$CATALINA_HOME/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "consol/tomcat-6.0",
+  "revision": "6.0.41",
+  "uris": [
+    "https://hub.docker.com/r/consol/tomcat-6.0",
+    "https://hub.docker.com/v2/repositories/consol/tomcat-6.0",
+    "https://github.com/ConSol/docker-appserver.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/consol/tomcat-6.0",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

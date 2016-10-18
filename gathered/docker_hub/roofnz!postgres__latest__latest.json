@@ -1,0 +1,113 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/roofnz/postgres",
+    "repository_url": "https://hub.docker.com/v2/repositories/roofnz/postgres",
+    "tags_url": "https://hub.docker.com/v2/repositories/roofnz/postgres/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/roofnz/postgres/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/roofnz/postgres/autobuild",
+    "user": "roofnz",
+    "name": "postgres",
+    "namespace": "roofnz",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 83,
+    "last_updated": "2016-08-18T05:05:54.675165Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 234375364,
+        "id": 3222189,
+        "repository": 716492,
+        "creator": 574206,
+        "last_updater": 574206,
+        "last_updated": "2016-08-18T05:05:54.291692Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "nzroof/postgres"
+  },
+  "name": "roofnz/postgres Docker container",
+  "description": "Just a test for postgres",
+  "readme": "# Postgres docker container with wale for backup\n\nCurrently supports Amazon S3 and Azure (beta) which must be specified by CONTAINER_TYPE.\n\nRecommended use is with a docker env file. e.g .env/postgres.list\n\n```\n# For Postgres\nPOSTGRES_PASSWORD=MyPassword \n\n# For Wal-e\nACCESS_KEY=access-key # ACCESS KEY for S3, ACCOUNT NAME for Azure\nSECRET_KEY=secret-key # SECRET ACCESS KEY for S3, ACCESS KEY for Azure\nCONTAINER_TYPE=S3 # S3 or AZURE\nBUCKET=s3://yourbucket/yourarchivedir\n\n```\n\n## Example usage\n```\ndocker run -v pg95data:/var/lib/postgresql/data --env-file .env/postgres.list roofnz/postgres\n```\n\nThe entry point scripts enable pg_trgm extension for text searching and change postgres configuration by creating a 10-general.conf and 20-archive.conf.  These are designed for a fairly grunty server, however creating your own conf file e.g. 30-my.conf in conf.d will override these",
+  "dockerfile": "FROM postgres:9.5\n\nMAINTAINER Graeme Gellatly <graemeg@roof.co.nz>\n\nRUN apt-get update && apt-get install -y python3 python3-pip python3-dev lzop pv daemontools cron\nRUN easy_install3 wal-e\nRUN pip3 install boto\n\nRUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nADD initdb.d/setupConfFile.sh /docker-entrypoint-initdb.d/setupConfFile.sh\nADD initdb.d/setupExtensions.sql /docker-entrypoint-initdb.d/setupExtensions.sql\nADD scripts/setup-wal-e.sh /tmp/setup-wal-e.sh\n\nRUN chmod 755 /docker-entrypoint-initdb.d/setupConfFile.sh\nRUN chmod 755 /docker-entrypoint-initdb.d/setupExtensions.sql\nRUN chmod 755 /tmp/setup-wal-e.sh\n\nRUN /tmp/setup-wal-e.sh\nRUN su - postgres -c \"crontab -l | { cat; echo \\\"0 3 * * * /usr/bin/envdir /etc/wal-e.d/env /usr/local/bin/wal-e backup-push /var/lib/postgresql/data\\\"; } | crontab -\"\nRUN su - postgres -c \"crontab -l | { cat; echo \\\"30 3 * * * /usr/bin/envdir /etc/wal-e.d/env /usr/local/bin/wal-e delete --confirm retain 5\\\"; } | crontab -\"\n\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "initdb.d/setupConfFile.sh",
+        "dest": "/docker-entrypoint-initdb.d/setupConfFile.sh"
+      },
+      {
+        "source": "initdb.d/setupExtensions.sql",
+        "dest": "/docker-entrypoint-initdb.d/setupExtensions.sql"
+      },
+      {
+        "source": "scripts/setup-wal-e.sh",
+        "dest": "/tmp/setup-wal-e.sh"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y python3 python3-pip python3-dev lzop pv daemontools cron",
+      "easy_install3 wal-e",
+      "pip3 install boto",
+      "apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "chmod 755 /docker-entrypoint-initdb.d/setupConfFile.sh",
+      "chmod 755 /docker-entrypoint-initdb.d/setupExtensions.sql",
+      "chmod 755 /tmp/setup-wal-e.sh",
+      "/tmp/setup-wal-e.sh",
+      "su - postgres -c \"crontab -l | { cat; echo \\\"0 3 * * * /usr/bin/envdir /etc/wal-e.d/env /usr/local/bin/wal-e backup-push /var/lib/postgresql/data\\\"; } | crontab -\"",
+      "su - postgres -c \"crontab -l | { cat; echo \\\"30 3 * * * /usr/bin/envdir /etc/wal-e.d/env /usr/local/bin/wal-e delete --confirm retain 5\\\"; } | crontab -\""
+    ],
+    "workdir": [],
+    "from": "postgres:9.5",
+    "maintainer": "Graeme Gellatly <graemeg@roof.co.nz>"
+  },
+  "source_repository_url": "https://github.com/nzroof/postgres.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/nzroof/postgres",
+  "docker_repository": "roofnz/postgres",
+  "docker_image": "roofnz/postgres",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "roofnz/postgres",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/roofnz/postgres",
+    "https://hub.docker.com/v2/repositories/roofnz/postgres",
+    "https://github.com/nzroof/postgres.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Test",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/roofnz/postgres",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

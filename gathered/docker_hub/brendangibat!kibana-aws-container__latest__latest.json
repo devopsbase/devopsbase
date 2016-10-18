@@ -1,0 +1,124 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/brendangibat/kibana-aws-container",
+    "repository_url": "https://hub.docker.com/v2/repositories/brendangibat/kibana-aws-container",
+    "tags_url": "https://hub.docker.com/v2/repositories/brendangibat/kibana-aws-container/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/brendangibat/kibana-aws-container/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/brendangibat/kibana-aws-container/autobuild",
+    "user": "brendangibat",
+    "name": "kibana-aws-container",
+    "namespace": "brendangibat",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 70889,
+    "last_updated": "2016-08-08T14:29:16.039102Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 122585547,
+        "id": 1570920,
+        "repository": 448444,
+        "creator": 239625,
+        "last_updater": 239625,
+        "last_updated": "2016-08-08T14:29:15.701459Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "brendangibat/kibana-aws-container"
+  },
+  "name": "brendangibat/kibana-aws-container Docker container",
+  "description": "Kibana v4.1.4 with AWS ElasticSearch signing support.",
+  "readme": "# kibana-aws-container\nKibana docker container that supports communicating signed requests to AWS ElasticSearch\n\nTo connet the container to your AWS ElasticSearch search cluster, set either of the environmental variables:\n* ELASTICSEARCH_URL\n* ELASTICSEARCH_PORT_9200_TCP\n\nto a url, for example, of: \"https://search-prefix.us-east-1.es.amazonaws.com\"\n\n# AWS ElasticSearch service integration\n\nFor quicker integration with your existing AWS VPC and the AWS ElasticSearch service, the following environmental variables can be specified while omitting ELASTICSEARCH_URL and ELASTICSEARCH_PORT_9200_TCP:\n\n* ES_CLUSTER\n* ES_CLUSTER_REGION\n\nIf you define both, the container will query the AWS CLI for the search cluster by name (ES_CLUSTER) in the region (ES_CLUSTER_REGION) and populate ELASTICSEARCH_URL with the hostname discovered.\n\nIf using the AWS discovery of the search cluster hostname, you will need to ensure the container has the IAM policy permissions to execute 'es:DescribeElasticsearchDomain' for the current account for the region specified in ES_CLUSTER_REGION.\n\n# Extending the container\n\nIn your kibana.yml add your own config values to communicate with the AWS ES endpoints:\n\n```\n# The Elasticsearch instance to use for all your queries.\nelasticsearch_url: \"https://search-prefix.us-east-1.es.amazonaws.com\"\n\n# For AWS Hosted ElasticSearch\ntransport: \"AWS\"\nregion: \"us-east-1\"\n```\n",
+  "dockerfile": "FROM debian:jessie\n\n# add our user and group first to make sure their IDs get assigned consistently\nRUN groupadd -r kibana && useradd -r -g kibana kibana\n\nRUN apt-get update && apt-get -y install unzip curl\n\nRUN apt-get update && apt-get -y install python\nRUN curl \"https://s3.amazonaws.com/aws-cli/awscli-bundle.zip\" -o \"awscli-bundle.zip\"\nRUN unzip awscli-bundle.zip\nRUN ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws\n\nRUN apt-get update && apt-get install -y ca-certificates curl --no-install-recommends && rm -rf /var/lib/apt/lists/*\n\n# grab gosu for easy step-down from root\nRUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4\nRUN arch=\"$(dpkg --print-architecture)\" \\\n\t&& set -x \\\n\t&& curl -o /usr/local/bin/gosu -SL \"https://github.com/tianon/gosu/releases/download/1.3/gosu-$arch\" \\\n\t&& curl -o /usr/local/bin/gosu.asc -SL \"https://github.com/tianon/gosu/releases/download/1.3/gosu-$arch.asc\" \\\n\t&& gpg --verify /usr/local/bin/gosu.asc \\\n\t&& rm /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu\n\nENV KIBANA_VERSION 4.1.11\nENV KIBANA_SHA1 8c9cdc08e47cd6f0c4720122dd81ed8ed5b66a6d\n\nRUN set -x \\\n\t&& curl -fSL \"https://github.com/brendangibat/kibana/releases/download/v4.1.11-aws/kibana-4.1.11-aws-linux-x64.tar.gz\" -o kibana.tar.gz \\\n\t&& echo \"${KIBANA_SHA1}  kibana.tar.gz\" | sha1sum -c - \\\n\t&& mkdir -p /opt/kibana \\\n\t&& tar -xz --strip-components=1 -C /opt/kibana -f kibana.tar.gz \\\n\t&& rm kibana.tar.gz\n\nENV PATH /opt/kibana/bin:$PATH\n\nCOPY ./docker-entrypoint.sh /\n\nEXPOSE 5601\nENTRYPOINT [\"/docker-entrypoint.sh\"]\nCMD [\"kibana\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5601
+    ],
+    "volume": [],
+    "run": [
+      "groupadd -r kibana && useradd -r -g kibana kibana",
+      "apt-get update && apt-get -y install unzip curl",
+      "apt-get update && apt-get -y install python",
+      "curl \"https://s3.amazonaws.com/aws-cli/awscli-bundle.zip\" -o \"awscli-bundle.zip\"",
+      "unzip awscli-bundle.zip",
+      "./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws",
+      "apt-get update && apt-get install -y ca-certificates curl --no-install-recommends && rm -rf /var/lib/apt/lists/*",
+      "gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4",
+      "arch=\"$(dpkg --print-architecture)\" \t&& set -x \t&& curl -o /usr/local/bin/gosu -SL \"https://github.com/tianon/gosu/releases/download/1.3/gosu-$arch\" \t&& curl -o /usr/local/bin/gosu.asc -SL \"https://github.com/tianon/gosu/releases/download/1.3/gosu-$arch.asc\" \t&& gpg --verify /usr/local/bin/gosu.asc \t&& rm /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu",
+      "set -x \t&& curl -fSL \"https://github.com/brendangibat/kibana/releases/download/v4.1.11-aws/kibana-4.1.11-aws-linux-x64.tar.gz\" -o kibana.tar.gz \t&& echo \"${KIBANA_SHA1}  kibana.tar.gz\" | sha1sum -c - \t&& mkdir -p /opt/kibana \t&& tar -xz --strip-components=1 -C /opt/kibana -f kibana.tar.gz \t&& rm kibana.tar.gz"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "env": {
+      "KIBANA_VERSION": "4.1.11",
+      "KIBANA_SHA1": "8c9cdc08e47cd6f0c4720122dd81ed8ed5b66a6d",
+      "PATH": "/opt/kibana/bin:$PATH"
+    },
+    "copy": "./docker-entrypoint.sh /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"kibana\"]"
+  },
+  "source_repository_url": "https://github.com/brendangibat/kibana-aws-container.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/brendangibat/kibana-aws-container",
+  "docker_repository": "brendangibat/kibana-aws-container",
+  "docker_image": "brendangibat/kibana-aws-container",
+  "parameters_schema": {
+    "KIBANA_VERSION": {
+      "default": "4.1.11",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIBANA_SHA1": {
+      "default": "8c9cdc08e47cd6f0c4720122dd81ed8ed5b66a6d",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/opt/kibana/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5601
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "brendangibat/kibana-aws-container",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/brendangibat/kibana-aws-container",
+    "https://hub.docker.com/v2/repositories/brendangibat/kibana-aws-container",
+    "https://github.com/brendangibat/kibana-aws-container.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/Amazon",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/brendangibat/kibana-aws-container",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

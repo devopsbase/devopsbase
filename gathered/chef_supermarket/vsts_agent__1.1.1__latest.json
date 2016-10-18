@@ -1,0 +1,94 @@
+{
+  "name": "vsts_agent Chef cookbook",
+  "chef_cookbook_name": "vsts_agent",
+  "revision": "1.1.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/vsts_agent",
+    "https://supermarket.chef.io/cookbooks/vsts_agent/download",
+    "https://supermarket.chef.io/cookbooks/vsts_agent/versions/1.1.1",
+    "https://supermarket.chef.io/cookbooks/vsts_agent/versions/1.1.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/vsts_agent/versions/1.1.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/vsts_agent",
+    "https://supermarket.chef.io/api/v1/cookbooks/vsts_agent/versions/1.1.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Build"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/vsts_agent",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/vsts_agent/versions/1.1.1/download",
+  "deprecated": false,
+  "created": "2016-06-29T14:59:21.823Z",
+  "updated": "2016-09-27T14:54:54.121Z",
+  "description": "Installs/Configures visualstudio team services build agents",
+  "maintainer": {
+    "name": "ivadim",
+    "email": "dmivanov@microsoft.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 73,
+  "downloads_count_revision": 14,
+  "repository_url": "https://github.com/Microsoft/vsts-agent-cookbook",
+  "issues_url": "https://github.com/Microsoft/vsts-agent-cookbook/issues",
+  "chef_source_url": "https://github.com/Microsoft/vsts-agent-cookbook",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Visual Studio Team Services Build and Release Agent Cookbook\n================\n\n[![Join the chat at https://gitter.im/Microsoft/vsts-agent-cookbook](https://badges.gitter.im/Microsoft/vsts-agent-cookbook.svg)](https://gitter.im/Microsoft/vsts-agent-cookbook?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)\n[![Build Status](https://travis-ci.org/Microsoft/vsts-agent-cookbook.svg?branch=master)](https://travis-ci.org/Microsoft/vsts-agent-cookbook)\n[![Cookbook Version](https://img.shields.io/cookbook/v/vsts_agent.svg)](https://supermarket.chef.io/cookbooks/vsts_agent)\n\nInstalls and configures Visual Studio Team Services [Build and Release Agent](https://github.com/Microsoft/vsts-agent/)\n\nPlease check [Wiki](https://github.com/Microsoft/vsts-agent-cookbook/wiki) for more examples\n\nRequirements\n------------\n- Chef 12 or higher\n\n### Platforms\nThe following platforms are tested and supported:\n- Debian 8 x64 (Jessie)\n- Ubuntu 16.04\n- Windows 10\n- Mac OS X 10.11.4 \n\nAttributes\n----------\n* `node['vsts_agent']['binary']['version']` - set version of package to install\n* `node['vsts_agent']['prerequisites']['osx']['install']` - control osx dependencies installation. Default true\n* `node['vsts_agent']['prerequisites']['debian']['install']` - control debian dependencies installation. Default true\n\nResource/Provider\n-----------------\n### vsts_agent\nThis resource installs and configures the vsts build and release agent\n#### Actions\n- `:install`: Install and configure the agent\n- `:remove`: Remove the agent and unregister it from VSTS\n- `:restart`: Restart the agent service\n\n#### Parameters\n- `agent_name`: Name attribute. The name of the vsts agent\n- `version`: an agent version to install. Default version from an attribute\n- `install_dir`: A target directory to install the vsts agent\n- `path`: Overwrite system PATH environment variable values. Linux and Mac OS X only\n- `env`: Additional environment variables. Linux and Mac OS X only \n- `user`: Set a local user to run the vsts agent\n- `group`: Set a local group to run the vsts agent\n- `runasservice`: run agent as a service. Default 'true'\n- `windowslogonaccount`: Set a user name to run a windows service. Possible values are \"NT AUTHORITY\\NetworkService\", \"NT AUTHORITY\\LocalService\" or any system valid username\n- `windowslogonpassword`: Set password for windowslogonaccount unless it is equal to NetworkService or LocalService\n- `vsts_url`: url to VSTS instance\n- `vsts_pool`: A pool to connect an agent\n- `vsts_auth`:  Authentication type. Valid options are PAT (Personal Access Token), Negotiate (Kerberos or NTLM), Integrated (Windows default credentials) and ALT (Alternate Credentials). Default PAT auth\n- `vsts_token`: A personal access token for VSTS. Used with PAT auth type. [See](http://roadtoalm.com/2015/07/22/using-personal-access-tokens-to-access-visual-studio-online/)\n- `vsts_username`: A user to connect to VSTS. Used with Negotiate and ALT auth\n- `vsts_password`: A user to connect to VSTS. Used with Negotiate and ALT auth\n- `work_folder`: Set different workspace location. Default is \"install_dir/\\_work\"\n\n#### Examples\nInstall, configure, restart and remove an agent.\nCheck [windows](test/cookbooks/windows-basic/recipes/default.rb), [debian](test/cookbooks/debian-basic/recipes/default.rb) or [osx](test/cookbooks/osx-basic/recipes/default.rb) tests for more examples.\n\n```ruby\ninclude_recipe 'vsts_agent::default'\n\nif platform_family?('windows')\n  dir = 'c:\\\\agents'\nelse\n  dir = '/tmp/agents'\nend\n\nvsts_agent 'agent_01' do\n  install_dir dir\n  user 'vagrant'\n  group 'vagrant'\n  path '/usr/local/bin/:/usr/bin:/opt/bin/' # only works on nix systems\n  env('M2_HOME' => '/opt/maven', 'JAVA_HOME' => '/opt/java') # only works on nix systems\n  vsts_url 'https://contoso.visualstudio.com'\n  vsts_pool 'default'\n  vsts_token 'my_secret_token_from_vsts'\n  windowslogonaccount 'builder' # will be used only on windows\n  windowslogonpassword 'Pas$w0r_d' # will be used only on windows\n  action :install\nend\n\nvsts_agent 'agent_01' do\n  action :restart\nend\n\nvsts_agent 'agent_01' do\n  vsts_token 'my_secret_token_from_vsts'\n  action :remove\nend\n```\n\n# How to contribute\nCheck [Contribution Guide](CONTRIBUTING.md) and [Testing Guide](TESTING.md)\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "mac_os_x",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "mac_os_x_server",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "windows",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/windows",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ark",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/seven_zip",
+      "revision": "~> 2.0.0",
+      "self_resolve": true
+    }
+  ]
+}

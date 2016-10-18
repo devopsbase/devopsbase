@@ -1,0 +1,116 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/quantumobject/docker-owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/quantumobject/docker-owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/quantumobject/docker-owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/quantumobject/docker-owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/quantumobject/docker-owncloud/autobuild",
+    "user": "quantumobject",
+    "name": "docker-owncloud",
+    "namespace": "quantumobject",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 244,
+    "last_updated": "2016-04-27T14:20:17.754818Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 381361385,
+        "id": 56029,
+        "repository": 60680,
+        "creator": 80344,
+        "last_updater": 80344,
+        "last_updated": "2016-04-27T14:20:17.278614Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "test",
+        "full_size": 381360485,
+        "id": 2808647,
+        "repository": 60680,
+        "creator": 80344,
+        "last_updater": 80344,
+        "last_updated": "2016-04-27T13:17:32.532831Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "QuantumObject/docker-owncloud"
+  },
+  "name": "quantumobject/docker-owncloud Docker container",
+  "description": "Owncloud 8.2",
+  "readme": "# docker-owncloud\n\nDocker container for [Owncloud 9.0.1][3]\n\n\"OwnCloud Server Access your data from all your devices, on an open platform you can extend and modify.\"\n\n## Install dependencies\n\n  - [Docker][2]\n\nTo install docker in Ubuntu 14.04 use the commands:\n\n    $ sudo apt-get update\n    $ wget -qO- https://get.docker.com/ | sh\n\n To install docker in other operating systems check [docker online documentation][4]\n\n## Usage\n\nTo run container use the command below:\n\n    $ docker run -d -p xxxx:80 quantumobject/docker-owncloud\n\nWhere xxxxx is the port assigned by you for the container if not docker will assigned one for it.\n\n## If you need a MySQL database you can link container :\n\n    $ docker run --name owncloud-mysql -e MYSQL_ROOT_PASSWORD=mysecretpassword  -e MYSQL_DATABASE=owncloud \\\n    -e MYSQL_USER=ownclouduser -e MYSQL_PASSWORD=owncloudpasswd -d mysql\n\nin case you want to used pre-existing mysql container , you can add the new database by connecting to it with _docker exec -it some-mysql bash_ and manual adding owncloud database or you can link and used quantumobject/docker-mywebsql to create database owncloud and user ownclouduser plus need to grant all permission of this user to the database.  \n  \nThem link to Owncloud container\n\n    $ docker run -d -p xxxx:80 --link owncloud-mysql:db quantumobject/docker-owncloud \n\nwhere when been ask for database need to replace localhost for db.\n\n## Accessing the Owncloud applications:\n\nAfter that check with your browser at addresses plus the port xxxx that is assigned by you or docker:\n\n  - **http://host_ip:xxxx/**\n\nTo access the container from the server that the container is running :\n\n    $ docker exec -it container_id /bin/bash\n\nnote: deploy this container behind proxy with SSL for extra security:\n\nhttps://github.com/jwilder/nginx-proxy\n\nhttps://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion\n\n## More Info\n\nAbout Owncloud  [doc.owncloud.org][1]\n\nTo help improve this container [docker-owncloud][5]\n\nFor additional info about us and our projects check our site [www.quantumobject.org][6]\n\n[1]:http://doc.owncloud.org\n[2]:https://www.docker.com\n[3]:https://owncloud.org/install\n[4]:http://docs.docker.com\n[5]:https://github.com/QuantumObject/docker-owncloud\n[6]:https://www.quantumobject.org\n",
+  "dockerfile": "#name of container: docker-owncloud\n#versison of container: 2.0\n\nFROM quantumobject/docker-baseimage:15.10\nMAINTAINER Angel Rodriguez  \"angel@quantumobject.com\"\n\n#add repository and update the container\n#Installation of nesesary package/software for this containers...\nRUN echo \"deb http://archive.ubuntu.com/ubuntu `cat /etc/container_environment/DISTRIB_CODENAME`-backports main restricted \" >> /etc/apt/sources.list\nRUN apt-get update && apt-get install -y -q  php5 \\\n                                             libapache2-mod-php5 \\\n                                             php5-gd apache2 \\\n                                             php-xml-parser \\\n                                             php5-intl \\\n                                             smbclient \\\n                                             php5-sqlite \\\n                                             php5-mysql \\\n                                             php5-json  \\\n                                             php5-curl  \\\n                                             libcurl3 \\\n                      && apt-get clean \\\n                      && rm -rf /tmp/* /var/tmp/*  \\\n                      && rm -rf /var/lib/apt/lists/*\n\n# to add apache2 deamon to runit\nRUN mkdir /etc/service/apache2\nCOPY apache2.sh /etc/service/apache2/run\nRUN chmod +x /etc/service/apache2/run\n\n#to add startup.sh to be runs the scripts during startup\nRUN mkdir -p /etc/my_init.d\nCOPY startup.sh /etc/my_init.d/startup.sh\nRUN chmod +x /etc/my_init.d/startup.sh\n\n#installing owncloud and creating database for it ....\nCOPY pre-conf.sh /sbin/pre-conf\nRUN chmod +x /sbin/pre-conf; sync \\\n    && /bin/bash -c /sbin/pre-conf \\\n    && rm /sbin/pre-conf\n\n# configuration file for owncloud and apache2\nCOPY apache2.conf /etc/apache2/apache2.conf\nCOPY owncloud.conf /etc/apache2/conf.d/owncloud.conf\nRUN sed  -i 's/DocumentRoot \\/var\\/www\\/html/DocumentRoot \\/var\\/www\\/owncloud/' /etc/apache2/sites-available/000-default.conf\nCOPY autoconfig.php /var/www/owncloud/config/autoconfig.php\nRUN mkdir -p /etc/apache2/ssl \\\n    && rm -R /var/www/html  \\\n    && a2enmod rewrite \\\n    && a2enmod headers\n\n##scritp that can be running from the outside using docker-bash tool ...\n#backup scritp with need to be use with VOLUME /var/backups/\nCOPY backup.sh /sbin/backup\nRUN chmod +x /sbin/backup\nVOLUME /var/backups\n\n#create Volume for the data for owncloud\nVOLUME /var/data\n\n#expose port for https service\nEXPOSE 80\n\n# Use baseimage-docker's init system.\nCMD [\"/sbin/my_init\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "/var/backups",
+      "/var/data"
+    ],
+    "run": [
+      "echo \"deb http://archive.ubuntu.com/ubuntu `cat /etc/container_environment/DISTRIB_CODENAME`-backports main restricted \" >> /etc/apt/sources.list",
+      "apt-get update && apt-get install -y -q  php5                                              libapache2-mod-php5                                              php5-gd apache2                                              php-xml-parser                                              php5-intl                                              smbclient                                              php5-sqlite                                              php5-mysql                                              php5-json                                               php5-curl                                               libcurl3                       && apt-get clean                       && rm -rf /tmp/* /var/tmp/*                        && rm -rf /var/lib/apt/lists/*",
+      "mkdir /etc/service/apache2",
+      "chmod +x /etc/service/apache2/run",
+      "mkdir -p /etc/my_init.d",
+      "chmod +x /etc/my_init.d/startup.sh",
+      "chmod +x /sbin/pre-conf; sync     && /bin/bash -c /sbin/pre-conf     && rm /sbin/pre-conf",
+      "sed  -i 's/DocumentRoot \\/var\\/www\\/html/DocumentRoot \\/var\\/www\\/owncloud/' /etc/apache2/sites-available/000-default.conf",
+      "mkdir -p /etc/apache2/ssl     && rm -R /var/www/html      && a2enmod rewrite     && a2enmod headers",
+      "chmod +x /sbin/backup"
+    ],
+    "workdir": [],
+    "from": "quantumobject/docker-baseimage:15.10",
+    "maintainer": "Angel Rodriguez  \"angel@quantumobject.com\"",
+    "copy": "backup.sh /sbin/backup",
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/QuantumObject/docker-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/QuantumObject/docker-owncloud",
+  "docker_repository": "quantumobject/docker-owncloud",
+  "docker_image": "quantumobject/docker-owncloud",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "quantumobject/docker-owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/quantumobject/docker-owncloud",
+    "https://hub.docker.com/v2/repositories/quantumobject/docker-owncloud",
+    "https://github.com/QuantumObject/docker-owncloud.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Build/Java/Ant"
+  ],
+  "info_url": "https://hub.docker.com/r/quantumobject/docker-owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

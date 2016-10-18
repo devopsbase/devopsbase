@@ -1,0 +1,133 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/killercentury/jenkins-dind",
+    "repository_url": "https://hub.docker.com/v2/repositories/killercentury/jenkins-dind",
+    "tags_url": "https://hub.docker.com/v2/repositories/killercentury/jenkins-dind/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/killercentury/jenkins-dind/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/killercentury/jenkins-dind/autobuild",
+    "user": "killercentury",
+    "name": "jenkins-dind",
+    "namespace": "killercentury",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 20,
+    "pull_count": 9314,
+    "last_updated": "2016-10-15T03:22:18.142537Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 297909949,
+        "id": 319,
+        "repository": 168887,
+        "creator": 152201,
+        "last_updater": 152201,
+        "last_updated": "2016-10-15T03:22:17.581020Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "killercentury/docker-jenkins-dind"
+  },
+  "name": "killercentury/jenkins-dind Docker container",
+  "description": "Generic Jenkins CI with Docker Engine and Docker Compose inside",
+  "readme": "# Jenkins DinD (Docker in Docker)\n\nThis Jenkins Docker image provides Docker inside itself, which allows you to run any Docker container in your Jenkins build script.\n\nBecause Docker container proivdes an isolated environment for running applications or tasks, which is perfect for any CI solution. This image is designed to run everything with Docker, so it doesn't pre-install any execution environment for any specific programming language. Instead, simply run the images you need from the public Docker Hub or your private Docker registry for your CI tasks.\n\nThis Docker image is based on [jpetazzo/dind](https://registry.hub.docker.com/u/jpetazzo/dind/) instead of the offical [Jenkins](https://registry.hub.docker.com/u/library/jenkins/). Supervisord is used to make sure everything has proper permission and lanuch in the right order. Morever, [Docker Compose](https://github.com/docker/compose) is available for launching multiple containers inside the CI.\n\nRun it with mounted directory from host:\n\n```\ndocker run --name jenkins-dind --privileged -d -p 8080:8080 -v /your/path:/var/lib/jenkins killercentury/jenkins-dind\n```\n",
+  "dockerfile": "FROM ubuntu:14.04\n\nMAINTAINER Decheng Zhang <killercentury@gmail.com>\n\n# Let's start with some basic stuff.\nRUN apt-get update -qq && apt-get install -qqy \\\n    apt-transport-https \\\n    ca-certificates \\\n    curl \\\n    lxc \\\n    iptables\n\n# Install Docker from Docker Inc. repositories.\nRUN curl -sSL https://get.docker.com/ | sh\n\n# Install the wrapper script from https://raw.githubusercontent.com/docker/docker/master/hack/dind.\nADD ./dind /usr/local/bin/dind\nRUN chmod +x /usr/local/bin/dind\n\nADD ./wrapdocker /usr/local/bin/wrapdocker\nRUN chmod +x /usr/local/bin/wrapdocker\n\n# Define additional metadata for our image.\nVOLUME /var/lib/docker\n\nENV DOCKER_COMPOSE_VERSION 1.3.3\n\nRUN wget -q -O - https://jenkins-ci.org/debian/jenkins-ci.org.key | apt-key add -\nRUN sh -c 'echo deb http://pkg.jenkins-ci.org/debian binary/ > /etc/apt/sources.list.d/jenkins.list'\nRUN apt-get update && apt-get install -y zip supervisor jenkins && rm -rf /var/lib/apt/lists/*\nRUN usermod -a -G docker jenkins\nENV JENKINS_HOME /var/lib/jenkins\nVOLUME /var/lib/jenkins\n\n# Install Docker Compose\nRUN curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose\nRUN chmod +x /usr/local/bin/docker-compose\n\nADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf\n\nEXPOSE 8080\n\nCMD [\"/usr/bin/supervisord\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./dind",
+        "dest": "/usr/local/bin/dind"
+      },
+      {
+        "source": "./wrapdocker",
+        "dest": "/usr/local/bin/wrapdocker"
+      },
+      {
+        "source": "supervisord.conf",
+        "dest": "/etc/supervisor/conf.d/supervisord.conf"
+      }
+    ],
+    "expose": [
+      8080
+    ],
+    "volume": [
+      "/var/lib/docker",
+      "/var/lib/jenkins"
+    ],
+    "run": [
+      "apt-get update -qq && apt-get install -qqy     apt-transport-https     ca-certificates     curl     lxc     iptables",
+      "curl -sSL https://get.docker.com/ | sh",
+      "chmod +x /usr/local/bin/dind",
+      "chmod +x /usr/local/bin/wrapdocker",
+      "wget -q -O - https://jenkins-ci.org/debian/jenkins-ci.org.key | apt-key add -",
+      "sh -c 'echo deb http://pkg.jenkins-ci.org/debian binary/ > /etc/apt/sources.list.d/jenkins.list'",
+      "apt-get update && apt-get install -y zip supervisor jenkins && rm -rf /var/lib/apt/lists/*",
+      "usermod -a -G docker jenkins",
+      "curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose",
+      "chmod +x /usr/local/bin/docker-compose"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "Decheng Zhang <killercentury@gmail.com>",
+    "env": {
+      "DOCKER_COMPOSE_VERSION": "1.3.3",
+      "JENKINS_HOME": "/var/lib/jenkins"
+    },
+    "cmd": "[\"/usr/bin/supervisord\"]"
+  },
+  "source_repository_url": "https://github.com/killercentury/docker-jenkins-dind.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/killercentury/docker-jenkins-dind",
+  "docker_repository": "killercentury/jenkins-dind",
+  "docker_image": "killercentury/jenkins-dind",
+  "parameters_schema": {
+    "DOCKER_COMPOSE_VERSION": {
+      "default": "1.3.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_HOME": {
+      "default": "/var/lib/jenkins",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "killercentury/jenkins-dind",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/killercentury/jenkins-dind",
+    "https://hub.docker.com/v2/repositories/killercentury/jenkins-dind",
+    "https://github.com/killercentury/docker-jenkins-dind.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Integration/Jenkins",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/killercentury/jenkins-dind",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

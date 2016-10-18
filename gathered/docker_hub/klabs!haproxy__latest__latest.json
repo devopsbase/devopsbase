@@ -1,0 +1,104 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/klabs/haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/klabs/haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/klabs/haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/klabs/haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/klabs/haproxy/autobuild",
+    "user": "klabs",
+    "name": "haproxy",
+    "namespace": "klabs",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 157,
+    "last_updated": "2016-09-25T10:17:47.733546Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 84779913,
+        "id": 5053297,
+        "repository": 938533,
+        "creator": 279802,
+        "last_updater": 279802,
+        "last_updated": "2016-09-25T10:17:47.207913Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "kaliop/ezdocker-stack"
+  },
+  "name": "klabs/haproxy Docker container",
+  "description": "Haproxy Docker image",
+  "readme": "Haproxy Docker image\n===================\n\nThis image (based on Debian 8) runs a haproxy 1.5 service.\n\nryslog is installed in order to have haproxy logs available in /var/log/haproxy.\n\nExposed ports are 80, 443, 8000.\n\nYou can copy the haproxy_example_kaliop.cfg file in your project and mount it as a volume in /etc/haproxy/haproxy.cfg : this configuration file will use linked 'web', 'varnish' and 'solr' containers as backends that will be accessible via corresponding 'backend' header on port 80.\n\n\nHow to run the container\n--------------------------------\n\n* If you are working behind a corporate http proxy, run the [klabs/forgetproxy container](https://registry.hub.docker.com/u/klabs/forgetproxy/)\n* Run the container\n\nYou can run the container with the docker run command :\n\n\n  ``` sh\n    docker run klabs/haproxy\n    ```\n\n But is is strongly recommended to use docker-compose with the stack.sh script provided in [ezdocker-stack](https://github.com/kaliop/ezdocker-stack/) repository.\n\nHow to use docker-compose to run container\n--------------------------------\n\n``` sh\ndocker-compose up -d\n``` \n\n\nExample custom docker-compose.yml file using haproxy container\n----------------------------------------------------------\n\n\n``` yml\nvarnish:\n  extends:\n    file: /home/user/docker/varnish4/docker-compose.yml\n    service: varnish4\n  image: kaliop_varnish4\n  links:\n  - web\n  \nweb:\n  privileged: true\n  image: kaliop_webserver\n  volumes:\n   - .:/home/site/www/\n   - \"$SSH_AUTH_SOCK:/ssh-agent\"\n   - /var/run/docker.sock:/var/run/docker.sock\n   - /usr/bin/docker:/usr/bin/docker\n  environment:\n   - DEV_UID=65527\n   - DEV_GID=513\n   - SSH_AUTH_SOCK=/ssh-agent\n  cap_add:\n    - SYS_PTRACE\n\nhaproxy:\n  extends:\n    file: /home/user/docker/haproxy/docker-compose.yml\n    service: haproxy\n  image: kaliop_haproxy\n  volumes:\n   - /home/user/docker/haproxy/haproxy_example_kaliop.cfg:/etc/haproxy/haproxy.cfg\n  links:\n    - web\n    - varnish\n    - solr\n\nsolr:\n  extends:\n    file: /home/user/docker/solr/docker-compose.yml\n    service: solr\n  image: kaliop_solr\n\n\n``` ",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER Kaliop\n\nRUN apt-get update && \\\n    apt-get install -y \\\n    haproxy \\\n    procps \\\n    rsyslog \\\n    curl;\n\nADD haproxy.cfg /etc/haproxy/haproxy.cfg\n\n\nADD bootstrap.sh /root/bootstrap.sh\n\n# Clear archives in apt cache folder\nRUN apt-get clean && rm -rf /var/lib/apt/lists/*\n\nCMD [\"/root/bootstrap.sh\"]\n\nEXPOSE 80 443 8000",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "haproxy.cfg",
+        "dest": "/etc/haproxy/haproxy.cfg"
+      },
+      {
+        "source": "bootstrap.sh",
+        "dest": "/root/bootstrap.sh"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update &&     apt-get install -y     haproxy     procps     rsyslog     curl;",
+      "apt-get clean && rm -rf /var/lib/apt/lists/*"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "Kaliop",
+    "cmd": "[\"/root/bootstrap.sh\"]"
+  },
+  "source_repository_url": "https://github.com/kaliop/ezdocker-stack.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/kaliop/ezdocker-stack",
+  "docker_repository": "klabs/haproxy",
+  "docker_image": "klabs/haproxy",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "klabs/haproxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/klabs/haproxy",
+    "https://hub.docker.com/v2/repositories/klabs/haproxy",
+    "https://github.com/kaliop/ezdocker-stack.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/klabs/haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

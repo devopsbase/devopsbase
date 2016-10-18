@@ -1,0 +1,133 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/skaji/relocatable-perl-growthforecas",
+    "repository_url": "https://hub.docker.com/v2/repositories/skaji/relocatable-perl-growthforecas",
+    "tags_url": "https://hub.docker.com/v2/repositories/skaji/relocatable-perl-growthforecas/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/skaji/relocatable-perl-growthforecas/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/skaji/relocatable-perl-growthforecas/autobuild",
+    "user": "skaji",
+    "name": "relocatable-perl-growthforecas",
+    "namespace": "skaji",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 56,
+    "last_updated": "2015-11-14T01:06:41.025903Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 473500010,
+        "id": 27144,
+        "repository": 22811,
+        "creator": 30636,
+        "last_updater": 30636,
+        "last_updated": "2015-11-14T01:06:59.354183Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "shoichikaji/relocatable-perl-growthforecast"
+  },
+  "name": "skaji/relocatable-perl-growthforecas Docker container",
+  "description": "",
+  "readme": "# Relocatable Perl with GrowthForecast\n\n[![Build Status](https://api.travis-ci.org/shoichikaji/relocatable-perl-growthforecast.svg)](https://travis-ci.org/shoichikaji/relocatable-perl-growthforecast)\n\nThis repository is just an attempt to show\nhow latest, pre-compiled, relocatable Perl is useful.\n\nYou can download *latest*, *pre-compiled*, *relocatable* Perl with GrowthForecast from\n[release page](https://github.com/shoichikaji/relocatable-perl-growthforecast/releases).\n\n## how to install\n\nJust fetch a tarball (darwin-2level or x86_64-linux), and extract it to your favorite directory:\n\n    # MacOS X example\n    > wget https://github.com/shoichikaji/relocatable-perl-growthforecast/releases/download/0.32/growthforecast-darwin-2level.tar.gz\n    > tar xzf growthforecast-darwin-2level.tar.gz\n    > mv growthforecast-darwin-2level ~/my-favorite-name\n\n    > ~/my-favorite-name/bin/growthforecast.pl\n\nThen GrowthForecast will be accepting connections at 5125 port:\n\n    > curl http://localhost:5125\n\nI've confirmed that the pre-compiled perl worked on:\n\n* 64bit CentOS 6.5 and Ubuntu 12.04, 14.04 (growthforecast-x86_64-linux.tar.gz)\n* Mac OS X 10.9.5 (growthforecast-darwin-2level.tar.gz)\n\n## how to build yourself\n\nSee [Dockerfile](https://github.com/shoichikaji/relocatable-perl-growthforecast/blob/master/Dockerfile)\nand [mac.sh](https://github.com/shoichikaji/relocatable-perl-growthforecast/blob/master/misc/mac.sh).\n\n## docker image\n\nhttps://registry.hub.docker.com/u/skaji/relocatable-perl-growthforecas\n\n",
+  "dockerfile": "FROM skaji/relocatable-perl\nMAINTAINER Shoichi Kaji <skaji@cpan.org>\n\nRUN yum install -y xz gcc-c++ chrpath bzip2 patch\n\nRUN mkdir /tmp/build\nWORKDIR /tmp/build\n\nADD misc/rrdtool-deps-install.pl /tmp/build/rrdtool-deps-install.pl\nRUN PREFIX=/opt/perl/local /usr/bin/perl rrdtool-deps-install.pl\nADD misc/pango.modules /opt/perl/local/etc/pango/pango.modules\n\nRUN rm -rf /opt/perl/local/etc/fonts\nRUN mkdir -p /opt/perl/local/etc/fontconfig/conf.d /opt/perl/local/share/fonts/truetype/dejavu /opt/perl/local/var/fontconfig\nRUN wget -q http://sourceforge.net/projects/dejavu/files/dejavu/2.34/dejavu-fonts-ttf-2.34.tar.bz2\nRUN tar xjf dejavu-fonts-ttf-2.34.tar.bz2\nRUN cp dejavu-fonts-ttf-2.34/ttf/* /opt/perl/local/share/fonts/truetype/dejavu\nRUN cp dejavu-fonts-ttf-2.34/fontconfig/* /opt/perl/local/share/fontconfig/conf.avail\nADD misc/fonts.conf /opt/perl/local/etc/fontconfig/fonts.conf\nRUN cd /opt/perl/local/etc/fontconfig/conf.d && ln -s ../../../share/fontconfig/conf.avail/*.conf .\n\nRUN /opt/perl/bin/cpanm --installdeps -nq Alien::RRDtool@0.06\n\nADD misc/Alien-RRDtool-0.06-patch /tmp/build/Alien-RRDtool-0.06-patch\nRUN wget -q http://www.cpan.org/authors/id/K/KA/KAZEBURO/Alien-RRDtool-0.06.tar.gz\nRUN tar xzf Alien-RRDtool-0.06.tar.gz && \\\n    cd Alien-RRDtool-0.06 && \\\n    patch -p0 < /tmp/build/Alien-RRDtool-0.06-patch && \\\n    PKGCONFIG=/opt/perl/local/bin/pkg-config \\\n    PKG_CONFIG_PATH=/opt/perl/local/lib/pkgconfig \\\n    /opt/perl/bin/cpanm -nq .\n\nRUN chrpath -r \\$ORIGIN/../../../../../../local/lib /opt/perl/lib/site_perl/5.*/x86_64-linux/auto/RRDs/RRDs.so\nRUN /opt/perl/bin/perl -MRRDs -e0\n\nRUN /opt/perl/bin/cpanm -nq --installdeps GrowthForecast\nRUN /opt/perl/bin/cpanm -nq GrowthForecast\n\n# I don't know why: sometimes missing dist share files\nRUN if [ `find /opt/perl/lib/site_perl/5.*/auto/share/dist/GrowthForecast -type f | wc -l` -eq 20 ]; then \\\n    echo GrowthForecast share files exist; \\\nelse \\\n    find /opt/perl/lib/site_perl/5.*/auto/share/dist/GrowthForecast -type f >&2; perl -e 'die \"some GrowthForecast files missing!\\n\"'; \\\nfi\n\nADD misc/header-growthforecast.pl /tmp/build/header-growthforecast.pl\nRUN /opt/perl/bin/perl /tmp/build/header-growthforecast.pl /opt/perl/bin/growthforecast.pl\n\nRUN /opt/perl/bin/change-shebang -f /opt/perl/bin/*\n\nRUN cp -r /opt/perl /tmp/growthforecast-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`\nRUN cd /tmp && tar czf /artifact/growthforecast-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`.tar.gz \\\n                                 growthforecast-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`\n\nRUN rm -rf /tmp/growthforecast-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`\nRUN rm -rf /tmp/build\n\nCMD [\"sleep\", \"infinity\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "misc/rrdtool-deps-install.pl",
+        "dest": "/tmp/build/rrdtool-deps-install.pl"
+      },
+      {
+        "source": "misc/pango.modules",
+        "dest": "/opt/perl/local/etc/pango/pango.modules"
+      },
+      {
+        "source": "misc/fonts.conf",
+        "dest": "/opt/perl/local/etc/fontconfig/fonts.conf"
+      },
+      {
+        "source": "misc/Alien-RRDtool-0.06-patch",
+        "dest": "/tmp/build/Alien-RRDtool-0.06-patch"
+      },
+      {
+        "source": "misc/header-growthforecast.pl",
+        "dest": "/tmp/build/header-growthforecast.pl"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "yum install -y xz gcc-c++ chrpath bzip2 patch",
+      "mkdir /tmp/build",
+      "PREFIX=/opt/perl/local /usr/bin/perl rrdtool-deps-install.pl",
+      "rm -rf /opt/perl/local/etc/fonts",
+      "mkdir -p /opt/perl/local/etc/fontconfig/conf.d /opt/perl/local/share/fonts/truetype/dejavu /opt/perl/local/var/fontconfig",
+      "wget -q http://sourceforge.net/projects/dejavu/files/dejavu/2.34/dejavu-fonts-ttf-2.34.tar.bz2",
+      "tar xjf dejavu-fonts-ttf-2.34.tar.bz2",
+      "cp dejavu-fonts-ttf-2.34/ttf/* /opt/perl/local/share/fonts/truetype/dejavu",
+      "cp dejavu-fonts-ttf-2.34/fontconfig/* /opt/perl/local/share/fontconfig/conf.avail",
+      "cd /opt/perl/local/etc/fontconfig/conf.d && ln -s ../../../share/fontconfig/conf.avail/*.conf .",
+      "/opt/perl/bin/cpanm --installdeps -nq Alien::RRDtool@0.06",
+      "wget -q http://www.cpan.org/authors/id/K/KA/KAZEBURO/Alien-RRDtool-0.06.tar.gz",
+      "tar xzf Alien-RRDtool-0.06.tar.gz &&     cd Alien-RRDtool-0.06 &&     patch -p0 < /tmp/build/Alien-RRDtool-0.06-patch &&     PKGCONFIG=/opt/perl/local/bin/pkg-config     PKG_CONFIG_PATH=/opt/perl/local/lib/pkgconfig     /opt/perl/bin/cpanm -nq .",
+      "chrpath -r \\$ORIGIN/../../../../../../local/lib /opt/perl/lib/site_perl/5.*/x86_64-linux/auto/RRDs/RRDs.so",
+      "/opt/perl/bin/perl -MRRDs -e0",
+      "/opt/perl/bin/cpanm -nq --installdeps GrowthForecast",
+      "/opt/perl/bin/cpanm -nq GrowthForecast",
+      "if [ `find /opt/perl/lib/site_perl/5.*/auto/share/dist/GrowthForecast -type f | wc -l` -eq 20 ]; then     echo GrowthForecast share files exist; else     find /opt/perl/lib/site_perl/5.*/auto/share/dist/GrowthForecast -type f >&2; perl -e 'die \"some GrowthForecast files missing!\\n\"'; fi",
+      "/opt/perl/bin/perl /tmp/build/header-growthforecast.pl /opt/perl/bin/growthforecast.pl",
+      "/opt/perl/bin/change-shebang -f /opt/perl/bin/*",
+      "cp -r /opt/perl /tmp/growthforecast-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`",
+      "cd /tmp && tar czf /artifact/growthforecast-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`.tar.gz                                  growthforecast-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`",
+      "rm -rf /tmp/growthforecast-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`",
+      "rm -rf /tmp/build"
+    ],
+    "workdir": [
+      "/tmp/build"
+    ],
+    "from": "skaji/relocatable-perl",
+    "maintainer": "Shoichi Kaji <skaji@cpan.org>",
+    "cmd": "[\"sleep\", \"infinity\"]"
+  },
+  "source_repository_url": "https://github.com/shoichikaji/relocatable-perl-growthforecast.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/shoichikaji/relocatable-perl-growthforecast",
+  "docker_repository": "skaji/relocatable-perl-growthforecas",
+  "docker_image": "skaji/relocatable-perl-growthforecas",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "skaji/relocatable-perl-growthforecas",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/skaji/relocatable-perl-growthforecas",
+    "https://hub.docker.com/v2/repositories/skaji/relocatable-perl-growthforecas",
+    "https://github.com/shoichikaji/relocatable-perl-growthforecast.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Perl"
+  ],
+  "info_url": "https://hub.docker.com/r/skaji/relocatable-perl-growthforecas",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

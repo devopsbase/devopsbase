@@ -1,0 +1,121 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/zmarcantel/cassandra",
+    "repository_url": "https://hub.docker.com/v2/repositories/zmarcantel/cassandra",
+    "tags_url": "https://hub.docker.com/v2/repositories/zmarcantel/cassandra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/zmarcantel/cassandra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/zmarcantel/cassandra/autobuild",
+    "user": "zmarcantel",
+    "name": "cassandra",
+    "namespace": "zmarcantel",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 12,
+    "pull_count": 3620,
+    "last_updated": "2015-10-10T15:59:01.170233Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 386521563,
+        "id": 21963,
+        "repository": 13019,
+        "creator": 15073,
+        "last_updater": 15073,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "zmarcantel/docker-cassandra"
+  },
+  "name": "zmarcantel/cassandra Docker container",
+  "description": "Cluster/Standalone DataStax Cassandra on Ubuntu.",
+  "readme": "docker-cassandra\n================\n\nStandlone/Clustered Datastax Community running on top of a Ubuntu-based Docker image\n\n\nRunning as standalone\n=====================\n\n### Docker\n\nJust start the image normally\n\n    docker run -d zmarcantel/cassandra\n\nThe necessary ports are exposed, so you can interact with the docker image as you normally do.\n\nIf you need help, see [Usage Guide](#usage-guide).\n\n\n### Vagrant\n\nSimply use the builtin `docker` provisioner to pull and start the image.\n\n````ruby\nconfig.vm.provision \"docker\" do |d|\n    d.pull_images \"zmarcantel/cassandra\"\n    d.run \"cass\", image: \"zmarcantel/cassandra\"\nend\n````\n\n\nRunning as a cluster\n====================\n\nTo get the images to talk to each other, simply use the docker `link` and `name` options.\n\nWe can __link__ up to 10 containers.\n\nYou are able to create as many containers as you'd like, but the init script only considers up to the first 10 as seeds.\n\nTruly, you only need one other seed and for simplicity, that's how this example works. The Cassandra cluster will gossip its way into being fully networked rather quickly. There is no reason a machine `cass9999` can't just reuse a seed from `cass[0-9]`.\n\n\n### Docker\n\nStart a first image, and then link them all up.\n\n##### Start the first image\n\n    docker run -d -name cass0 zmarcantel/cassandra\n\n##### Link the cluster\n\n    docker run -d -name cass1 -link cass0:cass0 zmarcantel/cassandra\n    docker run -d -name cass2 -link cass0:cass0 -link cass1:cass1 zmarcantel/cassandra\n\n\n### Vagrant\n\nWe'll do the same as above, but using the `docker` provisioner.\n\n````ruby\nconfig.vm.provision \"docker\" do |d|\n    d.run \"seed\", auto_assign_name: false,\n      args: \"--name cass0\",\n      image: \"zmarcantel/cassandra\"\n\n    d.run \"first\", auto_assign_name: false,\n      args: \"--name cass1 --link cass0:cass0\",\n      image: \"zmarcantel/cassandra\"\n\n    d.run \"second\", auto_assign_name: false,\n      args: \"--name cass2 --link cass0:cass0 --link cass1:cass1\",\n      image: \"zmarcantel/cassandra\"\nend\n````\n\n\n\nUsage Guide\n===========\n\n## Basic Docker One-Liners\n\nGet image ID for `docker-cassandra` on your machine\n\n    docker images | grep \"zmarcantel/cassandra\" | sed -e \"s/\\s\\+/ /g\" | cut -d' ' -f3\n\n__This is a very convenient export: the image ID__\n\n    export CASSDOCK_ID=`docker images | grep \"zmarcantel/cassandra\" | sed -e \"s/\\s\\+/ /g\" | cut -d' ' -f3`\n\nList the IPs of containers running `docker-cassandra`\n\n    docker inspect $CASSDOCK_ID | grep IPAddress | sed 's/\"IPAddress\": \"/ /g' | sed 's/\",//g' | sed 's/ //g'\n\nGet the above in a comma-separated format\n\n    docker inspect $CASSDOCK_ID | grep IPAddress | sed 's/\"IPAddress\": \"/ /g' | sed 's/\",//g' | sed 's/ //g' \\\n    sed -e :a -e N -e 's/\\n/,/' -e ta\n\nOr with spaces if you prefer\n\n    docker inspect $CASSDOCK_ID | grep IPAddress | sed 's/\"IPAddress\": \"/ /g' | sed 's/\",//g' | sed 's/ //g' \\\n    sed -e :a -e N -e 's/\\n/ /' -e ta\n\n\n## Talking to Cassandra\n\nEvery docker image is given an IP to communicate with.\n\nUse the above commands to get the IP of your docker images. Or manually look them up using `docker ps` and `docker inspect`.\n\nThe Following IPs are open (default Cassandra ports):\n\n    7199 7000 7001 9160 9042\n\n#### Standalone instance\n\nEvery language and client has a different syntax, but simply:\n\n````js\n    cassandra.connect(\"172.17.0.2\")\n````\n\nObviously modify to fit the method of connecting for your library.\n\n\n#### Cluster\n\nThe IPs of the cluster are determined using [one-liners] and your application input channels.\n\nI provide a way to get the info, but how it gets into your application is up to you.\n\nThe below IPs are examples to give a gist, but you must get your relevant IPs using the above commands.\n\n````js\n    cassandra.connect([\"172.17.0.2\", \"172.17.0.3\", \"172.17.0.4\"])\n````\n",
+  "dockerfile": "##\n##    Cassandra\n##\n##\n\nFROM ubuntu\nMAINTAINER Zachary Marcantel, zmarcantel@gmail.com, zach@zed.io, zmarcantel@utexas.edu\n\n# Add PPA for the necessary JDK\nRUN echo \"deb http://ppa.launchpad.net/webupd8team/java/ubuntu precise main\" | tee /etc/apt/sources.list.d/webupd8team-java.list\nRUN echo \"deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu precise main\" | tee -a /etc/apt/sources.list.d/webupd8team-java.list\nRUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys EEA14886\nRUN apt-get update\n\n# Install other packages\nRUN apt-get install -y curl\n\n# Preemptively accept the Oracle License\nRUN echo \"oracle-java7-installer\tshared/accepted-oracle-license-v1-1\tboolean\ttrue\" > /tmp/oracle-license-debconf\nRUN /usr/bin/debconf-set-selections /tmp/oracle-license-debconf\nRUN rm /tmp/oracle-license-debconf\n\n# Install the JDK\nRUN apt-get install -y oracle-java7-installer oracle-java7-set-default\nRUN apt-get update\n\n# Install Cassandra\nRUN echo \"deb http://debian.datastax.com/community stable main\" | sudo tee -a /etc/apt/sources.list.d/datastax.sources.list\nRUN curl -L http://debian.datastax.com/debian/repo_key | sudo apt-key add -\nRUN apt-get update\nRUN apt-get install -y dsc20 datastax-agent\n\n# Start the datastax-agent\nRUN service datastax-agent start\n\n# Deploy startup script\nADD init.sh /usr/local/bin/cass-dock\nRUN chmod 755 /usr/local/bin/cass-dock\n\n# Deploy shutdown script\nADD shutdown.sh /usr/local/bin/cass-stop\nRUN chmod 755 /usr/local/bin/cass-stop\n\nEXPOSE 7199 7000 7001 9160 9042\nUSER root\nCMD cass-dock\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "init.sh",
+        "dest": "/usr/local/bin/cass-dock"
+      },
+      {
+        "source": "shutdown.sh",
+        "dest": "/usr/local/bin/cass-stop"
+      }
+    ],
+    "expose": [
+      7199
+    ],
+    "volume": [],
+    "run": [
+      "echo \"deb http://ppa.launchpad.net/webupd8team/java/ubuntu precise main\" | tee /etc/apt/sources.list.d/webupd8team-java.list",
+      "echo \"deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu precise main\" | tee -a /etc/apt/sources.list.d/webupd8team-java.list",
+      "apt-key adv --keyserver keyserver.ubuntu.com --recv-keys EEA14886",
+      "apt-get update",
+      "apt-get install -y curl",
+      "echo \"oracle-java7-installer\tshared/accepted-oracle-license-v1-1\tboolean\ttrue\" > /tmp/oracle-license-debconf",
+      "/usr/bin/debconf-set-selections /tmp/oracle-license-debconf",
+      "rm /tmp/oracle-license-debconf",
+      "apt-get install -y oracle-java7-installer oracle-java7-set-default",
+      "apt-get update",
+      "echo \"deb http://debian.datastax.com/community stable main\" | sudo tee -a /etc/apt/sources.list.d/datastax.sources.list",
+      "curl -L http://debian.datastax.com/debian/repo_key | sudo apt-key add -",
+      "apt-get update",
+      "apt-get install -y dsc20 datastax-agent",
+      "service datastax-agent start",
+      "chmod 755 /usr/local/bin/cass-dock",
+      "chmod 755 /usr/local/bin/cass-stop"
+    ],
+    "workdir": [],
+    "from": "ubuntu",
+    "maintainer": "Zachary Marcantel, zmarcantel@gmail.com, zach@zed.io, zmarcantel@utexas.edu",
+    "user": "root",
+    "cmd": "cass-dock"
+  },
+  "source_repository_url": "git://github.com/zmarcantel/docker-cassandra.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/zmarcantel/docker-cassandra",
+  "docker_repository": "zmarcantel/cassandra",
+  "docker_image": "zmarcantel/cassandra",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        7199
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "zmarcantel/cassandra",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/zmarcantel/cassandra",
+    "https://hub.docker.com/v2/repositories/zmarcantel/cassandra",
+    "git://github.com/zmarcantel/docker-cassandra.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Build/Java/Ant",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/zmarcantel/cassandra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

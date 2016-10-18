@@ -1,0 +1,116 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/8x8cloud/kibana",
+    "repository_url": "https://hub.docker.com/v2/repositories/8x8cloud/kibana",
+    "tags_url": "https://hub.docker.com/v2/repositories/8x8cloud/kibana/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/8x8cloud/kibana/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/8x8cloud/kibana/autobuild",
+    "user": "8x8cloud",
+    "name": "kibana",
+    "namespace": "8x8cloud",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 28,
+    "last_updated": "2016-09-01T22:14:02.558118Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 43002810,
+        "id": 4635459,
+        "repository": 892612,
+        "creator": 278160,
+        "last_updater": 278160,
+        "last_updated": "2016-09-01T22:14:02.131617Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "8x8Cloud/docker-elastic"
+  },
+  "name": "8x8cloud/kibana Docker container",
+  "description": "An Alpine Linux based Kibana image, for local exploration",
+  "readme": "Kibana Docker Image\n=============\n## What is this?\n\nThis image is based off the raw [Alpine](https://hub.docker.com/_/alpine/) image. This shaves 100MB+ of image size off our Docker container! The Docker file also:\n * Grabs Kibana 4.5.4\n * Symlinks a version of Node/NPM that actually work with Busybox\n * Installs handy plugins (more below)\n * Exposes port 5601\n\n## Plugins\n\nThis image comes with the following plugins:\n\n * [Marvel](https://www.elastic.co/products/marvel) - a cluster monitoring plugin. See below for license details.\n * [Sense](https://www.elastic.co/guide/en/sense/current/installing.html) - an ad-hoc query plugin.\n\n\nSense is a completely awesome plugin for ad-hoc queries. It has auto-complete, a memory of queries run, syntax highlighting. It's also free and does not require a support plan or license.\n\n## Licensing\n\nIt is important to note that Marvel requires a license. As of the 2.x release of ElasticSearch Marvel is free for basic (single-cluster) use. The license obtained above will function as a trial for 30 days, and then you will be required to either buy a subscription or obtain a free basic license. Please see the [official documentation](https://www.elastic.co/guide/en/marvel/current/license-management.html) for up to date, detailed information.\n\nPlease note that these Docker images are not intended to be used in a production environment, and are not configured beyond simple clustering. These images are instead more for local exploration of features and parsing of ad-hoc data with different groups of plugins.\n\nIf there is sufficient interest, we may release an image without Marvel baked in.\n\n## Clustering\n\nKibana requires a copy of ElasticSearch in order to do anything useful. When running this image, you can either use it as a part of the `docker-compose.yml` in the root directory like so:\n\n```bash\ndocker-compose up -d\n```\n\nOr you can point it at a single container, aliased to \"elasticsearch\" (see the ElasticSearch image README for details):\n\n```bash\ndocker run --link elasticsearch -p 5601:5601 -d 8x8cloud/kibana\n```\n\n*Note: links are used here for simplicity. You can also use a Docker network.*\n\n## Why\n\nMuch like ElasticSearch, there are a number of Kibana images. None of them seemed to have the right combination of an up-to-date copy of Kibana, with a small image size, and the desired set of plugins. Plus, if we're already taking the trouble to dockerize the ElasticSearch nodes, why not create a small and customized Kibana node to go along with them...\n\nAs always, we welcome pull requests and issues. Within reason.\n",
+  "dockerfile": "FROM alpine:3.4\nMAINTAINER Greg Feigenson <greg.feigenson@8x8.com>\n\nENV KIBANA_VERSION=4.6.0 KIBANA_HOME=/usr/share/kibana PATH=${PATH}:${KIBANA_HOME}/bin\n\nRUN apk update && apk upgrade && apk add --no-cache curl nodejs bash && \\\n    curl -Ls https://download.elastic.co/kibana/kibana/kibana-$KIBANA_VERSION-linux-x86_64.tar.gz | tar -xz -C /usr/share && \\\n    ln -s /usr/share/kibana-$KIBANA_VERSION-linux-x86_64 $KIBANA_HOME && \\\n\n    # We can't use the standard NPM/Node distributed with Kibana because we're not using glibc.\n    # So let's grab one out of APK and symlink the distro. This is actually smaller than\n    # using APK to grab libuv et al and then remove Node.js after...\n    rm $KIBANA_HOME/node/bin/npm && \\\n    rm $KIBANA_HOME/node/bin/node && \\\n    ln -s /usr/bin/npm $KIBANA_HOME/node/bin/npm && \\\n    ln -s /usr/bin/node $KIBANA_HOME/node/bin/node && \\\n\n    # Install all our plugins.\n    $KIBANA_HOME/bin/kibana plugin --install elasticsearch/marvel/latest && \\\n    $KIBANA_HOME/bin/kibana plugin --install elastic/sense && \\\n\n    # Cleanup.\n    rm -rf /tmp/* /var/cache/apk/* && apk del curl\n\n# Copy our config file and our entry point - the latter allows us to configure our ES URL.\nCOPY config $KIBANA_HOME/config\nCOPY docker-entrypoint.sh /\n\n# Expose the ports we care about\nEXPOSE 5601\n\n# Get ready to run\nENTRYPOINT [\"/docker-entrypoint.sh\"]\nCMD [\"kibana\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5601
+    ],
+    "volume": [],
+    "run": [
+      "apk update && apk upgrade && apk add --no-cache curl nodejs bash &&     curl -Ls https://download.elastic.co/kibana/kibana/kibana-$KIBANA_VERSION-linux-x86_64.tar.gz | tar -xz -C /usr/share &&     ln -s /usr/share/kibana-$KIBANA_VERSION-linux-x86_64 $KIBANA_HOME && "
+    ],
+    "workdir": [],
+    "from": "alpine:3.4",
+    "maintainer": "Greg Feigenson <greg.feigenson@8x8.com>",
+    "env": {
+      "KIBANA_VERSION": "4.6.0",
+      "KIBANA_HOME": "/usr/share/kibana",
+      "PATH": "${PATH}:${KIBANA_HOME}/bin"
+    },
+    "copy": "docker-entrypoint.sh /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"kibana\"]"
+  },
+  "source_repository_url": "https://github.com/8x8Cloud/docker-elastic.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/8x8Cloud/docker-elastic",
+  "docker_repository": "8x8cloud/kibana",
+  "docker_image": "8x8cloud/kibana",
+  "parameters_schema": {
+    "KIBANA_VERSION": {
+      "default": "4.6.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIBANA_HOME": {
+      "default": "/usr/share/kibana",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "${PATH}:${KIBANA_HOME}/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5601
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "8x8cloud/kibana",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/8x8cloud/kibana",
+    "https://hub.docker.com/v2/repositories/8x8cloud/kibana",
+    "https://github.com/8x8Cloud/docker-elastic.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux"
+  ],
+  "info_url": "https://hub.docker.com/r/8x8cloud/kibana",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

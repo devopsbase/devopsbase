@@ -1,0 +1,102 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/panubo/apache-mvh",
+    "repository_url": "https://hub.docker.com/v2/repositories/panubo/apache-mvh",
+    "tags_url": "https://hub.docker.com/v2/repositories/panubo/apache-mvh/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/panubo/apache-mvh/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/panubo/apache-mvh/autobuild",
+    "user": "panubo",
+    "name": "apache-mvh",
+    "namespace": "panubo",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 731,
+    "last_updated": "2016-09-23T21:24:50.229362Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 112365304,
+        "id": 1012353,
+        "repository": 337851,
+        "creator": 318424,
+        "last_updater": 318420,
+        "last_updated": "2016-09-23T21:24:49.894396Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "panubo/docker-apache-mvh"
+  },
+  "name": "panubo/apache-mvh Docker container",
+  "description": "Apache Mass Virtual Host",
+  "readme": "# Apache Mass Virtual Host\n\n[![Docker Repository on Quay.io](https://quay.io/repository/panubo/apache-mvh/status \"Docker Repository on Quay.io\")](https://quay.io/repository/panubo/apache-mvh)\n\nApache Mass Virtual Host for PHP and static HTML websites.\n\n## Features\n\n- Uses [debian](https://hub.docker.com/_/debian/) base image\n- Thin Container. Uses linked [MariaDB](https://hub.docker.com/_/mariadb/) and [SMTP](https://hub.docker.com/r/panubo/postfix/) containers for those services\n- Mod PHP5 enabled \n- Both \"www\" and \"naked\" domains are served from  from /srv/www/sitename`\n\n## Environment variables\n\nSMTP Setting:\n\n- `SMTP_PORT`\n- `SMTP_HOST`\n\nApache MPM Tuning:\n\n- `MPM_START` - Optional: Default '5'\n- `MPM_MINSPARE` - Optional: Default '5'\n- `MPM_MAXSPARE` - Optional: Default '10'\n- `MPM_MAXWORKERS` - Optional: Default '150'\n- `MPM_MAXCONNECTIONS` - Optional: Default '0'\n\n## Status\n\nProduction ready.\n",
+  "dockerfile": "FROM debian:jessie\n\nMAINTAINER Andrew Cutler <andrew@panubo.com>\n\nEXPOSE 80\n\n# Install Requirements\nRUN apt-get update && \\\n    apt-get install -y apache2-mpm-prefork ca-certificates && \\\n    apt-get install -y libapache2-mod-php5 php5 php5-gd php-pear php5-mysql php5-pgsql php5-sqlite php5-mcrypt php5-intl php5-ldap && \\\n    apt-get install -y vim msmtp && \\\n    # Install Pear Requirements\n    pear install mail_mime mail_mimedecode net_smtp net_idna2-beta auth_sasl net_sieve crypt_gpg && \\\n    # Cleanup\n    rm -rf /var/lib/apt/lists/*\n\n# Host Configuration\nCOPY apache2.conf /etc/apache2/apache2.conf\nCOPY mpm_prefork.conf /etc/apache2/mods-available/\nCOPY vhost.conf /etc/apache2/sites-available/\nRUN rm /etc/apache2/conf-enabled/* /etc/apache2/sites-enabled/* && \\\n    a2enmod vhost_alias mpm_prefork deflate rewrite expires headers php5 && \\\n    a2ensite vhost.conf && \\\n    sed -i -e 's@^;sendmail_path =.*@sendmail_path = /usr/bin/msmtp -t -i@g' /etc/php5/apache2/php.ini /etc/php5/cli/php.ini && \\\n    sed -i -e 's@short_open_tag =.*@short_open_tag = On@g' /etc/php5/apache2/php.ini /etc/php5/cli/php.ini && \\\n    mkdir -p /srv/www\n\nADD entry.sh /\nENTRYPOINT [\"/entry.sh\"]\nCMD [ \"/usr/sbin/apache2ctl\", \"-D\", \"FOREGROUND\", \"-k\", \"start\" ]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "entry.sh",
+        "dest": "/"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update &&     apt-get install -y apache2-mpm-prefork ca-certificates &&     apt-get install -y libapache2-mod-php5 php5 php5-gd php-pear php5-mysql php5-pgsql php5-sqlite php5-mcrypt php5-intl php5-ldap &&     apt-get install -y vim msmtp &&     # Install Pear Requirements",
+      "rm /etc/apache2/conf-enabled/* /etc/apache2/sites-enabled/* &&     a2enmod vhost_alias mpm_prefork deflate rewrite expires headers php5 &&     a2ensite vhost.conf &&     sed -i -e 's@^;sendmail_path =.*@sendmail_path = /usr/bin/msmtp -t -i@g' /etc/php5/apache2/php.ini /etc/php5/cli/php.ini &&     sed -i -e 's@short_open_tag =.*@short_open_tag = On@g' /etc/php5/apache2/php.ini /etc/php5/cli/php.ini &&     mkdir -p /srv/www"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "Andrew Cutler <andrew@panubo.com>",
+    "copy": "vhost.conf /etc/apache2/sites-available/",
+    "entrypoint": "[\"/entry.sh\"]",
+    "cmd": "[ \"/usr/sbin/apache2ctl\", \"-D\", \"FOREGROUND\", \"-k\", \"start\" ]"
+  },
+  "source_repository_url": "https://github.com/panubo/docker-apache-mvh.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/panubo/docker-apache-mvh",
+  "docker_repository": "panubo/apache-mvh",
+  "docker_image": "panubo/apache-mvh",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "panubo/apache-mvh",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/panubo/apache-mvh",
+    "https://hub.docker.com/v2/repositories/panubo/apache-mvh",
+    "https://github.com/panubo/docker-apache-mvh.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/panubo/apache-mvh",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

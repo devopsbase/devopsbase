@@ -1,0 +1,131 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kevensen/centos-vnc",
+    "repository_url": "https://hub.docker.com/v2/repositories/kevensen/centos-vnc",
+    "tags_url": "https://hub.docker.com/v2/repositories/kevensen/centos-vnc/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kevensen/centos-vnc/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kevensen/centos-vnc/autobuild",
+    "user": "kevensen",
+    "name": "centos-vnc",
+    "namespace": "kevensen",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 359,
+    "last_updated": "2016-09-06T22:52:57.358595Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 319157811,
+        "id": 1753279,
+        "repository": 484387,
+        "creator": 421487,
+        "last_updater": 421487,
+        "last_updated": "2016-09-06T22:52:55.917596Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "kevensen/openshift-kiosk"
+  },
+  "name": "kevensen/centos-vnc Docker container",
+  "description": "Build a bare bones CentOS VNC server.",
+  "readme": "# CentOS VNC\n\n## Building the container\n```bash\n$ docker build -t kevensen/centos-vnc .\n```\nOr if you'd like to change the default password\n```bash\ndocker build --build-arg vncpassword=<somepassword> kevensen/centos-vnc .\n```\n## Running the container\nThis container does not get run directly.\n",
+  "dockerfile": "# Using CentOS 6 base image and VNC\n# Version 1\n\n# Pull the rhel image from the local repository\nFROM centos:6\nMAINTAINER Ken Evensen\n\nLABEL io.openshift.expose-services=\"5901:tcp\"\n\nUSER root\nENV DISPLAY=\"\" \\\n    HOME=/home/1001\n\nARG vncpassword=password\n\nRUN yum clean all && \\\n    yum update -y && \\\n    yum install -y --setopt=tsflags=nodocs \\\n                   tigervnc-server \\\n    \t\t   xorg-x11-server-utils \\\n                   xorg-x11-server-Xvfb \\\n                   xorg-x11-fonts-* \\\n                   xterm \\\n                   gnome-session && \\\n                   yum clean all && \\\n                   rm -rf /var/cache/yum\n\nRUN yum install -y --setopt=tsflags=nodocs \\\n                  firefox \\\n                  yum clean all && \\\n                  rm -rf /var/cache/yum/*\n\nRUN /bin/dbus-uuidgen --ensure\nRUN useradd -u 1001 -r -g 0 -d ${HOME} -s /sbin/nologin -c \"Kiosk User\" kioskuser\n\nADD xstartup ${HOME}/.vnc/\nRUN echo \"${vncpassword}\" | vncpasswd -f > ${HOME}/.vnc/passwd\nRUN /bin/echo \"/usr/bin/firefox\" >> /home/1001/.vnc/xstartup\n\nRUN chown -R 1001:0 ${HOME} && \\\n    chmod 775 ${HOME}/.vnc/xstartup && \\\n    chmod 600 ${HOME}/.vnc/passwd\n\nEXPOSE 5901\nWORKDIR ${HOME}\nUSER 1001\nENTRYPOINT [\"/usr/bin/vncserver\",\"-fg\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "xstartup",
+        "dest": "${HOME}/.vnc/"
+      }
+    ],
+    "expose": [
+      5901
+    ],
+    "volume": [],
+    "run": [
+      "yum clean all &&     yum update -y &&     yum install -y --setopt=tsflags=nodocs                    tigervnc-server     \t\t   xorg-x11-server-utils                    xorg-x11-server-Xvfb                    xorg-x11-fonts-*                    xterm                    gnome-session &&                    yum clean all &&                    rm -rf /var/cache/yum",
+      "yum install -y --setopt=tsflags=nodocs                   firefox                   yum clean all &&                   rm -rf /var/cache/yum/*",
+      "/bin/dbus-uuidgen --ensure",
+      "useradd -u 1001 -r -g 0 -d ${HOME} -s /sbin/nologin -c \"Kiosk User\" kioskuser",
+      "echo \"${vncpassword}\" | vncpasswd -f > ${HOME}/.vnc/passwd",
+      "/bin/echo \"/usr/bin/firefox\" >> /home/1001/.vnc/xstartup",
+      "chown -R 1001:0 ${HOME} &&     chmod 775 ${HOME}/.vnc/xstartup &&     chmod 600 ${HOME}/.vnc/passwd"
+    ],
+    "workdir": [
+      "${HOME}"
+    ],
+    "from": "centos:6",
+    "maintainer": "Ken Evensen",
+    "label": "io.openshift.expose-services=\"5901:tcp\"",
+    "user": "1001",
+    "env": {
+      "DISPLAY": "\"\"",
+      "": "",
+      "HOME": "/home/1001"
+    },
+    "arg": "vncpassword=password",
+    "entrypoint": "[\"/usr/bin/vncserver\",\"-fg\"]"
+  },
+  "source_repository_url": "https://github.com/kevensen/openshift-kiosk.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/kevensen/openshift-kiosk",
+  "docker_repository": "kevensen/centos-vnc",
+  "docker_image": "kevensen/centos-vnc",
+  "parameters_schema": {
+    "DISPLAY": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/home/1001",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5901
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kevensen/centos-vnc",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/kevensen/centos-vnc",
+    "https://hub.docker.com/v2/repositories/kevensen/centos-vnc",
+    "https://github.com/kevensen/openshift-kiosk.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Build",
+    "Type/Devopsware/Version Control/Subversion",
+    "Type/Infrastructure/Operating System/Linux/CentOS"
+  ],
+  "info_url": "https://hub.docker.com/r/kevensen/centos-vnc",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

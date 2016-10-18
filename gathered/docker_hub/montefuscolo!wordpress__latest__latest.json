@@ -1,0 +1,128 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/montefuscolo/wordpress",
+    "repository_url": "https://hub.docker.com/v2/repositories/montefuscolo/wordpress",
+    "tags_url": "https://hub.docker.com/v2/repositories/montefuscolo/wordpress/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/montefuscolo/wordpress/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/montefuscolo/wordpress/autobuild",
+    "user": "montefuscolo",
+    "name": "wordpress",
+    "namespace": "montefuscolo",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 76,
+    "last_updated": "2016-08-25T01:02:32.894026Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 191255961,
+        "id": 1756026,
+        "repository": 485384,
+        "creator": 507100,
+        "last_updater": 507100,
+        "last_updated": "2016-08-25T01:02:30.856908Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "wp-4.6-apache-php-7",
+        "full_size": 193056685,
+        "id": 4412462,
+        "repository": 485384,
+        "creator": 507100,
+        "last_updater": 507100,
+        "last_updated": "2016-08-19T14:35:27.023776Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "wp-4.6-apache-php-5.6",
+        "full_size": 189346950,
+        "id": 4394908,
+        "repository": 485384,
+        "creator": 507100,
+        "last_updater": 507100,
+        "last_updated": "2016-08-18T18:24:50.887256Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "fabiomontefuscolo/my-docker-images"
+  },
+  "name": "montefuscolo/wordpress Docker container",
+  "description": "A fork from official Wordpress image to fit my development needs.",
+  "readme": "## Objective\n\nI would like to have an image to use to development and also production. So I modified this image to have the `wp-cli` tool. Also, you can mount your stuff inside container, so your changes will be effective.\n\n## Development\n\nThis image download the Wordpress code in `/var/www/html`. You can mount your stuff in `/var/www/html/wp-content` or you can mount a entire wordpress installation over `/var/www/html`.\n\nI like to develop in this way\n\n```\ndocker run --rm \\\n           --name awesomesite \\\n           --link mariadb:mysql \\\n           -e WORDPRESS_DB_USER=greatuser \\\n           -e WORDPRESS_DB_PASSWORD=password \\\n           -v $PWD/src/wp-content/:/var/www/html/wp-content/ \\\n           -p 80:80 \\\n           -i montefuscolo/wordpress:latest\n```\n\nThe `wp-config.php` is can be set up using environment variables. You can use the variables below:\n\n```\n$WORDPRESS_DB_USER\n$WORDPRESS_DB_NAME\n$WORDPRESS_DB_PASSWORD\n$WORDPRESS_DB_HOST\n$WORDPRESS_DB_CHARSET\n$WORDPRESS_DB_COLLATE\n$WORDPRESS_AUTH_KEY\n$WORDPRESS_SECURE_AUTH_KEY\n$WORDPRESS_LOGGED_IN_KEY\n$WORDPRESS_NONCE_KEY\n$WORDPRESS_AUTH_SALT\n$WORDPRESS_SECURE_AUTH_SALT\n$WORDPRESS_LOGGED_IN_SALT\n$WORDPRESS_NONCE_SALT\n$WORDPRESS_TABLE_PREFIX\n$WORDPRESS_WP_DEBUG\n```\n\n",
+  "dockerfile": "FROM montefuscolo/php\nMAINTAINER Fabio Montefuscolo <fabio.montefuscolo@gmail.com>\n\nRUN curl -s -o wp-cli.phar 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar?0.24.1' \\\n    && chmod +x wp-cli.phar \\\n    && mv wp-cli.phar /usr/local/bin/wp\n\nRUN wp core download --path=/var/www/html/  --version=4.6 --locale=pt_BR --allow-root\n\nCOPY htaccess /var/www/html/.htaccess\nCOPY wp-config.php /var/www/html/wp-config.php\n\nRUN useradd --no-create-home --no-user-group --groups www-data wordpress\nRUN chown -R wordpress:root /var/www/html/ \\\n    && chown -R wordpress:www-data /var/www/html/wp-content \\\n    && find /var/www/html/wp-content -type d -exec chmod 775 {} \\; \\\n    && find /var/www/html/wp-content -type f -exec chmod 664 {} \\;\n\nRUN mkdir -p /docker-entrypoint-extra/\nCOPY docker-entrypoint.sh /entrypoint.sh\n\nEXPOSE 80 443\nENTRYPOINT [\"/entrypoint.sh\"]\nCMD [\"apache2-foreground\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "curl -s -o wp-cli.phar 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar?0.24.1'     && chmod +x wp-cli.phar     && mv wp-cli.phar /usr/local/bin/wp",
+      "wp core download --path=/var/www/html/  --version=4.6 --locale=pt_BR --allow-root",
+      "useradd --no-create-home --no-user-group --groups www-data wordpress",
+      "chown -R wordpress:root /var/www/html/     && chown -R wordpress:www-data /var/www/html/wp-content     && find /var/www/html/wp-content -type d -exec chmod 775 {} \\;     && find /var/www/html/wp-content -type f -exec chmod 664 {} \\;",
+      "mkdir -p /docker-entrypoint-extra/"
+    ],
+    "workdir": [],
+    "from": "montefuscolo/php",
+    "maintainer": "Fabio Montefuscolo <fabio.montefuscolo@gmail.com>",
+    "copy": "docker-entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"apache2-foreground\"]"
+  },
+  "source_repository_url": "https://github.com/fabiomontefuscolo/my-docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/fabiomontefuscolo/my-docker-images",
+  "docker_repository": "montefuscolo/wordpress",
+  "docker_image": "montefuscolo/wordpress",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "montefuscolo/wordpress",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/montefuscolo/wordpress",
+    "https://hub.docker.com/v2/repositories/montefuscolo/wordpress",
+    "https://github.com/fabiomontefuscolo/my-docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image"
+  ],
+  "info_url": "https://hub.docker.com/r/montefuscolo/wordpress",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,144 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kardasz/mysql",
+    "repository_url": "https://hub.docker.com/v2/repositories/kardasz/mysql",
+    "tags_url": "https://hub.docker.com/v2/repositories/kardasz/mysql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kardasz/mysql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kardasz/mysql/autobuild",
+    "user": "kardasz",
+    "name": "mysql",
+    "namespace": "kardasz",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 47693,
+    "last_updated": "2016-06-08T13:00:43.190437Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "5.6",
+        "full_size": 113038929,
+        "id": 2413680,
+        "repository": 272366,
+        "creator": 382131,
+        "last_updater": 382131,
+        "last_updated": "2016-06-08T13:00:42.712060Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5.7",
+        "full_size": 129709504,
+        "id": 2413695,
+        "repository": 272366,
+        "creator": 382131,
+        "last_updater": 382131,
+        "last_updated": "2016-06-08T12:58:10.087344Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 129709209,
+        "id": 662724,
+        "repository": 272366,
+        "creator": 382131,
+        "last_updater": 382131,
+        "last_updated": "2016-06-08T12:55:22.994386Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "kardasz/docker-mysql"
+  },
+  "name": "kardasz/mysql Docker container",
+  "description": "Debian 8, MySQL 5.7",
+  "readme": "# docker-mysql\nDocker Debian 8, MySQL 5.7\n",
+  "dockerfile": "FROM debian:jessie\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\nRUN \\\n\tgroupadd --gid 4000 -r mysql && \\\n\tuseradd --uid 4000 -r -g mysql mysql\n\n# FATAL ERROR: please install the following Perl modules before executing /usr/local/mysql/scripts/mysql_install_db:\n# File::Basename\n# File::Copy\n# Sys::Hostname\n# Data::Dumper\nRUN apt-get update && apt-get install -y perl pwgen --no-install-recommends && rm -rf /var/lib/apt/lists/*\n\n# gpg: key 5072E1F5: public key \"MySQL Release Engineering <mysql-build@oss.oracle.com>\" imported\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys A4A9406876FCBD3C456770C88C718D3B5072E1F5\n\nENV MYSQL_MAJOR 5.6\nENV MYSQL_VERSION 5.6.*\n\nRUN echo \"deb http://repo.mysql.com/apt/debian/ jessie mysql-${MYSQL_MAJOR}\" > /etc/apt/sources.list.d/mysql.list\n\n# the \"/var/lib/mysql\" stuff here is because the mysql-server postinst doesn't have an explicit way to disable the mysql_install_db codepath besides having a database already \"configured\" (ie, stuff in /var/lib/mysql/mysql)\n# also, we set debconf keys to make APT a little quieter\nRUN { \\\n\t\techo mysql-community-server mysql-community-server/data-dir select ''; \\\n\t\techo mysql-community-server mysql-community-server/root-pass password ''; \\\n\t\techo mysql-community-server mysql-community-server/re-root-pass password ''; \\\n\t\techo mysql-community-server mysql-community-server/remove-test-db select false; \\\n\t} | debconf-set-selections \\\n\t&& apt-get update && apt-get install -y mysql-server=\"${MYSQL_VERSION}\" && rm -rf /var/lib/apt/lists/* \\\n\t&& rm -rf /var/lib/mysql && mkdir -p /var/lib/mysql\n\n# comment out a few problematic configuration values\n# don't reverse lookup hostnames, they are usually another container\nRUN sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/my.cnf \\\n\t&& echo 'skip-host-cache\\nskip-name-resolve' | awk '{ print } $1 == \"[mysqld]\" && c == 0 { c = 1; system(\"cat\") }' /etc/mysql/my.cnf > /tmp/my.cnf \\\n\t&& mv /tmp/my.cnf /etc/mysql/my.cnf\n\nVOLUME /var/lib/mysql\n\nCOPY docker-entrypoint.sh /entrypoint.sh\nENTRYPOINT [\"/entrypoint.sh\"]\n\nEXPOSE 3306\nCMD [\"mysqld\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      "/var/lib/mysql"
+    ],
+    "run": [
+      "\tgroupadd --gid 4000 -r mysql && \tuseradd --uid 4000 -r -g mysql mysql",
+      "apt-get update && apt-get install -y perl pwgen --no-install-recommends && rm -rf /var/lib/apt/lists/*",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys A4A9406876FCBD3C456770C88C718D3B5072E1F5",
+      "echo \"deb http://repo.mysql.com/apt/debian/ jessie mysql-${MYSQL_MAJOR}\" > /etc/apt/sources.list.d/mysql.list",
+      "{ \t\techo mysql-community-server mysql-community-server/data-dir select ''; \t\techo mysql-community-server mysql-community-server/root-pass password ''; \t\techo mysql-community-server mysql-community-server/re-root-pass password ''; \t\techo mysql-community-server mysql-community-server/remove-test-db select false; \t} | debconf-set-selections \t&& apt-get update && apt-get install -y mysql-server=\"${MYSQL_VERSION}\" && rm -rf /var/lib/apt/lists/* \t&& rm -rf /var/lib/mysql && mkdir -p /var/lib/mysql",
+      "sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/my.cnf \t&& echo 'skip-host-cache\\nskip-name-resolve' | awk '{ print } $1 == \"[mysqld]\" && c == 0 { c = 1; system(\"cat\") }' /etc/mysql/my.cnf > /tmp/my.cnf \t&& mv /tmp/my.cnf /etc/mysql/my.cnf"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "env": {
+      "MYSQL_MAJOR": "5.6",
+      "MYSQL_VERSION": "5.6.*"
+    },
+    "copy": "docker-entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"mysqld\"]"
+  },
+  "source_repository_url": "https://github.com/kardasz/docker-mysql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/kardasz/docker-mysql",
+  "docker_repository": "kardasz/mysql",
+  "docker_image": "kardasz/mysql",
+  "parameters_schema": {
+    "MYSQL_MAJOR": {
+      "default": "5.6",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_VERSION": {
+      "default": "5.6.*",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kardasz/mysql",
+  "revision": "5.6",
+  "uris": [
+    "https://hub.docker.com/r/kardasz/mysql",
+    "https://hub.docker.com/v2/repositories/kardasz/mysql",
+    "https://github.com/kardasz/docker-mysql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/kardasz/mysql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

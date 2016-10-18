@@ -1,0 +1,110 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/deardooley/httpd",
+    "repository_url": "https://hub.docker.com/v2/repositories/deardooley/httpd",
+    "tags_url": "https://hub.docker.com/v2/repositories/deardooley/httpd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/deardooley/httpd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/deardooley/httpd/autobuild",
+    "user": "deardooley",
+    "name": "httpd",
+    "namespace": "deardooley",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 96,
+    "last_updated": "2016-10-02T17:38:34.003539Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2.4",
+        "full_size": 12941949,
+        "id": 1703230,
+        "repository": 476097,
+        "creator": 113545,
+        "last_updater": 113545,
+        "last_updated": "2016-10-02T17:38:33.693346Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "deardooley/base-images"
+  },
+  "name": "deardooley/httpd Docker container",
+  "description": "Apache 2.4 image with built in ssl based on Alpine",
+  "readme": "[![](https://badge.imagelayers.io/deardooley/httpd:2.4.svg)](https://imagelayers.io/?images=deardooley/httpd:2.4 'Get your own badge on imagelayers.io')\n\n# Apache 2.4 Base Image\n\nThis is a Minimal apache image with support for dynamic document root definition. Default unified logging to standard out.\n\n## Extending this image\n\nThis image can be used as a standard web server for most apps. It is sufficient to add a .htaccess file to\nthe server root to set up redirects, etc.\n\n### Developing with this image\n\nIf you are developing with this image, mount your code into the `/var/www/html` directory in the container. Your local changes will be reflected instantly when you refresh your page.\n\n```\ndocker run -h docker.example.com\n           -p 80:80 \\\n           --name apache \\\n           -v `pwd`:/var/www/html \\\n           --link mysql:mysql\n           -e DOCUMENT_ROOT=/var/www/html\n           deardooley/httpd:2.4\n```\n\nAlternatively, you can specify a different web root if needed by your application.\n```\ndocker run -h docker.example.com\n           -p 80:80 \\\n           --name apache \\\n           -v /usr/local/src/code:/var/www \\\n           --link mysql:mysql\n           -e DOCUMENT_ROOT=/var/www/public\n           deardooley/httpd:2.4\n```\n\n### Running in production\n\nWhen running in production, both the access and error logs will stream to standard out so they can be access via the Docker logs facility by default.\n\n```\ndocker run -h docker.example.com \\\n           -p 80:80 \\\n           -p 443:443 \\\n           --name apache \\\n           deardooley/httpd:2.4\n```\n\n### SSL Support\n\nTo add ssl support, volume mount your ssl cert, key, ca cert file, and ca chain file as needed. In the following example, a folder containing the necessary files is volume mounted to /ssl in the container.\n\n```\ndocker run -h docker.example.com \\\n           -p 80:80 \\\n           -p 443:443 \\\n           --name apache \\\n           -v `pwd`/ssl:/ssl:ro \\\n           -e SSL_CERT=/ssl/docker_example_com_cert.cer \\\n           -e SSL_KEY=/ssl/docker.example.com.key \\\n           -e SSL_CA_CERT=/ssl/docker_example_com.cer \\\n           deardooley/httpd:2.4\n```\n",
+  "dockerfile": "######################################################\n#\n# Apache 2.4 Base Image\n# Tag: deardooley/apache:alpine\n#\n# Minimal Apache 2.4 image with CORS, rewrite, and proxy\n# support. Default unified logging to standard out.\n#\n######################################################\n\nFROM gliderlabs/alpine:3.4\nMAINTAINER Rion Dooley <dooley@tacc.utexas.edu\n\nADD tcp/limits.conf /etc/security/limits.conf\nADD tcp/sysctl.conf /etc/sysctl.conf\n\nRUN apk --update add openssl apache2 vim gzip tzdata bash && \\\n    apk --update add apache2-ssl && \\\n    rm -f /var/cache/apk/* && \\\n\n    # Set up system timezone and sync\n    echo \"Setting system timezone to America/Chicago...\" && \\\n    ln -snf /usr/share/zoneinfo/America/Chicago /etc/localtime && \\\n    #echo $(setup-ntp -c busybox  2>&1) && \\\n    ntpd -d -p pool.ntp.org && \\\n\n    echo \"Updating default apache DocumentRoot...\" && \\\n    mv /var/www/localhost/htdocs /var/www/html && \\\n    # addgroup -S apache && \\\n    chown -R apache:apache /var/www/html && \\\n    sed -i 's#/var/www/localhost/htdocs#%DOCUMENT_ROOT%#g' /etc/apache2/httpd.conf && \\\n    sed -i 's/^    AllowOverride None/    AllowOverride All/' /etc/apache2/httpd.conf && \\\n    #sed -i 's#LogLevel warn#LogLevel info#g' /etc/apache2/httpd.conf && \\\n    sed -i 's#logs/error.log#/proc/self/fd/2#g' /etc/apache2/httpd.conf && \\\n    sed -i 's#logs/access.log#/proc/self/fd/1#g' /etc/apache2/httpd.conf && \\\n\n    # update default server hostname to a template variable we can replace at runtime\n    sed -i 's/^#ServerName .*/ServerName %HOSTNAME%:80/g' /etc/apache2/httpd.conf && \\\n    sed -i 's/^ServerName .*/ServerName %HOSTNAME%:443/g' /etc/apache2/conf.d/ssl.conf && \\\n\n    # update document root to a template variable we can replace at runtime.\n    sed -i 's#/var/www/localhost/htdocs#%DOCUMENT_ROOT%#g' /etc/apache2/conf.d/ssl.conf && \\\n\n    # update logging levels\n    sed -i 's#^SSLMutex .*#Mutex sysvsem default#g' /etc/apache2/conf.d/ssl.conf && \\\n    sed -i 's#logs/ssl_error.log#/proc/self/fd/2#g' /etc/apache2/conf.d/ssl.conf && \\\n    sed -i 's#logs/ssl_access.log#/proc/self/fd/1#g' /etc/apache2/conf.d/ssl.conf && \\\n    sed -i 's#logs/ssl_request.log#/proc/self/fd/1#g' /etc/apache2/conf.d/ssl.conf && \\\n    #sed -i 's#LogLevel warn#LogLevel info#g' /etc/apache2/conf.d/ssl.conf && \\\n    mkdir /etc/apache2/run && \\\n    sed -i 's#/run/apache2#/etc/apache2/run#g' /etc/apache2/httpd.conf && \\\n    sed -i 's#/run/apache2#/etc/apache2/run#g' /etc/apache2/conf.d/ssl.conf && \\\n    rm -f /etc/apache2/conf.d/mpm.conf && \\\n    rm -f /etc/apache2/conf.d/info && \\\n    rm -f /etc/apache2/conf.d/userdir.conf && \\\n    sed -i 's/^#LoadModule rewrite_module/LoadModule rewrite_module/'  /etc/apache2/httpd.conf && \\\n    sed -i 's/^#LoadModule deflate_module/LoadModule deflate_module/g' /etc/apache2/httpd.conf && \\\n    sed -i 's/^#LoadModule expires_module/LoadModule expires_module/g' /etc/apache2/httpd.conf && \\\n\n    echo 'PidFile \"/etc/apache2/run/httpd.pid\"' >> /etc/apache2/httpd.conf\n\n\n#\n# RUN apk --update add apache2-proxy apache2-proxy-html vim gzip tzdata bash curl && \\\n#     rm -f /var/cache/apk/* && \\\n#     /usr/sbin/deluser apache && \\\n#\n#     addgroup -g 50 -S apache && \\\n#     adduser -u 1000 -g apache -G apache -S apache && \\\n#     mkdir /run/apache2 && \\\n#     chown -R apache:root /run/apache2 && \\\n#\n#     # Set up system timezone and sync\n#     echo \"Setting system timezone to America/Chicago...\" && \\\n#     ln -snf /usr/share/zoneinfo/America/Chicago /etc/localtime && \\\n#     ntpd -d -p pool.ntp.org && \\\n#\n#     echo \"Updating default apache DocumentRoot...\" && \\\n#     mkdir /var/www/html && \\\n#     chown -R apache:apache /var/www/html && \\\n#     # fix bug in proxy.conf and proxy-html.conf in stock apache install\n#     sed -i 's/^    AllowOverride None/    AllowOverride All/' /etc/apache2/httpd.conf && \\\n#     sed -i 's/^#LoadModule slotmem_shm_module/LoadModule slotmem_shm_module/'  /etc/apache2/httpd.conf && \\\n#     sed -i 's/^#LoadModule socache_shmcb_module/LoadModule socache_shmcb_module/'  /etc/apache2/httpd.conf && \\\n#     sed -i 's/^#LoadModule rewrite_module/LoadModule rewrite_module/'  /etc/apache2/httpd.conf && \\\n#     sed -i 's#/usr/lib/libxml2.so$#/usr/lib/libxml2.so.2#' /etc/apache2/conf.d/proxy-html.conf && \\\n#     sed -i 's#/usr/lib/libxml2.so$#/usr/lib/libxml2.so.2#' /etc/apache2/conf.d/proxy.conf && \\\n#     sed -i 's#/var/www/localhost/htdocs#%DOCUMENT_ROOT%#g' /etc/apache2/httpd.conf && \\\n# #    sed -i 's#^SSLMutex .*#Mutex sysvsem default#g' /etc/apache2/conf.d/ssl.conf && \\\n#\n#     # update logging to write\n#     sed -i 's#/var/www/localhost/htdocs#%DOCUMENT_ROOT%#g' /etc/apache2/httpd.conf && \\\n#     #sed -i 's#LogLevel warn#LogLevel info#g' /etc/apache2/httpd.conf && \\\n#     sed -i 's#^ErrorLog logs/error.log#ErrorLog /proc/self/fd/2#g' /etc/apache2/httpd.conf && \\\n#     sed -i 's#^CustomLog logs/access.log combined#CustomLog /proc/self/fd/1 combined#g' /etc/apache2/httpd.conf\n# #    sed -i 's#^SSLMutex .*#Mutex sysvsem default#g' /etc/apache2/conf.d/ssl.conf && \\\n# #   sed -i 's#^ErrorLog logs/ssl_error.log#ErrorLog /proc/self/fd/2#g' /etc/apache2/conf.d/ssl.conf && \\\n# #    sed -i 's#^TransferLog logs/ssl_access.log#TransferLog /proc/self/fd/1#g' /etc/apache2/conf.d/ssl.conf && \\\n# #    sed -i 's#^CustomLog logs/ssl_request.log#CustomLog /proc/self/fd/1#g' /etc/apache2/conf.d/ssl.conf && \\\n#     #sed -i 's#LogLevel warn#LogLevel info#g' /etc/apache2/conf.d/ssl.conf && \\\n#\n# #    sed -i 's#^SSLProtocol .*#SSLProtocol all -SSLv2 -SSLv3#g' /etc/apache2/conf.d/ssl.conf\n\nADD docker_entrypoint.sh /docker_entrypoint.sh\n\nWORKDIR /var/www/html\n\nEXPOSE 80 443\n\nENTRYPOINT [\"/docker_entrypoint.sh\"]\n\nCMD [\"httpd\", \"-DFOREGROUND\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "tcp/limits.conf",
+        "dest": "/etc/security/limits.conf"
+      },
+      {
+        "source": "tcp/sysctl.conf",
+        "dest": "/etc/sysctl.conf"
+      },
+      {
+        "source": "docker_entrypoint.sh",
+        "dest": "/docker_entrypoint.sh"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apk --update add openssl apache2 vim gzip tzdata bash &&     apk --update add apache2-ssl &&     rm -f /var/cache/apk/* && "
+    ],
+    "workdir": [
+      "/var/www/html"
+    ],
+    "from": "gliderlabs/alpine:3.4",
+    "maintainer": "Rion Dooley <dooley@tacc.utexas.edu",
+    "entrypoint": "[\"/docker_entrypoint.sh\"]",
+    "cmd": "[\"httpd\", \"-DFOREGROUND\"]"
+  },
+  "source_repository_url": "https://github.com/deardooley/base-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/deardooley/base-images",
+  "docker_repository": "deardooley/httpd",
+  "docker_image": "deardooley/httpd",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "deardooley/httpd",
+  "revision": "2.4",
+  "uris": [
+    "https://hub.docker.com/r/deardooley/httpd",
+    "https://hub.docker.com/v2/repositories/deardooley/httpd",
+    "https://github.com/deardooley/base-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/deardooley/httpd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

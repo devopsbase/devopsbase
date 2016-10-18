@@ -1,0 +1,136 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/skrat/rabbitmq-etcd",
+    "repository_url": "https://hub.docker.com/v2/repositories/skrat/rabbitmq-etcd",
+    "tags_url": "https://hub.docker.com/v2/repositories/skrat/rabbitmq-etcd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/skrat/rabbitmq-etcd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/skrat/rabbitmq-etcd/autobuild",
+    "user": "skrat",
+    "name": "rabbitmq-etcd",
+    "namespace": "skrat",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 613,
+    "last_updated": "2015-11-13T23:30:08.667548Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 491625959,
+        "id": 15295,
+        "repository": 16201,
+        "creator": 16754,
+        "last_updater": 16754,
+        "last_updated": "2015-11-13T23:30:15.999608Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "skrat/rabbitmq-etcd"
+  },
+  "name": "skrat/rabbitmq-etcd Docker container",
+  "description": "RabbitMQ server docker image. Running latest version on Arch Linux. It includes a service that syncs users, vhosts and permissions using etcd, and is therefore intended to be run on CoreOS cluster.",
+  "readme": "RabbitMQ docker image / etcd enabled\n====================================\n\nThis is a Docker image with RabbitMQ server, running the latest version,\non Arch Linux. It synchronizes RabbitMQ vhosts, users and permissions,\nusing hosts etcd. This is done with simple Python script running in background.\nThis image is intended to be used on CoreOS host.\n\nInstallation\n------------\n\nWith docker:\n```\n/usr/bin/docker run                 \\\n        --env-file /etc/environment \\\n        -p 5672:5672                \\\n        -p 15672:15672              \\\n        skrat/rabbitmq-etcd\n```\n\nSynchronization script expects `COREOS_PRIVATE_IPV4` variable to be host's\nIP address. It uses it access etcd, and publish its own location to etcd.\n\nWith fleet:\n```\ngit clone https://github.com/skrat/rabbitmq-etcd.git\nfleetctl start rabbitmq-etcd/rabbitmq.service\n```\n\nUsage\n-----\n\nCreating vhost:\n\n```\netcdctl set /rabbitmq/vhosts/example 1\n```\n\nDeleting vhost:\n\n```\netcdctl rm /rabbitmq/vhosts/example\n```\n\nCreating user:\n\n```\netcdctl set /rabbitmq/users/john secret\n```\n\nCreating user with tags:\n\n```\netcdctl set /rabbitmq/tags/john management,administrator\netcdctl set /rabbitmq/users/john secret\n```\n\nDeleting user:\n\n```\netcdctl rm /rabbitmq/users/john\n```\n\nSetting permissions:\n\n```\netcdctl set /rabbitmq/permissions/example/john \".*/.*/.*\"\n```\n",
+  "dockerfile": "FROM base/archlinux\nMAINTAINER Dusan <dusan@floorplanner.com>\n\n# Runs whole system upgrade and install packages\nRUN pacman -Syu --noconfirm\nRUN pacman -S --noconfirm base-devel binutils curl python2 python2-pip cronie\n\n# Builds & Installs RabbitMQ server package from AUR\nWORKDIR /tmp\nRUN curl -O https://aur.archlinux.org/packages/ra/rabbitmq/rabbitmq.tar.gz\nRUN tar -xzf rabbitmq.tar.gz\nWORKDIR /tmp/rabbitmq\nRUN makepkg --asroot --noconfirm --syncdeps --install\nRUN rabbitmq-plugins enable rabbitmq_management\nWORKDIR /root\nRUN rm -rf /tmp/rabbitmq\n\n# Installs Configuration Synchronization service\nRUN pip2 install python-etcd==0.3.0\nRUN pip2 install urllib3==1.8.2\nRUN pip2 install pyrabbit==1.0.1\n\n# Add and run scripts\nADD configure.sh /configure.sh\nRUN chmod 755 /configure.sh\nRUN /configure.sh\nADD configsync.py /configsync.py\nRUN chmod 755 /configsync.py\nADD run.sh /run.sh\nRUN chmod 755 /run.sh\nADD logrotate.cron /etc/cron.daily/logrotate\nRUN chmod 755 /etc/cron.daily/logrotate\nADD rabbitmq.logrotate /etc/logrotate.d/rabbitmq\n\n# RabbitMQ ports\nEXPOSE 5672 15672\n\nCMD [\"/run.sh\"]\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "configure.sh",
+        "dest": "/configure.sh"
+      },
+      {
+        "source": "configsync.py",
+        "dest": "/configsync.py"
+      },
+      {
+        "source": "run.sh",
+        "dest": "/run.sh"
+      },
+      {
+        "source": "logrotate.cron",
+        "dest": "/etc/cron.daily/logrotate"
+      },
+      {
+        "source": "rabbitmq.logrotate",
+        "dest": "/etc/logrotate.d/rabbitmq"
+      }
+    ],
+    "expose": [
+      5672
+    ],
+    "volume": [],
+    "run": [
+      "pacman -Syu --noconfirm",
+      "pacman -S --noconfirm base-devel binutils curl python2 python2-pip cronie",
+      "curl -O https://aur.archlinux.org/packages/ra/rabbitmq/rabbitmq.tar.gz",
+      "tar -xzf rabbitmq.tar.gz",
+      "makepkg --asroot --noconfirm --syncdeps --install",
+      "rabbitmq-plugins enable rabbitmq_management",
+      "rm -rf /tmp/rabbitmq",
+      "pip2 install python-etcd==0.3.0",
+      "pip2 install urllib3==1.8.2",
+      "pip2 install pyrabbit==1.0.1",
+      "chmod 755 /configure.sh",
+      "/configure.sh",
+      "chmod 755 /configsync.py",
+      "chmod 755 /run.sh",
+      "chmod 755 /etc/cron.daily/logrotate"
+    ],
+    "workdir": [
+      "/tmp",
+      "/tmp/rabbitmq",
+      "/root"
+    ],
+    "from": "base/archlinux",
+    "maintainer": "Dusan <dusan@floorplanner.com>",
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "git://github.com/skrat/rabbitmq-etcd.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/skrat/rabbitmq-etcd",
+  "docker_repository": "skrat/rabbitmq-etcd",
+  "docker_image": "skrat/rabbitmq-etcd",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5672
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "skrat/rabbitmq-etcd",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/skrat/rabbitmq-etcd",
+    "https://hub.docker.com/v2/repositories/skrat/rabbitmq-etcd",
+    "git://github.com/skrat/rabbitmq-etcd.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Test",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Infrastructure/Operating System/Linux/CoreOS",
+    "Type/Infrastructure/Operating System/Linux/Arch Linux",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/skrat/rabbitmq-etcd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

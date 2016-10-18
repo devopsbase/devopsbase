@@ -1,0 +1,226 @@
+{
+  "name": "nodestack Chef cookbook",
+  "chef_cookbook_name": "nodestack",
+  "revision": "2.3.5",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/nodestack",
+    "https://supermarket.chef.io/cookbooks/nodestack/download",
+    "https://supermarket.chef.io/cookbooks/nodestack/versions/2.3.5",
+    "https://supermarket.chef.io/cookbooks/nodestack/versions/2.3.5/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/nodestack/versions/2.3.5",
+    "https://supermarket.chef.io/api/v1/cookbooks/nodestack",
+    "https://supermarket.chef.io/api/v1/cookbooks/nodestack/versions/2.3.5/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/nodestack",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/nodestack/versions/2.3.5/download",
+  "deprecated": false,
+  "created": "2014-11-12T15:28:25.011Z",
+  "updated": "2015-03-09T16:42:42.736Z",
+  "description": "Installs/Configures nodestack",
+  "maintainer": {
+    "name": "rackops",
+    "email": "rackspace-cookbooks@rackspace.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 2981509,
+  "downloads_count_revision": 487624,
+  "repository_url": "https://github.com/rackspace-cookbooks/nodestack",
+  "issues_url": "https://github.com/rackspace-cookbooks/nodestack/issues",
+  "chef_source_url": "https://github.com/rackspace-cookbooks/nodestack",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "nodestack Cookbook\n==================\nThis cookbook deploys a NodeJS applitcation stack.\n\nRequirements\n------------\n\n#### cookbooks\n- apt\n- mysql\n- mysql-multi\n- database\n- chef-sugar\n- apt\n- mysql-multi\n- pg-multi\n- database\n- chef-sugar\n- elasticsearch\n- apache2, ~> 1.10\n- memcached\n- openssl\n- redisio\n- varnish\n- rackspace_gluster\n- platformstack\n- mongodb\n- build-essential\n- java\n- yum\n- git\n- nodejs\n- ssh_known_hosts\n- application\n- magic_shell\n- logrotate\n\n\nAttributes\n----------\n\n####Note: the 'my_nodejs_app' defines the name of the app, please change this to something more relevant to the customer.\n\n`node['nodestack']['apps']['my_nodejs_app']['app_dir']` path where the application will be deployed\n\n`node['nodestack']['apps']['my_nodejs_app']['git_repo']` Git repository where the code lives.\n\n`node['nodestack']['apps']['my_nodejs_app']['git_rev']` Code revision or branch that should be used ('origin/' should not be specified for remote branches.) Example: HEAD\n\n`node['nodestack']['apps']['my_nodejs_app']['git_repo_domain']` The domain name for the git repo. Example: `github.com`\n\n`node['nodestack']['apps']['my_nodejs_app']['entry_point']` the .js file that will be ran as the server.\n\n`node['nodestack']['apps']['my_nodejs_app']['npm']` `true/false` - Wether we should run `npm install` during a deployment.\n\n`node['nodestack']['apps']['my_nodejs_app']['npm_options']` `Array` - NPM command line options to use for the application.  '--production' should usually be included unless development is being done on the server.\n\n`node['nodestack']['apps']['my_nodejs_app']['config_file']` `true/false` - Wether the coobook will write a config.js from the following config hash.\n\n`node['nodestack']['apps']['my_nodejs_app']['env']`= {} - This config hash contains environment variables that will be available to the application.\n\n`node['nodestack']['apps']['my_nodejs_app']['env']['PORT']` This is the only `env` attribute the cookbook expects to have by default, this is the port the app listens on.\n\n`node['nodestack']['apps']['my_nodejs_app']['monitoring']['body']` Text that will be matched from the GET request\n\n`node['nodestack']['apps']['my_nodejs_app']['deployment']['before_symlink']` Exposes the before_symlink attribute for the application resource. Set this to `nil` if you're not planning on using it.\n\n`node['nodestack']['apps']['my_nodejs_app']['deployment']['before_symlink_template']` Template file that will be dropped on the revision folder that will be ran by the before_symlink callback. Set this to `nil` if you're not planning on using it.\n\n`node['nodestack']['apps']['my_nodejs_app']['deployment']['template_options']` Hash of values that can be used in the `before_symlink_template`.\n\n`node['nodestack']['apps']['my_nodejs_app']['deployment']['strategy']` This is the strategy that will be used to run the Node.js application. Currently Nodestack only supports `forever`. Scroll further down to the deployment strategy section to read more about this.\n\n`node['nodestack']['apps']['my_nodejs_app']['open_files']` This sets the application user's file open limit (ulimit -n) - this is useful for upping the total number of concurrent websockets.\n\n`node['nodestack']['forever']['watch_ignore_patterns'] = ['*.log', '*.logs']` This is a list of patterns that will be ignored and not watched by forever-monitor. Forever-monitor watches the code directory (in the demo app `/var/app/current`) and will reload the application if it notices any changes in the files.\n\n`node['nodestack']['code_deployment']` This enables or disabled code deployment.\n\nDeployment strategy\n----\n\nIn the near future, nodestack may support more than one deployment strategy, for now it only supports forever.\n\n### Forever\n\nWith this deployment strategy, we use whatever init system is running on the OS to start/stop a service that starts a very simple Node.js app that starts [forever-monitor](https://github.com/nodejitsu/forever-monitor).\n\nThis application will monitor and supervise the Node.js application the application being deployed. Forever-monitor will monitor any changes on the application files and reload itself if it finds any changes. It will also control the logging and the pids for the child process. There's also other options that can be implemented in the future, like the amount of child processes.\n\n#### Code deployment is optional.\n\nNodestack can be deployed on a server without the deploying an application. Please note that the deployment strategy used will need to consider installing dependencies through NPM and starting/stopping the application. Some of these could be handled on a wrapper cookbook if so desired.\n\nTo make code deployment optional you need to set the following attribute `node['nodestack']['code_deployment'] = false`\n\n## Encrypted Data Bags\n\nThis cookbook uses encrypted databags to fill in the config.js file for the application. This `config.js` file is where you would usually include credentials for third party services, API keys, database passwords, etc. The data bag also stores the deployment private key.\nThe top level key in the databag represents the environment.\n\nExample of the contents of a databag:\n\n```json\n{\n  \"id\": \"config\",\n  \"staging\": {\n    \"ssh_deployment_key\": \"-----BEGIN RSA PRIVATE KEY-----\\Ia+q5KO/FfGc2pD2bt2Vh9Tjg==\\n-----END RSA PRIVATE KEY-----\",\n    \"config\": {\n      \"mysql\": {\n        \"password\": \"randompass\"\n      },\n      \"mongo\": {\n        \"host\": \"192.168.1.1\",\n        \"port\": 27027\n      }\n    }\n  }\n}\n```\n\n#### Attributes expected from an encrypted databag:\n\n`config = {}` Configuration hash with all the information that the application needs\n\n`ssh_deployment_key =''` SSH private key for deployment.\n\n**It's important to name the databag with the `app_name` and then `_databag`**\n\nUsage\n-----\nTo deploy an app node these is how a `nodejs_app` role would look like:\n```text\n$ knife role show nodejs_app\nchef_type:           role\ndefault_attributes:\ndescription:\nenv_run_lists:\njson_class:          Chef::Role\nname:                nodejs_app\noverride_attributes:\nrun_list:\n  recipe[platformstack::default]\n  recipe[rackops_rolebook::default]\n  recipe[nodestack::application_nodejs]\n```\n\nTo deploy a standalone db for an app node these is how a `nodejs_mysql` role would look like:\n```text\n$ knife role show nodejs_mysql\nchef_type:           role\ndefault_attributes:\ndescription:\nenv_run_lists:\njson_class:          Chef::Role\nname:                nodejs_mysql\noverride_attributes:\nrun_list:\n  recipe[platformstack::default]\n  recipe[rackops_rolebook::default]\n  recipe[nodestack::mysql_base]\n```\n\nTo deploy a mongo node these is how a `nodejs_mongo` role would look like:\n```text\n$ knife role show nodejs_mongo\nchef_type:           role\ndefault_attributes:\ndescription:\nenv_run_lists:\njson_class:          Chef::Role\nname:                nodejs_mongo\noverride_attributes:\nrun_list:\n  recipe[platformstack::default]\n  recipe[rackops_rolebook::default]\n  recipe[nodestack::mongodb_standalone]\n```\n\nThese are the minimum environment variables that would be needed:\n```text\n$ knife environment show nodejs\nchef_type:           environment\ncookbook_versions:\ndefault_attributes:\ndescription:\njson_class:          Chef::Environment\nname:                nodejs\noverride_attributes:\n  mysql:\n    server_root_password: randompass\n  mysql-multi:\n    master: 10.x.x.x\n  nodestack:\n    app_name: beer_survey\n    git_repo: https://github.com/jrperritt/beer-survey.git\n  platformstack:\n    cloud_backup:\n      enabled: false\n    cloud_monitoring:\n      enabled: false\n  rackspace:\n    cloud_credentials:\n      api_key:  xxx\n      username: xxx\n```\n\n* Building MySQL cluster for nodestack.\n\nEnsure the following attributes are set within environment or wrapper cookbook.\n\n```\n['mysql']['server_repl_password'] = 'rootlogin'\n['mysql']['server_repl_password'] = 'replicantlogin'\n['mysql-multi']['master'] = '1.2.3.4'\n['mysql-multi']['slaves'] = ['5.6.7.8']\n```\n\nMySQL Master node:\n```text\n$ knife role show nodejs_mysql_master\nchef_type:           role\ndefault_attributes:\ndescription:\nenv_run_lists:\njson_class:          Chef::Role\nname:                nodejs_mysql_master\noverride_attributes:\nrun_list:\n  recipe[platformstack::default]\n  recipe[rackops_rolebook::default]\n  recipe[nodestack::mysql_master]\n```\n\nMySQL Slave node:\n```text\n$ knife role show nodejs_mysql_slave\nchef_type:           role\ndefault_attributes:\ndescription:\nenv_run_lists:\njson_class:          Chef::Role\nname:                nodejs_mysql_slave\noverride_attributes:\nrun_list:\n  recipe[platformstack::default]\n  recipe[rackops_rolebook::default]\n  recipe[nodestack::mysql_slave]\n```\n\n* Building a PostgreSQL cluster for nodestack.\n\nEnsure the following attributes are set within environment or wrapper cookbook.\n\n```\n['postgresql']['version'] = '9.3'\n['postgresql']['password'] = 'postgresdefault'\n['pg-multi']['replication']['password'] = 'useagudpasswd'\n['pg-multi']['master_ip'] = '1.2.3.4'\n['pg-multi']['slave_ip'] = ['5.6.7.8']\n\nDepending on OS one of the following two must be set:\n['postgresql']['enable_pdgd_yum'] = true  (Redhat Family)\n['postgresql']['enable_pdgd_apt'] = true  (Debian Family)\n```\n\nPostgreSQL Master node:\n```text\n$ knife role show nodejs_postgresql_master\nchef_type:           role\ndefault_attributes:\ndescription:\nenv_run_lists:\njson_class:          Chef::Role\nname:                nodejs_postgresql_master\noverride_attributes:\nrun_list:\n  recipe[platformstack::default]\n  recipe[rackops_rolebook::default]\n  recipe[nodestack::postgresql_master]\n```\n\nPostgreSQL Slave node:\n```text\n$ knife role show nodejs_postgresql_slave\nchef_type:           role\ndefault_attributes:\ndescription:\nenv_run_lists:\njson_class:          Chef::Role\nname:                nodejs_postgresql_slave\noverride_attributes:\nrun_list:\n  recipe[platformstack::default]\n  recipe[rackops_rolebook::default]\n  recipe[nodestack::postgresql_slave]\n```\n\nCloud Monitoring\n-----------\n\nTo enable monitoring you need to set `node['platformstack']['cloud_monitoring']['enabled'] = true`. This will setup the OS monitors like filesystem, CPU, memory, networking, etc.\n\nTo enable HTTP checks for a Node.js app deployed with Nodestack, set the `node['nodestack']['cloud_monitoring']['remote_http']['disabled'] = false`.\n\n`default['nodestack']['cloud_monitoring']['remote_http']['disabled']` Enable/disable remote HTTP monitoring.\n`default['nodestack']['cloud_monitoring']['remote_http']['alarm']` Enable/disable alarm notifications.\n`default['nodestack']['cloud_monitoring']['remote_http']['period']` Seconds value on how often the check will be performed.\n`default['nodestack']['cloud_monitoring']['remote_http']['timeout']` Seconds value on the timeout before the check fails.\n\nNew Relic Monitoring\n--------------------\n\nTo configure New Relic, make sure the `node['newrelic']['license']`\nattribute is set and include the `platformstack` cookbook in your run_list.\n\nNew Relic monitoring plugins can be configured by including the `newrelic::meetme-plugin`\nrecipe in your run_list and setting the following attribute hash in an application\ncookbook:\n\n```ruby\nnode.override['newrelic']['meetme-plugin']['services'] = {\n  \"memcached\": {\n    \"name\": \"localhost\",\n    \"host\":  \"host\",\n    \"port\":  11211\n  },\n  \"elasticsearch\": {\n    \"name\": \"clustername\",\n    \"host\": \"localhost\",\n    \"port\": 9200\n  }\n}\n```\n\nMore examples can be found [here](https://github.com/escapestudios-cookbooks/newrelic#meetme-pluginrb)\nand [here](https://github.com/MeetMe/newrelic-plugin-agent#configuration-example).\n\nLogrotate\n---------\nlogrotate is now enabled, by default, for customer app(forever.[log|out|err]) log files.\nThe logrotate recipe iterates over every item(app_name) in the node['nodestack']['apps_to_deploy'] list\nand creates a configuration file. i.e /etc/logrotate.d/my_nodejs_app\n\nNOTE: The logrotate recipe does not rotate custom log files, so make sure the customer's app uses STDOUT and STDERR.\n\nConfiguration examples can be found [here](https://supermarket.getchef.com/cookbooks/logrotate)\nand [here](https://github.com/stevendanna/logrotate)\n\n\nContributing\n------------\n* See the guide [here](https://github.com/rackspace-cookbooks/contributing/blob/master/CONTRIBUTING.md)\n\nLicense and Authors\n-------------------\n- Author:: Rackspace DevOps (devops@rackspace.com)\n\n```text\nCopyright 2014, Rackspace, US Inc.\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": "= 14.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "rhel",
+      "revision": ">= 6.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/mysql",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/mysql-multi",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/database",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef-sugar",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/elasticsearch",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apache2",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/memcached",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/openssl",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/redisio",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/varnish",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/rackspace_gluster",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/platformstack",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/mongodb",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/java",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/git",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/nodejs",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ssh_known_hosts",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/application",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/magic_shell",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/pg-multi",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/newrelic",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/logrotate",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/sudo",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ulimit",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/stack_commons",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

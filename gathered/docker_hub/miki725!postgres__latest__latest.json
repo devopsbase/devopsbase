@@ -1,0 +1,136 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/miki725/postgres",
+    "repository_url": "https://hub.docker.com/v2/repositories/miki725/postgres",
+    "tags_url": "https://hub.docker.com/v2/repositories/miki725/postgres/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/miki725/postgres/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/miki725/postgres/autobuild",
+    "user": "miki725",
+    "name": "postgres",
+    "namespace": "miki725",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 571,
+    "last_updated": "2016-10-04T20:23:43.923921Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 134636755,
+        "id": 750413,
+        "repository": 288651,
+        "creator": 27674,
+        "last_updater": 27674,
+        "last_updated": "2016-10-04T20:23:43.583650Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "miki725/dockerfiles"
+  },
+  "name": "miki725/postgres Docker container",
+  "description": "Custom docker container build for PostgreSQL.",
+  "readme": "# Postgres\n\nCustom docker container build for PostgreSQL.\n\n## Features\n\n* Build on top of official [Ubuntu container](https://hub.docker.com/_/ubuntu/)\n* Installs PostgreSQL by using `apt-get` which makes it really easy to add any other extensions (e.g. like PostGIS)\n* Implements custom `ENTRYPOINT` which automatically runs PostgreSQL commands as `postgres` user:  \n  `docker run -it --rm miki725/postgres psql  # runs under postgres user`\n* Designed to make it easy to integrate with data volumes\n* The entrypoint automatically initializes the db at the data location if one is not already present. That is really useful when starting a fresh app.\n* Exposes port `5432` by default\n\n## Usage\n\nAs mentioned above, this container is meant to be used together volumes for for persistent storage:\n\n```bash\n$ docker volume create --name pgdata\n$ docker run --name=mypgdb \\\n             --volume=pgdata:/var/lib/postgresql/data \\\n             miki725/postgres\n```\n\nThe above creates a volume which is used by `miki725/postgres` to store its database data.\n\nAlternatively `docker-compose` can be used (only after the volume is created):\n\n```yaml\npostgres:\n  image: miki725/postgres\n  expose:\n    - 5432\n  volumes:\n    - pgdata:/var/lib/postgresql/data\n```\n",
+  "dockerfile": "FROM ubuntu:16.04\nMAINTAINER \"Miroslav Shubernetskiy\"\n\nENV POSTGRES_VERSION 9.6\nENV GOSU_VERSION 1.10\nENV PGDATA /var/lib/postgresql/data\nENV PATH $PATH:/usr/lib/postgresql/$POSTGRES_VERSION/bin\n\nRUN groupadd -r postgres && useradd -r -g postgres postgres\n\n# Add the PostgreSQL PGP key to verify their Debian packages\n# It should be the same key as https://www.postgresql.org/media/keys/ACCC4CF8.asc\nRUN apt-key adv \\\n        --keyserver keyserver.ubuntu.com \\\n        --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8 && \\\n    echo \"deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main $POSTGRES_VERSION\" \\\n        > /etc/apt/sources.list.d/pgdg.list && \\\n    apt-get update\n\nRUN apt-get upgrade -y\n\nRUN apt-get install -y \\\n    curl \\\n    libpq5 \\\n    postgresql-$POSTGRES_VERSION \\\n    postgresql-client-$POSTGRES_VERSION \\\n    postgresql-contrib-$POSTGRES_VERSION\n\n# cleanup\nRUN apt-get clean && \\\n    rm -rf /var/cache/apt\n\n# install gosu\nRUN curl -o /usr/local/bin/gosu -sSL \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \\\n    && chmod +x /usr/local/bin/gosu\n\nADD entrypoint.sh /usr/local/bin/entrypoint.sh\nRUN chmod +x /usr/local/bin/entrypoint.sh\n\nENTRYPOINT [\"/usr/local/bin/entrypoint.sh\"]\n\nWORKDIR /\n\nEXPOSE 5432\nCMD [\"postgres\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "entrypoint.sh",
+        "dest": "/usr/local/bin/entrypoint.sh"
+      }
+    ],
+    "expose": [
+      5432
+    ],
+    "volume": [],
+    "run": [
+      "groupadd -r postgres && useradd -r -g postgres postgres",
+      "apt-key adv         --keyserver keyserver.ubuntu.com         --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8 &&     echo \"deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main $POSTGRES_VERSION\"         > /etc/apt/sources.list.d/pgdg.list &&     apt-get update",
+      "apt-get upgrade -y",
+      "apt-get install -y     curl     libpq5     postgresql-$POSTGRES_VERSION     postgresql-client-$POSTGRES_VERSION     postgresql-contrib-$POSTGRES_VERSION",
+      "apt-get clean &&     rm -rf /var/cache/apt",
+      "curl -o /usr/local/bin/gosu -sSL \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\"     && chmod +x /usr/local/bin/gosu",
+      "chmod +x /usr/local/bin/entrypoint.sh"
+    ],
+    "workdir": [
+      "/"
+    ],
+    "from": "ubuntu:16.04",
+    "maintainer": "\"Miroslav Shubernetskiy\"",
+    "env": {
+      "POSTGRES_VERSION": "9.6",
+      "GOSU_VERSION": "1.10",
+      "PGDATA": "/var/lib/postgresql/data",
+      "PATH": "$PATH:/usr/lib/postgresql/$POSTGRES_VERSION/bin"
+    },
+    "entrypoint": "[\"/usr/local/bin/entrypoint.sh\"]",
+    "cmd": "[\"postgres\"]"
+  },
+  "source_repository_url": "https://github.com/miki725/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/miki725/dockerfiles",
+  "docker_repository": "miki725/postgres",
+  "docker_image": "miki725/postgres",
+  "parameters_schema": {
+    "POSTGRES_VERSION": {
+      "default": "9.6",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOSU_VERSION": {
+      "default": "1.10",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGDATA": {
+      "default": "/var/lib/postgresql/data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:/usr/lib/postgresql/$POSTGRES_VERSION/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5432
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "miki725/postgres",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/miki725/postgres",
+    "https://hub.docker.com/v2/repositories/miki725/postgres",
+    "https://github.com/miki725/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Build",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/miki725/postgres",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

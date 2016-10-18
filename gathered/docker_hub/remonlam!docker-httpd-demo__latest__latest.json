@@ -1,0 +1,143 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/remonlam/docker-httpd-demo",
+    "repository_url": "https://hub.docker.com/v2/repositories/remonlam/docker-httpd-demo",
+    "tags_url": "https://hub.docker.com/v2/repositories/remonlam/docker-httpd-demo/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/remonlam/docker-httpd-demo/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/remonlam/docker-httpd-demo/autobuild",
+    "user": "remonlam",
+    "name": "docker-httpd-demo",
+    "namespace": "remonlam",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 56,
+    "last_updated": "2016-09-23T20:52:49.982199Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 67706111,
+        "id": 3882490,
+        "repository": 804697,
+        "creator": 150950,
+        "last_updater": 150950,
+        "last_updated": "2016-09-23T20:48:35.439802Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "dev_latest",
+        "full_size": 67706198,
+        "id": 3882535,
+        "repository": 804697,
+        "creator": 150950,
+        "last_updater": 150950,
+        "last_updated": "2016-09-23T20:22:30.705528Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "remonlam/docker-httpd-demo"
+  },
+  "name": "remonlam/docker-httpd-demo Docker container",
+  "description": "Demo based on httpd on debian",
+  "readme": "# docker-httpd-demo\nThis repo contains a apache httpd demo running in a Docker container\n",
+  "dockerfile": "FROM debian:jessie\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\n#RUN groupadd -r www-data && useradd -r --create-home -g www-data www-data\n\nENV HTTPD_PREFIX /usr/local/apache2\nENV PATH $HTTPD_PREFIX/bin:$PATH\nRUN mkdir -p \"$HTTPD_PREFIX\" \\\n\t&& chown www-data:www-data \"$HTTPD_PREFIX\"\nWORKDIR $HTTPD_PREFIX\n\n# install httpd runtime dependencies\n# https://httpd.apache.org/docs/2.4/install.html#requirements\nRUN apt-get update \\\n\t&& apt-get install -y --no-install-recommends \\\n\t\tlibapr1 \\\n\t\tlibaprutil1 \\\n\t\tlibaprutil1-ldap \\\n\t\tlibapr1-dev \\\n\t\tlibaprutil1-dev \\\n\t\tlibpcre++0 \\\n\t\tlibssl1.0.0 \\\n\t&& rm -r /var/lib/apt/lists/*\n\nENV HTTPD_VERSION 2.2.31\nENV HTTPD_SHA1 e3b55387112206307ba76526820a2627472f3787\nENV HTTPD_BZ2_URL https://www.apache.org/dist/httpd/httpd-$HTTPD_VERSION.tar.bz2\n\nRUN set -x \\\n\t&& buildDeps=' \\\n\t\tbzip2 \\\n\t\tca-certificates \\\n\t\tgcc \\\n\t\tlibpcre++-dev \\\n\t\tlibssl-dev \\\n\t\tmake \\\n\t\twget \\\n\t' \\\n\t&& apt-get update \\\n\t&& apt-get install -y --no-install-recommends $buildDeps \\\n\t&& rm -r /var/lib/apt/lists/* \\\n\t\\\n\t&& wget -O httpd.tar.bz2 \"$HTTPD_BZ2_URL\" \\\n\t&& echo \"$HTTPD_SHA1 *httpd.tar.bz2\" | sha1sum -c - \\\n# see https://httpd.apache.org/download.cgi#verify\n\t&& wget -O httpd.tar.bz2.asc \"$HTTPD_BZ2_URL.asc\" \\\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B1B96F45DFBDCCF974019235193F180AB55D9977 \\\n\t&& gpg --batch --verify httpd.tar.bz2.asc httpd.tar.bz2 \\\n\t&& rm -r \"$GNUPGHOME\" httpd.tar.bz2.asc \\\n\t\\\n\t&& mkdir -p src \\\n\t&& tar -xvf httpd.tar.bz2 -C src --strip-components=1 \\\n\t&& rm httpd.tar.bz2 \\\n\t&& cd src \\\n\t\\\n\t&& ./configure \\\n\t\t--prefix=\"$HTTPD_PREFIX\" \\\n# https://httpd.apache.org/docs/2.2/programs/configure.html\n# Caveat: --enable-mods-shared=all does not actually build all modules. To build all modules then, one might use:\n\t\t--enable-mods-shared='all ssl ldap cache proxy authn_alias mem_cache file_cache authnz_ldap charset_lite dav_lock disk_cache' \\\n\t&& make -j\"$(nproc)\" \\\n\t&& make install \\\n\t\\\n\t&& cd .. \\\n\t&& rm -r src \\\n\t\\\n\t&& sed -ri \\\n\t\t-e 's!^(\\s*CustomLog)\\s+\\S+!\\1 /proc/self/fd/1!g' \\\n\t\t-e 's!^(\\s*ErrorLog)\\s+\\S+!\\1 /proc/self/fd/2!g' \\\n\t\t\"$HTTPD_PREFIX/conf/httpd.conf\" \\\n\t\\\n\t&& apt-get purge -y --auto-remove $buildDeps\n\nCOPY httpd-foreground /usr/local/bin/\n\nEXPOSE 80\nCMD [\"httpd-foreground\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "mkdir -p \"$HTTPD_PREFIX\" \t&& chown www-data:www-data \"$HTTPD_PREFIX\"",
+      "apt-get update \t&& apt-get install -y --no-install-recommends \t\tlibapr1 \t\tlibaprutil1 \t\tlibaprutil1-ldap \t\tlibapr1-dev \t\tlibaprutil1-dev \t\tlibpcre++0 \t\tlibssl1.0.0 \t&& rm -r /var/lib/apt/lists/*",
+      "set -x \t&& buildDeps=' \t\tbzip2 \t\tca-certificates \t\tgcc \t\tlibpcre++-dev \t\tlibssl-dev \t\tmake \t\twget \t' \t&& apt-get update \t&& apt-get install -y --no-install-recommends $buildDeps \t&& rm -r /var/lib/apt/lists/* \t\t&& wget -O httpd.tar.bz2 \"$HTTPD_BZ2_URL\" \t&& echo \"$HTTPD_SHA1 *httpd.tar.bz2\" | sha1sum -c - # see https://httpd.apache.org/download.cgi#verify"
+    ],
+    "workdir": [
+      "$HTTPD_PREFIX"
+    ],
+    "from": "debian:jessie",
+    "env": {
+      "HTTPD_PREFIX": "/usr/local/apache2",
+      "PATH": "$HTTPD_PREFIX/bin:$PATH",
+      "HTTPD_VERSION": "2.2.31",
+      "HTTPD_SHA1": "e3b55387112206307ba76526820a2627472f3787",
+      "HTTPD_BZ2_URL": "https://www.apache.org/dist/httpd/httpd-$HTTPD_VERSION.tar.bz2"
+    },
+    "copy": "httpd-foreground /usr/local/bin/",
+    "cmd": "[\"httpd-foreground\"]"
+  },
+  "source_repository_url": "https://github.com/remonlam/docker-httpd-demo.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/remonlam/docker-httpd-demo",
+  "docker_repository": "remonlam/docker-httpd-demo",
+  "docker_image": "remonlam/docker-httpd-demo",
+  "parameters_schema": {
+    "HTTPD_PREFIX": {
+      "default": "/usr/local/apache2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$HTTPD_PREFIX/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HTTPD_VERSION": {
+      "default": "2.2.31",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HTTPD_SHA1": {
+      "default": "e3b55387112206307ba76526820a2627472f3787",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HTTPD_BZ2_URL": {
+      "default": "https://www.apache.org/dist/httpd/httpd-$HTTPD_VERSION.tar.bz2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "remonlam/docker-httpd-demo",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/remonlam/docker-httpd-demo",
+    "https://hub.docker.com/v2/repositories/remonlam/docker-httpd-demo",
+    "https://github.com/remonlam/docker-httpd-demo.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Debian"
+  ],
+  "info_url": "https://hub.docker.com/r/remonlam/docker-httpd-demo",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

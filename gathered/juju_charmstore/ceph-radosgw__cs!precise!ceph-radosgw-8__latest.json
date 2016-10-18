@@ -1,0 +1,112 @@
+{
+  "name": "ceph-radosgw Juju charm",
+  "juju_charm_name": "ceph-radosgw",
+  "revision": "cs:precise/ceph-radosgw-8",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/ceph-radosgw",
+    "https://jujucharms.com/ceph-radosgw/precise",
+    "https://jujucharms.com/ceph-radosgw/precise/8",
+    "https://api.jujucharms.com/v5/ceph-radosgw",
+    "https://api.jujucharms.com/v5/precise/ceph-radosgw",
+    "https://api.jujucharms.com/v5/precise/ceph-radosgw-8"
+  ],
+  "labels": [
+    "Juju charm",
+    "misc",
+    "Type/Middleware/Runtime/Java",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Style/Virtualization Level/Hardware/Network",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store"
+  ],
+  "info_url": "https://jujucharms.com/ceph-radosgw",
+  "package_url": "https://api.jujucharms.com/v5/precise/ceph-radosgw-8/archive",
+  "created": "2015-06-17T09:35:47.486Z",
+  "updated": "2015-06-17T09:35:47.486Z",
+  "description": "Highly scalable distributed storage - RADOS HTTP Gateway\n\nCeph is a distributed storage and network file system designed to provide\nexcellent performance, reliability, and scalability.\n.\nThis charm provides the RADOS HTTP gateway supporting S3 and Swift protocols\nfor object storage.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "precise",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= precise"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/keystone",
+      "self_resolve": true,
+      "juju_interface": "keystone",
+      "juju_name": "identity-service",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/ceph-radosgw",
+      "self_resolve": true,
+      "juju_interface": "ceph-radosgw",
+      "juju_name": "mon",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "cache-size": {
+      "type": "int",
+      "description": "Number of keystone tokens to hold in local cache.",
+      "default": 500,
+      "mapping": "charm_option"
+    },
+    "key": {
+      "type": "string",
+      "description": "Key ID to import to the apt keyring to support use with arbitary source\nconfiguration from outside of Launchpad archives or PPA's.\n",
+      "default": null,
+      "mapping": "charm_option"
+    },
+    "operator-roles": {
+      "type": "string",
+      "description": "Comma-separated list of Swift operator roles; used when integrating with\nOpenStack Keystone.\n",
+      "default": "Member,Admin",
+      "mapping": "charm_option"
+    },
+    "region": {
+      "type": "string",
+      "description": "OpenStack region that the RADOS gateway supports; used when integrating with\nOpenStack Keystone.\n",
+      "default": "RegionOne",
+      "mapping": "charm_option"
+    },
+    "revocation-check-interval": {
+      "type": "int",
+      "description": "Interval between revocation checks to keystone.",
+      "default": 600,
+      "mapping": "charm_option"
+    },
+    "source": {
+      "type": "string",
+      "description": "Optional configuration to support use of additional sources such as:\n.\n  - ppa:myteam/ppa\n  - cloud:precise-proposed/folsom\n  - http://my.archive.com/ubuntu main\n.\nThe last option should be used in conjunction with the key configuration\noption.\n.\nNote that a minimum ceph version of 0.48.2 is required for use with this\ncharm which is NOT provided by the packages in the main Ubuntu archive\nfor precise.\n",
+      "default": "cloud:precise-updates/folsom",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/http",
+      "juju_interface": "http",
+      "juju_name": "gateway",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "Overview\n========\n\nCeph is a distributed storage and network file system designed to provide\nexcellent performance, reliability and scalability.\n\nThis charm deploys the RADOS Gateway, a S3 and Swift compatible HTTP gateway\nfor online object storage on-top of a ceph cluster.\n\nUsage\n=====\n\nIn order to use this charm, it is assumed that you have already deployed a ceph\nstorage cluster using the 'ceph' charm with something like this::\n\n   juju deploy -n 3 --config ceph.yaml ceph\n\nTo deploy the RADOS gateway simple do::\n\n   juju deploy ceph-radosgw\n   juju add-relation ceph-radosgw ceph\n\nYou can then directly access the RADOS gateway by exposing the service::\n\n   juju expose ceph-radosgw\n\nThe gateway can be accessed over port 80 (as show in juju status exposed\nports).\n\nAccess\n======\n\nNote that you will need to login to one of the service units supporting the\nceph charm to generate some access credentials::\n\n   juju ssh ceph/0 \\\n      'sudo radosgw-admin user create --uid=\"ubuntu\" --display-name=\"Ubuntu Ceph\"'\n\nFor security reasons the ceph-radosgw charm is not set up with appropriate\npermissions to administer the ceph cluster.\n\nKeystone Integration\n====================\n\nCeph >= 0.55 integrates with Openstack Keystone for authentication of Swift requests.\n\nThis is enabled by relating the ceph-radosgw service with keystone::\n\n   juju deploy keystone\n   juju add-relation keystone ceph-radosgw\n\nIf you try to relate the radosgw to keystone with an earlier version of ceph the hook\nwill error out to let you know.\n\nScale-out\n=========\n\nIts possible to scale-out the RADOS Gateway itself::\n\n   juju add-unit -n 2 ceph-radosgw\n\nand then stick a HA loadbalancer on the front::\n\n   juju deploy haproxy\n   juju add-relation haproxy ceph-radosgw\n\nShould give you a bit more bang on the front end if you really need it.\n\nContact Information\n===================\n\nAuthor: James Page <james.page@ubuntu.com>\nReport bugs at: http://bugs.launchpad.net/charms/+source/ceph-radosgw/+filebug\nLocation: http://jujucharms.com/charms/ceph-radosgw\n\nBootnotes\n=========\n\nThe Ceph RADOS Gateway makes use of a multiverse package libapache2-mod-fastcgi.\nAs such it will try to automatically enable the multiverse pocket in\n/etc/apt/sources.list.  Note that there is noting 'wrong' with multiverse\ncomponents - they typically have less liberal licensing policies or suchlike.\n",
+  "readme": "Overview\n========\n\nCeph is a distributed storage and network file system designed to provide\nexcellent performance, reliability and scalability.\n\nThis charm deploys the RADOS Gateway, a S3 and Swift compatible HTTP gateway\nfor online object storage on-top of a ceph cluster.\n\nUsage\n=====\n\nIn order to use this charm, it is assumed that you have already deployed a ceph\nstorage cluster using the 'ceph' charm with something like this::\n\n   juju deploy -n 3 --config ceph.yaml ceph\n\nTo deploy the RADOS gateway simple do::\n\n   juju deploy ceph-radosgw\n   juju add-relation ceph-radosgw ceph\n\nYou can then directly access the RADOS gateway by exposing the service::\n\n   juju expose ceph-radosgw\n\nThe gateway can be accessed over port 80 (as show in juju status exposed\nports).\n\nAccess\n======\n\nNote that you will need to login to one of the service units supporting the\nceph charm to generate some access credentials::\n\n   juju ssh ceph/0 \\\n      'sudo radosgw-admin user create --uid=\"ubuntu\" --display-name=\"Ubuntu Ceph\"'\n\nFor security reasons the ceph-radosgw charm is not set up with appropriate\npermissions to administer the ceph cluster.\n\nKeystone Integration\n====================\n\nCeph >= 0.55 integrates with Openstack Keystone for authentication of Swift requests.\n\nThis is enabled by relating the ceph-radosgw service with keystone::\n\n   juju deploy keystone\n   juju add-relation keystone ceph-radosgw\n\nIf you try to relate the radosgw to keystone with an earlier version of ceph the hook\nwill error out to let you know.\n\nScale-out\n=========\n\nIts possible to scale-out the RADOS Gateway itself::\n\n   juju add-unit -n 2 ceph-radosgw\n\nand then stick a HA loadbalancer on the front::\n\n   juju deploy haproxy\n   juju add-relation haproxy ceph-radosgw\n\nShould give you a bit more bang on the front end if you really need it.\n\nContact Information\n===================\n\nAuthor: James Page <james.page@ubuntu.com>\nReport bugs at: http://bugs.launchpad.net/charms/+source/ceph-radosgw/+filebug\nLocation: http://jujucharms.com/charms/ceph-radosgw\n\nBootnotes\n=========\n\nThe Ceph RADOS Gateway makes use of a multiverse package libapache2-mod-fastcgi.\nAs such it will try to automatically enable the multiverse pocket in\n/etc/apt/sources.list.  Note that there is noting 'wrong' with multiverse\ncomponents - they typically have less liberal licensing policies or suchlike.\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

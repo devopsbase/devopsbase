@@ -1,0 +1,51 @@
+{
+  "name": "rightscale_backup Chef cookbook",
+  "chef_cookbook_name": "rightscale_backup",
+  "revision": "1.1.5",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/rightscale_backup",
+    "https://supermarket.chef.io/cookbooks/rightscale_backup/download",
+    "https://supermarket.chef.io/cookbooks/rightscale_backup/versions/1.1.5",
+    "https://supermarket.chef.io/cookbooks/rightscale_backup/versions/1.1.5/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/rightscale_backup/versions/1.1.5",
+    "https://supermarket.chef.io/api/v1/cookbooks/rightscale_backup",
+    "https://supermarket.chef.io/api/v1/cookbooks/rightscale_backup/versions/1.1.5/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/rightscale_backup",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/rightscale_backup/versions/1.1.5/download",
+  "deprecated": false,
+  "created": "2014-02-24T15:34:17.000Z",
+  "updated": "2015-04-01T19:02:34.241Z",
+  "description": "Provides a resource to manage volume backups on any cloud RightScale supports.",
+  "maintainer": {
+    "name": "rightscale",
+    "email": "cookbooks@rightscale.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 10561054,
+  "downloads_count_revision": 859766,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# rightscale_backup cookbook\n\n[![Cookbook](https://img.shields.io/cookbook/v/rightscale_backup.svg?style=flat)][cookbook]\n[![Release](https://img.shields.io/github/release/rightscale-cookbooks/rightscale_backup.svg?style=flat)][release]\n[![Build Status](https://img.shields.io/travis/rightscale-cookbooks/rightscale_backup.svg?style=flat)][travis]\n\n[cookbook]: https://supermarket.getchef.com/cookbooks/rightscale_backup\n[release]: https://github.com/rightscale-cookbooks/rightscale_backup/releases/latest\n[travis]: https://travis-ci.org/rightscale-cookbooks/rightscale_backup\n\nThis cookbook provides a `rightscale_backup` resource that can create,\nrestore, and clean up block device storage (\"volume\") backups on numerous\npublic and private IaaS clouds.\n\nA backup represents a collection of volume snapshots taken at the same\ntime from one or more volumes attached to the server. A backup belongs\nto a series of backups, called the \"lineage\". Maintaining a lineage allows for\npoint-in-time data recovery using timestamps (even if the snapshots are taken from\ndifferent volumes). It also supports a more sophisticated algorithm for backup\nrotation/retention, as opposed to simple snapshot truncation.\n\nThe `rightscale_backup` resource uses RightScale's instance-facing API to\nmanage backups in the cloud.\n\nGithub Repository: [https://github.com/rightscale-cookbooks/rightscale_backup](https://github.com/rightscale-cookbooks/rightscale_backup)\n\n# Requirements\n\n* The system being configured must be a RightScale managed VM to have the\nrequired access to the RightScale API.\n* Chef 11 or higher.\n* Requires a RightScale account that is registered with all the cloud vendors\nyou expect to provision on (e.g. AWS, Rackspace, Openstack, CloudStack, GCE,\nand Azure).\n* Cookbook dependencies\n  * [rightscale_volume](http://community.opscode.com/cookbooks/rightscale_volume)\n\n# Usage\n\nThis resource only handles manipulating volume backups. Managing volumes is\nhandled by the [rightscale_volume][RightScale Volume] resource.\n\n**Example 1:** Creates and attaches 2 volumes using the [rightscale_volume][RightScale Volume] resource,\nand then takes a backup of the volumes using the `rightscale_backup` resource.\n\n```ruby\n# Creates and attaches two 1 GB volumes\n2.times do |count|\n  rightscale_volume \"db_data_volume_#{count}\" do\n    size 1\n    action [:create, :attach]\n  end\nend\n\n# Backs up the two volumes to a 'db_backup_lineage' lineage\nrightscale_backup \"db_data_volume_backup\" do\n  lineage 'db_backup_lineage'\n  action :create\nend\n```\n\n**Example 2:** Restores the backup (created in Example 1) to the server\n\n```ruby\n# Restores the latest backup in the 'db_backup_lineage' taken on or before\n# the UNIX timestamp '1391118125'\nrightscale_backup \"db_data_volume_backup\" do\n  lineage 'db_backup_lineage'\n  timestamp 1391118125\n  action :restore\nend\n```\n\n**Example 3:** Deletes old backups\n\n```ruby\n# Deletes old backups from the 'db_backup_lineage' lineage. After this action\n# there will be only 2 backups in the cloud.\nrightscale_backup \"db_data_volume_backup\" do\n  lineage 'db_backup_lineage'\n  keep_last 2\n  monthlies 1\n  yearlies 1\n  dailies 1\n  weeklies 1\n  action :cleanup\nend\n```\n\n[RightAPI Client]: https://rubygems.org/gems/right_api_client\n[RightScale Volume]: http://community.opscode.com/cookbooks/rightscale_volume\n\n\n# Recipes\n\n## default\n\nThe default recipe installs the [right_api_client gem][RightAPI Client] to make\ninstance-facing RightScale API calls.\n\n# Resource/Providers\n\n## rightscale_backup\n\nA resource to create, restore, and cleanup backups in the cloud.\n\n### Actions\n\n| Actions | Description | Default |\n| --- | --- | --- |\n| `:create` | Creates a snapshot for every volume attached to the server | yes |\n| `:restore` | Restores a backup from the cloud | |\n| `:cleanup` | Deletes old backups from the cloud | |\n\n### Attributes\n\n| Name | Description | Default | Required |\n| --- | --- | --- | --- |\n| `nickname` | Name of the backup. During `:create` action, all snapshots in the backup will be created with this name. | | Yes |\n| `lineage` | Lineage in which the backup must belong | | Yes |\n| `description` | Description for the backup. During `:restore` action, the volumes created from the snapshots are set with this description. If description is not given, the description in the snapshots will be used for the newly created volumes. | | No |\n| `from_master` | Set this to 'true' to create a `rs_backup:from_master=true` tag on the snapshots which can be used in filtering | `false` | No |\n| `timestamp` | The timestamp on the backup. The latest *perfect backup* on or before this timestamp in the specified lineage will be picked for restore. This attribute can be set using the Time class or the seconds since UNIX epoch (Integer) | | No |\n| `size` | Size of the volume to be restored. All volumes created from the snapshot will be of this size. NOTE: This size must be equal to or larger than the size of the snapshots in the backup. WARNING: Some clouds do not support volume resizing and throws an exception when we pass this parameter. On clouds that supports resizing (currently only tested in EC2), the volumes will be created with this size instead of the original backup's size. | | No |\n| `timeout` | Throws an error if an action could not be completed within this timeout (in minutes) | `15` | No |\n| `options` | Optional parameters hash. For example, `:volume_type` on Rackspace Open Clouds can be specified to restore the volume as an 'SATA' or 'SSD' device. | | No |\n| `keep_last` | Number of backups to keep from deleting | `60` | Yes |\n| `dailies` | Number of daily backups to keep | `1` | No |\n| `monthlies` | Number of monthly backups to keep | `12` | No |\n| `weeklies` | Number of weekly backups to keep | `4` | No |\n| `yearlies` | Number of yearly backups to keep | `2` | No |\n\n### `:create` Action\n\nCreates a snapshot for every volume attached to the server. The newly created snapshot will be tagged with the following\n\n* `rs_backup:lineage=<string>` - Lineage name of the backup\n* `rs_backup:backup_id=<UUID>` - Unique identifier for a backup (all snapshots in a backup will share this ID)\n* `rs_backup:committed=true` - The backup is committed\n* `rs_backup:count=X` - Number of snapshots in the backup\n* `rs_backup:device=<device>` - Device to which the volume was attached\n* `rs_backup:position=Y` - Position of the snapshot in a backup\n* `rs_backup:timestamp=<timestamp>` - Time at which the backup was taken\nA backup is considered a *perfect backup* when it is completed (all the snapshots are\ncompleted), committed (all the snapshots are committed), and the number of snapshots\nit found is equal to the number in the \"rs_backup:count=\" tag on each of the snapshots.\n\n### `:restore` Action\n\nRestores a backup from the cloud. This will\n\n* create a volume for each snapshot in the backup\n* attach all the created volumes to the server at the device specified in the snapshot\n(obtained from `rs_backup:device=`). NOTE: If the devices are already being used on the\nserver, the restore will fail.\n\n### `:cleanup` Action\n\nDeletes old backups from the cloud. For all the *perfect backups*, the constraints of\nkeep_last, dailies, weeklies, monthlies, and yearlies attributes will be applied\n(See 'Parameters' section below). The algorithm for choosing the backups to keep is\nenforced by the RightScale API which is the union of those set of backups if each of\nthose conditions are applied independently.\n\n```\nbackups_to_keep = backups_to_keep(keep_last) U backups_to_keep(dailies) U\nbackups_to_keep(weeklies) U backups_to_keep(monthlies) U backups_to_keep(yearlies)\n```\n\nAn *imperfect backup* is picked up for clean up only if there exists a perfect backup\nwith a newer timestamp. No constraints will be applied on *imperfect backups* and all\nof them will be cleaned up.\n\n# Author\n\nAuthor:: RightScale, Inc. (<cookbooks@rightscale.com>)\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/rightscale_volume",
+      "revision": "~> 1.2.2",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "rightscale_backup::default": "Default recipe for installing required packages/gems."
+  }
+}

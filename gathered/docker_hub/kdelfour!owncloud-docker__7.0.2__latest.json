@@ -1,0 +1,151 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kdelfour/owncloud-docker",
+    "repository_url": "https://hub.docker.com/v2/repositories/kdelfour/owncloud-docker",
+    "tags_url": "https://hub.docker.com/v2/repositories/kdelfour/owncloud-docker/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kdelfour/owncloud-docker/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kdelfour/owncloud-docker/autobuild",
+    "user": "kdelfour",
+    "name": "owncloud-docker",
+    "namespace": "kdelfour",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 251,
+    "last_updated": "2015-11-14T09:54:40.961854Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "7.0.2",
+        "full_size": 204374016,
+        "id": 63425,
+        "repository": 61413,
+        "creator": 71446,
+        "last_updater": 71446,
+        "last_updated": "2015-11-14T09:54:51.008537Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 246136891,
+        "id": 63437,
+        "repository": 61413,
+        "creator": 71446,
+        "last_updater": 71446,
+        "last_updated": "2015-11-14T09:54:09.642656Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "8.0.2",
+        "full_size": 204373985,
+        "id": 63446,
+        "repository": 61413,
+        "creator": 71446,
+        "last_updater": 71446,
+        "last_updated": "2015-11-14T09:52:27.116287Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "kdelfour/owncloud-docker"
+  },
+  "name": "kdelfour/owncloud-docker Docker container",
+  "description": "Automated latest Owncloud (http://owncloud.org/) Build",
+  "readme": "Owncloud Dockerfile\n=============\n\nThis repository contains Dockerfile of Owncloud for Docker's automated build published to the public Docker Hub Registry.\n\n# Base Docker Image\n[kdelfour/supervisor-docker](https://registry.hub.docker.com/u/kdelfour/supervisor-docker/)\n\n# Installation\n\n## Install Docker.\n\nDownload automated build from public Docker Hub Registry: docker pull kdelfour/owncloud-docker\n\n(alternatively, you can build an image from Dockerfile: docker build -t=\"kdelfour/owncloud-docker\" github.com/kdelfour/owncloud-docker)\n\n## Usage\n\n    docker run -it -d -p 80:80 -p 443:443 kdelfour/owncloud-docker\n    \nYou can add a shared directory as a volume directory with the argument *-v /your-path/data/:/data/* like this :\n\n    docker run -it -d -p 80:80 -p 443:443 -v /your-path/data/:/data/ kdelfour/owncloud-docker\n\nAn embedded database is available.\n    \n## Build and run with custom config directory\n\nGet the latest version from github\n\n    git clone https://github.com/kdelfour/owncloud-docker\n    cd owncloud-docker/\n\nBuild it\n\n    sudo docker build --force-rm=true --tag=\"$USER/owncloud-docker\" .\n    \nAnd run\n\n    sudo docker run -d -p 80:80 -p 443:443 -v /your-path/data/:/data/ $USER/owncloud-docker:8.0.2\n    \nEnjoy !!    \n",
+  "dockerfile": "# ------------------------------------------------------------------------------\n# Based on a work at https://github.com/docker/docker.\n# ------------------------------------------------------------------------------\n# Pull base image.\nFROM kdelfour/supervisor-docker\nMAINTAINER Kevin Delfour <kevin@delfour.eu>\n\n# ------------------------------------------------------------------------------\n# Install base\nRUN apt-get update\nRUN apt-get install -y bzip2 wget apache2 sendmail smbclient \\\n  fontconfig-config fonts-dejavu-core ghostscript gsfonts imagemagick-common \\\n  libapache2-mod-php5 libcupsfilters1 libcupsimage2 libfftw3-double3 \\\n  libfontconfig1 libfreetype6 libgd3 libgs9 libgs9-common libicu52 libijs-0.35 \\\n  libjasper1 libjbig0 libjbig2dec0 libjpeg-turbo8 libjpeg8 liblcms2-2 \\\n  liblqr-1-0 libltdl7 libmagickcore5 libmagickwand5 libmcrypt4 libopts25 \\\n  libpaper-utils libpaper1 libpq5 libtiff5 libvpx1 libxpm4 lsof ntp \\\n  php-pear php-xml-parser php5 php5-cli php5-common php5-curl php5-gd \\\n  php5-imagick php5-intl php5-json php5-mcrypt php5-mysqlnd php5-pgsql \\\n  php5-readline php5-sqlite poppler-data psmisc ttf-dejavu-core curl \\\n  libc6 libcurl3 zlib1g\n\nRUN update-rc.d sendmail defaults\n\n# ------------------------------------------------------------------------------\n# Install Owncloud\nRUN curl -k http://download.owncloud.org/community/owncloud-8.1.1.tar.bz2 | tar jx -C /var/www/\nRUN mkdir /var/www/owncloud/data\nRUN chown -R www-data:www-data /var/www/owncloud\nRUN chmod -R 770 /var/www/owncloud/data\n\n# ------------------------------------------------------------------------------\n# Make some changes\nRUN cp /etc/php5/cli/php.ini /etc/php5/php.ini\nRUN sed -i 's/^;\\?\\(post_max_size =\\).*$/\\1 4G/' /etc/php5/php.ini && \\\n  sed -i 's/^;\\?\\(upload_max_filesize =\\).*$/\\1 4G/' /etc/php5/php.ini && \\\n  sed -i 's/^;\\?\\(output_buffering =\\).*$/\\1 Off/' /etc/php5/php.ini && \\\n  sed -i 's/^;\\?\\(default_charset =\\).*$/\\1 \"UTF-8\"/' /etc/php5/php.ini\nRUN sed -i -e \"s:;\\s*session.save_path\\s*=\\s*\\\"N;/path\\\":session.save_path = /tmp:g\" /etc/php5/php.ini\n\nWORKDIR /etc/php5/cli\nRUN rm -f php.ini\nRUN ln -s ../php.ini php.ini\n\nWORKDIR /etc/php5/apache2\nRUN rm -f php.ini\nRUN ln -s ../php.ini php.ini\n\nRUN chown -R www-data:www-data /tmp\n\nRUN php5enmod mcrypt\n\nRUN sed -i 's/AllowOverride None/AllowOverride All/'  /etc/apache2/apache2.conf\nRUN sed -i -e\"s/html/owncloud/\" /etc/apache2/sites-available/000-default.conf\nRUN sed -i -e\"s/html/owncloud/\" /etc/apache2/sites-available/default-ssl.conf\nRUN a2enmod ssl\nRUN a2ensite default-ssl\n\n# ------------------------------------------------------------------------------\n# Clean up APT when done.\nRUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n# ------------------------------------------------------------------------------\n# Expose port & volumes\nWORKDIR /\nRUN ln -s /var/www/owncloud/data data\nVOLUME /data\n\nEXPOSE 80\nEXPOSE 443\n\n# ------------------------------------------------------------------------------\n# Add supervisord conf\nADD conf/startup.conf /etc/supervisor/conf.d/\n\n# ------------------------------------------------------------------------------\n# Start supervisor, define default command.\nCMD [\"supervisord\", \"-c\", \"/etc/supervisor/supervisord.conf\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "conf/startup.conf",
+        "dest": "/etc/supervisor/conf.d/"
+      }
+    ],
+    "expose": [
+      80,
+      443
+    ],
+    "volume": [
+      "/data"
+    ],
+    "run": [
+      "apt-get update",
+      "apt-get install -y bzip2 wget apache2 sendmail smbclient   fontconfig-config fonts-dejavu-core ghostscript gsfonts imagemagick-common   libapache2-mod-php5 libcupsfilters1 libcupsimage2 libfftw3-double3   libfontconfig1 libfreetype6 libgd3 libgs9 libgs9-common libicu52 libijs-0.35   libjasper1 libjbig0 libjbig2dec0 libjpeg-turbo8 libjpeg8 liblcms2-2   liblqr-1-0 libltdl7 libmagickcore5 libmagickwand5 libmcrypt4 libopts25   libpaper-utils libpaper1 libpq5 libtiff5 libvpx1 libxpm4 lsof ntp   php-pear php-xml-parser php5 php5-cli php5-common php5-curl php5-gd   php5-imagick php5-intl php5-json php5-mcrypt php5-mysqlnd php5-pgsql   php5-readline php5-sqlite poppler-data psmisc ttf-dejavu-core curl   libc6 libcurl3 zlib1g",
+      "update-rc.d sendmail defaults",
+      "curl -k http://download.owncloud.org/community/owncloud-8.1.1.tar.bz2 | tar jx -C /var/www/",
+      "mkdir /var/www/owncloud/data",
+      "chown -R www-data:www-data /var/www/owncloud",
+      "chmod -R 770 /var/www/owncloud/data",
+      "cp /etc/php5/cli/php.ini /etc/php5/php.ini",
+      "sed -i 's/^;\\?\\(post_max_size =\\).*$/\\1 4G/' /etc/php5/php.ini &&   sed -i 's/^;\\?\\(upload_max_filesize =\\).*$/\\1 4G/' /etc/php5/php.ini &&   sed -i 's/^;\\?\\(output_buffering =\\).*$/\\1 Off/' /etc/php5/php.ini &&   sed -i 's/^;\\?\\(default_charset =\\).*$/\\1 \"UTF-8\"/' /etc/php5/php.ini",
+      "sed -i -e \"s:;\\s*session.save_path\\s*=\\s*\\\"N;/path\\\":session.save_path = /tmp:g\" /etc/php5/php.ini",
+      "rm -f php.ini",
+      "ln -s ../php.ini php.ini",
+      "rm -f php.ini",
+      "ln -s ../php.ini php.ini",
+      "chown -R www-data:www-data /tmp",
+      "php5enmod mcrypt",
+      "sed -i 's/AllowOverride None/AllowOverride All/'  /etc/apache2/apache2.conf",
+      "sed -i -e\"s/html/owncloud/\" /etc/apache2/sites-available/000-default.conf",
+      "sed -i -e\"s/html/owncloud/\" /etc/apache2/sites-available/default-ssl.conf",
+      "a2enmod ssl",
+      "a2ensite default-ssl",
+      "apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "ln -s /var/www/owncloud/data data"
+    ],
+    "workdir": [
+      "/etc/php5/cli",
+      "/etc/php5/apache2",
+      "/"
+    ],
+    "from": "kdelfour/supervisor-docker",
+    "maintainer": "Kevin Delfour <kevin@delfour.eu>",
+    "cmd": "[\"supervisord\", \"-c\", \"/etc/supervisor/supervisord.conf\"]"
+  },
+  "source_repository_url": "https://github.com/kdelfour/owncloud-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/kdelfour/owncloud-docker",
+  "docker_repository": "kdelfour/owncloud-docker",
+  "docker_image": "kdelfour/owncloud-docker",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80,
+        443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kdelfour/owncloud-docker",
+  "revision": "7.0.2",
+  "uris": [
+    "https://hub.docker.com/r/kdelfour/owncloud-docker",
+    "https://hub.docker.com/v2/repositories/kdelfour/owncloud-docker",
+    "https://github.com/kdelfour/owncloud-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Build",
+    "Type/Devopsware/Test"
+  ],
+  "info_url": "https://hub.docker.com/r/kdelfour/owncloud-docker",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

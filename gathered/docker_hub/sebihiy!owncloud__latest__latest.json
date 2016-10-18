@@ -1,0 +1,137 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/sebihiy/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/sebihiy/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/sebihiy/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/sebihiy/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/sebihiy/owncloud/autobuild",
+    "user": "sebihiy",
+    "name": "owncloud",
+    "namespace": "sebihiy",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 29,
+    "last_updated": "2016-06-13T12:49:48.911978Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 222150168,
+        "id": 3398652,
+        "repository": 741194,
+        "creator": 495064,
+        "last_updater": 495064,
+        "last_updated": "2016-06-13T12:49:48.390517Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "sebihiy/owncloud"
+  },
+  "name": "sebihiy/owncloud Docker container",
+  "description": "Owncloud",
+  "readme": "# docker-owncloud\n\n[![Docker Stars](https://img.shields.io/docker/stars/jchaney/owncloud.svg)][this.project_docker_hub_url]\n[![Docker Pulls](https://img.shields.io/docker/pulls/jchaney/owncloud.svg)][this.project_docker_hub_url]\n[![ImageLayers Size](https://img.shields.io/imagelayers/image-size/jchaney/owncloud/latest.svg)][this.project_docker_hub_url]\n[![ImageLayers Layers](https://img.shields.io/imagelayers/layers/jchaney/owncloud/latest.svg)][this.project_docker_hub_url]\n\nDocker image for [ownCloud][] with security in mind.\n\nThe build instructions are tracked on [GitHub][this.project_github_url].\n[Automated builds][] are hosted on [Docker Hub][this.project_docker_hub_url].\n\n## Why using this image\n\n* It is directly based on Debian stable. No additional image layers which blow up the total image size and might by a security risk.\n* Uses [nginx][] as webserver.\n* [Hardened TLS](https://github.com/BetterCrypto/Applied-Crypto-Hardening/blob/master/src/configuration/Webservers/nginx/default-hsts) configuration.\n* Generates unique Diffie Hellman parameters to mitigate precomputation based attacks on common parameters. Refs: [Guide to Deploying Diffie-Hellman for TLS](https://weakdh.org/sysadmin.html).\n* Local caching enabled by default (APCu).\n  See https://owncloud.org/blog/making-owncloud-faster-through-caching/\n* Installs the ownCloud tarball directly from https://owncloud.org/ and it [securely](https://github.com/jchaney/owncloud/pull/12) verifies the GPG signature.\n* Makes installing of 3party apps easy and keeps them across updates.\n* The [`occ`][occ] command can be used just by typing `docker exec -ti $owncloud_container_name occ`.\n* ownCloud can only be updated by redeploying the container. No update via the web interface is possible. The ownCloud installation is fully contained in the container and not made persistent. This allows to make the ownCloud installation write protected for the Webserver and PHP which run as `www-data`.\n* Automated database update on ownCloud update during the startup of a redeployed/updated container.\n\n## Getting the image\n\nYou have two options to get the image:\n\n1. Build it yourself with `make build`.\n2. Download it via `docker pull jchaney/owncloud` ([automated build][this.project_docker_hub_url]).\n\n## ownCloud up and running\n\nCheckout the [Makefile][] for an example or just run `make owncloud` which will setup a ownCloud container instance (called \"owncloud\"). After that, just head over to [http://localhost/](http://localhost/) and give it a try. You can now create an admin account. For testing purposes you can use SQLite (but remember to use a real database in production).\n\n## Running ownCloud in production\n\nSetup a separate container running your database server and link it to the ownCloud container.\nFor running in production, you need to provide a TLS key and certificate. The\nMakefile defaults to `/etc/ssl/private/ssl-cert-snakeoil.key` and\n`/etc/ssl/certs/ssl-cert-snakeoil.pem`. Make sure those files exist or extend\nthe Makefile (you can include this Makefile and overwrite some variables in\nyour own Makefile). To generate self signed once you can run the following command:\n\n```Shell\nmake-ssl-cert generate-default-snakeoil\n```\n\nTo setup ownCloud with [MariaDB] as backend, just run:\n\n```Shell\nmake owncloud-production\n```\n\nIn the initial ownCloud setup, you need to supply the database user, password, database name and database host which you can look up via:\n\n```Shell\nmake owncloud-mariadb-get-pw\n```\n\nThat should be it :smile:\n\n## Update your container and ownCloud\n\nIt is recommended to rebuild/pull this image on a regular basis and redeploy your ownCloud container(s) to get the latest security fixes.\nNote that ownCloud version jumps are uploaded to the `latest` tag of this image once they are tested. You might want to watch this repository to see when this happens.\n\nOnce the ownCloud image is up-to-date, just run:\n\n```Shell\nmake owncloud-production\n```\n\nto update your container. ownCloud usually requires a database update when the version of ownCloud is bumped. This process [has been automated](/misc/bootstrap.sh) for this Docker image but remember that you are still in charge of making backups/snapshots prior to updates!\n\n## Installing 3party apps\n\nJust write the command(s) needed to install apps in a configuration file and make sure it is present as `/owncloud/3party_apps.conf` in your container.\n\nCheckout the [example configuration][3party_apps.conf] and the [install script][oc-install-3party-apps] for details.\n\n## docker-compose support\n\nYou can also run this image with `docker-compose`. First you need to declare all env variables since `docker-compose` does not support (yet) default variables.\n\n```Shell\n# Where to store data and database ?\nexport docker_owncloud_permanent_storage=\"~/owncloud_data\"\n\n# SSL Certificates to use.\nexport docker_owncloud_ssl_cert=\"../certs/cloud.cert\"\nexport docker_owncloud_ssl_key=\"../certs/cloud.key\"\n\n# Servername\nexport docker_owncloud_servername=\"localhost\"\n\nexport docker_owncloud_http_port=\"80\"\nexport docker_owncloud_https_port=\"443\"\nexport docker_owncloud_in_root_path=\"1\"\n\nexport docker_owncloud_mariadb_root_password=$(pwgen --secure 40 1)\nexport docker_owncloud_mariadb_user_password=$(pwgen --secure 40 1)\n\nexport image_owncloud=\"jchaney/owncloud\"\nexport image_mariadb=\"mysql\"\n\n```\n\nThen:\n\n```Shell\ndocker-compose up\n```\n\nThat's all !\n\n## Related projects\n\n* [official docker repository for ownCloud](https://hub.docker.com/_/owncloud/)\n\n  Uses Apache as webserver and is based on the [official Docker PHP image](https://hub.docker.com/_/php/).\n\n* [l3iggs/owncloud](https://hub.docker.com/r/l3iggs/owncloud/)\n\n  Uses Apache as webserver and is based on a self build LAMP stack based on Arch Linux.\n\n* [Ansible role to install and manage ownCloud instances](https://github.com/debops/ansible-owncloud)\n\n  Automation framework for setting up ownCloud on any Debian based system. This offers much\n  more flexibility and is not limited to Docker. So you can setup a ownCloud\n  instance in a KVM virtual machine and/or a LXC container for example.\n\n  This role is part of the [DebOps](http://debops.org/) project which allows\n  you to automate all the steps mentioned above (setting up a Hypervisor host with\n  support for KVM and/or LXC, setting up the virtual machine/container and\n  installing Webserver/PHP/Database and finally ownCloud).\n\n  The real fun with this approach begins when you manage multiple instances\n  because Ansible and this role allow you to run actions like ownCloud updates\n  or enabling apps or the like on all your instances automatically.\n\n## Maintainer\n\nThe current maintainer is [Robin `ypid` Schneider][ypid].\n\nList of previous maintainers:\n\n1. [Josh Chaney][jchaney]\n2. [silvio][]\n\n## Problems\n\n* If you get \"Command not found\" for any of the programs used then install it (make sure you know what you are doing).\n\n  > Your distribution packages: You should find missing dependencies from the errors yourself. It's _your_ machine, you're supposed to know it.\n\n  Ref: https://bb.osmocom.org/trac/wiki/PreliminaryRequirements#Generalknowledge\n\n## License\n\nThis project is distributed under [GNU Affero General Public License, Version 3][AGPLv3].\n\n[ypid]: https://github.com/ypid\n[silvio]: https://github.com/silvio\n[jchaney]: https://github.com/jchaney\n\n[Makefile]: /Makefile\n[ownCloud]: https://owncloud.org/\n[occ]: https://doc.owncloud.org/server/8.1/admin_manual/configuration_server/occ_command.html\n[MariaDB]: https://mariadb.org/\n[nginx]: https://en.wikipedia.org/wiki/Nginx\n\n[3party_apps.conf]: https://github.com/jchaney/owncloud/blob/master/configs/3party_apps.conf\n[oc-install-3party-apps]: https://github.com/jchaney/owncloud/blob/master/misc/oc-install-3party-apps\n[AGPLv3]: https://github.com/jchaney/owncloud/blob/master/LICENSE\n[this.project_docker_hub_url]: https://hub.docker.com/r/jchaney/owncloud/\n[this.project_github_url]: https://github.com/jchaney/owncloud\n[Automated builds]: https://docs.docker.com/docker-hub/builds/\n# owncloud\n# owncloud\n",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER  Robin Schneider <ypid@riseup.net>\n# MAINTAINER silvio <silvio@port1024.net>\n# MAINTAINER Josh Chaney <josh@chaney.io>\n\nRUN DEBIAN_FRONTEND=noninteractive ;\\\n    apt-get update && \\\n    apt-get install --assume-yes \\\n        bzip2 \\\n        cron \\\n        nginx \\\n        openssl \\\n        php-apc \\\n        php5-apcu \\\n        php5-cli \\\n        php5-curl \\\n        php5-fpm \\\n        php5-gd \\\n        php5-gmp \\\n        php5-imagick \\\n        php5-intl \\\n        php5-ldap \\\n        php5-mcrypt \\\n        php5-mysqlnd \\\n        php5-pgsql \\\n        php5-sqlite \\\n        smbclient \\\n        sudo \\\n        wget\n\n## Check latest version: https://github.com/owncloud/core/wiki/Maintenance-and-Release-Schedule\nENV OWNCLOUD_VERSION=\"9.0.2\" \\\n    OWNCLOUD_IN_ROOTPATH=\"0\" \\\n    OWNCLOUD_SERVERNAME=\"localhost\"\n\nLABEL com.github.jchaney.owncloud.version=\"$OWNCLOUD_VERSION\" \\\n      com.github.jchaney.owncloud.license=\"AGPL-3.0\" \\\n      com.github.jchaney.owncloud.url=\"https://github.com/jchaney/owncloud\"\n\nRUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys E3036906AD9F30807351FAC32D5D5E97F6978A26\n\nRUN wget --no-verbose --output-document /tmp/oc.tar.bz2 https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2 && \\\n    wget --no-verbose --output-document /tmp/oc.tar.bz2.asc https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2.asc\nRUN mkdir --parent /var/www/owncloud/apps_persistent /owncloud /var/log/cron && \\\n    gpg --verify /tmp/oc.tar.bz2.asc && \\\n    tar --no-same-owner --directory /var/www/ --extract --file /tmp/oc.tar.bz2 && \\\n    ln --symbolic --force /owncloud/config.php /var/www/owncloud/config/config.php && \\\n    ln --symbolic --force /owncloud/docker_image_owncloud.config.php /var/www/owncloud/config/docker_image_owncloud.config.php && \\\n    rm /tmp/oc.tar.bz2 /tmp/oc.tar.bz2.asc\n\nADD misc/bootstrap.sh misc/occ misc/oc-install-3party-apps /usr/local/bin/\nADD configs/3party_apps.conf configs/nginx_ssl.conf configs/nginx.conf configs/docker_image_owncloud.config.php configs/owncloud_autoconfig.php /root/\n\n## Fixed warning in admin panel getenv('PATH') == '' for ownCloud 8.1.\nRUN echo 'env[PATH] = /usr/local/bin:/usr/bin:/bin' >> /etc/php5/fpm/pool.d/www.conf\n\nADD configs/cron.conf /etc/oc-cron.conf\nRUN crontab /etc/oc-cron.conf\n\nEXPOSE 80 443\n\nENTRYPOINT [\"bootstrap.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "misc/bootstrap.sh",
+        "dest": "misc/occ"
+      },
+      {
+        "source": "configs/3party_apps.conf",
+        "dest": "configs/nginx_ssl.conf"
+      },
+      {
+        "source": "configs/cron.conf",
+        "dest": "/etc/oc-cron.conf"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "DEBIAN_FRONTEND=noninteractive ;    apt-get update &&     apt-get install --assume-yes         bzip2         cron         nginx         openssl         php-apc         php5-apcu         php5-cli         php5-curl         php5-fpm         php5-gd         php5-gmp         php5-imagick         php5-intl         php5-ldap         php5-mcrypt         php5-mysqlnd         php5-pgsql         php5-sqlite         smbclient         sudo         wget",
+      "gpg --keyserver ha.pool.sks-keyservers.net --recv-keys E3036906AD9F30807351FAC32D5D5E97F6978A26",
+      "wget --no-verbose --output-document /tmp/oc.tar.bz2 https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2 &&     wget --no-verbose --output-document /tmp/oc.tar.bz2.asc https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2.asc",
+      "mkdir --parent /var/www/owncloud/apps_persistent /owncloud /var/log/cron &&     gpg --verify /tmp/oc.tar.bz2.asc &&     tar --no-same-owner --directory /var/www/ --extract --file /tmp/oc.tar.bz2 &&     ln --symbolic --force /owncloud/config.php /var/www/owncloud/config/config.php &&     ln --symbolic --force /owncloud/docker_image_owncloud.config.php /var/www/owncloud/config/docker_image_owncloud.config.php &&     rm /tmp/oc.tar.bz2 /tmp/oc.tar.bz2.asc",
+      "echo 'env[PATH] = /usr/local/bin:/usr/bin:/bin' >> /etc/php5/fpm/pool.d/www.conf",
+      "crontab /etc/oc-cron.conf"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": " Robin Schneider <ypid@riseup.net>",
+    "env": {
+      "OWNCLOUD_VERSION": "\"9.0.2\"",
+      "": "",
+      "OWNCLOUD_IN_ROOTPATH": "\"0\"",
+      "OWNCLOUD_SERVERNAME": "\"localhost\""
+    },
+    "label": "com.github.jchaney.owncloud.version=\"$OWNCLOUD_VERSION\"       com.github.jchaney.owncloud.license=\"AGPL-3.0\"       com.github.jchaney.owncloud.url=\"https://github.com/jchaney/owncloud\"",
+    "entrypoint": "[\"bootstrap.sh\"]"
+  },
+  "source_repository_url": "https://github.com/sebihiy/owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/sebihiy/owncloud",
+  "docker_repository": "sebihiy/owncloud",
+  "docker_image": "sebihiy/owncloud",
+  "parameters_schema": {
+    "OWNCLOUD_VERSION": {
+      "default": "\"9.0.2\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OWNCLOUD_IN_ROOTPATH": {
+      "default": "\"0\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OWNCLOUD_SERVERNAME": {
+      "default": "\"localhost\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "sebihiy/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/sebihiy/owncloud",
+    "https://hub.docker.com/v2/repositories/sebihiy/owncloud",
+    "https://github.com/sebihiy/owncloud.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/sebihiy/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

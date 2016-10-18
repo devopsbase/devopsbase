@@ -1,0 +1,123 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/superbuddy/laravel-nginx",
+    "repository_url": "https://hub.docker.com/v2/repositories/superbuddy/laravel-nginx",
+    "tags_url": "https://hub.docker.com/v2/repositories/superbuddy/laravel-nginx/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/superbuddy/laravel-nginx/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/superbuddy/laravel-nginx/autobuild",
+    "user": "superbuddy",
+    "name": "laravel-nginx",
+    "namespace": "superbuddy",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 433,
+    "last_updated": "2016-10-15T03:20:57.535887Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 203398859,
+        "id": 3838850,
+        "repository": 798887,
+        "creator": 725679,
+        "last_updater": 725679,
+        "last_updated": "2016-10-15T03:20:57.182020Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "SuperBuddy/dockerfiles"
+  },
+  "name": "superbuddy/laravel-nginx Docker container",
+  "description": "Just Laravel, Nginx, PHP fpm, Composer and Mcrypt.",
+  "readme": "# laravel-nginx\n\n[![](https://images.microbadger.com/badges/image/superbuddy/laravel-nginx.svg)](https://microbadger.com/images/superbuddy/laravel-nginx \"Get your own image badge on microbadger.com\")\n\nJust Laravel, Nginx, PHP fpm, Composer and Mcrypt.\nWe put this online, since we could not find a decent base image for our use.\n\n## Our usage\nThe previous version of the Superbuddy backoffice uses some libraries on top of composer (PHP).\nThis Docker image contains the base on which the backoffice is build.\nThe next Docker image uses `FROM superbuddy/laravel-nginx` and specifies the ENVironment variables,\nPORTS and ENTRYPOINT.\n\n## Example Dockerfile\nThe following is an example of how this file can be used.\n\n```\n# $tree\nlaravel-dockerfiles\n  |\n  - Project01\n  |  |\n  |  - docker-compose.yml\n  |  - .env\n  |  - laravel.env\n  - Project99\n  |  |\n  |  - docker-compose.yml\n  |  - .env\n  |  - laravel.env\n  |  - my.cnf\n  - common.env\n  - laravel.Dockerfile\n  - common.yml\n  - db.yml\n  \n```\n\n\n\n```dockerfile\n# laravel.Dockerfile\nFROM superbuddy/laravel-nginx\nCOPY . /var/www\nWORKDIR /var/www\nRUN run_after_copying_repo\nCMD service php5-fpm start && nginx\n```\n\n\n```yaml\n# docker-compose.yml\nversion: '2'\nservices:\n  web:\n    extends:\n      file: $PWD/../common.yml\n      service: laravelcommon\n    container_name: project99\n    links:\n      - cache:redis\n      - db\n      - search\n  db:\n    extends:\n      file: $PWD/../db.yml\n      service: db\n  cache:\n    image: redis\n    expose:\n      - \"6379\"\n  search:\n    image: elasticsearch\n    expose:\n      - \"1622\"\n```\n\n\n```bash\n# .env\npath_to_project_repo=~/laravel-example-project\nexposed_to_host_port=8080\ndb_location=/var/lib/mysql\ndb_pwd=password\n```\n\n\n```yaml\n# common.yml\nversion: '2'\nservices:\n  laravelcommon:\n    build:\n      context: \"${path_to_project_repo}/\"\n      dockerfile: \"$PWD/../laravel.Dockerfile\"\n    env_file:\n      - $PWD/laravel.env\n      - common.env\n    ports:\n      - \"${exposed_to_host_port}:80\"\n    volumes:\n      - /var/log/docker/frontend/laravel:/var/www/storage/logs\n      - /var/log/docker/frontend/nginx:/var/log/nginx\n```\n\n\n```yaml\n# db.yml\nversion: '2'\nservices:\n  db:\n    image: mariadb\n    environment:\n      - MYSQL_ROOT_PASSWORD=${db_pwd}\n    expose:\n      - \"3306\"\n    volumes:\n      - \"$PWD/my.cnf:/etc/mysql/my.cnf\"\n      - \"${db_location}:/var/lib/mysql\"\n```\n",
+  "dockerfile": "# docker build -f Dockerfile -t superbuddy/laravel-nginx .\nFROM php:5-fpm\n\nMAINTAINER svlentink <sander@superbuddy.nl>\nLABEL Description=\"Laravel and Nginx\"\n\n# https://github.com/phusion/baseimage-docker/issues/58\n# http://serverfault.com/questions/618994/when-building-from-dockerfile-debian-ubuntu-package-install-debconf-noninteract\nENV DEBIAN_FRONTEND noninteractive\n\n# runs during installation and remove junk, as described in http://docs.docker.com/engine/articles/dockerfile_best-practices/#apt-get\nRUN apt-get update && \\\n  apt-get install -y \\\n  git \\\n  cron \\\n  nginx \\\n# https://github.com/docker-library/php/issues/60\n  zlib1g-dev \\\n  mcrypt \\\n# ubuntu = php-mcrypt, debian = php5-mcrypt\n  php5-mcrypt \\\n  php5-fpm \\\n# gd; http://serverfault.com/questions/436634/installing-php-extensions-on-linux\n  php5-gd \\\n  php5-mysql \\\n  php5-imap \\\n# https://laravel.com/docs/5.0#server-requirements\n  php5-json \\\n  php5-curl \\\n# The following three are mentioned by https://hub.docker.com/r/cheezykins/laravel/~/dockerfile/\n  libgmp10 \\\n  libgmp-dev \\\n  mysql-client \\\n  && apt-get clean && rm -rf /var/lib/apt/lists/*\n\nRUN docker-php-ext-install \\\n  bcmath \\\n#  gmp \\\n  mbstring \\\n  mysql \\\n  pdo \\\n  pdo_mysql \\\n# https://hub.docker.com/r/ganiutomo/docker-php-laravel/~/dockerfile/\n  zip\n\n# Install composer (PHP dep. manager)\nRUN curl -sS https://getcomposer.org/installer | php\nRUN mv composer.phar /usr/local/bin/composer\n\nRUN cp /etc/php5/cli/php.ini /usr/local/etc/php/conf.d/php.ini\n\nRUN php5enmod mcrypt\n#  && php5enmod imap \\\n#  && php5enmod mysql \\\n#  && php5enmod\n\n# defining the volumes that need to be mounted\nVOLUME /var/www/storage/logs\nVOLUME /var/log/nginx\n\n# Set up cron\n# https://laravel.com/docs/5.1/scheduling\nADD crontab /var/spool/cron/crontabs/www-data\nRUN chown www-data.crontab /var/spool/cron/crontabs/www-data\nRUN chmod 0600 /var/spool/cron/crontabs/www-data\n\nCOPY nginx.conf /etc/nginx/sites-available/default\nRUN sed -i \"s/request_terminate_timeout =.*/request_terminate_timeout=3600/g\" /etc/php5/fpm/php.ini\nRUN sed -i \"s/default_socket_timeout =.*/default_socket_timeout=3600/g\" /etc/php5/fpm/php.ini\nRUN sed -i \"s/max_execution_time =.*/max_execution_time=3600/g\" /etc/php5/fpm/php.ini\nRUN sed -i \"s/cgi.fix_pathinfo=/cgi.fix_pathinfo=0#/g\" /etc/php5/fpm/php.ini\n\nCOPY run_after_copying_repo.sh /usr/local/bin/run_after_copying_repo\n\n# https://www.digitalocean.com/community/tutorials/docker-explained-how-to-containerize-and-use-nginx-as-a-proxy\nRUN echo \"daemon off;\" >> /etc/nginx/nginx.conf\n# https://github.com/nginxinc/docker-nginx/blob/11fc019b2be3ad51ba5d097b1857a099c4056213/mainline/jessie/Dockerfile#L27\nCMD service php5-fpm start && nginx\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "crontab",
+        "dest": "/var/spool/cron/crontabs/www-data"
+      }
+    ],
+    "expose": [],
+    "volume": [
+      "/var/www/storage/logs",
+      "/var/log/nginx"
+    ],
+    "run": [
+      "apt-get update &&   apt-get install -y   git   cron   nginx # https://github.com/docker-library/php/issues/60",
+      "docker-php-ext-install   bcmath #  gmp   mbstring   mysql   pdo   pdo_mysql # https://hub.docker.com/r/ganiutomo/docker-php-laravel/~/dockerfile/",
+      "curl -sS https://getcomposer.org/installer | php",
+      "mv composer.phar /usr/local/bin/composer",
+      "cp /etc/php5/cli/php.ini /usr/local/etc/php/conf.d/php.ini",
+      "php5enmod mcrypt",
+      "chown www-data.crontab /var/spool/cron/crontabs/www-data",
+      "chmod 0600 /var/spool/cron/crontabs/www-data",
+      "sed -i \"s/request_terminate_timeout =.*/request_terminate_timeout=3600/g\" /etc/php5/fpm/php.ini",
+      "sed -i \"s/default_socket_timeout =.*/default_socket_timeout=3600/g\" /etc/php5/fpm/php.ini",
+      "sed -i \"s/max_execution_time =.*/max_execution_time=3600/g\" /etc/php5/fpm/php.ini",
+      "sed -i \"s/cgi.fix_pathinfo=/cgi.fix_pathinfo=0#/g\" /etc/php5/fpm/php.ini",
+      "echo \"daemon off;\" >> /etc/nginx/nginx.conf"
+    ],
+    "workdir": [],
+    "from": "php:5-fpm",
+    "maintainer": "svlentink <sander@superbuddy.nl>",
+    "label": "Description=\"Laravel and Nginx\"",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "copy": "run_after_copying_repo.sh /usr/local/bin/run_after_copying_repo",
+    "cmd": "service php5-fpm start && nginx"
+  },
+  "source_repository_url": "https://github.com/SuperBuddy/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/SuperBuddy/dockerfiles",
+  "docker_repository": "superbuddy/laravel-nginx",
+  "docker_image": "superbuddy/laravel-nginx",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "superbuddy/laravel-nginx",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/superbuddy/laravel-nginx",
+    "https://hub.docker.com/v2/repositories/superbuddy/laravel-nginx",
+    "https://github.com/SuperBuddy/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/superbuddy/laravel-nginx",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

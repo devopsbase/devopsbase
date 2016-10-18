@@ -1,0 +1,110 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/marcelmaatkamp/rabbitmq-udp-exchange",
+    "repository_url": "https://hub.docker.com/v2/repositories/marcelmaatkamp/rabbitmq-udp-exchange",
+    "tags_url": "https://hub.docker.com/v2/repositories/marcelmaatkamp/rabbitmq-udp-exchange/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/marcelmaatkamp/rabbitmq-udp-exchange/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/marcelmaatkamp/rabbitmq-udp-exchange/autobuild",
+    "user": "marcelmaatkamp",
+    "name": "rabbitmq-udp-exchange",
+    "namespace": "marcelmaatkamp",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 74,
+    "last_updated": "2015-09-21T13:46:19.649951Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 285890666,
+        "id": 105411,
+        "repository": 143436,
+        "creator": 16442,
+        "last_updater": 16442,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "marcelmaatkamp/udp-exchange"
+  },
+  "name": "marcelmaatkamp/rabbitmq-udp-exchange Docker container",
+  "description": "This is the latest RabbitMQ with rabbitmq-udp-exchange plugins enabled",
+  "readme": "# RabbitMQ with udp-exchange plugin enabled \n\nThis RabbitMQ as a docker container with the plugins management, shovel, federation and rabbitmq-udp-exchange enabled \n\nThis is my source for building a docker container with RabbitMQ 3.4.4, shovel, federation and rabbitmq-udp-exchange plugins enabled. For more information about the udp-exchange see [https://github.com/tonyg/udp-exchange] and the docker image itself can be found at [https://registry.hub.docker.com/u/marcelmaatkamp/rabbitmq-udp-exchange]\n\nEnabled plugins are:\n * rabbit_udp_exchange\n * rabbitmq_shovel_management\n * rabbitmq_federation_management\n * rabbitmq_management\n * rabbitmq_web_dispatch\n * webmachine\n * mochiweb\n * rabbitmq_shovel\n * rabbitmq_federation\n * rabbitmq_management_agent\n * amqp_client\n\nTo start this image using docker use the following command:\n```\n $ docker -d run \\\n --name rabbitmq-udp \\\n -p 5672:5672 \\\n -p 15672:15672 \\\n -p 5673:5673/udp \\\n -v /var/lib/rabbitmq:/var/lib/rabbitmq \\\n marcelmaatkamp/rabbitmq-udp-exchange\n```\n# RabbitMQ \"UDP Exchange\" Plugin\n\nExtends RabbitMQ Server with support for a new experimental exchange\ntype, `x-udp`.\n\nEach created `x-udp` exchange listens on a specified UDP port for\nincoming messages, and relays them on to the queues bound to the\nexchange. It also takes messages published to the exchange and relays\nthem on to a specified IP address and UDP port.\n\n## Prebuilt Binary Downloads\n\nFrom time to time, I make a snapshot binary download of the plugin\navailable: see\n<http://eighty-twenty.org/tech/rabbitmq/binary-plugins.html>. Expect\nplugins to have a GPG signature from `tonygarnockjones@gmail.com`, key\navailable\n[here](http://homepages.kcbbs.gen.nz/tonyg/gpg-key-gmail.txt),\nfingerprint `630A 8781 4B1F A5BA C30F  A95D 6141 87C4 CEB5 3E0C`.\n\n## Declaring an `x-udp` exchange\n\nCall your `exchange_declare` command with the following arguments in\nthe `arguments` table:\n\n    Key    Type    Optional? Description\n    ------------------------------------------------------------------------\n    port   short   no        Port number to listen for incoming packets on\n    ip     string  yes       IP address to listen on; default is 0.0.0.0\n    format string  yes       Module to use for packet parsing and formatting; default \"raw\"\n\nThe `ip` string, if supplied, must be a numeric IPv4 address string of\nthe form `X.Y.Z.W`. If `ip` is missing, the exchange will listen at\nthe specified port on all interfaces.\n\n## Deleting an `x-udp` exchange\n\nDeleting an `x-udp` exchange causes the system to stop listening for\nUDP packets on the exchange's configured port.\n\n## Packet formats\n\nThe `format` string in the `arguments` table of `exchange_declare`\ncontrols the packet parsing and formatting process. The possible\nvalues for the string are documented below.\n\nIf the `format` string is omitted, `raw` is assumed.\n\n### Raw packet format, `format = \"raw\"`\n\nMessages arriving on the UDP socket associated with an `x-udp`\nexchange in `raw` mode are translated into AMQP messages and routed to\nbound queues. The `routing_key`s of the AMQP messages are of the form\n\n    ipv4.X.Y.Z.W.Port.Prefix\n\nwhere `X.Y.Z.W` is the numeric IPv4 address string that the UDP packet\nwas sent from, `Port` is the UDP port number that the packet was sent\nfrom, and `Prefix` is the first few bytes of the packet itself. AMQP\n`routing_key`s are not permitted to be longer than 255 bytes, so as\nmuch of the packet's body is placed in the `routing_key` as will\nfit. The remainder is discarded from the `routing_key`.\n\nThe body of each produced AMQP message is the entire body of the\nreceived UDP packet.\n\n### STOMP packet format, `format = \"stomp\"`\n\nMessages arriving on the UDP socket associated with an `x-udp`\nexchange in `stomp` mode are parsed as if they were complete\n[STOMP](http://stomp.github.com/stomp-specification-1.1.html) protocol\nframes. The `routing_key`s of the resulting AMQP messages are of the\nform\n\n    ipv4.X.Y.Z.W.Port.Command.Destination\n\nwhere `X.Y.Z.W` is the numeric IPv4 address string that the UDP packet\nwas sent from, `Port` is the UDP port number that the packet was sent\nfrom, `Command` is the command name from the STOMP frame, and\n`Destination` is the contents of a distinguished routing-key header\nfield from the STOMP frame.\n\nIf the exchange was declared with a string-valued argument table entry\nnamed `routing_key_header`, then the value of that table entry is used\nas the STOMP header name to scan incoming frames for in calculating\nthe AMQP routing key to use when delivering them on to bound\nqueues. If the value of `routing_key_header` is the empty string, then\nnone of the headers on an incoming STOMP frame are treated as the\nrouting key; the `Destination` portion of the AMQP routing key is\nsimply left empty, and the complete collection of STOMP headers is\npassed on to AMQP receivers as usual. If `routing_key_header` is not\nspecified, then the STOMP `destination` header is used.\n\n    Value for routing_key_header   STOMP header used to extract routing key\n    -----------------------------------------------------------------------\n    missing                        \"destination\"\n    \"\"                             none\n    \"example\"                      \"example\"\n\nNo matter the choice of `routing_key_header`, *all* the headers from\nthe received STOMP frame are passed on as user headers in the AMQP\nmessage, and the body of each produced AMQP message is the entire body\nof the received STOMP frame.\n\n### Syslog packet format, `format = \"syslog\"`\n\n(Contributed by Lionel Cons.)\n\nMessages arriving on the UDP socket associated with an `x-udp`\nexchange in `syslog` mode are parsed as if they were in [BSD syslog\nProtocol format (RFC 3164)](http://www.ietf.org/rfc/rfc3164.txt). The\n`routing_key`s of the resulting AMQP messages are of the form\n\n    ipv4.X.Y.Z.W.Port.Facility.Severity\n\nwhere `X.Y.Z.W` and `Port` are as specified above, and `Facility` and\n`Severity` are respectively the numerical facility and severity of the\nsyslog packet. The latter two also appear in the user headers of the\nmessages.\n\n## Bindings from `x-udp` exchanges to AMQP queues\n\nThe `routing_key` of messages routed to queues is formatted as\ndescribed above in order to make AMQP's topic routing syntax useful\nfor selecting UDP messages to receive. All the normal topic\n`routing_key` patterns are available.\n\nFor example, to receive all packets *sent* from port 1234, you would\nbind your queue using a `routing_key` pattern of\n`ipv4.*.*.*.*.1234.#`. To simply receive all incoming packets, you\nwould bind using a pattern of `#`.\n\nWhen using the `raw` format, since the first few bytes of each packet\nare placed in the `routing_key` field, you can route based on packet\nprefix (so long as your data format uses `\".\"` in a compatible\nway). When using the `stomp` format, the `routing_key` field is\ncomputed based on the `routing_key_header` described above.\n\n## Routing messages from AMQP outbound via UDP\n\n### Raw UDP packets - `format = \"raw\"`\n\nMessages published to a `raw`-mode `x-udp` exchange must have routing\nkeys of the form\n\n    ipv4.X.Y.Z.W.Port\n\nwhere `X.Y.Z.W` and `Port` are the numeric IP address and UDP port\nnumber to send the packet to, respectively. If there are other\nperiod-separated routing key segments following the `Port` segment of\nthe key, they are ignored. The packet's body will be the body of the\npublished AMQP message. The packet will be sent from the IP address\nand port number that the exchange itself was declared with.\n\n### STOMP UDP packets - `format = \"stomp\"`\n\nMessages published to a `stomp`-mode `x-udp` exchange must have routing\nkeys of the form\n\n    ipv4.X.Y.Z.W.Port.Command.Destination\n\nas described above for `raw`-mode, except the `Command`, which is used\nas the command portion of the STOMP frame to be sent, and the\n`Destination`, which is optional, and used as the value for the\n`routing_key_header`, if any.\n\nThe AMQP user headers are converted into STOMP headers. A STOMP\n`content-length` header is added before sending. The body of the STOMP\nframe UDP packet is just the body of the published AMQP message. The\npacket will be sent from the IP address and port number that the\nexchange itself was declared with.\n\n### Syslog UDP packets - `format = \"syslog\"`\n\nOutbound delivery of syslog-formatted packets is not yet implemented:\n`syslog`-format UDP exchanges will only be able to receive syslog\npackets.\n\n## Limitations\n\nNote that there may be platform and network-specific limitations on\nthe sizes of UDP packets that can be sent and received.\n\n## Licensing\n\nThis plugin is licensed under the [MPL 2.0][]. The full license text is\nincluded with the source code for the package. If you have any\nquestions regarding licensing, please contact\n<tonygarnockjones@gmail.com>.\n\n[MPL 2.0]: http://www.mozilla.org/MPL/2.0/\n",
+  "dockerfile": "FROM rabbitmq:3-management\n\nRUN rabbitmq-plugins enable --offline \\\n  rabbitmq_federation \\\n  rabbitmq_federation_management \\\n  rabbitmq_shovel \\\n  rabbitmq_shovel_management \\\n  rabbitmq_mqtt\n\nRUN apt-get update\nRUN apt-get install -y build-essential zip wget git python xsltproc erlang-dev erlang-src \n\nRUN mkdir /rabbitmq\nWORKDIR /rabbitmq\n\nRUN git clone https://github.com/rabbitmq/rabbitmq-public-umbrella.git\nWORKDIR /rabbitmq/rabbitmq-public-umbrella\n\nRUN git clone https://github.com/rabbitmq/rabbitmq-server.git\nRUN git clone https://github.com/rabbitmq/rabbitmq-erlang-client.git\nRUN git clone https://github.com/rabbitmq/rabbitmq-codegen.git\nRUN git clone https://github.com/rabbitmq/rabbitmq-auth-mechanism-ssl\n\nADD . /rabbitmq//rabbitmq-public-umbrella/udp-exchange\nWORKDIR /rabbitmq//rabbitmq-public-umbrella/udp-exchange\n\nRUN make\n\nRUN cp -r build/app/rabbit_udp_exchange-0.0.0 /usr/lib/rabbitmq/lib/rabbitmq_server-*/plugins\nRUN rabbitmq-plugins enable --offline rabbit_udp_exchange\n\nEXPOSE 5672 15672 25672\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": ".",
+        "dest": "/rabbitmq//rabbitmq-public-umbrella/udp-exchange"
+      }
+    ],
+    "expose": [
+      5672
+    ],
+    "volume": [],
+    "run": [
+      "rabbitmq-plugins enable --offline   rabbitmq_federation   rabbitmq_federation_management   rabbitmq_shovel   rabbitmq_shovel_management   rabbitmq_mqtt",
+      "apt-get update",
+      "apt-get install -y build-essential zip wget git python xsltproc erlang-dev erlang-src ",
+      "mkdir /rabbitmq",
+      "git clone https://github.com/rabbitmq/rabbitmq-public-umbrella.git",
+      "git clone https://github.com/rabbitmq/rabbitmq-server.git",
+      "git clone https://github.com/rabbitmq/rabbitmq-erlang-client.git",
+      "git clone https://github.com/rabbitmq/rabbitmq-codegen.git",
+      "git clone https://github.com/rabbitmq/rabbitmq-auth-mechanism-ssl",
+      "make",
+      "cp -r build/app/rabbit_udp_exchange-0.0.0 /usr/lib/rabbitmq/lib/rabbitmq_server-*/plugins",
+      "rabbitmq-plugins enable --offline rabbit_udp_exchange"
+    ],
+    "workdir": [
+      "/rabbitmq",
+      "/rabbitmq/rabbitmq-public-umbrella",
+      "/rabbitmq//rabbitmq-public-umbrella/udp-exchange"
+    ],
+    "from": "rabbitmq:3-management"
+  },
+  "source_repository_url": "https://github.com/marcelmaatkamp/udp-exchange.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/marcelmaatkamp/udp-exchange",
+  "docker_repository": "marcelmaatkamp/rabbitmq-udp-exchange",
+  "docker_image": "marcelmaatkamp/rabbitmq-udp-exchange",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5672
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "marcelmaatkamp/rabbitmq-udp-exchange",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/marcelmaatkamp/rabbitmq-udp-exchange",
+    "https://hub.docker.com/v2/repositories/marcelmaatkamp/rabbitmq-udp-exchange",
+    "https://github.com/marcelmaatkamp/udp-exchange.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Test",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/marcelmaatkamp/rabbitmq-udp-exchange",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

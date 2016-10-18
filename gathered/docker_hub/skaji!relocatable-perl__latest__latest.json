@@ -1,0 +1,121 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/skaji/relocatable-perl",
+    "repository_url": "https://hub.docker.com/v2/repositories/skaji/relocatable-perl",
+    "tags_url": "https://hub.docker.com/v2/repositories/skaji/relocatable-perl/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/skaji/relocatable-perl/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/skaji/relocatable-perl/autobuild",
+    "user": "skaji",
+    "name": "relocatable-perl",
+    "namespace": "skaji",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 117,
+    "last_updated": "2016-05-10T14:38:01.314361Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 199060455,
+        "id": 16114,
+        "repository": 30317,
+        "creator": 30636,
+        "last_updater": 30636,
+        "last_updated": "2016-05-10T14:37:59.552937Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "master",
+        "full_size": 200483343,
+        "id": 16109,
+        "repository": 30317,
+        "creator": 30636,
+        "last_updater": 30636,
+        "last_updated": "2015-11-14T14:55:25.302864Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "shoichikaji/relocatable-perl"
+  },
+  "name": "skaji/relocatable-perl Docker container",
+  "description": "",
+  "readme": "# relocatable perl\n\n[![Build Status](https://api.travis-ci.org/skaji/relocatable-perl.svg)](https://travis-ci.org/skaji/relocatable-perl)\n\nPerl can be built with relocatable enabled,\nwhich means you can move perl wherever you want!\n\nI prepared relocatable enabled perls for linux and OS X.\nSee [release page](https://github.com/skaji/relocatable-perl/releases).\n\n## How to install\n\n### One liner\n\nTo install latest relocatable-perl to `~/perl`, just type:\n\n    curl -sSkL https://git.io/perl-install | bash -s ~/perl\n\n### Manually\n\nDownload and extract artifacts. Let's say you use OS X, then:\n\n    > wget https://github.com/skaji/relocatable-perl/releases/download/5.22.1.0/perl-darwin-2level.tar.gz\n    > tar xzf perl-darwin-2level.tar.gz\n    > mv perl-darwin-2level ~/my-favorite-name\n\nThat's all. Check out your perl works:\n\n    > ~/my-favorite-name/bin/perl -v\n    This is perl 5, version 22, subversion 1 (v5.22.1) built for darwin-2level\n\n    # cpanm is already installed. Install your favorite cpan module.\n    > ~/my-favorite-name/bin/cpanm LWP::UserAgent\n\n## How to build yourself\n\nSee [Dockerfile](https://github.com/skaji/relocatable-perl/blob/master/Dockerfile)\nand [mac.sh](https://github.com/skaji/relocatable-perl/blob/master/mac.sh).\n\n## Docker image\n\nhttps://registry.hub.docker.com/u/skaji/relocatable-perl\n\n## LICENSE\n\nCopyright (C) Shoichi Kaji.\n\nThis is free software; you can redistribute it and/or modify it under the same terms as Perl itself.\n\nPlease note that the artifacts in the release page contains\nPerl5, App::cpanminus and App::ChangeShebang.\nThey have their own copyright and license.\n\n* [Perl5](https://www.perl.org/)\nCopyright 1987-2015, Larry Wall, GNU General Public License or Artistic License\n\n* [App::cpanminus](https://github.com/miyagawa/cpanminus)\nCopyright 2010- Tatsuhiko Miyagawa, licensed under the same terms as Perl.\n\n* [App::ChangeShebang](https://github.com/skaji/change-shebang)\nCopyright Shoichi Kaji, licensed under the same terms as Perl.\n",
+  "dockerfile": "FROM centos:centos6\nMAINTAINER Shoichi Kaji <skaji@cpan.org>\n\nRUN yum install -y gcc make tar wget patch\nRUN yum clean all\nRUN mkdir /tmp/build /artifact\nRUN wget --no-check-certificate -q -O - https://github.com/skaji/relocatable-perl/releases/download/5.22.1.0/perl-x86_64-linux.tar.gz | tar xzf - --strip-components 1 -C /usr/local\n\nRUN /usr/local/bin/perl -e 'mkdir $_ for grep !-d, @ARGV' /usr/local/lib64 /usr/local/lib /lib/x86_64-linux-gnu /lib64 /lib /usr/lib/x86_64-linux-gnu /usr/lib64 /usr/lib\n\nADD relocatable-perl-build /tmp/build/relocatable-perl-build\nADD PERL_VERSION /tmp/build/PERL_VERSION\nRUN /usr/local/bin/perl /tmp/build/relocatable-perl-build --perl_version `cat /tmp/build/PERL_VERSION` --prefix /opt/perl\n\nRUN wget --no-check-certificate -q -O - http://cpanmin.us | /opt/perl/bin/perl - -qn --no-man-pages App::cpanminus App::ChangeShebang\nRUN /opt/perl/bin/change-shebang -f /opt/perl/bin/*\n\nRUN cp -r /opt/perl /tmp/perl-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`\nRUN cd /tmp && tar czf /artifact/perl-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`.tar.gz perl-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`\n\nRUN rm -rf /tmp/perl-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`\nRUN rm -rf /tmp/build\n\nCMD [\"sleep\", \"infinity\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "relocatable-perl-build",
+        "dest": "/tmp/build/relocatable-perl-build"
+      },
+      {
+        "source": "PERL_VERSION",
+        "dest": "/tmp/build/PERL_VERSION"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "yum install -y gcc make tar wget patch",
+      "yum clean all",
+      "mkdir /tmp/build /artifact",
+      "wget --no-check-certificate -q -O - https://github.com/skaji/relocatable-perl/releases/download/5.22.1.0/perl-x86_64-linux.tar.gz | tar xzf - --strip-components 1 -C /usr/local",
+      "/usr/local/bin/perl -e 'mkdir $_ for grep !-d, @ARGV' /usr/local/lib64 /usr/local/lib /lib/x86_64-linux-gnu /lib64 /lib /usr/lib/x86_64-linux-gnu /usr/lib64 /usr/lib",
+      "/usr/local/bin/perl /tmp/build/relocatable-perl-build --perl_version `cat /tmp/build/PERL_VERSION` --prefix /opt/perl",
+      "wget --no-check-certificate -q -O - http://cpanmin.us | /opt/perl/bin/perl - -qn --no-man-pages App::cpanminus App::ChangeShebang",
+      "/opt/perl/bin/change-shebang -f /opt/perl/bin/*",
+      "cp -r /opt/perl /tmp/perl-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`",
+      "cd /tmp && tar czf /artifact/perl-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`.tar.gz perl-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`",
+      "rm -rf /tmp/perl-`/opt/perl/bin/perl -MConfig -e 'print $Config{archname}'`",
+      "rm -rf /tmp/build"
+    ],
+    "workdir": [],
+    "from": "centos:centos6",
+    "maintainer": "Shoichi Kaji <skaji@cpan.org>",
+    "cmd": "[\"sleep\", \"infinity\"]"
+  },
+  "source_repository_url": "https://github.com/shoichikaji/relocatable-perl.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/shoichikaji/relocatable-perl",
+  "docker_repository": "skaji/relocatable-perl",
+  "docker_image": "skaji/relocatable-perl",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "skaji/relocatable-perl",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/skaji/relocatable-perl",
+    "https://hub.docker.com/v2/repositories/skaji/relocatable-perl",
+    "https://github.com/shoichikaji/relocatable-perl.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Perl"
+  ],
+  "info_url": "https://hub.docker.com/r/skaji/relocatable-perl",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

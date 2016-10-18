@@ -1,0 +1,130 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/bde2020/flink-maven-template",
+    "repository_url": "https://hub.docker.com/v2/repositories/bde2020/flink-maven-template",
+    "tags_url": "https://hub.docker.com/v2/repositories/bde2020/flink-maven-template/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/bde2020/flink-maven-template/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/bde2020/flink-maven-template/autobuild",
+    "user": "bde2020",
+    "name": "flink-maven-template",
+    "namespace": "bde2020",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 91,
+    "last_updated": "2016-09-09T12:34:36.073041Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 456846176,
+        "id": 4710867,
+        "repository": 741472,
+        "creator": 311968,
+        "last_updater": 311968,
+        "last_updated": "2016-09-09T12:34:35.043404Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.10.2-hadoop2.7",
+        "full_size": 456846660,
+        "id": 4759388,
+        "repository": 741472,
+        "creator": 311968,
+        "last_updater": 311968,
+        "last_updated": "2016-09-09T11:05:57.947857Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.10.1-hadoop2.7",
+        "full_size": 461017384,
+        "id": 3400822,
+        "repository": 741472,
+        "creator": 311968,
+        "last_updater": 311968,
+        "last_updated": "2016-09-08T08:42:04.176042Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "big-data-europe/docker-flink"
+  },
+  "name": "bde2020/flink-maven-template Docker container",
+  "description": "Template to build Maven templates to run on top of a Flink cluster",
+  "readme": "# Flink Maven template\n\nThe Flink Maven template image serves as a base image to build your own Maven application to run on a Flink cluster. See [big-data-europe/docker-flink README](https://github.com/big-data-europe/docker-flink) for a description how to setup a Flink cluster.\n\n### Package your application using Maven\nYou can build and launch your application on a Flink cluster by extending this image with your sources. The template uses [Maven](https://maven.apache.org/) as build tool, so make sure you have a `pom.xml` file for your application specifying all the dependencies.\n\nThe Maven `package` command must create an assembly JAR (or 'uber' JAR) containing your code and its dependencies. Flink and Hadoop dependencies should be listes as `provided`. The [Maven shade plugin](http://maven.apache.org/plugins/maven-shade-plugin/) provides a plugin to build such assembly JARs.\n\n### Extending the Flink Maven template with your application\n\n#### Steps to extend the Flink Maven template\n1. Create a Dockerfile in the root folder of your project (which also contains a `pom.xml`)\n2. Extend the Flink Maven template Docker image\n3. Configure the following environment variables (unless the default value satisfies):\n  * `FLINK_APPLICATION_JAR_NAME` (default: application-1.0)\n  * `FLINK_APPLICATION_ARGS` (default: \"\")\n4. Build and run the image\n```\ndocker build --rm=true -t bde/flink-app .\ndocker run --name my-flink-app --link flink-master:flink-master -d bde/flink-app\n```\n\nThe sources in the project folder will be automatically added to `/usr/src/app` if you directly extend the Flink Maven template image. Otherwise you will have to add and package the sources by yourself in your Dockerfile with the commands:\n\n    COPY . /usr/src/app\n    RUN cd /usr/src/app \\\n        && mvn clean package\n      \nIf you overwrite the template's `CMD` in your Dockerfile, make sure to execute the `/template.sh` script at the end.\n\n#### Example Dockerfile\n```\nFROM bde2020/flink-maven-template:latest\n\nMAINTAINER Gezim Sejdiu <g.sejdiu@gmail.com>\n\nENV FLINK_APPLICATION_JAR_NAME my-app-1.0-SNAPSHOT-with-dependencies\nENV FLINK_APPLICATION_ARGS \"arg1 arg2\"\n```\n\n#### Example application\nSee [flink-starter](https://github.com/gezims/flink-starter).\n\n",
+  "dockerfile": "FROM bde2020/flink-submit:0.10.2-hadoop2.7\n\nMAINTAINER Gezim Sejdiu <g.sejdiu@gmail.com>\n\nENV FLINK_APPLICATION_JAR_NAME application-1.0\n\nCOPY template.sh /\n\nRUN apt-get update \\\n      && apt-get install -y maven \\\n      && apt-get clean \\ \n      && rm -rf /var/lib/apt/lists/* \\\n      && chmod +x /template.sh \\\n      && update-java-alternatives -s java-1.8.0-openjdk-amd64 \\\n      && mkdir -p /app \\\n      && mkdir -p /usr/src/app\n\nONBUILD COPY . /usr/src/app\nONBUILD RUN cd /usr/src/app \\\n      && mvn clean package\n\nCMD [\"/bin/bash\", \"/template.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update       && apt-get install -y maven       && apt-get clean \\ "
+    ],
+    "workdir": [],
+    "from": "bde2020/flink-submit:0.10.2-hadoop2.7",
+    "maintainer": "Gezim Sejdiu <g.sejdiu@gmail.com>",
+    "env": {
+      "FLINK_APPLICATION_JAR_NAME": "application-1.0"
+    },
+    "copy": "template.sh /",
+    "onbuild": "RUN cd /usr/src/app       && mvn clean package",
+    "cmd": "[\"/bin/bash\", \"/template.sh\"]"
+  },
+  "source_repository_url": "https://github.com/big-data-europe/docker-flink.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/big-data-europe/docker-flink",
+  "docker_repository": "bde2020/flink-maven-template",
+  "docker_image": "bde2020/flink-maven-template",
+  "parameters_schema": {
+    "FLINK_APPLICATION_JAR_NAME": {
+      "default": "application-1.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "bde2020/flink-maven-template",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/bde2020/flink-maven-template",
+    "https://hub.docker.com/v2/repositories/bde2020/flink-maven-template",
+    "https://github.com/big-data-europe/docker-flink.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Build/Java/Maven",
+    "Type/Devopsware/Test",
+    "Type/Devopsware/Orchestration/Cluster-based"
+  ],
+  "info_url": "https://hub.docker.com/r/bde2020/flink-maven-template",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

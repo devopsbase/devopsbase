@@ -1,0 +1,125 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mterron/kibana-autopilot",
+    "repository_url": "https://hub.docker.com/v2/repositories/mterron/kibana-autopilot",
+    "tags_url": "https://hub.docker.com/v2/repositories/mterron/kibana-autopilot/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mterron/kibana-autopilot/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mterron/kibana-autopilot/autobuild",
+    "user": "mterron",
+    "name": "kibana-autopilot",
+    "namespace": "mterron",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 40,
+    "last_updated": "2016-09-19T04:42:08.685601Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 65162037,
+        "id": 3350554,
+        "repository": 733552,
+        "creator": 769515,
+        "last_updater": 769515,
+        "last_updated": "2016-09-19T04:42:08.329791Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "mterron/kibana-autopilot"
+  },
+  "name": "mterron/kibana-autopilot Docker container",
+  "description": "Kibana with autopilot pattern (prod ready example)",
+  "readme": null,
+  "dockerfile": "FROM alpine:3.4\n\n# Alpine packages\nRUN apk -f -q --progress --no-cache upgrade &&\\\n\tapk -f -q --progress --no-cache add \\\n\t\tbash \\\n\t\tcurl \\\n\t\tca-certificates \\\n\t\tdnsmasq \\\n\t\tjq \\\n\t\tnodejs \\\n\t\topenssl \\\n\t\ttzdata\n\nENV CONTAINERPILOT_VERSION=2.2.0 \\\n\tCONTAINERPILOT=file:///etc/containerpilot/containerpilot.json \\\n\tCONSUL_VERSION=0.7.0 \\\n\tS6_VERSION=1.18.1.3\n\nWORKDIR /tmp\nRUN echo \"Downloading S6 Overlay\" &&\\\n\tcurl -LO# https://github.com/just-containers/s6-overlay/releases/download/v${S6_VERSION}/s6-overlay-amd64.tar.gz &&\\\n\tgunzip -c /tmp/s6-overlay-amd64.tar.gz | tar -xf - -C / &&\\\n\trm -f s6-overlay-amd64.tar.gz &&\\\n\techo \"Downloading Containerpilot\" &&\\\n\tcurl -LO# https://github.com/joyent/containerpilot/releases/download/${CONTAINERPILOT_VERSION}/containerpilot-${CONTAINERPILOT_VERSION}.tar.gz &&\\\n\techo \"Downloading Containerpilot checksums\" &&\\\n\tcurl -LO# https://github.com/joyent/containerpilot/releases/download/${CONTAINERPILOT_VERSION}/containerpilot-${CONTAINERPILOT_VERSION}.sha1.txt &&\\\n\tsha1sum -sc containerpilot-${CONTAINERPILOT_VERSION}.sha1.txt &&\\\n\tmkdir -p /opt/containerpilot &&\\\n\ttar xzf containerpilot-${CONTAINERPILOT_VERSION}.tar.gz -C /opt/containerpilot/ &&\\\n\trm -f containerpilot-${CONTAINERPILOT_VERSION}.* &&\\\n# Download Consul binary\n\techo \"Downloading Consul\" &&\\\n\tcurl -LO# https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip &&\\\n# Download Consul integrity file\n\techo \"Downloading Consul checksums\" &&\\\n\tcurl -LO# https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_SHA256SUMS &&\\\n# Check integrity and installs Consul\n\tgrep \"linux_amd64.zip\" consul_${CONSUL_VERSION}_SHA256SUMS | sha256sum -sc &&\\\n\tunzip -q -o consul_${CONSUL_VERSION}_linux_amd64.zip -d /bin &&\\\n\trm -f consul_${CONSUL_VERSION}_* &&\\\n# Consul user\n\tadduser -D -H -g consul consul &&\\\n\tadduser consul consul &&\\\n# Create Consul data directory\n\tmkdir /data &&\\\n\tmkdir -p /etc/consul &&\\\n\tchmod 770 /data &&\\\n\tchown -R consul: /data &&\\\n\tchown -R consul: /etc/consul/ &&\\\n\tchmod +x /bin/*\n\nENV\tKIBANA_VERSION=4.5.2 \\\n\tPATH=$PATH:/opt/kibana/bin\n\nEXPOSE 5601 8301\n\n# Create and take ownership over required directories\n# Copy CA certificate bundle.\nCOPY ca.pem /etc/ssl/private/\n# Client certificate to talk to Consul \n# From man curl \n# -E, --cert # <certificate[:password]> (SSL) Tells curl to use the specified\n# client certificate file when getting a file with HTTPS, FTPS or another SSL-\n# based protocol. The certificate must be in PKCS#12 format if using Secure \n# Transport, or PEM format if using any other engine. If the optional \n# password isn't specified, it will be queried for on the terminal. \n# Note that this option assumes a \"certificate\" file that is the private key \n# and the private certificate concatenated! See --cert and --key to specify \n# them independently.\nCOPY client_certificate.* /etc/tls/\n# Add our configuration files and scripts\nCOPY bin/* /usr/local/bin/\nCOPY containerpilot.json /etc/containerpilot/containerpilot.json\nCOPY etc/ /etc\nCOPY consul.json /etc/consul/\n\n# If you build on top of this image, please provide this file\n# If you are using an internal CA\nONBUILD COPY ca.pem /etc/ssl/private/\nONBUILD COPY containerpilot.json /etc/containerpilot/containerpilot.json\nONBUILD COPY consul.json /etc/consul/\n\n# Download Kibana release\nRUN\techo \"Downloading Kibana\" &&\\\n\tcurl -LO# https://download.elastic.co/kibana/kibana/kibana-${KIBANA_VERSION}-linux-x64.tar.gz &&\\\n\tmkdir -p /opt/kibana && \\\n\ttar xzf /tmp/kibana-${KIBANA_VERSION}-linux-x64.tar.gz &&\\\n\tmv kibana-${KIBANA_VERSION}-linux-x64/* /opt/kibana/ &&\\\n\trm -rf /tmp/* &&\\\n\trm -f /opt/kibana/node/bin/* &&\\\n\tln -sf /usr/bin/node /opt/kibana/node/bin &&\\\n\tln -sf /usr/bin/npm /opt/kibana/node/bin &&\\\n\tadduser -D -H -g kibana kibana &&\\\n\tadduser kibana kibana &&\\\n\tmkdir -p /etc/containerpilot &&\\\n\tchmod -R g+w /etc/containerpilot &&\\\n\tkibana plugin --install elasticsearch/marvel/2.3.3 &&\\\n\tkibana plugin --install elastic/sense &&\\\n\tkibana plugin --install kibana/timelion &&\\\n\tchown -R kibana:kibana /etc/containerpilot &&\\\n\tchown -R kibana:kibana /opt &&\\\n\tcat /etc/ssl/private/ca.pem >> /etc/ssl/certs/ca-certificates.crt\n\n# Put Consul data on a separate volume to avoid filesystem performance issues with Docker image layers\nVOLUME [\"/data\"]\n\nENTRYPOINT [\"/init\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5601
+    ],
+    "volume": [
+      "[\"/data\"]"
+    ],
+    "run": [
+      "apk -f -q --progress --no-cache upgrade &&\tapk -f -q --progress --no-cache add \t\tbash \t\tcurl \t\tca-certificates \t\tdnsmasq \t\tjq \t\tnodejs \t\topenssl \t\ttzdata",
+      "echo \"Downloading S6 Overlay\" &&\tcurl -LO# https://github.com/just-containers/s6-overlay/releases/download/v${S6_VERSION}/s6-overlay-amd64.tar.gz &&\tgunzip -c /tmp/s6-overlay-amd64.tar.gz | tar -xf - -C / &&\trm -f s6-overlay-amd64.tar.gz &&\techo \"Downloading Containerpilot\" &&\tcurl -LO# https://github.com/joyent/containerpilot/releases/download/${CONTAINERPILOT_VERSION}/containerpilot-${CONTAINERPILOT_VERSION}.tar.gz &&\techo \"Downloading Containerpilot checksums\" &&\tcurl -LO# https://github.com/joyent/containerpilot/releases/download/${CONTAINERPILOT_VERSION}/containerpilot-${CONTAINERPILOT_VERSION}.sha1.txt &&\tsha1sum -sc containerpilot-${CONTAINERPILOT_VERSION}.sha1.txt &&\tmkdir -p /opt/containerpilot &&\ttar xzf containerpilot-${CONTAINERPILOT_VERSION}.tar.gz -C /opt/containerpilot/ &&\trm -f containerpilot-${CONTAINERPILOT_VERSION}.* &&# Download Consul binary"
+    ],
+    "workdir": [
+      "/tmp"
+    ],
+    "from": "alpine:3.4",
+    "env": {
+      "CONTAINERPILOT_VERSION": "2.2.0",
+      "\tCONTAINERPILOT": "file:///etc/containerpilot/containerpilot.json",
+      "\tCONSUL_VERSION": "0.7.0",
+      "\tS6_VERSION": "1.18.1.3"
+    },
+    "copy": "consul.json /etc/consul/",
+    "onbuild": "COPY consul.json /etc/consul/",
+    "entrypoint": "[\"/init\"]"
+  },
+  "source_repository_url": "https://github.com/mterron/kibana-autopilot.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mterron/kibana-autopilot",
+  "docker_repository": "mterron/kibana-autopilot",
+  "docker_image": "mterron/kibana-autopilot",
+  "parameters_schema": {
+    "CONTAINERPILOT_VERSION": {
+      "default": "2.2.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "\tCONTAINERPILOT": {
+      "default": "file:///etc/containerpilot/containerpilot.json",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "\tCONSUL_VERSION": {
+      "default": "0.7.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "\tS6_VERSION": {
+      "default": "1.18.1.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5601
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mterron/kibana-autopilot",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/mterron/kibana-autopilot",
+    "https://hub.docker.com/v2/repositories/mterron/kibana-autopilot",
+    "https://github.com/mterron/kibana-autopilot.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Guide/Text/Pattern"
+  ],
+  "info_url": "https://hub.docker.com/r/mterron/kibana-autopilot",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,193 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/pteich/elasticsearch",
+    "repository_url": "https://hub.docker.com/v2/repositories/pteich/elasticsearch",
+    "tags_url": "https://hub.docker.com/v2/repositories/pteich/elasticsearch/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/pteich/elasticsearch/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/pteich/elasticsearch/autobuild",
+    "user": "pteich",
+    "name": "elasticsearch",
+    "namespace": "pteich",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 163,
+    "last_updated": "2016-07-13T13:18:35.584192Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2-dev",
+        "full_size": 322084288,
+        "id": 3821257,
+        "repository": 230865,
+        "creator": 239327,
+        "last_updater": 239327,
+        "last_updated": "2016-07-13T13:18:35.212968Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 319100096,
+        "id": 113480,
+        "repository": 230865,
+        "creator": 239327,
+        "last_updater": 239327,
+        "last_updated": "2016-07-13T10:36:11.416678Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.1",
+        "full_size": 321269738,
+        "id": 3815432,
+        "repository": 230865,
+        "creator": 239327,
+        "last_updater": 239327,
+        "last_updated": "2016-07-13T06:32:48.685454Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.7",
+        "full_size": 323545972,
+        "id": 1283657,
+        "repository": 230865,
+        "creator": 239327,
+        "last_updater": 239327,
+        "last_updated": "2015-11-05T14:09:57.932172Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.6",
+        "full_size": 323528384,
+        "id": 653283,
+        "repository": 230865,
+        "creator": 239327,
+        "last_updater": 239327,
+        "last_updated": "2015-11-05T13:19:49.192974Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "pteich/docker"
+  },
+  "name": "pteich/elasticsearch Docker container",
+  "description": "Elasticsearch 2.0 / Oracle Java 8",
+  "readme": "#Docker Files\n\nRepository for Docker files that are tailored for my personal needs. The goal is to provide an almost complete environement to run all my web projects.\n\n##Base images\n\n###Ubuntu\nBase image with pre-installed supervisord. Containers that use this base image can provide their own supervisord conf in `etc/supervisor/conf.d` and it will be executed automatically.\n\n##Applications\n\n###Elasticsearch\nElasticsearch running on Oracle Java 8 JRE.\n\nTo start Elasticsearch and make both ports public available:\n\n`docker run –name=elastic -d -p 9200:9200 -p 9300:9300 -v <data-dir>:/data pteich/elasticsearch`\n\nProvide your own config file (inside mounted /data volume):\n\n`docker run -d --name=elastic -p 9200:9200 -p 9300:9300 -v <data-dir>:/data pteich/elasticsearch -Des.config=/data/elasticsearch.yml`\n\n###Kibana4\nKibana 4 running on NodeJS 0.12, Kibana is started via supervisord\nIf you link an Elasticsearch container with the named elastic, it is automatically used as Elasticsearch server:\n\nTo start Elasticsearch:\n\n`docker run –-name=elastic -d -p 9200:9200 -p 9300:9300 -v <data-dir>:/data pteich/elasticsearch`\n\nTo start Kibana4:\n\n`docker run --name=kibana4 --link elastic:elastic -d -p 5601:5601 pteich/kibana4`\n\n**Environment variables (all optional):**\n\n`ELASTICSEARCH` ES-URL http://127.0.0.1:9200\n\n`KIBANA_INDEX` name of Kibana index, default .kibana\n\n`DEFAULT_APP_ID` default to discover\n\n`REQUEST_TIMEOUT` default to 300000\n\n`SHARD_TIMEOUT` default to 0\n\n`VERIFY_SSL` default to true\n\n###InfluxDB\n\nDocker Image `pteich/influxdb`\n\n###Chronograf\n\nDocker Image `pteich/chronograf`\n\n##Services\n\n###Apache+PHP\n\nDocker Image `pteich/apache-php`\n\n###MariaDB\n\nDocker Image `pteich/mariadb`\n\n###Nginx\n\nDocker Image `pteich/nginx`\n\n## Thanks\nThis repository is heavily inspired by [maxexcloo/Docker](https://github.com/maxexcloo/Docker)\n",
+  "dockerfile": "FROM pteich/ubuntu:latest\nMAINTAINER Peter Teich <peter.teich@gmail.com>\n\n# Add Elasticsearch repository\nRUN wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | apt-key add -\nADD etc /etc\n\n# Install Oracle JAVA 8\nRUN \\\n  echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \\\n  add-apt-repository -y ppa:webupd8team/java && \\\n  apt-get update && \\\n  apt-get install --no-install-recommends -y oracle-java8-installer elasticsearch && \\\n  rm -rf /var/lib/apt/lists/* && \\\n  rm -rf /var/cache/oracle-jdk8-installer && \\\n  curl -o /usr/local/bin/gosu -fSL \"https://github.com/tianon/gosu/releases/download/1.8/gosu-$(dpkg --print-architecture)\" && \\\n  chmod +x /usr/local/bin/gosu\n\nENV JAVA_HOME=/usr/lib/jvm/java-8-oracle ES_HOME=/usr/share/elasticsearch MAX_OPEN_FILES=65535 PATH=/usr/share/elasticsearch/bin:$PATH\n\nADD config /config\n\nRUN ulimit -n $MAX_OPEN_FILES\n\n# Expose ports\n#   - 9200: HTTP\n#   - 9300: transport\nEXPOSE 9200\nEXPOSE 9300\n\n# mountable directory\nVOLUME [\"/config\",\"/data\"]\n\nADD run.sh /run.sh\nRUN chmod +x /run.sh\n\nENTRYPOINT [\"/run.sh\"]\n\nCMD [\"elasticsearch\", \"-Des.network.host=0.0.0.0\", \"--default.path.conf=/config\", \"--default.path.home=/usr/share/elasticsearch\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "etc",
+        "dest": "/etc"
+      },
+      {
+        "source": "config",
+        "dest": "/config"
+      },
+      {
+        "source": "run.sh",
+        "dest": "/run.sh"
+      }
+    ],
+    "expose": [
+      9200,
+      9300
+    ],
+    "volume": [
+      "[\"/config\",\"/data\"]"
+    ],
+    "run": [
+      "wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | apt-key add -",
+      "  echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections &&   add-apt-repository -y ppa:webupd8team/java &&   apt-get update &&   apt-get install --no-install-recommends -y oracle-java8-installer elasticsearch &&   rm -rf /var/lib/apt/lists/* &&   rm -rf /var/cache/oracle-jdk8-installer &&   curl -o /usr/local/bin/gosu -fSL \"https://github.com/tianon/gosu/releases/download/1.8/gosu-$(dpkg --print-architecture)\" &&   chmod +x /usr/local/bin/gosu",
+      "ulimit -n $MAX_OPEN_FILES",
+      "chmod +x /run.sh"
+    ],
+    "workdir": [],
+    "from": "pteich/ubuntu:latest",
+    "maintainer": "Peter Teich <peter.teich@gmail.com>",
+    "env": {
+      "JAVA_HOME": "/usr/lib/jvm/java-8-oracle",
+      "ES_HOME": "/usr/share/elasticsearch",
+      "MAX_OPEN_FILES": "65535",
+      "PATH": "/usr/share/elasticsearch/bin:$PATH"
+    },
+    "entrypoint": "[\"/run.sh\"]",
+    "cmd": "[\"elasticsearch\", \"-Des.network.host=0.0.0.0\", \"--default.path.conf=/config\", \"--default.path.home=/usr/share/elasticsearch\"]"
+  },
+  "source_repository_url": "https://github.com/pteich/docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/pteich/docker",
+  "docker_repository": "pteich/elasticsearch",
+  "docker_image": "pteich/elasticsearch",
+  "parameters_schema": {
+    "JAVA_HOME": {
+      "default": "/usr/lib/jvm/java-8-oracle",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ES_HOME": {
+      "default": "/usr/share/elasticsearch",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAX_OPEN_FILES": {
+      "default": "65535",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/usr/share/elasticsearch/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        9200,
+        9300
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "pteich/elasticsearch",
+  "revision": "2-dev",
+  "uris": [
+    "https://hub.docker.com/r/pteich/elasticsearch",
+    "https://hub.docker.com/v2/repositories/pteich/elasticsearch",
+    "https://github.com/pteich/docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/pteich/elasticsearch",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

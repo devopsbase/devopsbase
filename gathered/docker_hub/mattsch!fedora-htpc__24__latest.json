@@ -1,0 +1,155 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mattsch/fedora-htpc",
+    "repository_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-htpc",
+    "tags_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-htpc/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-htpc/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-htpc/autobuild",
+    "user": "mattsch",
+    "name": "fedora-htpc",
+    "namespace": "mattsch",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 242,
+    "last_updated": "2016-08-15T23:56:28.038488Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "24",
+        "full_size": 296725401,
+        "id": 3750394,
+        "repository": 355324,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-08-15T23:56:25.289339Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 296674548,
+        "id": 1093127,
+        "repository": 355324,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-08-15T23:08:05.776240Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "23",
+        "full_size": 238147690,
+        "id": 1386442,
+        "repository": 355324,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-08-15T23:02:32.413007Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "22",
+        "full_size": 255245122,
+        "id": 1093134,
+        "repository": 355324,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-08-15T22:23:48.072230Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "mattsch/fedora-htpc"
+  },
+  "name": "mattsch/fedora-htpc Docker container",
+  "description": "Fedora HTPC",
+  "readme": "# Fedora HTPC Docker Container\n\nDocker container for [HTPC](https://github.com/Hellowlol/HTPC-Manager) using Fedora.\n\n## Usage\n\nCreate with defaults:\n\n```bash\ndocker create -v /path/to/config/dir:/config \\\n    -v /path/to/storage/dir:/storage \\\n    -v /etc/localtime:/etc/localtime:ro \\\n    -p 6789:6789 --name=htpc mattsch/fedora-htpc\n```\n\nCreate with a custom uid/gid for the htpc daemon:\n\n```bash\ndocker create -v /path/to/config/dir:/config \\\n    -v /path/to/storage/dir:/storage \\\n    -v /etc/localtime:/etc/localtime:ro \\\n    -e LUID=1234 -e LGID=1234 \\\n    -p 6789:6789 --name=htpc mattsch/fedora-htpc\n```\n\nUsing host networking rather than the port forwards above will give the best\nperformance.  However, this allows the container to have full access to the\nhost's networking stack.  Be sure you understand the implications before using\nit.\n\n",
+  "dockerfile": "FROM mattsch/fedora-rpmfusion:24\nMAINTAINER Matthew Schick <matthew.schick@gmail.com>\n\n# Install required packages\nRUN dnf install -yq gcc \\\n                    git \\\n                    pyOpenSSL \\\n                    python-paramiko \\\n                    python-pillow \\\n                    python-devel \\\n                    python-pip \\\n                    procps-ng \\\n                    redhat-rpm-config \\\n                    smartmontools \\\n                    zlib-devel && \\\n    dnf clean all\n\n# Set uid/gid (override with the '-e' flag), 1000/1000 used since it's the\n# default first uid/gid on a fresh Fedora install\nENV LUID=1000 LGID=1000\n\n# Create the htpc user/group\nRUN groupadd -g $LGID htpc && \\\n    useradd -c 'HTPC User' -s /bin/bash -m -d /opt/htpc -g $LGID -u $LUID htpc\n\n# Grab the installer, do the thing\nRUN git clone -q https://github.com/Hellowlol/HTPC-Manager.git /opt/htpc/app && \\\n    chown -R htpc:htpc /opt/htpc\n\nRUN cd /opt/htpc/app && pip install -r requirements.txt\n\n# Need a config and storage volume, expose proper port\nVOLUME /config /storage\nEXPOSE 5050\n\n# Add script to copy default config if one isn't there and start htpc\nCOPY run-htpc.sh /bin/run-htpc.sh\n\n# Run our script\nCMD [\"/bin/run-htpc.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5050
+    ],
+    "volume": [
+      "/config /storage"
+    ],
+    "run": [
+      "dnf install -yq gcc                     git                     pyOpenSSL                     python-paramiko                     python-pillow                     python-devel                     python-pip                     procps-ng                     redhat-rpm-config                     smartmontools                     zlib-devel &&     dnf clean all",
+      "groupadd -g $LGID htpc &&     useradd -c 'HTPC User' -s /bin/bash -m -d /opt/htpc -g $LGID -u $LUID htpc",
+      "git clone -q https://github.com/Hellowlol/HTPC-Manager.git /opt/htpc/app &&     chown -R htpc:htpc /opt/htpc",
+      "cd /opt/htpc/app && pip install -r requirements.txt"
+    ],
+    "workdir": [],
+    "from": "mattsch/fedora-rpmfusion:24",
+    "maintainer": "Matthew Schick <matthew.schick@gmail.com>",
+    "env": {
+      "LUID": "1000",
+      "LGID": "1000"
+    },
+    "copy": "run-htpc.sh /bin/run-htpc.sh",
+    "cmd": "[\"/bin/run-htpc.sh\"]"
+  },
+  "source_repository_url": "https://github.com/mattsch/fedora-htpc.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mattsch/fedora-htpc",
+  "docker_repository": "mattsch/fedora-htpc",
+  "docker_image": "mattsch/fedora-htpc",
+  "parameters_schema": {
+    "LUID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LGID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5050
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mattsch/fedora-htpc",
+  "revision": "24",
+  "uris": [
+    "https://hub.docker.com/r/mattsch/fedora-htpc",
+    "https://hub.docker.com/v2/repositories/mattsch/fedora-htpc",
+    "https://github.com/mattsch/fedora-htpc.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/mattsch/fedora-htpc",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

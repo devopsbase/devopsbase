@@ -1,0 +1,164 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/opensnp/rails",
+    "repository_url": "https://hub.docker.com/v2/repositories/opensnp/rails",
+    "tags_url": "https://hub.docker.com/v2/repositories/opensnp/rails/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/opensnp/rails/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/opensnp/rails/autobuild",
+    "user": "opensnp",
+    "name": "rails",
+    "namespace": "opensnp",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 88427,
+    "last_updated": "2016-09-16T04:36:05.023679Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 522720487,
+        "id": 1091768,
+        "repository": 354829,
+        "creator": 428190,
+        "last_updater": 469091,
+        "last_updated": "2016-09-16T04:36:04.575445Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "sidekiq",
+        "full_size": 411988761,
+        "id": 1823712,
+        "repository": 354829,
+        "creator": 519181,
+        "last_updater": 519181,
+        "last_updated": "2016-01-26T09:15:49.416292Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "dev",
+        "full_size": 411990761,
+        "id": 1823710,
+        "repository": 354829,
+        "creator": 519181,
+        "last_updater": 519181,
+        "last_updated": "2016-01-26T09:15:38.568763Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "tsujigiri/opensnp.org-docker"
+  },
+  "name": "opensnp/rails Docker container",
+  "description": "opensnp.org",
+  "readme": "# Docker images for opensnp.org\n\nCurrently two images - a *opensnp.org-docker* image and a *dev* image. The *opensnp.org-docker* image in the root folder pulls all gems and other dependencies. The *dev* image adds a few dummy files so that you can run the image in a local container.\n\n# How to build the images\n\nStart the docker server (screen/tmux/service if your system supports that)\n\n    docker daemon\n\nThen in the root folder:\n\n    docker build -t opensnp.org-docker .\n\nThis builds the *opensnp.org-docker* image and sets the name to *opensnp.org-docker*. This step takes ~10 minutes since it installs all dependencies and gems.\n\nThen to build the *dev* image:\n\n    cd dev_image\n    docker build -t dev .\n\nTo see all images:\n\n    docker images\n\nThis should show two images, one named *opensnp.org-docker* and one named *dev*.\n\nNow you can either build a container based on the *dev* image or on the *opensnp.org-docker* image.\n\n# Building the dev container\n\n    docker run dev\n\nTo run with environmental variables, in this case setting FOO to bar:\n\n    docker run -e FOO=bar dev\n\n",
+  "dockerfile": "FROM phusion/passenger-ruby22:0.9.17\n\nENV RAILS_ENV production\n\nRUN apt-get -q update\nRUN apt-get -qy -o Dpkg::Options::=\"--force-confold\" upgrade\nRUN echo 'postfix postfix/mailname string opensnp.org' | debconf-set-selections\nRUN echo \"postfix postfix/main_mailer_type string 'Internet Site'\" | debconf-set-selections\nRUN apt-get install -qy libhiredis-dev postgresql-client-9.3 postfix\nRUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nRUN postconf -e myhostname=opensnp.org\nADD start_postfix.sh /etc/my_init.d/91_start_postfix.sh\n\nADD nginx-http.conf /etc/nginx/conf.d/http.conf\nADD nginx-opensnp.org.conf /etc/nginx/sites-enabled/opensnp.org.conf\nRUN sed -i \"s/# gzip_types/gzip_types/\" /etc/nginx/nginx.conf\nRUN sed -i \"s/# gzip_vary/gzip_vary/\" /etc/nginx/nginx.conf\nRUN sed -i \"s/# gzip_proxied/gzip_proxied/\" /etc/nginx/nginx.conf\nRUN sed -i \"s/# gzip_http/gzip_http/\" /etc/nginx/nginx.conf\n\nRUN rm /etc/nginx/sites-enabled/default\nRUN rm -f /etc/service/nginx/down\n\nADD db_migrate.sh /etc/my_init.d/90_db_migrate.sh\n\nRUN git clone --depth=1 https://github.com/openSNP/snpr.git /home/app/snpr\nWORKDIR /home/app/snpr\nRUN rm -rf .git\nRUN chown app:app -R /home/app\n\nUSER app\n\nADD database.yml config/database.yml\nRUN bundle install --deployment --without test development\nRUN cp .env.example .env\nRUN bundle exec rake assets:precompile\nRUN rm .env\n\nUSER root\n\nRUN bin/extract_env_var_names_for_nginx > /etc/nginx/main.d/rails-env.conf\n\nCMD [\"/sbin/my_init\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "start_postfix.sh",
+        "dest": "/etc/my_init.d/91_start_postfix.sh"
+      },
+      {
+        "source": "nginx-http.conf",
+        "dest": "/etc/nginx/conf.d/http.conf"
+      },
+      {
+        "source": "nginx-opensnp.org.conf",
+        "dest": "/etc/nginx/sites-enabled/opensnp.org.conf"
+      },
+      {
+        "source": "db_migrate.sh",
+        "dest": "/etc/my_init.d/90_db_migrate.sh"
+      },
+      {
+        "source": "database.yml",
+        "dest": "config/database.yml"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get -q update",
+      "apt-get -qy -o Dpkg::Options::=\"--force-confold\" upgrade",
+      "echo 'postfix postfix/mailname string opensnp.org' | debconf-set-selections",
+      "echo \"postfix postfix/main_mailer_type string 'Internet Site'\" | debconf-set-selections",
+      "apt-get install -qy libhiredis-dev postgresql-client-9.3 postfix",
+      "apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "postconf -e myhostname=opensnp.org",
+      "sed -i \"s/# gzip_types/gzip_types/\" /etc/nginx/nginx.conf",
+      "sed -i \"s/# gzip_vary/gzip_vary/\" /etc/nginx/nginx.conf",
+      "sed -i \"s/# gzip_proxied/gzip_proxied/\" /etc/nginx/nginx.conf",
+      "sed -i \"s/# gzip_http/gzip_http/\" /etc/nginx/nginx.conf",
+      "rm /etc/nginx/sites-enabled/default",
+      "rm -f /etc/service/nginx/down",
+      "git clone --depth=1 https://github.com/openSNP/snpr.git /home/app/snpr",
+      "rm -rf .git",
+      "chown app:app -R /home/app",
+      "bundle install --deployment --without test development",
+      "cp .env.example .env",
+      "bundle exec rake assets:precompile",
+      "rm .env",
+      "bin/extract_env_var_names_for_nginx > /etc/nginx/main.d/rails-env.conf"
+    ],
+    "workdir": [
+      "/home/app/snpr"
+    ],
+    "from": "phusion/passenger-ruby22:0.9.17",
+    "env": {
+      "RAILS_ENV": "production"
+    },
+    "user": "root",
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/tsujigiri/opensnp.org-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/tsujigiri/opensnp.org-docker",
+  "docker_repository": "opensnp/rails",
+  "docker_image": "opensnp/rails",
+  "parameters_schema": {
+    "RAILS_ENV": {
+      "default": "production",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "opensnp/rails",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/opensnp/rails",
+    "https://hub.docker.com/v2/repositories/opensnp/rails",
+    "https://github.com/tsujigiri/opensnp.org-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby"
+  ],
+  "info_url": "https://hub.docker.com/r/opensnp/rails",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

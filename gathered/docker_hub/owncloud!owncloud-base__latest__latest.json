@@ -1,0 +1,142 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/owncloud/owncloud-base",
+    "repository_url": "https://hub.docker.com/v2/repositories/owncloud/owncloud-base",
+    "tags_url": "https://hub.docker.com/v2/repositories/owncloud/owncloud-base/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/owncloud/owncloud-base/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/owncloud/owncloud-base/autobuild",
+    "user": "owncloud",
+    "name": "owncloud-base",
+    "namespace": "owncloud",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 237,
+    "last_updated": "2016-08-04T16:38:00.788528Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 183953148,
+        "id": 3964043,
+        "repository": 814026,
+        "creator": 59269,
+        "last_updater": 59269,
+        "last_updated": "2016-08-04T16:38:00.403274Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "owncloud-docker/owncloud-base"
+  },
+  "name": "owncloud/owncloud-base Docker container",
+  "description": "Base Image for different ownCloud Editions and Versions",
+  "readme": "# ownCloud / owncloud-base\n\nDocker base image for ownCloud web server running on\n[owncloud/ubuntu image](https://hub.docker.com/r/owncloud/ubuntu/).\n\n\n## Usage\n\nAdd owncloud source, build, run.\n\n## Contributing\n\nFork -> Patch -> Push -> Pull Request\n\n\n## Authors\n\n* [Felix Böhm](https://github.com/felixboehm)\n\n\n## License\n\nMIT\n\n\n## Copyright\n\n```\nCopyright (c) 2016 Felix Böhm <http://owncloud.org>\n```\n",
+  "dockerfile": "FROM owncloud/ubuntu\n\nENV DEBIAN_FRONTEND noninteractive\n\nRUN apt-get update -y && apt-get install -y \\\n  apache2 \\\n  libapache2-mod-php7.0 \\\n  php7.0-gd \\\n  php7.0-json \\\n  php7.0-mysql \\\n  php7.0-curl \\\n  php7.0-intl \\\n  php7.0-mcrypt \\\n  php-imagick \\\n  php7.0-zip \\\n  php7.0-xml \\\n  php7.0-mb \\\n  php-ldap \\\n  php-apcu \\\n  php-redis \\\n  smbclient \\\n  php-smbclient \\\n  mysql-client \\\n  && apt-get clean \\\n  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n# apache modules oc needs as documented\nRUN a2enmod rewrite\nRUN a2enmod headers\nRUN a2enmod env\nRUN a2enmod dir\nRUN a2enmod mime\nRUN a2enmod ssl\nRUN a2ensite default-ssl\n\n# PHP Configs\nRUN echo \"apc.enable_cli=1\" >> /etc/php/7.0/cli/php.ini\n\n# Load php-libsmbclient\nRUN echo \"extension=smbclient.so\" > /etc/php/7.0/cli/conf.d/20-smbclint.ini\nRUN echo \"extension=smbclient.so\" > /etc/php/7.0/apache2/conf.d/20-smbclint.ini\n\n# Upload of big files\nRUN sed -i 's|upload_max_filesize = 2M|upload_max_filesize = 20G|' /etc/php/7.0/apache2/php.ini\nRUN sed -i 's|upload_max_filesize = 2M|upload_max_filesize = 20G|' /etc/php/7.0/cli/php.ini\nRUN sed -i 's|post_max_size = 8M|post_max_size = 20G|' /etc/php/7.0/apache2/php.ini\nRUN sed -i 's|post_max_size = 8M|post_max_size = 20G|' /etc/php/7.0/cli/php.ini\n\n# create folders for owncloud source, files and config\nRUN mkdir -p /var/www/owncloud\nRUN mkdir -p /mnt/data/files\nRUN mkdir -p /mnt/data/config\n\nRUN chsh -s /bin/bash www-data\nRUN chown -R www-data.www-data /mnt/data\n\n# Apache configs\nRUN sed -i 's_DocumentRoot /var/www/html_DocumentRoot /var/www/owncloud_' /etc/apache2/sites-enabled/000-default.conf\nRUN sed -i 's_DocumentRoot /var/www/html_DocumentRoot /var/www/owncloud_' /etc/apache2/sites-enabled/default-ssl.conf\nRUN sed -i 's|</VirtualHost>|\\t<IfModule mod_headers.c>\\n\\t\\t\\tHeader always set Strict-Transport-Security \"max-age=15768000; includeSubDomains; preload\"\\n\\t\\t</IfModule>\\n\\t</VirtualHost>|' /etc/apache2/sites-enabled/default-ssl.conf\nRUN sed -i 's|unset HOME|unset HOME\\nexport HOME=/var/www|' /etc/apache2/envvars\nRUN mv /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/ssl/certs/ssl-cert.pem\nRUN mv /etc/ssl/private/ssl-cert-snakeoil.key /etc/ssl/private/ssl-cert.key\nRUN sed -i 's|ssl-cert-snakeoil.pem|ssl-cert.pem|' /etc/apache2/sites-enabled/default-ssl.conf\nRUN sed -i 's|ssl-cert-snakeoil.key|ssl-cert.key|' /etc/apache2/sites-enabled/default-ssl.conf\n\n# Base config\nADD conf/config.php /root/config.php\n\n# Provide scripts in /usr/local/bin\nADD bin src/bin\nRUN chmod 0755 src/bin/*\nRUN cp src/bin/* /usr/local/bin\n\nVOLUME /mnt/data\n\n\nEXPOSE 443\nEXPOSE 80\n\nCMD [\"bash\", \"container-start.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "conf/config.php",
+        "dest": "/root/config.php"
+      },
+      {
+        "source": "bin",
+        "dest": "src/bin"
+      }
+    ],
+    "expose": [
+      443,
+      80
+    ],
+    "volume": [
+      "/mnt/data"
+    ],
+    "run": [
+      "apt-get update -y && apt-get install -y   apache2   libapache2-mod-php7.0   php7.0-gd   php7.0-json   php7.0-mysql   php7.0-curl   php7.0-intl   php7.0-mcrypt   php-imagick   php7.0-zip   php7.0-xml   php7.0-mb   php-ldap   php-apcu   php-redis   smbclient   php-smbclient   mysql-client   && apt-get clean   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "a2enmod rewrite",
+      "a2enmod headers",
+      "a2enmod env",
+      "a2enmod dir",
+      "a2enmod mime",
+      "a2enmod ssl",
+      "a2ensite default-ssl",
+      "echo \"apc.enable_cli=1\" >> /etc/php/7.0/cli/php.ini",
+      "echo \"extension=smbclient.so\" > /etc/php/7.0/cli/conf.d/20-smbclint.ini",
+      "echo \"extension=smbclient.so\" > /etc/php/7.0/apache2/conf.d/20-smbclint.ini",
+      "sed -i 's|upload_max_filesize = 2M|upload_max_filesize = 20G|' /etc/php/7.0/apache2/php.ini",
+      "sed -i 's|upload_max_filesize = 2M|upload_max_filesize = 20G|' /etc/php/7.0/cli/php.ini",
+      "sed -i 's|post_max_size = 8M|post_max_size = 20G|' /etc/php/7.0/apache2/php.ini",
+      "sed -i 's|post_max_size = 8M|post_max_size = 20G|' /etc/php/7.0/cli/php.ini",
+      "mkdir -p /var/www/owncloud",
+      "mkdir -p /mnt/data/files",
+      "mkdir -p /mnt/data/config",
+      "chsh -s /bin/bash www-data",
+      "chown -R www-data.www-data /mnt/data",
+      "sed -i 's_DocumentRoot /var/www/html_DocumentRoot /var/www/owncloud_' /etc/apache2/sites-enabled/000-default.conf",
+      "sed -i 's_DocumentRoot /var/www/html_DocumentRoot /var/www/owncloud_' /etc/apache2/sites-enabled/default-ssl.conf",
+      "sed -i 's|</VirtualHost>|\\t<IfModule mod_headers.c>\\n\\t\\t\\tHeader always set Strict-Transport-Security \"max-age=15768000; includeSubDomains; preload\"\\n\\t\\t</IfModule>\\n\\t</VirtualHost>|' /etc/apache2/sites-enabled/default-ssl.conf",
+      "sed -i 's|unset HOME|unset HOME\\nexport HOME=/var/www|' /etc/apache2/envvars",
+      "mv /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/ssl/certs/ssl-cert.pem",
+      "mv /etc/ssl/private/ssl-cert-snakeoil.key /etc/ssl/private/ssl-cert.key",
+      "sed -i 's|ssl-cert-snakeoil.pem|ssl-cert.pem|' /etc/apache2/sites-enabled/default-ssl.conf",
+      "sed -i 's|ssl-cert-snakeoil.key|ssl-cert.key|' /etc/apache2/sites-enabled/default-ssl.conf",
+      "chmod 0755 src/bin/*",
+      "cp src/bin/* /usr/local/bin"
+    ],
+    "workdir": [],
+    "from": "owncloud/ubuntu",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "cmd": "[\"bash\", \"container-start.sh\"]"
+  },
+  "source_repository_url": "https://github.com/owncloud-docker/owncloud-base.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/owncloud-docker/owncloud-base",
+  "docker_repository": "owncloud/owncloud-base",
+  "docker_image": "owncloud/owncloud-base",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        443,
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "owncloud/owncloud-base",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/owncloud/owncloud-base",
+    "https://hub.docker.com/v2/repositories/owncloud/owncloud-base",
+    "https://github.com/owncloud-docker/owncloud-base.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image"
+  ],
+  "info_url": "https://hub.docker.com/r/owncloud/owncloud-base",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,102 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/bennibu/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/bennibu/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/bennibu/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/bennibu/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/bennibu/owncloud/autobuild",
+    "user": "bennibu",
+    "name": "owncloud",
+    "namespace": "bennibu",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 28,
+    "last_updated": "2016-09-24T11:11:24.794233Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 233466471,
+        "id": 3977472,
+        "repository": 816494,
+        "creator": 33984,
+        "last_updater": 33984,
+        "last_updated": "2016-09-24T11:11:24.372174Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "bennibu/dockerfiles"
+  },
+  "name": "bennibu/owncloud Docker container",
+  "description": "owncloud docker image with php 7 support",
+  "readme": null,
+  "dockerfile": "FROM php:7.0-apache\n\nRUN apt-get update && apt-get install -y \\\n\tbzip2 \\\n\tlibcurl4-openssl-dev \\\n\tlibfreetype6-dev \\\n\tlibicu-dev \\\n\tlibjpeg-dev \\\n\tlibldap2-dev \\\n\tlibmcrypt-dev \\\n\tlibmemcached-dev \\\n\tlibpng12-dev \\\n\tlibpq-dev \\\n\tlibxml2-dev \\\n\t&& rm -rf /var/lib/apt/lists/*\n\n# https://doc.owncloud.org/server/9.1/admin_manual/installation/source_installation.html#prerequisites\nRUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \\\n\t&& docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \\\n\t&& docker-php-ext-install exif gd intl ldap mbstring mcrypt opcache pdo_mysql pdo_pgsql pgsql zip\n\n# set recommended PHP.ini settings\n# see https://secure.php.net/manual/en/opcache.installation.php\nRUN { \\\n\t\techo 'opcache.memory_consumption=128'; \\\n\t\techo 'opcache.interned_strings_buffer=8'; \\\n\t\techo 'opcache.max_accelerated_files=4000'; \\\n\t\techo 'opcache.revalidate_freq=60'; \\\n\t\techo 'opcache.fast_shutdown=1'; \\\n\t\techo 'opcache.enable_cli=1'; \\\n\t} > /usr/local/etc/php/conf.d/opcache-recommended.ini\nRUN a2enmod rewrite\n\nENV OWNCLOUD_VERSION 9.1.1\n\nRUN curl -fsSL -o owncloud-${OWNCLOUD_VERSION}.tar.bz2 \\\n\t\t\"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2\" \\\n\t&& curl -fsSL -o owncloud-${OWNCLOUD_VERSION}.tar.bz2.sha256 \\\n\t\t\"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2.sha256\" \\\n\t&& sha256sum -c owncloud-${OWNCLOUD_VERSION}.tar.bz2.sha256 \\\n\t&& tar -xjf owncloud-${OWNCLOUD_VERSION}.tar.bz2 -C /usr/src \\\n\t&& rm -rf /var/www/html \\\n\t&& mv /usr/src/owncloud /var/www/html \\\n\t&& mkdir -p /var/www/html/data \\\n\t&& chown -R www-data /var/www/html\n\nCMD [\"apache2-foreground\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y \tbzip2 \tlibcurl4-openssl-dev \tlibfreetype6-dev \tlibicu-dev \tlibjpeg-dev \tlibldap2-dev \tlibmcrypt-dev \tlibmemcached-dev \tlibpng12-dev \tlibpq-dev \tlibxml2-dev \t&& rm -rf /var/lib/apt/lists/*",
+      "docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \t&& docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \t&& docker-php-ext-install exif gd intl ldap mbstring mcrypt opcache pdo_mysql pdo_pgsql pgsql zip",
+      "{ \t\techo 'opcache.memory_consumption=128'; \t\techo 'opcache.interned_strings_buffer=8'; \t\techo 'opcache.max_accelerated_files=4000'; \t\techo 'opcache.revalidate_freq=60'; \t\techo 'opcache.fast_shutdown=1'; \t\techo 'opcache.enable_cli=1'; \t} > /usr/local/etc/php/conf.d/opcache-recommended.ini",
+      "a2enmod rewrite",
+      "curl -fsSL -o owncloud-${OWNCLOUD_VERSION}.tar.bz2 \t\t\"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2\" \t&& curl -fsSL -o owncloud-${OWNCLOUD_VERSION}.tar.bz2.sha256 \t\t\"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2.sha256\" \t&& sha256sum -c owncloud-${OWNCLOUD_VERSION}.tar.bz2.sha256 \t&& tar -xjf owncloud-${OWNCLOUD_VERSION}.tar.bz2 -C /usr/src \t&& rm -rf /var/www/html \t&& mv /usr/src/owncloud /var/www/html \t&& mkdir -p /var/www/html/data \t&& chown -R www-data /var/www/html"
+    ],
+    "workdir": [],
+    "from": "php:7.0-apache",
+    "env": {
+      "OWNCLOUD_VERSION": "9.1.1"
+    },
+    "cmd": "[\"apache2-foreground\"]"
+  },
+  "source_repository_url": "https://github.com/bennibu/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/bennibu/dockerfiles",
+  "docker_repository": "bennibu/owncloud",
+  "docker_image": "bennibu/owncloud",
+  "parameters_schema": {
+    "OWNCLOUD_VERSION": {
+      "default": "9.1.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "bennibu/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/bennibu/owncloud",
+    "https://hub.docker.com/v2/repositories/bennibu/owncloud",
+    "https://github.com/bennibu/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Runtime/PHP"
+  ],
+  "info_url": "https://hub.docker.com/r/bennibu/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

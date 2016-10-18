@@ -1,0 +1,100 @@
+{
+  "name": "rkt Chef cookbook",
+  "chef_cookbook_name": "rkt",
+  "revision": "0.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/rkt",
+    "https://supermarket.chef.io/cookbooks/rkt/download",
+    "https://supermarket.chef.io/cookbooks/rkt/versions/0.1.0",
+    "https://supermarket.chef.io/cookbooks/rkt/versions/0.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/rkt/versions/0.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/rkt",
+    "https://supermarket.chef.io/api/v1/cookbooks/rkt/versions/0.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Operating System/Linux/CoreOS"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/rkt",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/rkt/versions/0.1.0/download",
+  "deprecated": false,
+  "created": "2016-04-22T20:41:40.589Z",
+  "updated": "2016-07-14T21:19:46.659Z",
+  "description": "This cookbook allows management of coreos rkt",
+  "maintainer": {
+    "name": "artem-sidorenko",
+    "email": "artem@posteo.de"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 141,
+  "downloads_count_revision": 31,
+  "repository_url": "https://gitlab.com/artem-sidorenko/chef-rkt",
+  "issues_url": "https://gitlab.com/artem-sidorenko/chef-rkt/issues",
+  "chef_source_url": "https://gitlab.com/artem-sidorenko/chef-rkt",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "chef-rkt\n========\n\n[![build status](https://gitlab.com/artem-sidorenko/chef-rkt/badges/master/build.svg)](https://gitlab.com/artem-sidorenko/chef-rkt/commits/master) [![cookbook version](https://img.shields.io/cookbook/v/rkt.svg)](https://supermarket.chef.io/cookbooks/rkt)\n\n-----------------------------------------------------------\n\nThis cookbook has its home on [gitlab.com] and has a mirror\non [github.com]. Development is done on [gitlab.com] only.\n\n-----------------------------------------------------------\n\nChef cookbook for management of [coreos rkt].\n\n* [Requirements](#requirements)\n* [Usage](#usage)\n* [Recipes](#recipes)\n* [Resources](#resources)\n* [Issues](#issues)\n* [Contributing](#contributing)\n* [License and copyright](#license-and-copyright)\n\nRequirements\n------------\n\nSupported distributions:\n\n* EL 7 (CentOS, RHEL, ...) (with kernel >=3.18)\n* Ubuntu >=14.04\n* Debian 8 (with kernel >=3.18)\n\nrkt [requires](https://github.com/coreos/rkt/blob/master/Documentation/dependencies.md#run-time-dependencies) kernel >=3.18.\n\nRecipe [install_mainline_kernel](#install_mainline_kernel) can help with installation of [mainline kernel] on EL 7 systems.\n\nUsage\n-----\n\n### Installation of rkt\n\n* Usage in other cookbook\n  * Add `depends 'rkt'` to `metadata.rb` of your cookbook\n  * Include it in some recipe:\n\n```ruby\ninclude_recipe 'rkt'\n```\n\n* Usage in the run list of your node\n\n```json\n{\n  \"name\":\"examplenode\",\n  \"run_list\": [\n    \"recipe[rkt]\"\n  ]\n}\n```\n\n### Use rkt resources\n\nFetch and start etcd:\n\n```ruby\nrkt_image 'coreos.com/etcd:v2.3.0' do\n  trust_keys_from_https true\nend\n\nrkt_pod 'myetcd' do\n  image 'coreos.com/etcd:v2.3.0'\nend\n```\n\nand the same with one command:\n\n```ruby\nrkt_pod 'myetcd' do\n  image 'coreos.com/etcd:v2.3.0'\n  trust_keys_from_https true\nend\n```\n\nremove and cleanup:\n\n```ruby\nrkt_pod 'myetcd' do\n  action :delete\nend\n\nrkt_image 'coreos.com/etcd:v2.3.0' do\n  action :delete\nend\n\nrkt_trust 'coreos.com/etcd' do\n  action :delete\nend\n```\n\nRecipes\n-------\n\nRecipes in this cookbook can help with installation of [coreos rkt]. Management of rkt resources is done via [LWRPs], which are documented [below](#resources).\n\n### default\n\nThe default recipe invokes the installation recipe `install` only.\n\n### install\n\nThis recipe is responsible for rkt installation and includes some other recipes if needed.\n\nTwo different installation types of rkt are supported:\n\n* from [release tarballs with compiled rkt] - recipe `install_tgz`\n* from packages - recipe `install_package`\n\nThere is also a check of kernel version for possible known issues.\n\n#### Attributes\n\n| Key                                | Default | Description                                  |\n|------------------------------------|---------|----------------------------------------------|\n| ['rkt']['install']['type']         | `tgz`   | Installation type of rkt                     |\n| ['rkt']['install']['kernel_check'] | `true`  | Check the kernel version for possible issues |\n\n### install_package\n\nThis recipe installs rkt from packages. If needed, repository configuration recipe `repository` gets invoked.\n\nCurrently almost no distributions are providing rkt packages, see more information on this topic [below](#repository).\n\n#### Attributes\n\n| Key                                                | Default | Description                                      |\n|----------------------------------------------------|---------|--------------------------------------------------|\n| ['rkt']['install']['package']['name']              | `rkt`   | Package name of rkt                              |\n| ['rkt']['install']['package']['manage_repository'] | `true`  | Controls if repository management should be done |\n\n### install_tgz\n\nThis recipe installs rkt from [release tarballs with compiled rkt]. Installation includes:\n\n* Automatic download of specified rkt release\n* Constancy and integrity check\n* Creation of needed directories\n* Creation of garbage collection cronjob\n* Creation of sudo configuration if needed\n\n#### Attributes\n\n| Key                                  | Default                     | Description                                      |\n|--------------------------------------|-----------------------------|--------------------------------------------------|\n| ['rkt']['install']['tgz']['version'] | see [attributes/default.rb] | Version of rkt which should be installed         |\n| ['rkt']['install']['tgz']['sudo']    | `true`                      | Controls if sudo configuration should be done    |\n\n### repository\n\nThis recipe is automatically invoked by `install_package` if repository configuration should be done.\n\nRight now, almost no distributions are packaging rkt.\nI maintain [rkt project on OpenBuild Service], where I'm building the packages from [release tarballs with compiled rkt] for some distributions.\nI see this as intermediary solution (but probably for some years:D), so the quality claim of this packages isn't on the usual level of distributors (they just work, nothing more).\n\nYou can [use this repositories] without this cookbook too.\n\n### install_mainline_kernel\n\nThis recipe needs to be invoked manually via runlist if needed.\nThis recipe configures needed repositories and installs a [mainline kernel] for EL7 systems.\n\nEL7 distributions use an old kernel with some bugs in overlayfs, which is used by rkt.\nBy using the mainline kernel it's possible to avoid such problems.\n\nResources\n---------\n\n### rkt_image\n\nResource implementation of rkt commands for image handling:\n\n* [rkt fetch]\n* [rkt image rm]\n\n#### Syntax\n\n```ruby\nrkt_image 'coreos.com/dnsmasq:v0.2.0' do\n  action :create\n  trust_keys_from_https true\nend\n```\n\nThe full syntax:\n\n```ruby\nrkt_image 'name' do\n  image_url                String # defaults to 'name' if not specified\n  no_store                 TrueClass, FalseClass\n  trust_keys_from_https    TrueClass, FalseClass\n  action                   Symbol # defaults to :create if not specified\nend\n```\n\n#### Actions\n\n* `:create` - Default. Fetch image\n* `:delete` - Delete image\n\n#### Properties\n\n| Property                 | Default  | Description                                     |\n|--------------------------|----------|-------------------------------------------------|\n| image_url                | `[name]` | URL of image to fetch                           |\n| no_store                 | `false`  | Ignore the local store by fetching              |\n| trust_keys_from_https    | `false`  | Automatically trust keys fetched via HTTPS      |\n\n### rkt_pod\n\nRun image in a pod.\n\nThis LWRP creates systemd container services (or upstart for Ubuntu 14.04) with `rkt-` prefix and starts them.\n\n#### Syntax\n\n```ruby\nrkt_pod 'dnsmasq' do\n  action :create\n  image 'coreos.com/dnsmasq:v0.2.0'\nend\n```\n\nThe full syntax:\n\n```ruby\nrkt_pod 'name' do\n  name                     String # defaults to 'name' if not specified\n  image                    String\n  trust_keys_from_https    TrueClass, FalseClass\n  action                   Symbol # defaults to :create if not specified\nend\n```\n\n#### Actions\n\n* `:create` - Default. Create a new pod and start it\n* `:delete` - Delete pod\n\n#### Properties\n\n| Property                 | Default  | Description                                     |\n|--------------------------|----------|-------------------------------------------------|\n| name                     | `[name]` | Name of pod                                     |\n| image                    |          | Image which should be run                       |\n| trust_keys_from_https    | `false`  | Automatically trust keys fetched via HTTPS      |\n\n### rkt_trust\n\nResource implementation of [rkt trust] command.\n\n#### Syntax\n\n```ruby\nrkt_trust 'coreos.com/etcd' do\n  action :create\n  trust_keys_from_https true\nend\n```\n\nThe full syntax:\n\n```ruby\nrkt_trust 'name' do\n  prefix                   String # defaults to 'name' if not specified\n  insecure_allow_http      TrueClass, FalseClass\n  skip_fingerprint_review  TrueClass, FalseClass\n  trust_keys_from_https    TrueClass, FalseClass\n  action                   Symbol # defaults to :create if not specified\nend\n```\n\n#### Actions\n\n* `:create` - Default. Create a trust for a key, which verifies images.\n* `:delete` - Delete a trust for a key\n\n#### Properties\n\n| Property                 | Default  | Description                                     |\n|--------------------------|----------|-------------------------------------------------|\n| prefix                   | `[name]` | Prefix for the key                              |\n| insecure_allow_http      | `false`  | Allow HTTP usage for key discovery              |\n| skip_fingerprint_review  | `false`  | Accept the key without fingerprint verification |\n| trust_keys_from_https    | `false`  | Automatically trust keys fetched via HTTPS      |\n\n**Note:** fingerprint verification isn't supported yet.\nYou have to trust keys fetched via HTTPS or to skip fingerprint review.\n\nIssues\n------\n\nYou can find known issues [here](https://gitlab.com/artem-sidorenko/chef-rkt/issues). Feel free to open a new issue if needed.\n\nContributing\n------------\n\nPlease see the [contribution guide](CONTRIBUTING.md).\n\nLicense and copyright\n---------------------\n\nCopyright 2016 Artem Sidorenko and contributors.\n\nLicensed under Apache 2.0\n\nSee the COPYRIGHT file at the top-level directory of this distribution\nand at <https://gitlab.com/artem-sidorenko/chef-rkt/blob/master/COPYRIGHT>\n\n[coreos rkt]: https://github.com/coreos/rkt\n[LWRPs]: https://chefheads.wordpress.com/2015/03/30/lwrp-an-introduction/\n[release tarballs with compiled rkt]: https://github.com/coreos/rkt/releases\n[attributes/default.rb]: ./attributes/default.rb\n[use this repositories]: http://software.opensuse.org/download.html?project=home%3Aartem_sidorenko%3Arkt&package=rkt\n[rkt project on OpenBuild Service]: https://build.opensuse.org/project/show/home:artem_sidorenko:rkt\n[mainline kernel]: http://elrepo.org/tiki/kernel-ml\n[gitlab.com]: https://gitlab.com/artem-sidorenko/chef-rkt\n[github.com]: https://github.com/artem-sidorenko/chef-rkt\n[rkt trust]: https://coreos.com/rkt/docs/latest/subcommands/trust.html\n[rkt fetch]: https://coreos.com/rkt/docs/latest/subcommands/fetch.html\n[rkt image rm]: https://coreos.com/rkt/docs/latest/subcommands/image.html#rkt-image-rm\n[systemd container services]: https://github.com/coreos/rkt/blob/master/Documentation/using-rkt-with-systemd.md#systemd-run",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 7.2",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 7.2",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "oracle",
+      "revision": ">= 7.2",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 7.2",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 14.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 8.4",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/systemd",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/derjudge/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/derjudge/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/derjudge/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/derjudge/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/derjudge/owncloud/autobuild",
+    "user": "derjudge",
+    "name": "owncloud",
+    "namespace": "derjudge",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 908,
+    "last_updated": "2016-10-17T01:48:40.850534Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 1446132556,
+        "id": 672475,
+        "repository": 274793,
+        "creator": 17974,
+        "last_updater": 17974,
+        "last_updated": "2016-10-17T01:48:40.506207Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Judge82/docker_owncloud"
+  },
+  "name": "derjudge/owncloud Docker container",
+  "description": "Arch Linux based ownCloud server",
+  "readme": null,
+  "dockerfile": "FROM derjudge/archlinux-apache-php\nMAINTAINER Marc Richter <mail@marc-richter.info>\n\nRUN yes | pacman -Syy | cat\nRUN yes | pacman -S \\\n    cronie \\\n    exiv2 \\\n    ffmpeg \\\n    libreoffice-fresh \\\n    libx264 \\\n    owncloud \\\n    smbclient \\\n    | cat\n\n# Make owncloud configs\nADD assets/config.php /etc/webapps/owncloud/config/config.php\n# Add write permission for httpd user\nRUN chmod g+w -R /usr/share/webapps/owncloud\nRUN chown http:http -R /etc/webapps/owncloud/config\n\n# Make httpd settings\nADD assets/httpd.conf /etc/httpd/conf/httpd.conf\nADD assets/owncloud.conf /etc/httpd/conf/owncloud.conf\n\n# Make PHP settings\n# Load PostgreSQL modules\nRUN sed -i'' 's#^;\\(extension=.*pgsql.*\\)#\\1#g' /etc/php/php.ini\n# Load APCu module\nRUN sed -i'' 's#^;\\(extension=apcu.so\\)#\\1#g' /etc/php/conf.d/apcu.ini\n# Load iconv module\nRUN sed -i'' 's#^;\\(extension=iconv.so\\)#\\1#g' /etc/php/php.ini\n# Load posix module\nRUN sed -i'' 's#^;\\(extension=posix.so\\)#\\1#g' /etc/php/php.ini\n# Load xmlrpc module\nRUN sed -i'' 's#^;\\(extension=xmlrpc.so\\)#\\1#g' /etc/php/php.ini\n# Load bz2 module\nRUN sed -i'' 's#^;\\(extension=bz2.so\\)#\\1#g' /etc/php/php.ini\n# Load intl module\nRUN sed -i'' 's#^;\\(extension=intl.so\\)#\\1#g' /etc/php/php.ini\n# Load mcrypt module\nRUN sed -i'' 's#^;\\(extension=mcrypt.so\\)#\\1#g' /etc/php/php.ini\n# Load openssl module\nRUN sed -i'' 's#^;\\(extension=openssl.so\\)#\\1#g' /etc/php/php.ini\n# Un-Load mysqli module\nRUN sed -i'' 's#^\\(extension=mysqli.so\\)#;\\1#g' /etc/php/php.ini\n# Load exif module\nRUN sed -i'' 's#^;\\(extension=exif.so\\)#\\1#g' /etc/php/php.ini\n\n# Cronjob\nRUN if [ -f /extra/http.crontab ]; then crontab -u http /extra/http.crontab ; fi\n\n# Add default extra - script\nRUN if [ ! -e /extra ]; then mkdir /extra; fi\nADD assets/extra/init /extra/init\nRUN chmod +x /extra/init\n\nVOLUME [\"/etc/webapps/owncloud\"]\n\n# Create owncloud data dir\nRUN mkdir -p /var/lib/owncloud && \\\n    chown http:http -R /var/lib/owncloud\n\nVOLUME [\"/var/lib/owncloud\"]\nEXPOSE 80\n\nCMD [\"/init\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "assets/config.php",
+        "dest": "/etc/webapps/owncloud/config/config.php"
+      },
+      {
+        "source": "assets/httpd.conf",
+        "dest": "/etc/httpd/conf/httpd.conf"
+      },
+      {
+        "source": "assets/owncloud.conf",
+        "dest": "/etc/httpd/conf/owncloud.conf"
+      },
+      {
+        "source": "assets/extra/init",
+        "dest": "/extra/init"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/etc/webapps/owncloud\"]",
+      "[\"/var/lib/owncloud\"]"
+    ],
+    "run": [
+      "yes | pacman -Syy | cat",
+      "yes | pacman -S     cronie     exiv2     ffmpeg     libreoffice-fresh     libx264     owncloud     smbclient     | cat",
+      "chmod g+w -R /usr/share/webapps/owncloud",
+      "chown http:http -R /etc/webapps/owncloud/config",
+      "sed -i'' 's#^;\\(extension=.*pgsql.*\\)#\\1#g' /etc/php/php.ini",
+      "sed -i'' 's#^;\\(extension=apcu.so\\)#\\1#g' /etc/php/conf.d/apcu.ini",
+      "sed -i'' 's#^;\\(extension=iconv.so\\)#\\1#g' /etc/php/php.ini",
+      "sed -i'' 's#^;\\(extension=posix.so\\)#\\1#g' /etc/php/php.ini",
+      "sed -i'' 's#^;\\(extension=xmlrpc.so\\)#\\1#g' /etc/php/php.ini",
+      "sed -i'' 's#^;\\(extension=bz2.so\\)#\\1#g' /etc/php/php.ini",
+      "sed -i'' 's#^;\\(extension=intl.so\\)#\\1#g' /etc/php/php.ini",
+      "sed -i'' 's#^;\\(extension=mcrypt.so\\)#\\1#g' /etc/php/php.ini",
+      "sed -i'' 's#^;\\(extension=openssl.so\\)#\\1#g' /etc/php/php.ini",
+      "sed -i'' 's#^\\(extension=mysqli.so\\)#;\\1#g' /etc/php/php.ini",
+      "sed -i'' 's#^;\\(extension=exif.so\\)#\\1#g' /etc/php/php.ini",
+      "if [ -f /extra/http.crontab ]; then crontab -u http /extra/http.crontab ; fi",
+      "if [ ! -e /extra ]; then mkdir /extra; fi",
+      "chmod +x /extra/init",
+      "mkdir -p /var/lib/owncloud &&     chown http:http -R /var/lib/owncloud"
+    ],
+    "workdir": [],
+    "from": "derjudge/archlinux-apache-php",
+    "maintainer": "Marc Richter <mail@marc-richter.info>",
+    "cmd": "[\"/init\"]"
+  },
+  "source_repository_url": "https://bitbucket.org/Judge82/docker_owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/Judge82/docker_owncloud",
+  "docker_repository": "derjudge/owncloud",
+  "docker_image": "derjudge/owncloud",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "derjudge/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/derjudge/owncloud",
+    "https://hub.docker.com/v2/repositories/derjudge/owncloud",
+    "https://bitbucket.org/Judge82/docker_owncloud.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Arch Linux"
+  ],
+  "info_url": "https://hub.docker.com/r/derjudge/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,72 @@
+{
+  "name": "collectd-lib Chef cookbook",
+  "chef_cookbook_name": "collectd-lib",
+  "revision": "3.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/collectd-lib",
+    "https://supermarket.chef.io/cookbooks/collectd-lib/download",
+    "https://supermarket.chef.io/cookbooks/collectd-lib/versions/3.0.0",
+    "https://supermarket.chef.io/cookbooks/collectd-lib/versions/3.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/collectd-lib/versions/3.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/collectd-lib",
+    "https://supermarket.chef.io/api/v1/cookbooks/collectd-lib/versions/3.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Monitoring"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/collectd-lib",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/collectd-lib/versions/3.0.0/download",
+  "deprecated": false,
+  "created": "2015-05-16T20:03:26.919Z",
+  "updated": "2016-05-12T12:20:00.409Z",
+  "description": "Install and configure the collectd monitoring daemon",
+  "maintainer": {
+    "name": "sirex",
+    "email": "jsirex@gmail.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 2,
+  "downloads_count": 307221,
+  "downloads_count_revision": 155555,
+  "repository_url": "https://github.com/jsirex/collectd-lib-cookbook",
+  "issues_url": "https://github.com/jsirex/collectd-lib-cookbook/issues",
+  "chef_source_url": "https://github.com/jsirex/collectd-lib-cookbook",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Description\n\nLibrary cookbook for the [collectd](http://collectd.org/) monitoring daemon.\nThis cookbook introduce *accumulator* pattern for managing plugins.\nI have to rename it from `collectd` to `collectd-lib` because I want to publish it to supermarket. And it conflicts with existing one.\n\n## Usage\n\n**By default cookbook does nothing**. You have to wrap it in your projects' cookbook. See example in `test/fixtures` folder.\n\n## HWRP\n\n### collectd\\_conf\n\nThe `collectd_conf` defines configuration for collectd. The config is represented as a Hash and its syntax may be complecated.\nThis resource is very smart.\n\n#### Usage\n\nCookbook generates `node['collectd']['conf_dir']/collectd.conf` file. It consists of four main parts:\n\n1. Base Configuration. Manage it via node attributes\n1. Dynamic Section for all plugins (tuples, sorted by priority and name)\n1. Dynamic Section for all generic configurations (tuples, sorted by priority)\n1. `Include` directive for extra config files. By default from `/etc/collectd/collectd.conf.d/*.conf`\n\nDynamic sections consists of tuples. Each `collectd_conf` defines a tuple. It uses **conf** attributes as a **Hash** for config source.\n\nThe **conf** hash is converted to collectd-style settings automatically. Here is the rules for **conf**:\n\nIf **key** is a *String* and **value** is a *String* it produces `Key \"value\"`:\n\n```ruby\ncollectd_conf 'string-string' do\n  conf 'Key' => 'Value', 'Key2' => 'Value2'\nend\n```\n\nResult:\n\n```\nKey \"value\"\nKey2 \"value2\"\n```\n\nIf **key** is a *String* and **value** is a *Fixnum* it produces `Key value`:\n\n```ruby\ncollectd_conf 'string-fixnum' do\n  conf 'TheAnswerIs' => 42\nend\n```\n\nResult:\n\n```\nTheAnswerIs 42\n```\n\nIf **key** is a *String* and **value** is a *Array* it produces lines `Key value` for each value.\n\n```ruby\ncollectd_conf 'string-array' do\n  conf 'MultipleLines' => [1, \"string\", [\"ar\", \"ray\"]],\n       'MultipleValues' => [ [1, 2, false] ]\nend\n```\n\nResult:\n\n```\nMultipleLines 1\nMultipleLines \"string\"\nMultipleLines \"ar\" \"ray\"\nMultipleValues 1 2 false\n```\n\nIf **key** is a *String* and **value** is a *Hash* it produces section.\n\n```ruby\ncollectd_conf 'string-hash' do\n  conf 'Section' => {\n    'Key' => 'value',\n    'SubSection' => {\n      'SubKey' => 'SubValue'\n    }\n  }\nend\n```\n\nResult:\n\n```\n<Section>\n  Key \"value\"\n  <SubSection>\n    SubKey \"SubValue\"\n  </SubSection>\n</Section>\n```\n\nIf **key** is a *Array* and **value** is a *Hash* it produces section with `key[0]` name and attribute `key[1]`.\n\n```ruby\ncollectd_conf 'array-hash' do\n  conf %w(Include /etc/collectd/collectd.conf.d) => {\n    'Filter' => '*.conf'\n  }\nend\n```\n\nResult:\n\n```\n<Include \"/etc/collectd/collectd.conf.d\">\n  Filter \"*.conf\"\n</Include>\n```\n\nOne more:\n\n```ruby\ncollectd_conf 'curl' do\n  plugin 'curl'\n  conf %w(Page stock_quotes) => {\n    'URL' => 'http://finance.google.com/finance?q=NYSE%3AAMD',\n    'User' => 'foo',\n    'Password' => 'bar',\n    'Match' => { 'Regexp' => 'blabla.*', 'DsType' => 'GaugeAverage' }\n  }\nend\n```\n\nProduces:\n\n```\nLoadPlugin \"curl\"\n<Plugin \"curl\">\n  <Page \"stock_quotes\">\n    URL \"http://finance.google.com/finance?q=NYSE%3AAMD\"\n    User \"foo\"\n    Password \"bar\"\n    <Match>\n        Regexp \"blabla.*\"\n        DsType \"GaugeAverage\"\n    </Match>\n  </Page>\n</Plugin>\n```\n\n\nHere is the rules for **plugin** attribute:\n\nIf it is value is a *String* and **conf** is `nil` it produces `LoadPlugin \"value\"`\n\n```ruby\ncollectd_conf 'plugin-string' do\n  plugin 'cpu'\nend\n```\n\nResult:\n\n```\nLoadPlugin \"cpu\"\n```\n\nIf it is value is a *String* and **conf** not `nil` it produces `LoadPlugin \"value\"` and plugin section. **conf** goes into plugin section\n\n```ruby\ncollectd_conf 'plugin-string-conf' do\n  plugin 'disk'\n  conf 'Disk' => %w(sda sdb sdc sdd)\nend\n```\n\nResult:\n\n```\nLoadPlugin \"disk\"\n<Plugin \"disk\">\n  Disk \"sda\"\n  Disk \"sdb\"\n  Disk \"sdc\"\n  Disk \"sdd\"\n</Plugin>\n```\n\nIf it is value is a *Hash* it produces `LoadPlugin` section\n\n```ruby\ncollectd_conf 'plugin-hash-conf' do\n  plugin 'python' => {'Globals' => true}\n  conf 'Module' => 'SomeModule',\n       'DeepConf' => {...}\nend\n```\n\nResult:\n\n```\n<LoadPlugin \"python\">\n  Globals true\n</LoadPlugin>\n<Plugin \"python\">\n  Module \"SomeModule\"\n  <DeepConf>\n  ...\n  </DeepConf>\n</Plugin>\n```\n\nRepeation `collectd_conf` in different cookbooks and places for same plugin automatically merges all configuration together.\nUse `merge false` to create standalone entry.\n\nFor logging plugins it is make sense to set `priority` above `10` so it appears earler in configuration.\n\n**Merge works only for plugins.**\n\n#### Actions\n\n- **create** - default, adds configuration to collectd\n- **nothing** - does nothing\n\n#### Attributes\n\n- **plugin** - plugin name to load. Can be **String** for name or **Hash** for `LoadPlugin` section. Defaults to `nil`\n- **conf** - configuration. If plugin set - confgiration for plugin else generic configuration. Defaults to `nil`\n- **merge** - merge or not configurations. **Works only for plugins**. Defaults to `true`\n- **priority** - weather plugin or section appears early or later in config. Generic sections are always after plugins. Defaults to `10`\n\n# NOTICE\n\nThis cookbook heavy refactored but still not well tested. Also it supports only `Debian`. But you can implement your own installation and use this cookbook only for configuration.\n\n# Requirements\n\n## Platform:\n\n* Debian\n* Ubuntu\n\n## Cookbooks:\n\n* apt (Suggested but not required)\n* Conflicts with collectd\n\n# Attributes\n\n* `node['collectd']['packages']` -  Defaults to `%w(collectd-core)`.\n* `node['collectd']['conf_dir']` -  Defaults to `/etc/collectd`.\n* `node['collectd']['base_dir']` -  Defaults to `/var/lib/collectd`.\n* `node['collectd']['plugin_dir']` -  Defaults to `/usr/lib/collectd`.\n* `node['collectd']['extra_conf_dir']` -  Defaults to `/etc/collectd/colectd.conf.d`.\n* `node['collectd']['types_db']` -  Defaults to `[ ... ]`.\n* `node['collectd']['interval']` -  Defaults to `10`.\n* `node['collectd']['timeout']` -  Defaults to `2`.\n* `node['collectd']['read_threads']` -  Defaults to `5`.\n* `node['collectd']['write_threads']` -  Defaults to `5`.\n* `node['collectd']['write_queue_limit_high']` -  Defaults to `1000000`.\n* `node['collectd']['write_queue_limit_low']` -  Defaults to `900000`.\n* `node['collectd']['fqdn_lookup']` -  Defaults to `false`.\n\n# Recipes\n\n* collectd-lib::config\n* collectd-lib::default\n* collectd-lib::directories\n* collectd-lib::packages\n* collectd-lib::service\n\n# License and Maintainer\n\nMaintainer:: Yauhen Artsiukhou (<jsirex@gmail.com>)\n\nLicense:: Apache 2.0\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ],
+  "recommends": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0"
+    }
+  ],
+  "conflicts": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/collectd",
+      "revision": ">= 0.0.0"
+    }
+  ]
+}

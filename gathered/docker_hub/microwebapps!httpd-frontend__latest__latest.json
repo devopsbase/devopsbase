@@ -1,0 +1,106 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/microwebapps/httpd-frontend",
+    "repository_url": "https://hub.docker.com/v2/repositories/microwebapps/httpd-frontend",
+    "tags_url": "https://hub.docker.com/v2/repositories/microwebapps/httpd-frontend/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/microwebapps/httpd-frontend/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/microwebapps/httpd-frontend/autobuild",
+    "user": "microwebapps",
+    "name": "httpd-frontend",
+    "namespace": "microwebapps",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 212,
+    "last_updated": "2015-10-27T15:19:21.645059Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 117065597,
+        "id": 218492,
+        "repository": 229415,
+        "creator": 338695,
+        "last_updater": 253146,
+        "last_updated": "2015-10-27T15:36:11.009295Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "micro-webapps/micro-webapps"
+  },
+  "name": "microwebapps/httpd-frontend Docker container",
+  "description": "Httpd frontend allowing simple deployment and configuration of web applications.",
+  "readme": "## What is micro-webapps?\nThe goal of the micro-webapps project is to allow simple deployment of web applications in the cloud (multi container) environment. Admin is able to choose the frontend which will serve the web applications and then install the web applications as separate containers. For each web application, he is able to configure the URI on which the web application will be served.\n\nIt is therefore possible to setup webserver with, for example, following structure:\n\n- `http://domain.tld/` running static content.\n- `http://domain.tld/blog` running wordpress in separate container.\n- `http://bugs.domain.tld` running Bugzilla in separate container.\n- `http://another-domain.tld` running completely different domain.\n\nIt also allows more advanced features like load-balancing. For more information, check the [micro-webapps home page](https://github.com/micro-webapps/micro-webapps).\n\n## What is httpd-frontend?\nThis Docker image contains Apache httpd running as frontend for other web applications in the cloud. It is intended to be used with Kubernetes or Openshift. It fetches the list of deployed micro-webapps from the Kubernetes or Openshift API server and sets up the reverse proxy for the web applications.\n\n## How to use httpd-frontend?\n\nYou should consider using [Atomic App](https://github.com/projectatomic/atomicapp) to deploy httpd-frontend using the microwebapps/httpd-frontend-atomicapp Docker image, but it is also possible to just use this this Docker image without Atomic App to deploy the httpd-frontend.\n\n\n### 1. Create the httpd-frontend Kubernetes/Openshift service\n\nDownload the [httpd-frontend-service.json](https://raw.githubusercontent.com/micro-webapps/micro-webapps/master/nulecules/mwa-httpd-frontend/artifacts/kubernetes/mwa-httpd-frontend-service.json) and replace the `$publicip` variable with the public IP address you want to use for the httpd-frontend.\n\nThen you can deploy the Kubernetes/Openshift service as usual using `kubectl` or `osc`.\n\n### 2. Create the httpd-frontend Kubernetes/Openshift pod\n\nDownload the [httpd-frontend-pod.yaml](https://raw.githubusercontent.com/micro-webapps/micro-webapps/master/nulecules/mwa-httpd-frontend/artifacts/kubernetes/mwa-httpd-frontend-pod.yaml) and replace the `$kubernetes_client_certificate`, `$kubernetes_client_key` and `$kubernetes_namespace` variables with the proper values.\n\nFor Kubernetes, you can replace `$kubernetes_client_certificate` and `$kubernetes_client_key` with an empty string, because Kubernetes provides authorization token in the container automatically. Use `default` string as a default `$kubernetes_namespace`.\n\nThen you can deploy the Kubernetes/Openshift pod as usual using `kubectl` or `osc`.\n\n### 3. Test that the httpd-frontend is running.\n\nYou should now be able to use curl or wget to check that httpd-frontend is responding on the $publicip or on the IP address showed in `kubectl get service` or `osc get service` output.\n\n## Deploying micro-webapps web application\n\nWhen httpd-frontend is running, you can start deploying micro-webapps web applications. Check the [micro-webapps](https://hub.docker.com/u/microwebapps/dashboard/) Docker registry for list of supported web applications.",
+  "dockerfile": "# This program is free software: you can redistribute it and/or modify\n# it under the terms of the GNU General Public License as published by\n# the Free Software Foundation, either version 3 of the License, or\n# (at your option) any later version.\n# \n# This program is distributed in the hope that it will be useful,\n# but WITHOUT ANY WARRANTY; without even the implied warranty of\n# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n# GNU General Public License for more details.\n# \n# You should have received a copy of the GNU General Public License\n# along with this program.  If not, see <http://www.gnu.org/licenses/>.\n#\n# Author: Jan Kaluza <jkaluza at redhat dot com>\n\nFROM centos:7\n\nCOPY *.sh /\nRUN chmod +x /*.sh\n\nRUN mkdir -p /httpd-cfg-tmp\nCOPY httpd-cfg /httpd-cfg-tmp\nRUN mv /httpd-cfg-tmp/httpd-cfg /\nRUN rm -rf /httpd-cfg-tmp\nRUN chmod +x /httpd-cfg\n\nRUN mkdir -p /kubernetes-confd-tmp\nCOPY kubernetes-confd /kubernetes-confd-tmp\nRUN mv /kubernetes-confd-tmp/kubernetes-confd /\nRUN rm -rf /kubernetes-confd-tmp\nRUN chmod +x /kubernetes-confd\n\nRUN yum install httpd mod_ssl -y\nRUN echo \"IncludeOptional apps.d/*.conf\" >> /etc/httpd/conf/httpd.conf\n\nRUN sed -ri ' \\\n    s!^(\\s*CustomLog)\\s+\\S+!\\1 /proc/self/fd/1!g; \\\n    s!^(\\s*ErrorLog)\\s+\\S+!\\1 /proc/self/fd/2!g; \\\n    ' /etc/httpd/conf/httpd.conf\n\nVOLUME [\"/var/www/\", \"/var/log/httpd\", \"/etc/httpd/apps.d\"]\n\nExpose 80\nExpose 443\n\nCMD [\"/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80,
+      443
+    ],
+    "volume": [
+      "[\"/var/www/\", \"/var/log/httpd\", \"/etc/httpd/apps.d\"]"
+    ],
+    "run": [
+      "chmod +x /*.sh",
+      "mkdir -p /httpd-cfg-tmp",
+      "mv /httpd-cfg-tmp/httpd-cfg /",
+      "rm -rf /httpd-cfg-tmp",
+      "chmod +x /httpd-cfg",
+      "mkdir -p /kubernetes-confd-tmp",
+      "mv /kubernetes-confd-tmp/kubernetes-confd /",
+      "rm -rf /kubernetes-confd-tmp",
+      "chmod +x /kubernetes-confd",
+      "yum install httpd mod_ssl -y",
+      "echo \"IncludeOptional apps.d/*.conf\" >> /etc/httpd/conf/httpd.conf",
+      "sed -ri '     s!^(\\s*CustomLog)\\s+\\S+!\\1 /proc/self/fd/1!g;     s!^(\\s*ErrorLog)\\s+\\S+!\\1 /proc/self/fd/2!g;     ' /etc/httpd/conf/httpd.conf"
+    ],
+    "workdir": [],
+    "from": "centos:7",
+    "copy": "kubernetes-confd /kubernetes-confd-tmp",
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/micro-webapps/micro-webapps.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/micro-webapps/micro-webapps",
+  "docker_repository": "microwebapps/httpd-frontend",
+  "docker_image": "microwebapps/httpd-frontend",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80,
+        443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "microwebapps/httpd-frontend",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/microwebapps/httpd-frontend",
+    "https://hub.docker.com/v2/repositories/microwebapps/httpd-frontend",
+    "https://github.com/micro-webapps/micro-webapps.git"
+  ],
+  "labels": [
+    "Docker",
+    "Style/Virtualization Level/Application"
+  ],
+  "info_url": "https://hub.docker.com/r/microwebapps/httpd-frontend",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

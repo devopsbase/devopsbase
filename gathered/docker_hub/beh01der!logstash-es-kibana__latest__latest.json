@@ -1,0 +1,110 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/beh01der/logstash-es-kibana",
+    "repository_url": "https://hub.docker.com/v2/repositories/beh01der/logstash-es-kibana",
+    "tags_url": "https://hub.docker.com/v2/repositories/beh01der/logstash-es-kibana/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/beh01der/logstash-es-kibana/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/beh01der/logstash-es-kibana/autobuild",
+    "user": "beh01der",
+    "name": "logstash-es-kibana",
+    "namespace": "beh01der",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 5,
+    "pull_count": 274,
+    "last_updated": "2015-10-10T20:04:59.829741Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 362713168,
+        "id": 178037,
+        "repository": 158956,
+        "creator": 175577,
+        "last_updater": 175577,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.0",
+        "full_size": 362739069,
+        "id": 178036,
+        "repository": 158956,
+        "creator": 175577,
+        "last_updater": 175577,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "Beh01der/docker-logstash-es-kibana"
+  },
+  "name": "beh01der/logstash-es-kibana Docker container",
+  "description": "Super-easy to use logstash stack (logstash, elasticsearch, kibana). All latest versions!",
+  "readme": "# Logstash + Elasticsearch + Kibana\n\n### NOT FOR PRODUCTION !\n\nThis is a super-easy to use Logstash docker image that includes everything you need to collect, parse, store logs, search logs, visualise logs and extract different sort of information from logs.\n\nThis all-in-one logstash stack image includes:\n\n* JDK 8\n* Logstash 1.4.2\n* Elasticsearch 1.4.4\n* Kibana 4.0.1\n\nTo start container, simply run\n\n```\ndocker run -d \\\n   --name logstash \\\n   -p 5601:5601 \\\n   beh01der/logstash-es-kibana\n```\n\nKibana web interface will become available on port ```5601```.\nThis image comes with build-in example **logstash.conf** file\n\n```\ninput { \n  file {\n    path => \"/opt/logstash/example/access.log\"  \n    start_position => \"beginning\"\t    \n  }\n} \n\nfilter {\n  grok {\n    match => [\"message\", \"%{COMMONAPACHELOG}\"]\n  }\n  \n  date { \n    match => [ \"timestamp\", \"dd/MMM/yyyy:HH:mm:ss Z\" ]\n  }\n}\n\noutput { \n  elasticsearch { \n    host => localhost \n  } \n  \n  stdout {\n    codec => rubydebug\n  }\n}\n```\n\nand **example log file** (in Apache access log format) automatically loaded on startup to populate empty elasticsearch database with some initial data. This can be disabled by overriding default **logstash.conf** file.\n\n```\n64.242.88.10 - - [14/Mar/2015:16:05:49 -0800] \"GET /twiki/bin/edit/Main/Double_bounce_sender?topicparent=Main.ConfigurationVariables HTTP/1.1\" 401 12846\n64.242.88.10 - - [14/Mar/2015:16:06:51 -0800] \"GET /twiki/bin/rdiff/TWiki/NewUserTemplate?rev1=1.3&rev2=1.2 HTTP/1.1\" 200 4523\n64.242.88.10 - - [14/Mar/2015:16:10:02 -0800] \"GET /mailman/listinfo/hsdivision HTTP/1.1\" 200 6291\n...\n```\n\nTo customise logstash configuration, simply map (override) **logstash.conf** file\n\n```\ndocker run -d \\\n   --name logstash \\\n   -p 5601:5601 \\\n   -v path-to-your-logstash-conf:/opt/logstash/conf/logstash.conf \\\n   beh01der/logstash-es-kibana\n```\n\nFor debugging you can run this image in interactive mode\n\n```\ndocker run -i -t \\\n   --name logstash \\\n   -p 5601:5601 \\\n   -v path-to-your-logstash-conf:/opt/logstash/conf/logstash.conf \\\n   beh01der/logstash-es-kibana \\\n   /bin/bash\n\nthen inside the container run:\n/opt/start.sh\n```\n",
+  "dockerfile": "FROM java:8-jre\n\nADD upload /upload\n\nRUN cd /upload && \\\n\twget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.4.4.tar.gz && \\\n\twget https://download.elasticsearch.org/kibana/kibana/kibana-4.0.1-linux-x64.tar.gz && \\\n\twget https://download.elasticsearch.org/logstash/logstash/logstash-1.4.2.tar.gz && \\\n\twget https://download.elasticsearch.org/logstash/logstash/logstash-contrib-1.4.2.tar.gz && \\\n\ttar -xzvf elasticsearch-1.4.4.tar.gz && \\\n\ttar -xzvf kibana-4.0.1-linux-x64.tar.gz && \\\n\ttar -xzvf logstash-1.4.2.tar.gz && \\\n\ttar -xzvf logstash-contrib-1.4.2.tar.gz && \\\n\tmv /upload/start.sh /opt && \\\n\tmv elasticsearch-1.4.4 /opt/elasticsearch && \\\n\tmv kibana-4.0.1-linux-x64 /opt/kibana && \\\n\tmv logstash-1.4.2 /opt/logstash && \\\n\tcp -r logstash-contrib-1.4.2/* /opt/logstash && \\\n\tmkdir /opt/logstash/conf && \\\n\tmkdir /opt/logstash/example && \\\n\tmv elasticsearch.yml /opt/elasticsearch/config && \\\n\tmv logstash.conf /opt/logstash/conf && \\\n\tmv access.log /opt/logstash/example && \\\n\trm -rf /upload\n\t\nEXPOSE 5601\t\n\t\nCMD [\"/opt/start.sh\"]\t",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "upload",
+        "dest": "/upload"
+      }
+    ],
+    "expose": [
+      5601
+    ],
+    "volume": [],
+    "run": [
+      "cd /upload && \twget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.4.4.tar.gz && \twget https://download.elasticsearch.org/kibana/kibana/kibana-4.0.1-linux-x64.tar.gz && \twget https://download.elasticsearch.org/logstash/logstash/logstash-1.4.2.tar.gz && \twget https://download.elasticsearch.org/logstash/logstash/logstash-contrib-1.4.2.tar.gz && \ttar -xzvf elasticsearch-1.4.4.tar.gz && \ttar -xzvf kibana-4.0.1-linux-x64.tar.gz && \ttar -xzvf logstash-1.4.2.tar.gz && \ttar -xzvf logstash-contrib-1.4.2.tar.gz && \tmv /upload/start.sh /opt && \tmv elasticsearch-1.4.4 /opt/elasticsearch && \tmv kibana-4.0.1-linux-x64 /opt/kibana && \tmv logstash-1.4.2 /opt/logstash && \tcp -r logstash-contrib-1.4.2/* /opt/logstash && \tmkdir /opt/logstash/conf && \tmkdir /opt/logstash/example && \tmv elasticsearch.yml /opt/elasticsearch/config && \tmv logstash.conf /opt/logstash/conf && \tmv access.log /opt/logstash/example && \trm -rf /upload"
+    ],
+    "workdir": [],
+    "from": "java:8-jre",
+    "cmd": "[\"/opt/start.sh\"]\t"
+  },
+  "source_repository_url": "https://github.com/Beh01der/docker-logstash-es-kibana.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Beh01der/docker-logstash-es-kibana",
+  "docker_repository": "beh01der/logstash-es-kibana",
+  "docker_image": "beh01der/logstash-es-kibana",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5601
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "beh01der/logstash-es-kibana",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/beh01der/logstash-es-kibana",
+    "https://hub.docker.com/v2/repositories/beh01der/logstash-es-kibana",
+    "https://github.com/Beh01der/docker-logstash-es-kibana.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Test",
+    "Type/Devopsware/Logging/Logstash",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/beh01der/logstash-es-kibana",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

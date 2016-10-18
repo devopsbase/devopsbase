@@ -1,0 +1,216 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/travix/couchbase",
+    "repository_url": "https://hub.docker.com/v2/repositories/travix/couchbase",
+    "tags_url": "https://hub.docker.com/v2/repositories/travix/couchbase/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/travix/couchbase/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/travix/couchbase/autobuild",
+    "user": "travix",
+    "name": "couchbase",
+    "namespace": "travix",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 702,
+    "last_updated": "2016-09-23T21:19:06.499768Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 169529270,
+        "id": 858811,
+        "repository": 315175,
+        "creator": 126544,
+        "last_updater": 100853,
+        "last_updated": "2016-09-23T21:19:05.621503Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "community-4.0.0",
+        "full_size": 255123613,
+        "id": 2146742,
+        "repository": 315175,
+        "creator": 100853,
+        "last_updater": 100853,
+        "last_updated": "2016-03-22T11:15:53.735627Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "xivart/docker-couchbase"
+  },
+  "name": "travix/couchbase Docker container",
+  "description": "Run Couchbase Server community edition in a container.",
+  "readme": "# Usage\n\nTo run this docker container use the following command\n\n```sh\ndocker run -d travix/couchbase:latest\n```\n\n# Environment variables\n\nIn order to configure the agent for use in your cluster with other than default settings you can pass in the following environment variables\n\n| Name                   | Description                                                                              | Default value    |\n| ---------------------- | ---------------------------------------------------------------------------------------- | ---------------- |\n| CLUSTER_ACTION         | INIT_CLUSTER or ADD_TO_CLUSTER if you want the nodes to be part of a cluster             |                  |\n| CLUSTER_HOST_NAME      | This is the first cluster host address you want to add a new node to with ADD_TO_CLUSTER | localhost        |\n| CLUSTER_HOST_PORT      | This is the first cluster host port you want to add a new node to with ADD_TO_CLUSTER    | 8091             |\n| CLUSTER_RAM_SIZE       | How much memory a node gets access to; specified in MBs                                  | 1024             |\n| CLUSTER_SERVICE        | The services a node provides; can be either data, index, query or a combination of those | data,index,query |\n| CLUSTER_ADMIN_NAME     | Adminstrator name of the cluster                                                         |                  |\n| CLUSTER_ADMIN_PASSWORD | Password for the cluster administrator                                                   |                  |\n\nTo start this as the first node in a cluster run the following\n\n```sh\ndocker run -d \\\n    -p 8091:8091 \\\n    -p 8092:8092 \\\n    -p 8093:8093 \\\n    -p 11207:11207 \\ \n    -p 11210:11210 \\\n    -p 11211:11211 \\\n    -p 18091:18091 \\\n    -p 18092:18092 \\\n    -e \"CLUSTER_ACTION=INIT_CLUSTER\" \\\n    -e \"CLUSTER_ADMIN_NAME=Administrator\" \\\n    -e \"CLUSTER_ADMIN_PASSWORD=strongpassword\" \\\n    travix/couchbase\n```\n\nTo add an additional node to an already existing cluster run the following\n\n```sh\ndocker run -d \\\n    -p 8091:8091 \\\n    -p 8092:8092 \\\n    -p 8093:8093 \\\n    -p 11207:11207 \\ \n    -p 11210:11210 \\\n    -p 11211:11211 \\\n    -p 18091:18091 \\\n    -p 18092:18092 \\\n    -e \"CLUSTER_ACTION=ADD_TO_CLUSTER\" \\\n    -e \"CLUSTER_HOST_NAME:ip or dns name to one of the cluster nodes\"\n    -e \"CLUSTER_HOST_PORT:8091\"\n    -e \"CLUSTER_ADMIN_NAME=Administrator\" \\\n    -e \"CLUSTER_ADMIN_PASSWORD=strongpassword\" \\\n    travix/couchbase\n```\n\n# Mounting volumes\n\nIn order to keep persisted data over a restart you can mount the following directories\n\n| Directory                   | Description                                                                           | Importance                                                                            |\n| --------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |\n\n\nTo make sure the process in the container can read and write to those directories create a user and group with same gid and uid on the host machine\n\n```sh\ngroupadd -r -g 999 couchbase\nuseradd -r -g couchbase -u 999 couchbase\n```\n\nAnd then change the owner of the host directories\n\n```sh\nchown -R couchbase:couchbase /mnt/persistent-disk/couchbase\n```",
+  "dockerfile": "FROM travix/base-debian:latest\n\nMAINTAINER Travix\n\nENV CB_VERSION=4.0.0 \\\n    CB_RELEASE_URL=http://packages.couchbase.com/releases \\\n    CB_PACKAGE=couchbase-server-community_4.0.0-ubuntu12.04_amd64.deb \\\n    CB_SHA256=404007eaedc3d01997eea800fcce0d0a0339bc3ab79c1c48741210f435c719f0 \\\n    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install \\\n    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/couchbase/lib \\\n    USER_NAME=couchbase \\\n    USER_ID=999 \\\n    GROUP_NAME=couchbase \\\n    GROUP_ID=999\n\n# Install dependencies\nRUN groupadd -r -g $GROUP_ID $GROUP_NAME \\\n    && useradd -r -g $GROUP_NAME -u $USER_ID $USER_NAME \\\n    && apt-get update \\\n    && apt-get install -y \\\n        runit \\\n        wget \\\n        python-httplib2 \\\n    && apt-get clean \\\n    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \\\n    && curl -fSL \"$CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE\" -o $CB_PACKAGE \\\n    && echo \"$CB_SHA256  $CB_PACKAGE\" | sha256sum -c - \\\n    && dpkg -i $CB_PACKAGE \\\n    && rm -rf $CB_PACKAGE \\\n    && mkdir -p /opt/couchbase/var/lib/couchbase \\\n         /opt/couchbase/var/lib/couchbase/config \\\n         /opt/couchbase/var/lib/couchbase/data \\\n         /opt/couchbase/var/lib/couchbase/stats \\\n         /opt/couchbase/var/lib/couchbase/logs \\\n         /opt/couchbase/var/lib/moxi \\\n    && chown -R ${USER_NAME}:${GROUP_NAME} /opt/couchbase/var\n\n# runtime environment variables\nENV CLUSTER_ACTION=\"\" \\\n    CLUSTER_HOST_NAME=\"localhost\" \\\n    CLUSTER_HOST_PORT=\"8091\" \\\n    CLUSTER_RAM_SIZE=\"1024\" \\\n    CLUSTER_SERVICE=\"data,index,query\" \\\n    CLUSTER_ADMIN_NAME=\"\" \\\n    CLUSTER_ADMIN_PASSWORD=\"\"\n\n# expose ports (http://developer.couchbase.com/documentation/server/4.1/install/install-ports.html)\nEXPOSE 8091-8093 9100-9105 9998-9999 11207 11209-11211 11214 11215 18091-18093 4369 21100-21299\n\nCMD groupmod -g ${GROUP_ID} ${GROUP_NAME}; \\\n    usermod -g ${GROUP_ID} -u ${USER_ID} ${USER_NAME}; \\\n    chown -R ${USER_NAME}:${GROUP_NAME} /opt/couchbase/var; \\\n    /etc/init.d/couchbase-server start; \\\n    until curl -s -o /dev/null 'http://localhost:8091'; \\\n    do sleep 1; \\\n    done; \\\n    if [ -n \"$CLUSTER_ACTION\" ]; \\\n      echo \"CLUSTER_ACTION = $CLUSTER_ACTION\"; \\\n      then case $CLUSTER_ACTION in \\\n        INIT_CLUSTER)  \\\n          echo \"INIT_CLUSTER\"; \\\n          couchbase-cli cluster-init --cluster=localhost:8091 --user=${CLUSTER_ADMIN_NAME} --password=${CLUSTER_ADMIN_PASSWORD} --cluster-init-ramsize=${CLUSTER_RAM_SIZE} --service=${CLUSTER_SERVICE}; \\\n        ;; \\\n        ADD_TO_CLUSTER) \\\n          echo \"ADD_TO_CLUSTER\"; \\\n          couchbase-cli rebalance --cluster=${CLUSTER_HOST_NAME}:${CLUSTER_HOST_PORT} --user=${CLUSTER_ADMIN_NAME} --password=${CLUSTER_ADMIN_PASSWORD} --server-add=$(hostname):8091 --server-add-username=${CLUSTER_ADMIN_NAME} --server-add-password=${CLUSTER_ADMIN_PASSWORD} --service=${CLUSTER_SERVICE}; \\\n        ;; \\\n      esac \\\n    fi; \\\n    ps aux; \\\n    /bin/su - ${USER_NAME} -c \"exec tail -f /opt/couchbase/var/lib/couchbase/logs/*\"\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8091
+    ],
+    "volume": [],
+    "run": [
+      "groupadd -r -g $GROUP_ID $GROUP_NAME     && useradd -r -g $GROUP_NAME -u $USER_ID $USER_NAME     && apt-get update     && apt-get install -y         runit         wget         python-httplib2     && apt-get clean     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*     && curl -fSL \"$CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE\" -o $CB_PACKAGE     && echo \"$CB_SHA256  $CB_PACKAGE\" | sha256sum -c -     && dpkg -i $CB_PACKAGE     && rm -rf $CB_PACKAGE     && mkdir -p /opt/couchbase/var/lib/couchbase          /opt/couchbase/var/lib/couchbase/config          /opt/couchbase/var/lib/couchbase/data          /opt/couchbase/var/lib/couchbase/stats          /opt/couchbase/var/lib/couchbase/logs          /opt/couchbase/var/lib/moxi     && chown -R ${USER_NAME}:${GROUP_NAME} /opt/couchbase/var"
+    ],
+    "workdir": [],
+    "from": "travix/base-debian:latest",
+    "maintainer": "Travix",
+    "env": {
+      "CB_VERSION": "4.0.0",
+      "": "",
+      "CB_RELEASE_URL": "http://packages.couchbase.com/releases",
+      "CB_PACKAGE": "couchbase-server-community_4.0.0-ubuntu12.04_amd64.deb",
+      "CB_SHA256": "404007eaedc3d01997eea800fcce0d0a0339bc3ab79c1c48741210f435c719f0",
+      "PATH": "$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install",
+      "LD_LIBRARY_PATH": "$LD_LIBRARY_PATH:/opt/couchbase/lib",
+      "USER_NAME": "couchbase",
+      "USER_ID": "999",
+      "GROUP_NAME": "couchbase",
+      "GROUP_ID": "999",
+      "CLUSTER_ACTION": "\"\"",
+      "CLUSTER_HOST_NAME": "\"localhost\"",
+      "CLUSTER_HOST_PORT": "\"8091\"",
+      "CLUSTER_RAM_SIZE": "\"1024\"",
+      "CLUSTER_SERVICE": "\"data,index,query\"",
+      "CLUSTER_ADMIN_NAME": "\"\"",
+      "CLUSTER_ADMIN_PASSWORD": "\"\""
+    },
+    "cmd": "groupmod -g ${GROUP_ID} ${GROUP_NAME};     usermod -g ${GROUP_ID} -u ${USER_ID} ${USER_NAME};     chown -R ${USER_NAME}:${GROUP_NAME} /opt/couchbase/var;     /etc/init.d/couchbase-server start;     until curl -s -o /dev/null 'http://localhost:8091';     do sleep 1;     done;     if [ -n \"$CLUSTER_ACTION\" ];       echo \"CLUSTER_ACTION = $CLUSTER_ACTION\";       then case $CLUSTER_ACTION in         INIT_CLUSTER)            echo \"INIT_CLUSTER\";           couchbase-cli cluster-init --cluster=localhost:8091 --user=${CLUSTER_ADMIN_NAME} --password=${CLUSTER_ADMIN_PASSWORD} --cluster-init-ramsize=${CLUSTER_RAM_SIZE} --service=${CLUSTER_SERVICE};         ;;         ADD_TO_CLUSTER)           echo \"ADD_TO_CLUSTER\";           couchbase-cli rebalance --cluster=${CLUSTER_HOST_NAME}:${CLUSTER_HOST_PORT} --user=${CLUSTER_ADMIN_NAME} --password=${CLUSTER_ADMIN_PASSWORD} --server-add=$(hostname):8091 --server-add-username=${CLUSTER_ADMIN_NAME} --server-add-password=${CLUSTER_ADMIN_PASSWORD} --service=${CLUSTER_SERVICE};         ;;       esac     fi;     ps aux;     /bin/su - ${USER_NAME} -c \"exec tail -f /opt/couchbase/var/lib/couchbase/logs/*\""
+  },
+  "source_repository_url": "git@bitbucket.org:xivart/docker-couchbase.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/xivart/docker-couchbase",
+  "docker_repository": "travix/couchbase",
+  "docker_image": "travix/couchbase",
+  "parameters_schema": {
+    "CB_VERSION": {
+      "default": "4.0.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CB_RELEASE_URL": {
+      "default": "http://packages.couchbase.com/releases",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CB_PACKAGE": {
+      "default": "couchbase-server-community_4.0.0-ubuntu12.04_amd64.deb",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CB_SHA256": {
+      "default": "404007eaedc3d01997eea800fcce0d0a0339bc3ab79c1c48741210f435c719f0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LD_LIBRARY_PATH": {
+      "default": "$LD_LIBRARY_PATH:/opt/couchbase/lib",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "USER_NAME": {
+      "default": "couchbase",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "USER_ID": {
+      "default": "999",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GROUP_NAME": {
+      "default": "couchbase",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GROUP_ID": {
+      "default": "999",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CLUSTER_ACTION": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CLUSTER_HOST_NAME": {
+      "default": "\"localhost\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CLUSTER_HOST_PORT": {
+      "default": "\"8091\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CLUSTER_RAM_SIZE": {
+      "default": "\"1024\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CLUSTER_SERVICE": {
+      "default": "\"data,index,query\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CLUSTER_ADMIN_NAME": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CLUSTER_ADMIN_PASSWORD": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8091
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "travix/couchbase",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/travix/couchbase",
+    "https://hub.docker.com/v2/repositories/travix/couchbase",
+    "git@bitbucket.org:xivart/docker-couchbase.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Document-oriented/Couchbase",
+    "Type/Middleware/Data Store/Document-oriented/HBase"
+  ],
+  "info_url": "https://hub.docker.com/r/travix/couchbase",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

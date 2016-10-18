@@ -1,0 +1,56 @@
+{
+  "name": "oracle_aix Chef cookbook",
+  "chef_cookbook_name": "oracle_aix",
+  "revision": "1.2.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/oracle_aix",
+    "https://supermarket.chef.io/cookbooks/oracle_aix/download",
+    "https://supermarket.chef.io/cookbooks/oracle_aix/versions/1.2.2",
+    "https://supermarket.chef.io/cookbooks/oracle_aix/versions/1.2.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/oracle_aix/versions/1.2.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/oracle_aix",
+    "https://supermarket.chef.io/api/v1/cookbooks/oracle_aix/versions/1.2.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Databases",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Data Store/Relational"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/oracle_aix",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/oracle_aix/versions/1.2.2/download",
+  "deprecated": false,
+  "created": "2016-02-01T21:27:59.823Z",
+  "updated": "2016-02-01T21:27:59.673Z",
+  "description": "Installs/Configures Oracle 12c rdbms for AIX 7.1",
+  "maintainer": {
+    "name": "jkohlmeier",
+    "email": "jubal@us.ibm.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 3,
+  "downloads_count": 264,
+  "downloads_count_revision": 264,
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\nThis chef cookbook is based off the work originally published\nby Ari Riikonen called Oracle chef cookbook version 1.2.2\n\nIt installs and configures the Oracle RDBMS, with patches, to the latest\nversion of 12c for the AIX Operating System. \nThe version with 11g R2 has NOT been tested on AIX.\n\nI wish to acknowldege Air Riikonen's great work here in which\nmade porting to AIX easy to do. \n\nFeatures:\n* Oracle 12c Release 1 support with AIX 7.1\n(Note Customers using the cookbook must have valid licensing\nto use Oracle 12c products).\n\n\nNon-goals:\n* Oracle client install is 11g R2 but has not been tested on AIX and\n  given the work done on AIX, expect there to be some issues if tried.\n* We did not port Oracle 11gr2 Release support to AIX 7.1. It was\n  a non-goal.\n\nDiskSpace Requirements - assumes space exists in following directories\n========= ============\n/oracle         - default base and install area: 10 GB\n/oracle/oradata - default oracle data directory: 10 GB\n/opt            - chef installation:             .5 GB\n/tmp            - available temp space:          10 GB\n\nQuickstart (database)\n=====================\n\n* Have either an open Source Chef Server or a Hosted Chef account at\n  the ready.\n* Use AIX 7.1 or later.\n* Requires a web server for Oracle source files.  Set up a Web server \n  to serve them over HTTPS unless you're on a secure local network.\n* Create a role to override the default attribute values for the URLs\n  of Oracle's install files & patches with your own; e.g.:\n\n  ora_12c_aix.rb\n  ==========================================================\n  name \"ora_12c_aix\"\n  description \"Role applied to Oracle 12c AIX test machines.\"\n  \n  run_list 'recipe[oracle_aix]','recipe[oracle_aix::createdb]'\n\n  override_attributes :oracle => {\n    :rdbms => {\n      :dbs_root       => \"/oracle/oradata\",\n      :sys_pw         => 'oracle',\n      :system_pw      => 'oracle',\n      :dbsnmp_pw      => 'oracle',\n      :latest_patch => {\n        :dirname_12c =>      '20831110',\n        :url =>              'http://localhost/CHEF/oracle/p20831110_121020_AIX64-5L.zip'},\n      :opatch_update_url =>  'http://localhost/CHEF/oracle/p6880880_121010_AIX64-5L.zip',\n      :install_files     => ['http://localhost/CHEF/oracle/V73231-01_1of2.zip',\n                             'http://localhost/CHEF/oracle/V73231-01_2of2.zip'],\n      :dbbin_version     => '12c',\n      },\n    :user => {\n      :uid => 4000,\n      :gid => 4000,\n      :edb_use => false,\n      :ora_pw  => 'oracle',\n      }\n    }\n  ==========================================================\n  \n* You need to set up an encrypted data bag item to secure the oracle\n  user's password. See Opscode's docs site for details on encrypted\n  data bags:\n  [encrypted data bag doc](http://docs.opscode.com/chef/essentials_data_bags.html#encrypt-a-data-bag)\n  Your encrypted item requires a key named `pw`, whose value is the\n  password of the oracle user- you can set that to whatever you want.\n  You must set the value of `node[:oracle][:user][:edb]` to the name\n  of your data bag, and that of `node[:oracle][:user][:edb_item]` to\n  the name of the encrypted item; the defaults are `oracle` and\n  `foo`, respectively.\n\n* alternatively, setting :ebs_use to false and setting :ora_pw will\n  use the password provided.\n      :edb_use => false,\n      :ora_pw  => 'oracle',\n\n* Bootstrap the node, telling Chef to create the FOO database on it:\n\n  12c :\n    knife bootstrap HOSTNAME -x root -P <rootpassword>\n        -N HOSTNAME '-r role[ora_12c_aix]'  \n        -j '{oracle:{rdbms:{dbs:{FOO:false}}}}' -y -V\n\n* Go grab a cup of tea, as this is apt to take a fair amount of time\nto complete :-)\n\n\nRequirements\n============\n\n## Oracle\n\nSee here:\n\n[Oracle's requirements for 12c]\n  See edelivery and check the latest patches for the oracle 12c database\n  This installtion uses update patch 20831110  DATABASE PATCH SET UPDATE 12.1.0.2.4 \n\n## Chef\n\nThis cookbook was successfully tested using Chef-Client 12.5.1, in combo\nwith the open source Chef Server 12, as well as with Hosted Chef.\n\nthen run `chef-server-ctl reconfigure` to reconfigure Chef Server.\n\n## Platforms\n\n*# `AIX 7.1 (power7)`\n\n## Packages\n\n* Access to My Oracle Support to download the 11g R2 install media\n  and the patch files.\n\n* Download the 12.1.0.2.4 install files from eDelivery.oracle.com\n  My Oracle Support as well as an active CSI.\n\n  12c\n  \n    Oracle 12c OPatch 12.1.0.1.8       - p6880880_121010_AIX64-5L.zip\n    Oracle 12c Patch 12.1.0.2.4        - p20831110_121020_AIX64-5L.zip\n    Oracle 12c 12.1.0.2.0 DBMS         - V73231-01_1of2.zip\n    Oracle 12c 12.1.0.2.0 DBMS         - V73231-01_2of2.zip\n    Oracle 12c 12.1.0.2.0 64bit Client - V73233-01.zip\n\n## Miscellaneous\n\n* Ensure that your FQDN is properly configured (check the output of\n  `hostname -f`), else runInstaller will fail.\n* At least a basic knowledge of Oracle administration will come in\n  handy, in particular if you want to modify attributes' values\n  and/or modify the cookbook's code or resources.\n\n* Please check Oracle database specific swap recommendations from:\n\n\nSee Ari's Original README.md called READMEPRE_AIX.md for much\nfurther important information.\n\nLicense and Authors\n===================\n\n* Author for AIX port:: Jubal Kohlmeier <jubal@us.ibm.com>  \n\nOriginal Authors:\n* Author:: Ari Riikonen <ari.riikonen@gmail.com>  \n* Author:: Dominique Poulain\n\nCopyright:: 2014, Ari Riikonen\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n<http://www.apache.org/licenses/LICENSE-2.0>\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "aix",
+      "revision": ">= 6.1",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/aix",
+      "revision": ">= 0.1.0",
+      "self_resolve": true
+    }
+  ]
+}

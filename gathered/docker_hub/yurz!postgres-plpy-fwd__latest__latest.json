@@ -1,0 +1,94 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/yurz/postgres-plpy-fwd",
+    "repository_url": "https://hub.docker.com/v2/repositories/yurz/postgres-plpy-fwd",
+    "tags_url": "https://hub.docker.com/v2/repositories/yurz/postgres-plpy-fwd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/yurz/postgres-plpy-fwd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/yurz/postgres-plpy-fwd/autobuild",
+    "user": "yurz",
+    "name": "postgres-plpy-fwd",
+    "namespace": "yurz",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 334,
+    "last_updated": "2016-09-29T18:41:00.476092Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 299874967,
+        "id": 1782869,
+        "repository": 490476,
+        "creator": 430336,
+        "last_updater": 430336,
+        "last_updated": "2016-09-29T18:41:00.111878Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "yurz/docker-files"
+  },
+  "name": "yurz/postgres-plpy-fwd Docker container",
+  "description": "PostgreSQL 9.5 with plpython3u support and some foreign data wrappers.",
+  "readme": "Based on [postgres:9.5](https://hub.docker.com/_/postgres/) with multicorn.sqlalchemyfdw, mysql_fdw and cstore_fdw extensions installed.  \nSee [Dockerfile](../postgres-plpy-fwd/~/dockerfile/) for more details.  \nFor Oracle support - see draft notes at the bottom.  \nMore about [Postgres foreign data wrappers](https://wiki.postgresql.org/wiki/Foreign_data_wrappers)\nSample of run script: [run_dev_postgres.sh](https://bitbucket.org/yurz/docker-files/raw/master/postgres-plpy-fwd/run_dev_postgres.sh)\n\n### Test new features  \n\n**Enable plpython3u:**  \n`create extension plpython3u;`  \n\n**Test plpython3u:**\n\t`create or replace function pytest()`  \n\t`returns text`  \n\t`as $$`  \n\t`import pandas`  \n\t`return pandas.__version__`  \n\t`$$ language 'plpython3u';`  \n\t`select pytest();`  \n\n**Enable mysql_fdw:**\n\t`create extension mysql_fdw;`  \n\n**Create server:**  \n\t`create server mysql_db foreign data wrapper mysql_fdw options (`  \n\t`    host 'localhost',`  \n\t`    port '3306'`  \n\t`);`  \n\n**Store credentials:**  \n\t`create user mapping for current_user`  \n\t`server mysql_db`  \n\t`options (username 'mysql_user', password 'mysql_password');`\n\n**Create a postgres foreign table pg_tbl1 that is linked to mysql table (or subset of columns) mysql_tbl1:**  \n\t`create foreign table pg_tbl1`  \n\t`(`  \n\t`    cust_id bigint not null,`  \n\t`    subsidiary varchar(10) not null,`  \n\t`    email_addr varchar(120)`  \n\t`    ...`  \n\t`)`  \n\t`  server mysql_db options (`  \n\t`  dbname 'retail',`  \n\t`  table_name 'mysql_tbl1'`  \n\t`);`  \n  \n### Draft Notes for adding Oracle client and installing cx_Oracle python driver.\nThis step is only required if you need support for Oracle tables as foreign tables in your Postgres.  \nOracle client download requires authentication so I had to do this manually by bashing into a running container: \n  \n```\n**bash into running container:**\n$ docker exec -t -i dev-postgres bash\n\n**Inside container:**\n    ## nstall required packages:\napt-get install alien libaio1 wget \n    ## go to Oracle download page, login, accept agreement and start downloading.\n    ## get download URLs with AuthParam from your browser download history and use them with wget\n    ## http://www.oracle.com/technetwork/topics/linuxx86-64soft-092277.html\nwget oracle-instantclient12.1-basic-12.1.0.2.0-1.x86_64.rpm?AuthParam=....\nwget oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm?AuthParam=....\nwget oracle-instantclient12.1-sqlplus-12.1.0.2.0-1.x86_64.rpm?AuthParam=....\n    ## rename downloaded files so they would have proper .rpm extension and then install:\nalien -i oracle-instantclient12.1-basic-12.1.0.2.0-1.x86_64.rpm oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm oracle-instantclient12.1-sqlplus-12.1.0.2.0-1.x86_64.rpm\nrm *.rpm\nexport LD_LIBRARY_PATH=/usr/lib/oracle/12.1/client64/lib:$LD_LIBRARY_PATH\nexport ORACLE_HOME=/usr/lib/oracle/12.1/client64\necho 'export LD_LIBRARY_PATH=/usr/lib/oracle/12.1/client64/lib:$LD_LIBRARY_PATH' >> /etc/environment\necho 'export ORACLE_HOME=/usr/lib/oracle/12.1/client64' >> /etc/environment\n## install cx_oracle:\npip3 install cx_oracle\n    ## clenup:\napt-get -y clean autoclean\napt-get -y autoremove --purge\nrm -rf /var/lib/{apt,dpkg,cache,log}\n    ## exit container\nexit\n\n    ## commit container changes to a new image (you may want to name it differently):\ndocker commit dev-postgres yurz/postgres-plpy-fwd-ora\n```\n ",
+  "dockerfile": "FROM postgres:9.5\n\nMAINTAINER Yuri Zhylyuk <yuri@zhylyuk.com>\n\nRUN \\\n# add columnar store extension cstore_fdw\n    apt-get update && \\\n    apt-get -y install protobuf-c-compiler make git libprotobuf-c0-dev postgresql-server-dev-9.5 libpq-dev gcc apt-utils && \\\n    git clone https://github.com/citusdata/cstore_fdw.git && \\\n    cd cstore_fdw && \\\n    PATH=/usr/lib/postgresql/9.5/bin/:$PATH make && \\\n    PATH=/usr/lib/postgresql/9.5/bin/:$PATH make install && \\\n    echo \"shared_preload_libraries = 'cstore_fdw'\" >> /var/lib/postgresql/data/postgresql.conf && \\\n    cd .. && \\\n    rm -rf cstore_fdw\nRUN \\\n# add multicorn/SqlAlchemyFdw foreign table extension and plpython3 with some libraries:\n    apt-get -y install python3 && \\\n    PYTHON=/usr/bin/python3 && \\\n    apt-get -y install python3-dev python3-pip postgresql-plpython3-9.5 postgresql-9.5-python3-multicorn && \\\n    pip3 install numpy pandas SQLAlchemy && \\\n    pip3 install pymysql requests boto rethinkdb lxml\nRUN \\\n# add foreign table extension mysql_fdw:\n    git clone https://github.com/EnterpriseDB/mysql_fdw.git && \\\n    cd mysql_fdw && \\\n    apt-get -y install mysql-client libmysqlclient-dev && \\\n    PATH=/usr/lib/postgresql/9.5/bin/:$PATH make USE_PGXS=1 && \\\n    PATH=/usr/lib/postgresql/9.5/bin/:$PATH make USE_PGXS=1 install && \\\n    cd .. && \\\n    rm -rf mysql_fdw && \\\n    apt-get -y clean autoclean && \\\n    apt-get -y autoremove --purge && \\\n    rm -rf /var/lib/{apt,dpkg,cache,log}/\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "# add columnar store extension cstore_fdw",
+      "# add multicorn/SqlAlchemyFdw foreign table extension and plpython3 with some libraries:",
+      "# add foreign table extension mysql_fdw:"
+    ],
+    "workdir": [],
+    "from": "postgres:9.5",
+    "maintainer": "Yuri Zhylyuk <yuri@zhylyuk.com>"
+  },
+  "source_repository_url": "https://bitbucket.org/yurz/docker-files.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/yurz/docker-files",
+  "docker_repository": "yurz/postgres-plpy-fwd",
+  "docker_image": "yurz/postgres-plpy-fwd",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "yurz/postgres-plpy-fwd",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/yurz/postgres-plpy-fwd",
+    "https://hub.docker.com/v2/repositories/yurz/postgres-plpy-fwd",
+    "https://bitbucket.org/yurz/docker-files.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Binding/Provider/HP",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/yurz/postgres-plpy-fwd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

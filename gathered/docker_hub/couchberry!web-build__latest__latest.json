@@ -1,0 +1,148 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/couchberry/web-build",
+    "repository_url": "https://hub.docker.com/v2/repositories/couchberry/web-build",
+    "tags_url": "https://hub.docker.com/v2/repositories/couchberry/web-build/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/couchberry/web-build/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/couchberry/web-build/autobuild",
+    "user": "couchberry",
+    "name": "web-build",
+    "namespace": "couchberry",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 197,
+    "last_updated": "2016-02-02T22:53:42.872793Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 279639664,
+        "id": 927667,
+        "repository": 311825,
+        "creator": 416150,
+        "last_updater": 416153,
+        "last_updated": "2016-02-02T22:13:11.006271Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "devel",
+        "full_size": 204693572,
+        "id": 1822359,
+        "repository": 311825,
+        "creator": 550933,
+        "last_updater": 550933,
+        "last_updated": "2016-01-26T05:42:56.100865Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "couchberry/dockerfile-web-build"
+  },
+  "name": "couchberry/web-build Docker container",
+  "description": "Container used for building couchberry frontend.",
+  "readme": "# Docker image for building the Couchberry frontend\nThis container image is intended to be used only for building the Couchberry\nfrontend. It contains all the necessary dependencies and script that will build\nfrontend from sources located in <code>/home/user/sources/</code> inside container.\nThe result of the build will be placed into the <code>/home/user/build/</code>\ndirectory inside the container.\n\nPlease make sure to execute the container with proper directories mounted into\nthe container by adding the following parameters:\n```\n-v <path_to_frontend_sources>:/home/user/sources:Z\n```\nand\n```\n-v <path_to_dir_for_final_build>:/home/user/build:Z\n```\n\n## Getting the pre-built image\nTo use the pre-built image from Docker Hub, just pull it:\n```\ndocker pull couchberry/web-build\n```\n\n## Building the image\nJust clone the git repository and run:\n```\ndocker build -t couchberry/web-build .\n```\nThis will build the container image from local Dockerfile.\n\n## Running the image\nTo run the image execute:\n```\ndocker run \\\n    -ti \\\n    --rm \\\n    -v <path_to_frontend_sources>:/home/user/sources:Z \\\n    -v <path_to_dir_for_final_build>:/home/user/build:Z \\\n    couchberry/web-build\n```\n\nTo debug a failure, just change the entry point to some shell by adding\n<code>--entrypoint=/bin/bash</code>\n\n## Dockerfile Git repository\nThe main repository with Dockerfile for this image is located on [GitLab](https://gitlab.com/couchberry/dockerfile-web-build).\n\nThis repository is mirrored on [Bitbucket](https://bitbucket.org/couchberry/dockerfile-web-build),\nbecause Docker Hub supports automated builds only from repositories on Github\nor Bitbucket.",
+  "dockerfile": "# image for building couchberry frontend\n# Based on the Fedora image\nFROM fedora\n\n# File Author / Maintainer\nMAINTAINER Tomas Hozza <thozza@gmail.com>\n\n# image labels\nLABEL version=\"0.3\"\nLABEL description=\"image for building couchberry frontend\"\n\n# Environment variables\nENV USER user\nENV HOMEDIR /home/${USER}\nENV BUILDDIR ${HOMEDIR}/build\nENV SRCDIR ${HOMEDIR}/sources\n\n# update the system and install build dependencies\nRUN \\\n    dnf -y install \\\n        nodejs \\\n        curl \\\n        which \\\n        git \\\n        tar \\\n        bzip2 \\\n&& \\\n    dnf clean all\n\n# we need npm > 2.0.0 due to https://github.com/npm/npm/issues/6043\nRUN curl -L https://npmjs.org/install.sh | sh\nRUN npm install -g n grunt-cli\n# this installs OLD npm!\nRUN n 0.10.40 && rm -f /usr/local/bin/npm\nRUN npm cache clean -f\n\n# add user used for building the app\nRUN useradd -m -d ${HOMEDIR} -m ${USER}\n\n# install dependencies using bower\nCOPY bower.json ${HOMEDIR}/\nCOPY package.json ${HOMEDIR}/\nRUN chown ${USER}:${USER} ${HOMEDIR}/*.json\n\n# this may not be needed\nRUN echo \"umask 0000\" >> /etc/profile\nRUN echo \"umask 0000\" >> /etc/bashrc\n\nUSER ${USER}\nRUN umask 0000\nWORKDIR ${HOMEDIR}\nRUN mkdir ${BUILDDIR}\nRUN mkdir ${SRCDIR}\n\nRUN npm install\nRUN $(npm bin)/bower install\nRUN npm cache clean -f\n\n# make sure any user can read/write/execute the /home/user/*\nRUN chmod -R go+rwx ${HOMEDIR}\n\n# directories mounted to image\nVOLUME ${BUILDDIR} ${SRCDIR}\n\n# Default entry point\nCOPY build.sh /usr/bin/build\nENTRYPOINT build\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "${BUILDDIR} ${SRCDIR}"
+    ],
+    "run": [
+      "    dnf -y install         nodejs         curl         which         git         tar         bzip2 &&     dnf clean all",
+      "curl -L https://npmjs.org/install.sh | sh",
+      "npm install -g n grunt-cli",
+      "n 0.10.40 && rm -f /usr/local/bin/npm",
+      "npm cache clean -f",
+      "useradd -m -d ${HOMEDIR} -m ${USER}",
+      "chown ${USER}:${USER} ${HOMEDIR}/*.json",
+      "echo \"umask 0000\" >> /etc/profile",
+      "echo \"umask 0000\" >> /etc/bashrc",
+      "umask 0000",
+      "mkdir ${BUILDDIR}",
+      "mkdir ${SRCDIR}",
+      "npm install",
+      "$(npm bin)/bower install",
+      "npm cache clean -f",
+      "chmod -R go+rwx ${HOMEDIR}"
+    ],
+    "workdir": [
+      "${HOMEDIR}"
+    ],
+    "from": "fedora",
+    "maintainer": "Tomas Hozza <thozza@gmail.com>",
+    "label": "description=\"image for building couchberry frontend\"",
+    "env": {
+      "USER": "user",
+      "HOMEDIR": "/home/${USER}",
+      "BUILDDIR": "${HOMEDIR}/build",
+      "SRCDIR": "${HOMEDIR}/sources"
+    },
+    "copy": "build.sh /usr/bin/build",
+    "user": "${USER}",
+    "entrypoint": "build"
+  },
+  "source_repository_url": "git@bitbucket.org:couchberry/dockerfile-web-build.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/couchberry/dockerfile-web-build",
+  "docker_repository": "couchberry/web-build",
+  "docker_image": "couchberry/web-build",
+  "parameters_schema": {
+    "USER": {
+      "default": "user",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOMEDIR": {
+      "default": "/home/${USER}",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUILDDIR": {
+      "default": "${HOMEDIR}/build",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SRCDIR": {
+      "default": "${HOMEDIR}/sources",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "couchberry/web-build",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/couchberry/web-build",
+    "https://hub.docker.com/v2/repositories/couchberry/web-build",
+    "git@bitbucket.org:couchberry/dockerfile-web-build.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Build"
+  ],
+  "info_url": "https://hub.docker.com/r/couchberry/web-build",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

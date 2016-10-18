@@ -1,0 +1,139 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/luistmac/httpd",
+    "repository_url": "https://hub.docker.com/v2/repositories/luistmac/httpd",
+    "tags_url": "https://hub.docker.com/v2/repositories/luistmac/httpd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/luistmac/httpd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/luistmac/httpd/autobuild",
+    "user": "luistmac",
+    "name": "httpd",
+    "namespace": "luistmac",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 69,
+    "last_updated": "2015-12-07T16:21:05.896382Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 127315287,
+        "id": 1424249,
+        "repository": 419384,
+        "creator": 311139,
+        "last_updater": 311139,
+        "last_updated": "2015-12-07T16:21:08.420026Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "2.4",
+        "full_size": 127315178,
+        "id": 1424246,
+        "repository": 419384,
+        "creator": 311139,
+        "last_updater": 311139,
+        "last_updated": "2015-12-07T16:19:49.113647Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "luistmac/httpd"
+  },
+  "name": "luistmac/httpd Docker container",
+  "description": "Apache Http Server Docker image based on the oficial httpd docker image.",
+  "readme": null,
+  "dockerfile": "FROM phusion/baseimage:0.9.17\nMAINTAINER Luis Contreras <luiscon26@gmail.com>\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\n#RUN groupadd -r www-data && useradd -r --create-home -g www-data www-data\n\nENV HTTPD_PREFIX /usr/local/apache2\nENV PATH $PATH:$HTTPD_PREFIX/bin\nRUN mkdir -p \"$HTTPD_PREFIX\" \\\n\t&& chown www-data:www-data \"$HTTPD_PREFIX\"\n\n# install httpd runtime dependencies\n# https://httpd.apache.org/docs/2.4/install.html#requirements\nRUN apt-get update \\\n\t&& apt-get install -y --no-install-recommends \\\n\t\tlibapr1 \\\n\t\tlibaprutil1 \\\n\t\tlibapr1-dev \\\n\t\tlibaprutil1-dev \\\n\t\tlibpcre++0 \\\n\t\tlibssl1.0.0 \\\n\t&& rm -r /var/lib/apt/lists/*\n\n# see https://httpd.apache.org/download.cgi#verify\nRUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys A93D62ECC3C8EA12DB220EC934EA76E6791485A8\n\nENV HTTPD_VERSION 2.4.17\nENV HTTPD_BZ2_URL https://www.apache.org/dist/httpd/httpd-$HTTPD_VERSION.tar.bz2\n\nRUN buildDeps=' \\\n\t\tca-certificates \\\n\t\tcurl \\\n\t\tbzip2 \\\n\t\tgcc \\\n\t\tlibpcre++-dev \\\n\t\tlibssl-dev \\\n\t\tmake \\\n\t' \\\n\tset -x \\\n\t&& apt-get update \\\n\t&& apt-get install -y --no-install-recommends $buildDeps \\\n\t&& rm -r /var/lib/apt/lists/* \\\n\t&& curl -SL \"$HTTPD_BZ2_URL\" -o httpd.tar.bz2 \\\n\t&& curl -SL \"$HTTPD_BZ2_URL.asc\" -o httpd.tar.bz2.asc \\\n\t&& gpg --verify httpd.tar.bz2.asc \\\n\t&& mkdir -p src/httpd \\\n\t&& tar -xvf httpd.tar.bz2 -C src/httpd --strip-components=1 \\\n\t&& rm httpd.tar.bz2* \\\n\t&& cd src/httpd \\\n\t&& ./configure --enable-so --enable-ssl --with-mpm=prefork --prefix=$HTTPD_PREFIX \\\n\t&& make -j\"$(nproc)\" \\\n\t&& make install \\\n\t&& cd ../../ \\\n\t&& rm -r src/httpd \\\n\t&& sed -ri ' \\\n\t\ts!^(\\s*CustomLog)\\s+\\S+!\\1 /proc/self/fd/1!g; \\\n\t\ts!^(\\s*ErrorLog)\\s+\\S+!\\1 /proc/self/fd/2!g; \\\n\t\t' /usr/local/apache2/conf/httpd.conf \\\n\t&& apt-get purge -y --auto-remove $buildDeps \\\n\t&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nRUN mkdir -p /var/www/html \\\n\t&& chown www-data:www-data /var/www/html\n\nWORKDIR /var/www/html\n\nCOPY httpd.conf /usr/local/apache2/conf/httpd.conf\n\nRUN mkdir -p /etc/service/httpd\nCOPY httpd-foreground /etc/service/httpd/run\n\nEXPOSE 80\nCMD [\"/sbin/my_init\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "mkdir -p \"$HTTPD_PREFIX\" \t&& chown www-data:www-data \"$HTTPD_PREFIX\"",
+      "apt-get update \t&& apt-get install -y --no-install-recommends \t\tlibapr1 \t\tlibaprutil1 \t\tlibapr1-dev \t\tlibaprutil1-dev \t\tlibpcre++0 \t\tlibssl1.0.0 \t&& rm -r /var/lib/apt/lists/*",
+      "gpg --keyserver ha.pool.sks-keyservers.net --recv-keys A93D62ECC3C8EA12DB220EC934EA76E6791485A8",
+      "buildDeps=' \t\tca-certificates \t\tcurl \t\tbzip2 \t\tgcc \t\tlibpcre++-dev \t\tlibssl-dev \t\tmake \t' \tset -x \t&& apt-get update \t&& apt-get install -y --no-install-recommends $buildDeps \t&& rm -r /var/lib/apt/lists/* \t&& curl -SL \"$HTTPD_BZ2_URL\" -o httpd.tar.bz2 \t&& curl -SL \"$HTTPD_BZ2_URL.asc\" -o httpd.tar.bz2.asc \t&& gpg --verify httpd.tar.bz2.asc \t&& mkdir -p src/httpd \t&& tar -xvf httpd.tar.bz2 -C src/httpd --strip-components=1 \t&& rm httpd.tar.bz2* \t&& cd src/httpd \t&& ./configure --enable-so --enable-ssl --with-mpm=prefork --prefix=$HTTPD_PREFIX \t&& make -j\"$(nproc)\" \t&& make install \t&& cd ../../ \t&& rm -r src/httpd \t&& sed -ri ' \t\ts!^(\\s*CustomLog)\\s+\\S+!\\1 /proc/self/fd/1!g; \t\ts!^(\\s*ErrorLog)\\s+\\S+!\\1 /proc/self/fd/2!g; \t\t' /usr/local/apache2/conf/httpd.conf \t&& apt-get purge -y --auto-remove $buildDeps \t&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "mkdir -p /var/www/html \t&& chown www-data:www-data /var/www/html",
+      "mkdir -p /etc/service/httpd"
+    ],
+    "workdir": [
+      "/var/www/html"
+    ],
+    "from": "phusion/baseimage:0.9.17",
+    "maintainer": "Luis Contreras <luiscon26@gmail.com>",
+    "env": {
+      "HTTPD_PREFIX": "/usr/local/apache2",
+      "PATH": "$PATH:$HTTPD_PREFIX/bin",
+      "HTTPD_VERSION": "2.4.17",
+      "HTTPD_BZ2_URL": "https://www.apache.org/dist/httpd/httpd-$HTTPD_VERSION.tar.bz2"
+    },
+    "copy": "httpd-foreground /etc/service/httpd/run",
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/luistmac/httpd.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/luistmac/httpd",
+  "docker_repository": "luistmac/httpd",
+  "docker_image": "luistmac/httpd",
+  "parameters_schema": {
+    "HTTPD_PREFIX": {
+      "default": "/usr/local/apache2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:$HTTPD_PREFIX/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HTTPD_VERSION": {
+      "default": "2.4.17",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HTTPD_BZ2_URL": {
+      "default": "https://www.apache.org/dist/httpd/httpd-$HTTPD_VERSION.tar.bz2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "luistmac/httpd",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/luistmac/httpd",
+    "https://hub.docker.com/v2/repositories/luistmac/httpd",
+    "https://github.com/luistmac/httpd.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/macOS",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/luistmac/httpd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

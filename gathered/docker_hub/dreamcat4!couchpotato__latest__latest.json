@@ -1,0 +1,170 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dreamcat4/couchpotato",
+    "repository_url": "https://hub.docker.com/v2/repositories/dreamcat4/couchpotato",
+    "tags_url": "https://hub.docker.com/v2/repositories/dreamcat4/couchpotato/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dreamcat4/couchpotato/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dreamcat4/couchpotato/autobuild",
+    "user": "dreamcat4",
+    "name": "couchpotato",
+    "namespace": "dreamcat4",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 161,
+    "last_updated": "2016-10-17T03:31:40.169573Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 136197426,
+        "id": 3205576,
+        "repository": 713103,
+        "creator": 190978,
+        "last_updater": 190978,
+        "last_updated": "2016-10-17T03:31:39.840197Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "dreamcat4/docker-images"
+  },
+  "name": "dreamcat4/couchpotato Docker container",
+  "description": " ",
+  "readme": "## Couchpotato\n\n### Configuration\n\nYou will use couchpotato's web interface to specify it's settings. Main settings seem to be written to the file `/config/settings.conf`. Which can be backed up / restored by usig docker's build context and the `ADD` command.\n\n### Map your Media folder to the /downloads volume\n\ncouchpotato may be given read-only access to your top-level media folder. It should be bind:mounted to `/downloads`. You may selectively grant write access in subfolders of that folder. Depending upon your configuration.\n\nIt may help effeciency if the source + destination paths are are inside the same mountpoint. To avoid lots of copying large files across different drives. And that is the reason we mount the parent folder `/media` into a docker volume.\n\nIf you have other unrelated folders inside your `/media` folder (music, games etc). Then set the uid/gid and folder permissions to ensure that `couchpotato` user cannot read or write to the other folders.\n\n### File permissions\n\nBy default couchpotato will run as the `couchpotato` user and group. With a default `uid:gid` of `5050:5050`. Same as it's web interface TCP port number. So you will never forget.\n\nYou can change it's UID and GID to your liking by setting the following docker env vars:\n\n```sh\ncp_uid=XXX\ncp_gid=YYY\n```\n\nBy specifying an alternative uid and gid as a number, this lets you control which folder(s) couchpotato has read/write access to.\n\n#### Add your host user account to the couchpotato group\n\nIf you do not change couchpotato's gid number to match your other accounts, then you can instead permit your own host account(s) file access to the delueg folders by making the group permissions writable e.g. chmod `0664` and `0775`.\n\nOn the host side you will need to create a `couchpotato` group, adding your own user account to be a member of the same group gid (the default value of couchpotato's gid is `5050`). Copy-paste these commands:\n\n```sh\nsudo groupadd -g 103 couchpotato\nsudo usermod -a -G couchpotato $(id -un)\n```\n\n### Docker Compose\n\nSorry there is no example for Compose at this time. But it is something like this:\n\n```sh\n  cp:\n    image: dreamcat4/couchpotato\n    run:\n      ip: 1.2.3.4\n      volume:\n        - /my/couchpotato/config/folder:/config\n        - /my/media/folder:/downloads\n      env:\n        # - cp_uid=65534\n        # - cp_gid=44\n      detach: true\n```\n\n\n",
+  "dockerfile": "FROM ubuntu:16.04\nMAINTAINER dreamcat4 <dreamcat4@gmail.com>\n\n\nENV _clean=\"rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\"\nENV _apt_clean=\"eval apt-get clean && $_clean\"\n\n\n# Install s6-overlay\nENV s6_overlay_version=\"1.17.1.1\"\nADD https://github.com/just-containers/s6-overlay/releases/download/v${s6_overlay_version}/s6-overlay-amd64.tar.gz /tmp/\nRUN tar zxf /tmp/s6-overlay-amd64.tar.gz -C / && $_clean\nENV S6_LOGGING=\"1\"\n# ENV S6_KILL_GRACETIME=\"3000\"\n\n\n# Install pipework\nADD https://github.com/jpetazzo/pipework/archive/master.tar.gz /tmp/pipework-master.tar.gz\nRUN tar -zxf /tmp/pipework-master.tar.gz -C /tmp && cp /tmp/pipework-master/pipework /sbin/ && $_clean\n\n\n# Install dependancies\nRUN apt-get update -qq && DEBIAN_FRONTEND=noninteractive \\\n    apt-get install -qqy sudo git python python-openssl python-lxml && $_apt_clean\n\n\n# Download couchpotato\nRUN git clone https://github.com/CouchPotato/CouchPotatoServer.git /couchpotato \\\n || git clone https://github.com/RuudBurger/CouchPotatoServer.git  /couchpotato\n\n# $ git clone https://github.com/___???___/CouchPotatoServer.git\n# Cloning into 'CouchPotatoServer'...\n# fatal: Could not read from remote repository.\n# Please make sure you have the correct access rights\n# and the repository exists.\n\n\n# Setup the couchpotato user\nRUN groupadd -o -g 5050 couchpotato \\\n && useradd  -o -u 5050 -N -g couchpotato --shell /bin/sh -d /config couchpotato \\\n && install -o couchpotato -g couchpotato -d /config /media\n\n\n# Copy configuration files\nADD config.default /etc/config.preseed\nADD config.custom  /etc/config.preseed\n\n\n# Start scripts\nENV S6_LOGGING=\"0\"\nADD services.d /etc/services.d\n\n\n# Default container settings\nVOLUME /config /torrents /downloads\nEXPOSE 5050\nENTRYPOINT [\"/init\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "https://github.com/just-containers/s6-overlay/releases/download/v${s6_overlay_version}/s6-overlay-amd64.tar.gz",
+        "dest": "/tmp/"
+      },
+      {
+        "source": "https://github.com/jpetazzo/pipework/archive/master.tar.gz",
+        "dest": "/tmp/pipework-master.tar.gz"
+      },
+      {
+        "source": "config.default",
+        "dest": "/etc/config.preseed"
+      },
+      {
+        "source": "config.custom",
+        "dest": ""
+      },
+      {
+        "source": "services.d",
+        "dest": "/etc/services.d"
+      }
+    ],
+    "expose": [
+      5050
+    ],
+    "volume": [
+      "/config /torrents /downloads"
+    ],
+    "run": [
+      "tar zxf /tmp/s6-overlay-amd64.tar.gz -C / && $_clean",
+      "tar -zxf /tmp/pipework-master.tar.gz -C /tmp && cp /tmp/pipework-master/pipework /sbin/ && $_clean",
+      "apt-get update -qq && DEBIAN_FRONTEND=noninteractive     apt-get install -qqy sudo git python python-openssl python-lxml && $_apt_clean",
+      "git clone https://github.com/CouchPotato/CouchPotatoServer.git /couchpotato  || git clone https://github.com/RuudBurger/CouchPotatoServer.git  /couchpotato",
+      "groupadd -o -g 5050 couchpotato  && useradd  -o -u 5050 -N -g couchpotato --shell /bin/sh -d /config couchpotato  && install -o couchpotato -g couchpotato -d /config /media"
+    ],
+    "workdir": [],
+    "from": "ubuntu:16.04",
+    "maintainer": "dreamcat4 <dreamcat4@gmail.com>",
+    "env": {
+      "_clean": "\"rm",
+      "-rf": "/var/lib/apt/lists/*",
+      "/tmp/*": "/var/tmp/*\"",
+      "_apt_clean": "\"eval",
+      "apt-get": "clean",
+      "&&": "$_clean\"",
+      "s6_overlay_version": "\"1.17.1.1\"",
+      "S6_LOGGING": "\"0\""
+    },
+    "entrypoint": "[\"/init\"]"
+  },
+  "source_repository_url": "https://github.com/dreamcat4/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/dreamcat4/docker-images",
+  "docker_repository": "dreamcat4/couchpotato",
+  "docker_image": "dreamcat4/couchpotato",
+  "parameters_schema": {
+    "_clean": {
+      "default": "\"rm",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "-rf": {
+      "default": "/var/lib/apt/lists/*",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "/tmp/*": {
+      "default": "/var/tmp/*\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "_apt_clean": {
+      "default": "\"eval",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "apt-get": {
+      "default": "clean",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "&&": {
+      "default": "$_clean\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "s6_overlay_version": {
+      "default": "\"1.17.1.1\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "S6_LOGGING": {
+      "default": "\"0\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5050
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dreamcat4/couchpotato",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/dreamcat4/couchpotato",
+    "https://hub.docker.com/v2/repositories/dreamcat4/couchpotato",
+    "https://github.com/dreamcat4/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP"
+  ],
+  "info_url": "https://hub.docker.com/r/dreamcat4/couchpotato",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

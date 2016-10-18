@@ -1,0 +1,105 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/bringnow/haproxy-letsencrypt",
+    "repository_url": "https://hub.docker.com/v2/repositories/bringnow/haproxy-letsencrypt",
+    "tags_url": "https://hub.docker.com/v2/repositories/bringnow/haproxy-letsencrypt/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/bringnow/haproxy-letsencrypt/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/bringnow/haproxy-letsencrypt/autobuild",
+    "user": "bringnow",
+    "name": "haproxy-letsencrypt",
+    "namespace": "bringnow",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 588,
+    "last_updated": "2016-09-23T21:03:50.444514Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 189543387,
+        "id": 1836126,
+        "repository": 489502,
+        "creator": 136818,
+        "last_updater": 213020,
+        "last_updated": "2016-09-23T21:02:42.269669Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "bringnow/docker-haproxy-letsencrypt"
+  },
+  "name": "bringnow/haproxy-letsencrypt Docker container",
+  "description": "haproxy with built-in ACME plugin and zero-downtime auto-reload on configuration/certificate changes",
+  "readme": "# docker-haproxy-letsencrypt\nhaproxy docker image based on camptocamp/haproxy-luasec with built-in acme-plugin and zero-downtime auto-reload on configuration / certificate changes. This image was created for use with [letsencrypt-manager](https://github.com/bringnow/docker-letsencrypt-manager).\n\nFor integrating the acme-plugin, see [its documentation](https://github.com/janeczku/haproxy-acme-validation-plugin/).\n\nExample haproxy config file using acme webroot plugin:\n\n```\nglobal\n\tchroot /var/lib/haproxy\n\n\t# Default SSL material locations\n\tcrt-base /etc/letsencrypt/live\n\n\tlua-load /etc/haproxy/acme-http01-webroot.lua\n\n\t# Default ciphers to use on SSL-enabled listening sockets.\n\t# For more information, see ciphers(1SSL).\n\tssl-default-bind-ciphers AES256+EECDH:AES256+EDH:!aNULL;\n\n\ttune.ssl.default-dh-param 4096\n\ndefaults\n  \tlog\tglobal\n  \tmode\thttp\n\nfrontend http\n\tbind *:80\n\tmode http\n\tacl url_acme_http01 path_beg /.well-known/acme-challenge/\n\thttp-request use-service lua.acme-http01 if METH_GET url_acme_http01\n\tredirect scheme https if !url_acme_http01\n\nfrontend https\n\tbind :443 ssl no-tls-tickets crt example.com/haproxy.pem no-sslv3 no-tls-tickets no-tlsv10 no-tlsv11\n\tmode http\n\n  reqadd X-Forwarded-Proto:\\ https\n\trspadd Strict-Transport-Security:\\ max-age=15768000\n\nuse_backend\t\twww\tif { hdr(host) example.com or www.example.com }\n\nbackend www\n\tredirect prefix\thttps://www.example.com code 301 unless { hdr(host) www.example.com }\n\toption forwardfor\n\tserver node1 127.0.0.1:6000\n```\n",
+  "dockerfile": "FROM camptocamp/haproxy-luasec\nMAINTAINER bringnow team <wecare@bringnow.com>\n\nENV ACME_PLUGIN_VERSION 0.1.1\n\nRUN buildDeps='curl ca-certificates' runtimeDeps='inotify-tools' \\\n\t&& apt-get update && apt-get upgrade -y && apt-get install -y $buildDeps $runtimeDeps --no-install-recommends \\\n\t&& curl -SL https://github.com/janeczku/haproxy-acme-validation-plugin/archive/${ACME_PLUGIN_VERSION}.tar.gz -o acme-plugin.tar.gz \\\n\t&& tar xzf acme-plugin.tar.gz --strip-components=1 --no-anchored acme-http01-webroot.lua -C /etc/haproxy/ \\\n\t&& rm *.tar.gz \\\n\t&& apt-get purge -y --auto-remove $buildDeps\n\nEXPOSE 80 443\n\nCOPY entrypoint.sh /\n\nVOLUME /etc/letsencrypt\nVOLUME /var/acme-webroot\n\nENTRYPOINT [\"/entrypoint.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "/etc/letsencrypt",
+      "/var/acme-webroot"
+    ],
+    "run": [
+      "buildDeps='curl ca-certificates' runtimeDeps='inotify-tools' \t&& apt-get update && apt-get upgrade -y && apt-get install -y $buildDeps $runtimeDeps --no-install-recommends \t&& curl -SL https://github.com/janeczku/haproxy-acme-validation-plugin/archive/${ACME_PLUGIN_VERSION}.tar.gz -o acme-plugin.tar.gz \t&& tar xzf acme-plugin.tar.gz --strip-components=1 --no-anchored acme-http01-webroot.lua -C /etc/haproxy/ \t&& rm *.tar.gz \t&& apt-get purge -y --auto-remove $buildDeps"
+    ],
+    "workdir": [],
+    "from": "camptocamp/haproxy-luasec",
+    "maintainer": "bringnow team <wecare@bringnow.com>",
+    "env": {
+      "ACME_PLUGIN_VERSION": "0.1.1"
+    },
+    "copy": "entrypoint.sh /",
+    "entrypoint": "[\"/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/bringnow/docker-haproxy-letsencrypt.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/bringnow/docker-haproxy-letsencrypt",
+  "docker_repository": "bringnow/haproxy-letsencrypt",
+  "docker_image": "bringnow/haproxy-letsencrypt",
+  "parameters_schema": {
+    "ACME_PLUGIN_VERSION": {
+      "default": "0.1.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "bringnow/haproxy-letsencrypt",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/bringnow/haproxy-letsencrypt",
+    "https://hub.docker.com/v2/repositories/bringnow/haproxy-letsencrypt",
+    "https://github.com/bringnow/docker-haproxy-letsencrypt.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/bringnow/haproxy-letsencrypt",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

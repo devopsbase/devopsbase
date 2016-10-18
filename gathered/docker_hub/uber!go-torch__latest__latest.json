@@ -1,0 +1,140 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/uber/go-torch",
+    "repository_url": "https://hub.docker.com/v2/repositories/uber/go-torch",
+    "tags_url": "https://hub.docker.com/v2/repositories/uber/go-torch/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/uber/go-torch/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/uber/go-torch/autobuild",
+    "user": "uber",
+    "name": "go-torch",
+    "namespace": "uber",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 25501,
+    "last_updated": "2016-06-03T14:28:56.012847Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 99990870,
+        "id": 2622395,
+        "repository": 631220,
+        "creator": 30909,
+        "last_updater": 30909,
+        "last_updated": "2016-06-03T14:28:53.857012Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "readme",
+        "full_size": 99990817,
+        "id": 3276272,
+        "repository": 631220,
+        "creator": 30909,
+        "last_updater": 30909,
+        "last_updated": "2016-06-03T14:17:12.566165Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "pprof_args",
+        "full_size": 100039984,
+        "id": 3152103,
+        "repository": 631220,
+        "creator": 30909,
+        "last_updater": 30909,
+        "last_updated": "2016-05-25T01:19:16.540125Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "add_perl",
+        "full_size": 99804446,
+        "id": 2629265,
+        "repository": 631220,
+        "creator": 30909,
+        "last_updater": 30909,
+        "last_updated": "2016-04-12T16:57:16.305180Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "uber/go-torch"
+  },
+  "name": "uber/go-torch Docker container",
+  "description": "Stochastic flame graph profiler for Go programs",
+  "readme": "# go-torch [![Build Status](https://travis-ci.org/uber/go-torch.svg?branch=master)](https://travis-ci.org/uber/go-torch) [![Coverage Status](http://coveralls.io/repos/uber/go-torch/badge.svg?branch=master&service=github)](http://coveralls.io/github/uber/go-torch?branch=master) [![GoDoc](https://godoc.org/github.com/uber/go-torch?status.svg)](https://godoc.org/github.com/uber/go-torch)\n\n## Synopsis\n\nTool for stochastically profiling Go programs. Collects stack traces and\nsynthesizes them into a flame graph. Uses Go's built in [pprof][] library.\n\n[pprof]: https://golang.org/pkg/net/http/pprof/\n\n## Example Flame Graph\n\n[![Inception](http://uber.github.io/go-torch/meta.svg)](http://uber.github.io/go-torch/meta.svg)\n\n## Basic Usage\n\n```\n$ go-torch -h\nUsage:\n  go-torch [options] [binary] <profile source>\n\npprof Options:\n  -u, --url=         Base URL of your Go program (default: http://localhost:8080)\n  -s, --suffix=      URL path of pprof profile (default: /debug/pprof/profile)\n  -b, --binaryinput= File path of previously saved binary profile. (binary profile is anything accepted by https://golang.org/cmd/pprof)\n      --binaryname=  File path of the binary that the binaryinput is for, used for pprof inputs\n  -t, --seconds=     Number of seconds to profile for (default: 30)\n      --pprofArgs=   Extra arguments for pprof\n\nOutput Options:\n  -f, --file=        Output file name (must be .svg) (default: torch.svg)\n  -p, --print        Print the generated svg to stdout instead of writing to file\n  -r, --raw          Print the raw call graph output to stdout instead of creating a flame graph; use with Brendan Gregg's flame graph perl script (see https://github.com/brendangregg/FlameGraph)\n      --title=       Graph title to display in the output file (default: Flame Graph)\n\nHelp Options:\n  -h, --help         Show this help message\n```\n\n### Write flamegraph using /debug/pprof endpoint\n\nThe default options will hit `http://localhost:8080/debug/pprof/profile` for\na 30 second CPU profile, and write it out to torch.svg\n\n```\n$ go-torch\nINFO[19:10:58] Run pprof command: go tool pprof -raw -seconds 30 http://localhost:8080/debug/pprof/profile\nINFO[19:11:03] Writing svg to torch.svg\n```\n\nYou can customize the base URL by using `-u`\n\n```\n$ go-torch -u http://my-service:8080/\nINFO[19:10:58] Run pprof command: go tool pprof -raw -seconds 30 http://my-service:8080/debug/pprof/profile\nINFO[19:11:03] Writing svg to torch.svg\n```\n\nOr change the number of seconds to profile using `--seconds`:\n\n```\n$ go-torch --seconds 5\nINFO[19:10:58] Run pprof command: go tool pprof -raw -seconds 5 http://localhost:8080/debug/pprof/profile\nINFO[19:11:03] Writing svg to torch.svg\n```\n\n\n### Using pprof arguments\n\n`go-torch` will pass through arguments to `go tool pprof`, which lets you take\nexisting pprof commands and easily make them work with `go-torch`.\n\nFor example, after creating a CPU profile from a benchmark:\n```\n$ go test -bench . -cpuprofile=cpu.prof\n\n# This creates a cpu.prof file, and the $PKG.test binary.\n```\n\nThe same arguments that can be used with `go tool pprof` will also work\nwith `go-torch`:\n```\n$ go tool pprof main.test cpu.prof\n\n# Same arguments work with go-torch\n$ go-torch main.test cpu.pprof\nINFO[19:00:29] Run pprof command: go tool pprof -raw -seconds 30 main.test prof.cpu\nINFO[19:00:29] Writing svg to torch.svg\n```\n\n\nFlags that are not handled by `go-torch` are passed through as well:\n```\n$ go-torch --alloc_objects main.test mem.prof\nINFO[19:00:29] Run pprof command: go tool pprof -raw -seconds 30 --alloc_objects main.test prof.mem\nINFO[19:00:29] Writing svg to torch.svg\n```\n\n## Integrating With Your Application\n\nTo add profiling endpoints in your application, follow the official\nGo docs [here][].\nIf your application is already running a server on the DefaultServeMux,\njust add this import to your application.\n\n[here]: https://golang.org/pkg/net/http/pprof/\n\n```go\nimport _ \"net/http/pprof\"\n```\n\nIf your application is not using the DefaultServeMux, you can still easily\nexpose pprof endpoints by manually registering the net/http/pprof handlers or by\nusing a library like [this one](https://github.com/e-dard/netbug).\n\n## Installation\n\n```\n$ go get github.com/uber/go-torch\n```\n\nYou can also use go-torch using docker:\n```\n$ docker run uber/go-torch -u http://[address-of-host] -p > torch.svg\n```\n\nUsing `-p` will print the SVG to standard out, which can then be redirected\nto a file. This avoids mounting volumes to a container.\n\n### Get the flame graph script:\n\nWhen using the `go-torch` binary locally, you will need the Flamegraph scripts\nin your `PATH`:\n\n```\n$ cd $GOPATH/src/github.com/uber/go-torch\n$ git clone https://github.com/brendangregg/FlameGraph.git\n```\n\n## Development and Testing\n\n### Install the Go dependencies:\n\n```\n$ go get github.com/Masterminds/glide\n$ cd $GOPATH/src/github.com/uber/go-torch\n$ glide install\n```\n\n### Run the Tests\n\n```\n$ go test ./...\nok    github.com/uber/go-torch   0.012s\nok    github.com/uber/go-torch/graph   0.017s\nok    github.com/uber/go-torch/visualization 0.052s\n```\n",
+  "dockerfile": "FROM golang:1.6-alpine\n\nENV PATH $PATH:/opt/flamegraph\n\nRUN apk --update add git && \\\n    apk add perl && \\\n    curl -OL https://github.com/Masterminds/glide/releases/download/0.10.1/glide-0.10.1-linux-amd64.tar.gz && \\\n    tar -xzf glide-0.10.1-linux-amd64.tar.gz && \\\n    mv linux-amd64/glide /usr/bin && \\\n    git clone --depth=1 https://github.com/brendangregg/FlameGraph.git /opt/flamegraph\n\nCOPY . /go/src/github.com/uber/go-torch\n\nRUN cd /go/src/github.com/uber/go-torch && glide install && go install ./...\n\nENTRYPOINT [\"go-torch\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apk --update add git &&     apk add perl &&     curl -OL https://github.com/Masterminds/glide/releases/download/0.10.1/glide-0.10.1-linux-amd64.tar.gz &&     tar -xzf glide-0.10.1-linux-amd64.tar.gz &&     mv linux-amd64/glide /usr/bin &&     git clone --depth=1 https://github.com/brendangregg/FlameGraph.git /opt/flamegraph",
+      "cd /go/src/github.com/uber/go-torch && glide install && go install ./..."
+    ],
+    "workdir": [],
+    "from": "golang:1.6-alpine",
+    "env": {
+      "PATH": "$PATH:/opt/flamegraph"
+    },
+    "copy": ". /go/src/github.com/uber/go-torch",
+    "entrypoint": "[\"go-torch\"]"
+  },
+  "source_repository_url": "https://github.com/uber/go-torch.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/uber/go-torch",
+  "docker_repository": "uber/go-torch",
+  "docker_image": "uber/go-torch",
+  "parameters_schema": {
+    "PATH": {
+      "default": "$PATH:/opt/flamegraph",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "uber/go-torch",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/uber/go-torch",
+    "https://hub.docker.com/v2/repositories/uber/go-torch",
+    "https://github.com/uber/go-torch.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Data Store/Graph"
+  ],
+  "info_url": "https://hub.docker.com/r/uber/go-torch",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

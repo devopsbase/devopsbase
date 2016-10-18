@@ -1,0 +1,278 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/phpmentors/php-app",
+    "repository_url": "https://hub.docker.com/v2/repositories/phpmentors/php-app",
+    "tags_url": "https://hub.docker.com/v2/repositories/phpmentors/php-app/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/phpmentors/php-app/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/phpmentors/php-app/autobuild",
+    "user": "phpmentors",
+    "name": "php-app",
+    "namespace": "phpmentors",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 991,
+    "last_updated": "2016-09-27T09:20:55.347425Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "php55",
+        "full_size": 211659127,
+        "id": 88518,
+        "repository": 141436,
+        "creator": 150199,
+        "last_updater": 150199,
+        "last_updated": "2016-09-27T09:20:49.998352Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "php56",
+        "full_size": 222956375,
+        "id": 2070027,
+        "repository": 141436,
+        "creator": 150199,
+        "last_updater": 150199,
+        "last_updated": "2016-09-27T09:11:40.495690Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "php70",
+        "full_size": 229650523,
+        "id": 4453905,
+        "repository": 141436,
+        "creator": 150199,
+        "last_updater": 150199,
+        "last_updated": "2016-09-27T09:01:22.473831Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "php53",
+        "full_size": 149973034,
+        "id": 88503,
+        "repository": 141436,
+        "creator": 150199,
+        "last_updater": 150199,
+        "last_updated": "2016-09-27T08:51:34.993174Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 230953787,
+        "id": 88527,
+        "repository": 141436,
+        "creator": 150199,
+        "last_updater": 51573,
+        "last_updated": "2016-08-23T07:16:08.689938Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "phpmentors-jp/docker-images"
+  },
+  "name": "phpmentors/php-app Docker container",
+  "description": "PHP application image",
+  "readme": "# PHP Mentors Docker Images\n\n## Repositories\n\n* [phpmentors/maven-app](https://hub.docker.com/r/phpmentors/maven-app/) based on [java](https://hub.docker.com/_/java/)\n* [phpmentors/mysql](https://registry.hub.docker.com/u/phpmentors/mysql/) based on [mysql](https://registry.hub.docker.com/_/mysql/)\n* [phpmentors/node-browser-app](https://registry.hub.docker.com/u/phpmentors/node-browser-app/) based on [node](https://registry.hub.docker.com/_/node/)\n* [phpmentors/php-app](https://registry.hub.docker.com/u/phpmentors/php-app/) based on [ubuntu](https://registry.hub.docker.com/_/ubuntu/)\n* [phpmentors/sphinx-app](https://hub.docker.com/r/phpmentors/sphinx-app/) based on [nginx](https://hub.docker.com/_/nginx/)\n* [phpmentors/symfony-app](https://registry.hub.docker.com/u/phpmentors/symfony-app/) based on [phpmentors/php-app](https://registry.hub.docker.com/u/phpmentors/php-app/)\n* [phpmentors/tomcat-app](https://registry.hub.docker.com/u/phpmentors/tomcat-app/) based on [tomcat](https://registry.hub.docker.com/_/tomcat/)\n\n## Support\n\nIf you find a bug or have a question, or want to request a feature, create an issue or pull request for it on [Issues](https://github.com/phpmentors-jp/docker-images/issues).\n\n## Copyright\n\nCopyright (c) 2014-2016 KUBO Atsuhiro, All rights reserved.\n\n## License\n\n[The MIT License](http://opensource.org/licenses/MIT)\n",
+  "dockerfile": "#\n# php-app\n#\n\nFROM ubuntu:14.04\nMAINTAINER KUBO Atsuhiro <kubo@iteman.jp>\n\nRUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections\nRUN apt-get update\nRUN apt-get -y upgrade\nRUN apt-get install -y apt-utils\nRUN apt-get install -y supervisor\nRUN apt-get install -y apache2-mpm-prefork\nRUN apt-get install -y mysql-client-core-5.6\nRUN apt-get install -y php5 php5-curl php5-intl php5-mysql php5-xdebug php5-apcu php5-dev\nRUN apt-get install -y git\nRUN apt-get install -y less vim-tiny\nRUN apt-get install -y apg\nRUN apt-get install -y sudo\n\n# Supervisor\nRUN mkdir -p /var/log/supervisor\nADD supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf\n\n# Apache2\nENV APACHE_RUN_USER www-data\nENV APACHE_RUN_GROUP www-data\nENV APACHE_LOG_DIR /var/log/apache2\nENV APP_DOCUMENT_ROOT /var/www\nEXPOSE 80\nADD apache2/app.conf /etc/apache2/sites-available/000-default.conf\nADD apache2/apache2 /usr/local/sbin/apache2\nRUN chmod 755 /usr/local/sbin/apache2\nRUN a2enmod rewrite\nRUN sed -i \"s/^\\\\( *export \\+LANG.*\\\\)/#\\\\1/\" /etc/apache2/envvars\n\n# PHP5\nENV PHP_INI \"\"\nENV XDEBUG_REMOTE_PORT \"\"\nADD php5/app.ini /etc/php5/apache2/conf.d/90-app.ini\nADD php5/app.ini /etc/php5/cli/conf.d/90-app.ini\nADD php5/timezone.sh /usr/local/sbin/php5-timezone.sh\n\n# PHP application\nADD app/init /usr/local/sbin/app-init\nRUN chmod 755 /usr/local/sbin/app-init\nADD app/composer /usr/local/bin/composer\nRUN chmod 755 /usr/local/bin/composer\nRUN chown root.root /usr/local/bin/composer\n\n# System\nENV TZ \"\"\nENV LANG \"\"\nADD system/init /usr/local/sbin/system-init\nRUN chmod 755 /usr/local/sbin/system-init\nADD system/locale.sh /usr/local/sbin/system-locale.sh\nADD system/timezone.sh /usr/local/sbin/system-timezone.sh\n\n# Others\nENV HOME /root\nWORKDIR /root\nRUN mkdir /var/app\nRUN echo \"This file is a placeholder to expose /var/app directory after creating a new container from Kitematic.\" > /var/app/.placeholder\nVOLUME /var/app\n\n# Command\nCMD [\"/usr/local/sbin/system-init\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "supervisor/supervisord.conf",
+        "dest": "/etc/supervisor/conf.d/supervisord.conf"
+      },
+      {
+        "source": "apache2/app.conf",
+        "dest": "/etc/apache2/sites-available/000-default.conf"
+      },
+      {
+        "source": "apache2/apache2",
+        "dest": "/usr/local/sbin/apache2"
+      },
+      {
+        "source": "php5/app.ini",
+        "dest": "/etc/php5/apache2/conf.d/90-app.ini"
+      },
+      {
+        "source": "php5/app.ini",
+        "dest": "/etc/php5/cli/conf.d/90-app.ini"
+      },
+      {
+        "source": "php5/timezone.sh",
+        "dest": "/usr/local/sbin/php5-timezone.sh"
+      },
+      {
+        "source": "app/init",
+        "dest": "/usr/local/sbin/app-init"
+      },
+      {
+        "source": "app/composer",
+        "dest": "/usr/local/bin/composer"
+      },
+      {
+        "source": "system/init",
+        "dest": "/usr/local/sbin/system-init"
+      },
+      {
+        "source": "system/locale.sh",
+        "dest": "/usr/local/sbin/system-locale.sh"
+      },
+      {
+        "source": "system/timezone.sh",
+        "dest": "/usr/local/sbin/system-timezone.sh"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "/var/app"
+    ],
+    "run": [
+      "echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections",
+      "apt-get update",
+      "apt-get -y upgrade",
+      "apt-get install -y apt-utils",
+      "apt-get install -y supervisor",
+      "apt-get install -y apache2-mpm-prefork",
+      "apt-get install -y mysql-client-core-5.6",
+      "apt-get install -y php5 php5-curl php5-intl php5-mysql php5-xdebug php5-apcu php5-dev",
+      "apt-get install -y git",
+      "apt-get install -y less vim-tiny",
+      "apt-get install -y apg",
+      "apt-get install -y sudo",
+      "mkdir -p /var/log/supervisor",
+      "chmod 755 /usr/local/sbin/apache2",
+      "a2enmod rewrite",
+      "sed -i \"s/^\\\\( *export \\+LANG.*\\\\)/#\\\\1/\" /etc/apache2/envvars",
+      "chmod 755 /usr/local/sbin/app-init",
+      "chmod 755 /usr/local/bin/composer",
+      "chown root.root /usr/local/bin/composer",
+      "chmod 755 /usr/local/sbin/system-init",
+      "mkdir /var/app",
+      "echo \"This file is a placeholder to expose /var/app directory after creating a new container from Kitematic.\" > /var/app/.placeholder"
+    ],
+    "workdir": [
+      "/root"
+    ],
+    "from": "ubuntu:14.04",
+    "maintainer": "KUBO Atsuhiro <kubo@iteman.jp>",
+    "env": {
+      "APACHE_RUN_USER": "www-data",
+      "APACHE_RUN_GROUP": "www-data",
+      "APACHE_LOG_DIR": "/var/log/apache2",
+      "APP_DOCUMENT_ROOT": "/var/www",
+      "PHP_INI": "\"\"",
+      "XDEBUG_REMOTE_PORT": "\"\"",
+      "TZ": "\"\"",
+      "LANG": "\"\"",
+      "HOME": "/root"
+    },
+    "cmd": "[\"/usr/local/sbin/system-init\"]"
+  },
+  "source_repository_url": "https://github.com/phpmentors-jp/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/phpmentors-jp/docker-images",
+  "docker_repository": "phpmentors/php-app",
+  "docker_image": "phpmentors/php-app",
+  "parameters_schema": {
+    "APACHE_RUN_USER": {
+      "default": "www-data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APACHE_RUN_GROUP": {
+      "default": "www-data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APACHE_LOG_DIR": {
+      "default": "/var/log/apache2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APP_DOCUMENT_ROOT": {
+      "default": "/var/www",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PHP_INI": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "XDEBUG_REMOTE_PORT": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TZ": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "phpmentors/php-app",
+  "revision": "php55",
+  "uris": [
+    "https://hub.docker.com/r/phpmentors/php-app",
+    "https://hub.docker.com/v2/repositories/phpmentors/php-app",
+    "https://github.com/phpmentors-jp/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image",
+    "Style/Virtualization Level/Application",
+    "Type/Middleware/Runtime/PHP"
+  ],
+  "info_url": "https://hub.docker.com/r/phpmentors/php-app",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

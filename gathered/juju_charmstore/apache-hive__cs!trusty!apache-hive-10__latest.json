@@ -1,0 +1,89 @@
+{
+  "name": "apache-hive Juju charm",
+  "juju_charm_name": "apache-hive",
+  "revision": "cs:trusty/apache-hive-10",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/apache-hive",
+    "https://jujucharms.com/apache-hive/trusty",
+    "https://jujucharms.com/apache-hive/trusty/10",
+    "https://api.jujucharms.com/v5/apache-hive",
+    "https://api.jujucharms.com/v5/trusty/apache-hive",
+    "https://api.jujucharms.com/v5/trusty/apache-hive-10"
+  ],
+  "labels": [
+    "Juju charm",
+    "bigdata",
+    "hadoop",
+    "apache",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Infrastructure",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Processing/Hadoop/Hive"
+  ],
+  "info_url": "https://jujucharms.com/apache-hive",
+  "package_url": "https://api.jujucharms.com/v5/trusty/apache-hive-10/archive",
+  "created": "2015-10-07T21:01:53.511Z",
+  "updated": "2015-10-07T21:01:53.511Z",
+  "description": "Data warehouse infrastructure built on top of Hadoop\n\nApache Hive is a data warehouse infrastructure built on top of Hadoop that\nsupports data summarization, query, and analysis. Hive provides an SQL-like\nlanguage called HiveQL that transparently converts queries to MapReduce for\nexecution on large datasets stored in Hadoop's HDFS.\n\nLearn more at http://hive.apache.org\n",
+  "maintainer": {
+    "name": "bigdata-charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "bigdata-charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/mysql",
+      "self_resolve": true,
+      "juju_interface": "mysql",
+      "juju_name": "db",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "heap": {
+      "type": "int",
+      "description": "The maximum heap size (in MB) used by the hadoop client jvm. If you\nexperience out of memory (OOM) errors when running jobs, consider\nincreasing this value.\n",
+      "default": 1024,
+      "mapping": "charm_option"
+    },
+    "resources_mirror": {
+      "type": "string",
+      "description": "URL from which to fetch resources (e.g., Hadoop binaries) instead of Launchpad.\n",
+      "default": "",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/hadoop-plugin",
+      "juju_interface": "hadoop-plugin",
+      "juju_name": "hadoop-plugin",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/hive",
+      "juju_interface": "hive",
+      "juju_name": "hive",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "## Overview\n\nApache Hive is a data warehouse infrastructure built on top of Hadoop that\nsupports data summarization, query, and analysis. Hive provides an SQL-like\nlanguage called HiveQL that transparently converts queries to MapReduce for\nexecution on large datasets stored in Hadoop's HDFS. Learn more at\n[hive.apache.org](http://hive.apache.org).\n\nThis charm provides the Hive command line interface and the HiveServer2 service.\n\n\n## Usage\nThis charm leverages our pluggable Hadoop model with the `hadoop-plugin`\ninterface. This means that you will need to deploy a base Apache Hadoop cluster\nto run Hive. The suggested deployment method is to use the\n[apache-analytics-sql](https://jujucharms.com/apache-analytics-sql/)\nbundle. This will deploy the Apache Hadoop platform with a single Apache Hive\nunit that communicates with the cluster by relating to the\n`apache-hadoop-plugin` subordinate charm:\n\n    juju quickstart apache-analytics-sql\n\nAlternatively, you may manually deploy the recommended environment as follows:\n\n    juju deploy apache-hadoop-hdfs-master hdfs-master\n    juju deploy apache-hadoop-yarn-master yarn-master\n    juju deploy apache-hadoop-compute-slave compute-slave\n    juju deploy apache-hadoop-plugin plugin\n    juju deploy apache-hive hive\n\n    juju deploy mysql\n    juju set mysql binlog-format=ROW\n\n    juju add-relation yarn-master hdfs-master\n    juju add-relation compute-slave yarn-master\n    juju add-relation compute-slave hdfs-master\n    juju add-relation plugin yarn-master\n    juju add-relation plugin hdfs-master\n    juju add-relation hive plugin\n    juju add-relation hive mysql\n\nPlease note the special configuration for the mysql charm above; MySQL must be\nusing row-based logging for information to be replicated to Hadoop.\n\n\n## Testing the deployment\n\n### Smoke test Hive\nFrom the Hive unit, start the Hive console as the `hive` user:\n\n    juju ssh hive/0\n    sudo su hive -c hive\n\nFrom the Hive console, verify sample commands execute successfully:\n\n    show databases;\n    create table test(col1 int, col2 string);\n    show tables;\n    quit;\n\nExit from the Hive unit:\n\n    exit\n\n### Smoke test HiveServer2\nFrom the Hive unit, start the Beeline console as the `hive` user:\n\n    juju ssh hive/0\n    sudo su hive -c beeline\n\nFrom the Beeline console, connect to HiveServer2 and verify sample commands\nexecute successfully:\n\n    !connect jdbc:hive2://localhost:10000 hive password org.apache.hive.jdbc.HiveDriver\n    show databases;\n    create table test2(a int, b string);\n    show tables;\n    !quit\n\nExit from the Hive unit:\n\n    exit\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Help\n\n- [Juju mailing list](https://lists.ubuntu.com/mailman/listinfo/juju)\n- [Juju community](https://jujucharms.com/community)\n",
+  "readme": "## Overview\n\nApache Hive is a data warehouse infrastructure built on top of Hadoop that\nsupports data summarization, query, and analysis. Hive provides an SQL-like\nlanguage called HiveQL that transparently converts queries to MapReduce for\nexecution on large datasets stored in Hadoop's HDFS. Learn more at\n[hive.apache.org](http://hive.apache.org).\n\nThis charm provides the Hive command line interface and the HiveServer2 service.\n\n\n## Usage\nThis charm leverages our pluggable Hadoop model with the `hadoop-plugin`\ninterface. This means that you will need to deploy a base Apache Hadoop cluster\nto run Hive. The suggested deployment method is to use the\n[apache-analytics-sql](https://jujucharms.com/apache-analytics-sql/)\nbundle. This will deploy the Apache Hadoop platform with a single Apache Hive\nunit that communicates with the cluster by relating to the\n`apache-hadoop-plugin` subordinate charm:\n\n    juju quickstart apache-analytics-sql\n\nAlternatively, you may manually deploy the recommended environment as follows:\n\n    juju deploy apache-hadoop-hdfs-master hdfs-master\n    juju deploy apache-hadoop-yarn-master yarn-master\n    juju deploy apache-hadoop-compute-slave compute-slave\n    juju deploy apache-hadoop-plugin plugin\n    juju deploy apache-hive hive\n\n    juju deploy mysql\n    juju set mysql binlog-format=ROW\n\n    juju add-relation yarn-master hdfs-master\n    juju add-relation compute-slave yarn-master\n    juju add-relation compute-slave hdfs-master\n    juju add-relation plugin yarn-master\n    juju add-relation plugin hdfs-master\n    juju add-relation hive plugin\n    juju add-relation hive mysql\n\nPlease note the special configuration for the mysql charm above; MySQL must be\nusing row-based logging for information to be replicated to Hadoop.\n\n\n## Testing the deployment\n\n### Smoke test Hive\nFrom the Hive unit, start the Hive console as the `hive` user:\n\n    juju ssh hive/0\n    sudo su hive -c hive\n\nFrom the Hive console, verify sample commands execute successfully:\n\n    show databases;\n    create table test(col1 int, col2 string);\n    show tables;\n    quit;\n\nExit from the Hive unit:\n\n    exit\n\n### Smoke test HiveServer2\nFrom the Hive unit, start the Beeline console as the `hive` user:\n\n    juju ssh hive/0\n    sudo su hive -c beeline\n\nFrom the Beeline console, connect to HiveServer2 and verify sample commands\nexecute successfully:\n\n    !connect jdbc:hive2://localhost:10000 hive password org.apache.hive.jdbc.HiveDriver\n    show databases;\n    create table test2(a int, b string);\n    show tables;\n    !quit\n\nExit from the Hive unit:\n\n    exit\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Help\n\n- [Juju mailing list](https://lists.ubuntu.com/mailman/listinfo/juju)\n- [Juju community](https://jujucharms.com/community)\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

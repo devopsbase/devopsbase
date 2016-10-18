@@ -1,0 +1,132 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/tsweb/httpd",
+    "repository_url": "https://hub.docker.com/v2/repositories/tsweb/httpd",
+    "tags_url": "https://hub.docker.com/v2/repositories/tsweb/httpd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/tsweb/httpd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/tsweb/httpd/autobuild",
+    "user": "tsweb",
+    "name": "httpd",
+    "namespace": "tsweb",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 515,
+    "last_updated": "2016-03-28T09:17:47.603024Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2.2.15",
+        "full_size": 236528069,
+        "id": 150808,
+        "repository": 228301,
+        "creator": 336068,
+        "last_updater": 336068,
+        "last_updated": "2016-03-28T09:17:47.168408Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "2.2.25",
+        "full_size": 239558806,
+        "id": 607366,
+        "repository": 228301,
+        "creator": 336068,
+        "last_updater": 336068,
+        "last_updated": "2016-03-28T09:17:41.371805Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 199156057,
+        "id": 150712,
+        "repository": 228301,
+        "creator": 336068,
+        "last_updater": 336068,
+        "last_updated": "2016-03-28T09:12:09.261037Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "tvoweb2/docker-httpd"
+  },
+  "name": "tsweb/httpd Docker container",
+  "description": "",
+  "readme": null,
+  "dockerfile": "FROM tsweb/centos64\nMAINTAINER Kazuhisa Kumagai <k-kumagai@ts.tv-osaka.co.jp>\n\n#--------------------------------------\n# initialize\n#--------------------------------------\n\nRUN yum -y install wget\nRUN yum -y install tar gcc\n\n#--------------------------------------\n# install Apache 2.2.25\n#--------------------------------------\n\n# useradd apache\nRUN groupadd apache\nRUN useradd -g apache -s /sbin/nologin apache\n\n# resolving dependence\nRUN yum -y install zlib-devel openssl-devel\n\n# download and install\nRUN (\\\n  cd /usr/local/src;\\\n  wget -O httpd-2.2.25.tar.gz http://archive.apache.org/dist/httpd/httpd-2.2.25.tar.gz;\\\n  tar zxvf httpd-2.2.25.tar.gz;\\\n  cd httpd-2.2.25;\\\n  ./configure \\\n    --prefix=/usr/local/apache \\\n    --enable-so \\\n    --enable-mods-shared=all \\\n    --enable-ssl;\\\n  make;\\\n  make install;\\\n  make clean;\\\n  cp -f ./build/rpm/httpd.init /etc/rc.d/init.d/httpd;\\\n  chmod +x /etc/rc.d/init.d/httpd;\\\n)\n\n# chown\nRUN chown -R apache:apache /usr/local/apache\n\n# setting\nRUN sed -i -e \"s/^#ServerName .\\+/ServerName web:80/g\" /usr/local/apache/conf/httpd.conf\nRUN sed -i -e \"s/\\/usr\\/local\\/apache\\/htdocs/\\/var\\/www\\/html/g\" /usr/local/apache/conf/httpd.conf\nRUN sed -i -e \"s/^\\(User\\|Group\\) daemon$/\\1 apache/g\" /usr/local/apache/conf/httpd.conf\nRUN sed -i -e \"s/^#\\(EnableMMAP off\\)$/\\1/g\" /usr/local/apache/conf/httpd.conf\nRUN sed -i -e \"s/^#\\(EnableSendfile off\\)$/\\1/g\" /usr/local/apache/conf/httpd.conf\nRUN sed -i -e \"s/\\(AllowOverride\\) None$/\\1 All/gi\" /usr/local/apache/conf/httpd.conf\n\n# service\nRUN sed -i -e \"s/^\\(httpd\\)=\\${\\(HTTPD\\)-.\\+}$/\\1=\\${\\2-\\/usr\\/local\\/apache\\/bin\\/httpd}/g\" /etc/rc.d/init.d/httpd\nRUN sed -i -e \"s/^\\(pidfile\\)=\\${\\(PIDFILE\\)-.\\+}$/\\1=\\${\\2-\\/usr\\/local\\/apache\\/logs\\/httpd\\.pid}/g\" /etc/rc.d/init.d/httpd\nRUN sed -i -e \"s/CONFFILE=.\\+$/CONFFILE=\\/usr\\/local\\/apache\\/conf\\/httpd\\.conf/g\" /etc/rc.d/init.d/httpd\n\n#--------------------------------------\n# initialize\n#--------------------------------------\n\n# install initializer\nRUN mkdir /root/scripts\nADD service.sh /root/scripts/service.sh\nRUN chmod +x /root/scripts/*.sh\n\n# run service\nCMD [\"/root/scripts/service.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "service.sh",
+        "dest": "/root/scripts/service.sh"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "yum -y install wget",
+      "yum -y install tar gcc",
+      "groupadd apache",
+      "useradd -g apache -s /sbin/nologin apache",
+      "yum -y install zlib-devel openssl-devel",
+      "(  cd /usr/local/src;  wget -O httpd-2.2.25.tar.gz http://archive.apache.org/dist/httpd/httpd-2.2.25.tar.gz;  tar zxvf httpd-2.2.25.tar.gz;  cd httpd-2.2.25;  ./configure     --prefix=/usr/local/apache     --enable-so     --enable-mods-shared=all     --enable-ssl;  make;  make install;  make clean;  cp -f ./build/rpm/httpd.init /etc/rc.d/init.d/httpd;  chmod +x /etc/rc.d/init.d/httpd;)",
+      "chown -R apache:apache /usr/local/apache",
+      "sed -i -e \"s/^#ServerName .\\+/ServerName web:80/g\" /usr/local/apache/conf/httpd.conf",
+      "sed -i -e \"s/\\/usr\\/local\\/apache\\/htdocs/\\/var\\/www\\/html/g\" /usr/local/apache/conf/httpd.conf",
+      "sed -i -e \"s/^\\(User\\|Group\\) daemon$/\\1 apache/g\" /usr/local/apache/conf/httpd.conf",
+      "sed -i -e \"s/^#\\(EnableMMAP off\\)$/\\1/g\" /usr/local/apache/conf/httpd.conf",
+      "sed -i -e \"s/^#\\(EnableSendfile off\\)$/\\1/g\" /usr/local/apache/conf/httpd.conf",
+      "sed -i -e \"s/\\(AllowOverride\\) None$/\\1 All/gi\" /usr/local/apache/conf/httpd.conf",
+      "sed -i -e \"s/^\\(httpd\\)=\\${\\(HTTPD\\)-.\\+}$/\\1=\\${\\2-\\/usr\\/local\\/apache\\/bin\\/httpd}/g\" /etc/rc.d/init.d/httpd",
+      "sed -i -e \"s/^\\(pidfile\\)=\\${\\(PIDFILE\\)-.\\+}$/\\1=\\${\\2-\\/usr\\/local\\/apache\\/logs\\/httpd\\.pid}/g\" /etc/rc.d/init.d/httpd",
+      "sed -i -e \"s/CONFFILE=.\\+$/CONFFILE=\\/usr\\/local\\/apache\\/conf\\/httpd\\.conf/g\" /etc/rc.d/init.d/httpd",
+      "mkdir /root/scripts",
+      "chmod +x /root/scripts/*.sh"
+    ],
+    "workdir": [],
+    "from": "tsweb/centos64",
+    "maintainer": "Kazuhisa Kumagai <k-kumagai@ts.tv-osaka.co.jp>",
+    "cmd": "[\"/root/scripts/service.sh\"]"
+  },
+  "source_repository_url": "git@bitbucket.org:tvoweb2/docker-httpd.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/tvoweb2/docker-httpd",
+  "docker_repository": "tsweb/httpd",
+  "docker_image": "tsweb/httpd",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "tsweb/httpd",
+  "revision": "2.2.15",
+  "uris": [
+    "https://hub.docker.com/r/tsweb/httpd",
+    "https://hub.docker.com/v2/repositories/tsweb/httpd",
+    "git@bitbucket.org:tvoweb2/docker-httpd.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/tsweb/httpd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

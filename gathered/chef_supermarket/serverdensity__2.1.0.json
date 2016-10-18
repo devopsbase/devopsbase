@@ -1,0 +1,110 @@
+{
+  "name": "serverdensity Chef cookbook",
+  "chef_cookbook_name": "serverdensity",
+  "revision": "2.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/serverdensity",
+    "https://supermarket.chef.io/cookbooks/serverdensity/download",
+    "https://supermarket.chef.io/cookbooks/serverdensity/versions/2.1.0",
+    "https://supermarket.chef.io/cookbooks/serverdensity/versions/2.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/serverdensity/versions/2.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/serverdensity",
+    "https://supermarket.chef.io/api/v1/cookbooks/serverdensity/versions/2.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Monitoring"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/serverdensity",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/serverdensity/versions/2.1.0/download",
+  "deprecated": false,
+  "created": "2012-11-20T22:59:56.000Z",
+  "updated": "2016-10-04T15:05:28.355Z",
+  "description": "Installs/Configures the v2 Server Density monitoring agent",
+  "maintainer": {
+    "name": "serverdensity",
+    "email": "hello@serverdensity.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 4783753,
+  "downloads_count_revision": 1038257,
+  "repository_url": "https://github.com/serverdensity/chef-serverdensity",
+  "issues_url": "https://github.com/serverdensity/chef-serverdensity",
+  "chef_source_url": "https://github.com/serverdensity/chef-serverdensity",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# chef-serverdensity\n\nThis cookbook provides an easy way to install the [Server Density agent](https://github.com/serverdensity/sd-agent/) and manage server specific alerts.\n\n## Requirements\n\n### Cookbooks\n\nThis cookbook has dependencies on the following cookbooks:\n\n * [apt](https://github.com/opscode-cookbooks/apt)\n * [yum::epel](https://github.com/opscode-cookbooks/yum)\n\n### Platforms:\n\n * Ubuntu\n * Debian\n * RHEL\n * CentOS\n * Fedora\n\n## Usage\n\n### Basic\n\n  1. Include `recipe[serverdensity::alerts]` in a run list\n\n  2. Then:\n    * Override the `node['serverdensity']['agent_key']` attribute on a [higher level](http://wiki.opscode.com/display/chef/Attributes#Attributes-AttributesPrecedence). *recommended*\n    * **or** use the API to query for devices matching the node's hostname or create a new one if not found, by setting the [config options](#optional-api-config).\n\n### Advanced (recommended)\n\n  1. Add `serverdensity` as a dependency to another cookbook\n\n  2. Use `include_recipe 'serverdensity'` to install `sd-agent`\n\n  3. Call the LWRP as described [below](#lwrp) to dynamically configure `sd-agent`\n\n  4. Call the `serverdensity_plugin` [LWRP](#serverdensity_plugin) to configure plugins\n\n  5. Call the `serverdensity_alert` [LWRP](#serverdensity_alert) to configure custom alerts\n\n## Attributes\n\n### Basic Config\n\n * `node['serverdensity']['account']` **required**  \n   Your Server Density subdomain, i.e. `companyname.serverdensity.io`\n * `node['serverdensity']['agent_key']`  \n   Your Server Density agent key (don't set this if you want to use the API to handle querying nodes/creating nodes)\n * `node['serverdensity']['enabled']`  \n   Should `sd-agent` be running, *default* `true`\n\n### Optional API Config\n\nIf you don't set `agent_key` then set these parameters and new servers will be automatically created in your account.\n\n*If your account URL ends in .com you are using v1*\n\n * `node['serverdensity']['username']`  \n   Username for authenticating with the v1 API (if `agent_key` isn't set)\n * `node['serverdensity']['password']`  \n   Password for authenticating with the v1 API (if `agent_key` isn't set)\n\n*If your account URL ends in .io you are using v2*\n\n * `node['serverdensity']['token']`  \n    Your API token from Preferences > Security in Server Density.\n\n### Optional Advanced Config\n\n * `node['serverdensity']['sd_url']`  \n   By default this will be \"https://#{node.serverdensity.account}\", avoid setting manually where possible.\n\n * `node['serverdensity']['device_group']`  \n    Sets the group for the device to be created in, to inherit alerts automatically.\n\n * `node['serverdensity']['apache_status_url']`  \n    URL to get the Apache2 status page from (e.g. `mod_status`), disabled if not set\n * `node['serverdensity']['apache_status_user']`  \n    Username to authenticate to the Apache2 status page, required if `apache_status_url` is set\n * `node['serverdensity']['apache_status_pass']`  \n    Password to authenticate to the Apache2 status page, required if `apache_status_url` is set\n\n * `node['serverdensity']['mongodb_server']`  \n    Server to get MongoDB status monitoring from, this takes a full [MongoDB connection URI](http://docs.mongodb.org/manual/reference/connection-string/) so you can set username/password etc. details here if needed, disabled if not set\n * `node['serverdensity']['mongodb_dbstats']`  \n    Enables MongoDB stats if `true` and `mongodb_server` is set, *default*: `false`\n * `node['serverdensity']['mongodb_replset']`  \n    Enables MongoDB replset stats if `true` and `mongodb_server` is set, *default*: `false`\n\n * `node['serverdensity']['mysql_server']`  \n    Server to get MySQL status monitoring from, disabled if not set\n * `node['serverdensity']['mysql_user']`  \n    Username to authenticate to MySQL, required if `mysql_server` is set\n * `node['serverdensity']['mysql_pass']`  \n    Password to authenticate to MySQL, required if `mysql_server` is set\n\n * `node['serverdensity']['nginx_status_url']`  \n    URL to get th Nginx status page from, disabled if not set\n\n * `node['serverdensity']['rabbitmq_status_url']`  \n    URL to get the RabbitMQ status from via [HTTP management API](http://www.rabbitmq.com/management.html), disabled if not set\n * `node['serverdensity']['rabbitmq_user']`  \n    Username to authenticate to the RabbitMQ management API, required if `rabbitmq_status_url` is set\n * `node['serverdensity']['rabbitmq_pass']`  \n    Password to authenticate to the RabbitMQ management API, required if `rabbitmq_status_url` is set\n\n * `node['serverdensity']['tmp_directory']`  \n    Override where the agent stores temporary files, system default tmp will be used if not set\n * `node['serverdensity']['pidfile_directory']`  \n    Override where the agent stores it's PID file, temp dir (above or system default) is used if not set\n\n * `node['serverdensity']['logging_level']`  \n    Set the logging level for the agent\n\n * `node['serverdensity']['alerts']`  \n    This should be an array of hashes, each of which defines an alert, keys should match those exposed by the [alert LWRP](#serverdensity_alert) and will be created by the alerts recipe.\n\n * `node['serverdensity']['plugin_dir']`  \n    Sets the directory the agent looks for plugins, if left blank it is ignored\n * `node['serverdensity']['plugin_options']` **deprecated**  \n    _Use the [plugin LWRP](#serverdensity_plugin) where possible, this exists for legacy reasons only._  \n    A hash of optional named plugin options if you have agent plugins you want to configure, simple key-values will be added to the `[Main]` section of the config while sub-hashes will be generated into sections e.g. `{'Beanstalk'=>{'host'=>'localhost'}}` becomes:\n\n```ini\n[Beanstalk]\nhost = localhost\n```\n\n## Recipes\n\n### default\n\nInstalls the sd-agent, ready for the LWRP based setup.\n\n### alerts\n\nConfigures sd-agent from attributes rather than LWRPs, and creates attribute based alerts defined in the `['serverdensity']['alerts']` hash. Here is an example of an alert (for API v1):\n\n```rb\nnode['serverdensity']['alerts']['high-load'] = { \n  'metadata' => {\n    :userId => ['group'],\n    :notificationType => ['email'],\n    :checkType => 'loadAvrg',\n    :comparison => :>,\n    :triggerThreshold => 3,\n    :notificationFixed => true,\n    :notificationDelay => 5,\n    :notificationFrequencyOnce => true\n  }\n}\n```\n\n## LWRP\n\n### serverdensity\n\n#### Actions\n\n  - `clear`  \n    remove all alerts from device\n  - `configure`  \n    write agent config, get token (see below)\n  - `disable`  \n    stop agent if running\n  - `enable`  \n    start agent if not running\n  - `setup`  \n    initialize API for future calls\n  - `sync`  \n    synchronize device metadata\n  - `update` **(default)**  \n    setup api, either configure and enable or disable agent, sync metadata if API is available\n\n#### Getting Device Token\n\nThe configure action of this LWRP facilitates the dynamic configuration the `sd-agent`. The `agent_key` for the device can be acquired by various methods, in order attempts are made to:\n\n  1. use the `agent_key` passed into LWRP\n  2. use `agent_key` defined in attributes\n  3. read the `agent_key` from `/etc/sd-agent-key` on the server\n  4. extract `agent_key` from EC2's internal metadata API\n  5. find the device in Server Density and request the `agent_key`\n  6. create the device in Server Density and request the `agent_key`\n\nWhich of these steps take place depends on the various parameters passed in (see below), and when the `agent_key` is found. As soon as it is acquired no further steps are run.\n\n##### Default\n\nThe default recipe will use steps **2-4** to find an `agent_key`\n\n##### Manual\n\n```rb\n# step 1 only\nserverdensity node.name do\n  agent_key '00000000000000000000000000000000'\nend\n```\n\n##### API v1\n\n```rb\n# steps 2-6\nserverdensity node.name do\n  username 'foo'\n  password 'bar'\nend\n```\n\n##### API v2\n```rb\n# steps 2-6\nserverdensity node.name do\n  token '00000000000000000000000000000000'\nend\n```\n\n#### Other settings\n\n##### Device\n\nBy default, step **5** will use the hostname of the device to match against those stored in Server Density, however occasionally it makes more sense to match on something else, for example when using EC2:\n\n```rb\n# v2 only (v1 only supports name and hostname keys)\nserverdensity node.name do\n  token '00000000000000000000000000000000'\n  device :providerId => node.ec2.instance_id\nend\n```\n\n##### Metadata\n\nThe LWRP also supports writing metadata (via the sync action) to devices during creation via the API. Updating metadata is also supported by API v2.\n\n```rb\nserverdensity node.name do\n  token '00000000000000000000000000000000'\n  metadata :group => 'chef-lwrp'\nend\n```\n\n##### Settings\n\nSettings is a hash used to override configuration options set in the attributes before the agent config file is written. Take a look at [this template](/templates/default/agent.cfg.erb) to see which settings can be defined.\n\n### serverdensity\\_alert\n\nThis is used to create alerts for your newly minted device, it currently just acts as a wrapper for API calls and as such, v1 and v2 usage is significantly different, the hope is to give them a shared DSL in the future.\n\n**This LWRP requires that API credentials (v1 or v2) have been provided, if they have not, it will throw an error.**\n\n#### API v1\n\n```rb\n# create v1 alert (https://github.com/serverdensity/sd-api-docs/blob/master/sections/alerts.md#add)\nserverdensity_alert 'high-cpu' do\n  metadata(\n    :userId => ['group'],\n    :notificationType => ['email'],\n    :checkType => 'loadAvrg',\n    :comparison => :>,\n    :triggerThreshold => 3,\n    :notificationFixed => true,\n    :notificationDelay => 5,\n    :notificationFrequencyOnce => true\n  )\nend\n```\n\n#### API v2\n\n```rb\n# create v2 alert\nserverdensity_alert 'high-cpu' do\n  metadata(\n    # params as described here https://apidocs.serverdensity.com/Alerts/Alert_Configs/Creating\n  )\nend\n```\n\n### serverdensity\\_plugin\n\nThis is used to install and configure plugins, it creates a new plugin config file inside `/etc/sd-agent/conf.d` and symlinks the file specified in `path` to the `plugin_dir`. Currently plugins must be placed on the server outside of this LWRP and then referenced (with `path`). A future goal is to allow plugin installation directly via \n[plugins.serverdensity.com](https://plugins.serverdensity.com/).\n\n#### API (both versions)\n\n```rb\n# install Supervisord plugin, configure it, and restart the sd-agent\nserverdensity_plugin 'Supervisord' do\n  path '/opt/my-company/sd-plugins/Supervisord.py'\n  config(\n    rpc_url: 'unix:///var/run/supervisor.sock'\n  )\n  notifies :restart, 'service[sd-agent]'\nend\n```\n\nThe config file will namespace configurations so that they do not clash between plugins. The example above would produce the following config file:\n\n```ini\n[Supervisord]\nrpc_url = unix:///var/run/supervisor.sock\n```\n\n**IMPORTANT**: Some older plugins may require global settings, if this is the case it is possible to use the `plugin_options` attribute to set these, however it is recommended to upgrade the plugin where possible.\n\n## Notes\n\nAs this cookbook depends on a few [other cookbooks](#cookbooks) it's recommended you use a library like [Berkshelf](http://berkshelf.com/), [librarian-chef](https://github.com/applicationsonline/librarian-chef) or [knife-github-cookbooks](https://github.com/websterclay/knife-github-cookbooks) to automatically manage and install them.\n\n## References\n\n  * [Server Density home page](http://www.serverdensity.com/)\n  * [akatz/chef-serverdensity](https://github.com/akatz/chef-serverdensity)\n  * [Jonty/chef-serverdensity](https://github.com/Jonty/chef-serverdensity)\n  * [serverdensity/chef-serverdensity](https://github.com/serverdensity/chef-serverdensity)\n\n## Authors\n\n  * Original Author: Avrohom Katz <iambpentameter@gmail.com>\n  * Modified by: Jonty Wareing <jonty@jonty.co.uk>\n  * Modified by: Server Density <hello@serverdensity.com>\n  * Rewritten by: Mal Graty <mal.graty@googlemail.com>\n\n## License\n\n[MIT](/LICENSE)\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": "~> 2.6",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": "~> 3.3",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/dpkg_autostart",
+      "revision": "~> 0.1.6",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "serverdensity::default": "Installs serverdensity agent",
+    "serverdensity::alerts": "Installs, configures and starts sd-agent and creates alerts"
+  }
+}

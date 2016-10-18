@@ -1,0 +1,101 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/whiledo/letsencrypt-apache-ubuntu",
+    "repository_url": "https://hub.docker.com/v2/repositories/whiledo/letsencrypt-apache-ubuntu",
+    "tags_url": "https://hub.docker.com/v2/repositories/whiledo/letsencrypt-apache-ubuntu/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/whiledo/letsencrypt-apache-ubuntu/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/whiledo/letsencrypt-apache-ubuntu/autobuild",
+    "user": "whiledo",
+    "name": "letsencrypt-apache-ubuntu",
+    "namespace": "whiledo",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 330,
+    "last_updated": "2016-10-13T21:32:37.351097Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 192625029,
+        "id": 1479346,
+        "repository": 430481,
+        "creator": 370265,
+        "last_updater": 370265,
+        "last_updated": "2016-10-13T21:32:36.914091Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "kekru/letsencrypt-apache-ubuntu"
+  },
+  "name": "whiledo/letsencrypt-apache-ubuntu Docker container",
+  "description": "apache2 webserver with Lets Encrypt",
+  "readme": "### apache2 webserver with Let's Encrypt on Ubuntu\n\n[Let's Encrypt](https://github.com/letsencrypt/letsencrypt) is a service generating HTTPS certificates for you and installing them in your apache2 webserver.\n\n### Use with own Dockerfile  \nStart with creating a Dockerfile  \n`FROM whiledo/letsencrypt-apache-ubuntu`  \n`... deploy your app, or do other stuff`  \n`CMD [\"apache2ctl\", \"-D\", \"FOREGROUND\"]`  \n\nbuild it with  \n`docker build -t myname/myapp .`  \n(Be sure to be in the directory of your Dockerfile)\n\nrun with  \n`docker run -d --name myappcontainer -p 80:80 -p 443:443 myname/myapp`  \n\n### Just run without new Dockerfile  \nif you don't want to create a Dockerfile, you can just run  \n`docker run -d --name myappcontainer -p 80:80 -p 443:443 whiledo/letsencrypt-apache-ubuntu`\n\n### Install the https certificate  \nIt is important to expose port 80, because the Let's Encrypt Server will try to find yourwebsite.org:80  \n\nNow log in to the running container  \n`docker exec -it myappcontainer /bin/bash`  \n\nAnd install the https certificate  \n`/data/letsencrypt/letsencrypt-auto --apache --email your@email.org --agree-tos -d yourwebsite.org`  \n\n### I don't want to run on ports 80 and 443  \nLet's Encrypt wants you to make ports 80 and 443 available when running the automatic installer.  \nIf you don't want to expose ports 80 and 443, you could generate the certificates and install them in the apache server manually.  \nLook in the [Let's Encrypt Repository](https://github.com/letsencrypt/letsencrypt) for more information.\nIt is a command starting with `/letsencrypt-auto certonly --standalone ...`.  \n\n\nWhen you want to run the automatic installer, you can use a trick.  \nLet's say you want 9980 to be your HTTP port and 9981 to be your HTTPS port.  \n\nWe'll use the [docker-forward](https://hub.docker.com/r/njohnson/docker-forward/) image provided by njohnson to forward TCP traffic. The images is based on socat.  \n\nWe create a container forwarding TCP traffic from port 80 to 9980  \n`docker run -d --name forward80 -p 80:80 --env PORT_LOCAL=80 --env ADDRESS_REMOTE=yourwebsite.org --env PORT_REMOTE=9980 njohnson/docker-forward`  \n\nand a container forwarding TCP traffic from port 443 to 9981\n`docker run -d --name forward443 -p 443:443 --env PORT_LOCAL=443 --env ADDRESS_REMOTE=yourwebsite.org --env PORT_REMOTE=9981 njohnson/docker-forward`  \n\nNow go on with the steps at \"Install the https certificate\".  \n\nAfter finishing stop the forward-containers  \n`docker stop forward80 && docker rm forward80 && docker stop forward443 && docker rm forward443`  \n\n\n\n\n\n\n\n",
+  "dockerfile": "FROM ubuntu:14.04\nMAINTAINER Kevin Krummenauer <kevin@whiledo.de>\n\nWORKDIR /data\n\nRUN apt-get update && apt-get install -y \\\n        apache2 \\\n        git\n\nRUN echo \"\" > /var/www/html/index.html\nRUN git clone https://github.com/letsencrypt/letsencrypt\nRUN /data/letsencrypt/letsencrypt-auto --help\n\nRUN apache2ctl -D BACKGROUND\n\nEXPOSE 80 443\n\nCMD [\"apache2ctl\", \"-D\", \"FOREGROUND\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y         apache2         git",
+      "echo \"\" > /var/www/html/index.html",
+      "git clone https://github.com/letsencrypt/letsencrypt",
+      "/data/letsencrypt/letsencrypt-auto --help",
+      "apache2ctl -D BACKGROUND"
+    ],
+    "workdir": [
+      "/data"
+    ],
+    "from": "ubuntu:14.04",
+    "maintainer": "Kevin Krummenauer <kevin@whiledo.de>",
+    "cmd": "[\"apache2ctl\", \"-D\", \"FOREGROUND\"]"
+  },
+  "source_repository_url": "https://github.com/kekru/letsencrypt-apache-ubuntu.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/kekru/letsencrypt-apache-ubuntu",
+  "docker_repository": "whiledo/letsencrypt-apache-ubuntu",
+  "docker_image": "whiledo/letsencrypt-apache-ubuntu",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "whiledo/letsencrypt-apache-ubuntu",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/whiledo/letsencrypt-apache-ubuntu",
+    "https://hub.docker.com/v2/repositories/whiledo/letsencrypt-apache-ubuntu",
+    "https://github.com/kekru/letsencrypt-apache-ubuntu.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/Europe/EU",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/whiledo/letsencrypt-apache-ubuntu",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,103 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mbrt/golang-vim-dev",
+    "repository_url": "https://hub.docker.com/v2/repositories/mbrt/golang-vim-dev",
+    "tags_url": "https://hub.docker.com/v2/repositories/mbrt/golang-vim-dev/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mbrt/golang-vim-dev/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mbrt/golang-vim-dev/autobuild",
+    "user": "mbrt",
+    "name": "golang-vim-dev",
+    "namespace": "mbrt",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 16,
+    "pull_count": 1018,
+    "last_updated": "2016-09-07T23:38:45.135974Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 239497000,
+        "id": 58977,
+        "repository": 145081,
+        "creator": 185599,
+        "last_updater": 185599,
+        "last_updated": "2016-09-07T23:38:44.791545Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "michele-bertasi/go-docker-dev"
+  },
+  "name": "mbrt/golang-vim-dev Docker container",
+  "description": "Go lang + tools + vim-go",
+  "readme": "# go-vim Docker image\nThis Docker image adds [Go](https://golang.org/) tools and the following vim plugins to the [official Go image](https://registry.hub.docker.com/_/golang/):\n\n* [vim-go](https://github.com/fatih/vim-go)\n* [tagbar](https://github.com/majutsushi/tagbar)\n* [neocomplete](https://github.com/Shougo/neocomplete)\n* [NERD Tree](https://github.com/scrooloose/nerdtree)\n* [vim-airline](https://github.com/bling/vim-airline)\n* [fugitive.vim](https://github.com/tpope/vim-fugitive)\n* [NERD Tree tabs](https://github.com/jistr/vim-nerdtree-tabs)\n* [undotree](https://github.com/mbbill/undotree)\n* [vim-easymotion](https://github.com/Lokaltog/vim-easymotion)\n* [NERD Commenter](https://github.com/scrooloose/nerdcommenter)\n\n## Usage\n\nRun this image from within your go workspace. You can than edit your project using `vim`, and usual go commands: `go build`, `go run`, etc. \n\n```\ncd your/go/workspace\ndocker run --rm -tiv `pwd`:/go mbrt/golang-vim-dev\n```\n\n## Limitations\n\nThis image lacks [gdb](https://golang.org/doc/gdb) support. If anyone has managed to get it working on this image, please let me know (breakpoints are not working for me).\n",
+  "dockerfile": "FROM golang:wheezy\nMAINTAINER Michele Bertasi\n\nADD fs/ /\n\n# install pagkages\nRUN apt-get update                                                      && \\\n    apt-get install -y ncurses-dev libtolua-dev exuberant-ctags         && \\\n    ln -s /usr/include/lua5.2/ /usr/include/lua                         && \\\n    ln -s /usr/lib/x86_64-linux-gnu/liblua5.2.so /usr/lib/liblua.so     && \\\n    cd /tmp                                                             && \\\n# build and install vim\n    git clone https://github.com/vim/vim.git                            && \\\n    cd vim                                                              && \\\n    ./configure --with-features=huge --enable-luainterp                    \\\n        --enable-gui=no --without-x --prefix=/usr                       && \\\n    make VIMRUNTIMEDIR=/usr/share/vim/vim74                             && \\\n    make install                                                        && \\\n# get go tools\n    go get golang.org/x/tools/cmd/godoc                                 && \\\n    go get github.com/nsf/gocode                                        && \\\n    go get golang.org/x/tools/cmd/goimports                             && \\\n    go get github.com/rogpeppe/godef                                    && \\\n    go get golang.org/x/tools/cmd/oracle                                && \\\n    go get golang.org/x/tools/cmd/gorename                              && \\\n    go get github.com/golang/lint/golint                                && \\\n    go get github.com/kisielk/errcheck                                  && \\\n    go get github.com/jstemmer/gotags                                   && \\\n    go get github.com/tools/godep                                       && \\\n    mv /go/bin/* /usr/local/go/bin                                      && \\\n# add dev user\n    adduser dev --disabled-password --gecos \"\"                          && \\\n    echo \"ALL            ALL = (ALL) NOPASSWD: ALL\" >> /etc/sudoers     && \\\n    chown -R dev:dev /home/dev /go                                      && \\\n# cleanup\n    rm -rf /go/src/* /go/pkg                                            && \\\n    apt-get remove -y ncurses-dev                                       && \\\n    apt-get autoremove -y                                               && \\\n    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nUSER dev\nENV HOME /home/dev\n\n# install vim plugins\nRUN mkdir -p ~/.vim/bundle                                              && \\\n    cd  ~/.vim/bundle                                                   && \\\n    git clone --depth 1 https://github.com/gmarik/Vundle.vim.git        && \\\n    git clone --depth 1 https://github.com/fatih/vim-go.git             && \\\n    git clone --depth 1 https://github.com/majutsushi/tagbar.git        && \\\n    git clone --depth 1 https://github.com/Shougo/neocomplete.vim.git   && \\\n    git clone --depth 1 https://github.com/scrooloose/nerdtree.git      && \\\n    git clone --depth 1 https://github.com/bling/vim-airline.git        && \\\n    git clone --depth 1 https://github.com/tpope/vim-fugitive.git       && \\\n    git clone --depth 1 https://github.com/jistr/vim-nerdtree-tabs.git  && \\\n    git clone --depth 1 https://github.com/mbbill/undotree.git          && \\\n    git clone --depth 1 https://github.com/Lokaltog/vim-easymotion.git  && \\\n    git clone --depth 1 https://github.com/scrooloose/nerdcommenter.git && \\\n    vim +PluginInstall +qall                                            && \\\n# cleanup\n    rm -rf Vundle.vim/.git vim-go/.git tagbar/.git neocomplete.vim/.git    \\\n        nerdtree/.git vim-airline/.git vim-fugitive/.git                   \\\n        vim-nerdtree-tabs/.git undotree/.git vim-easymotion/.git           \\\n        nerdcommenter/.git\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "fs/",
+        "dest": "/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update                                                      &&     apt-get install -y ncurses-dev libtolua-dev exuberant-ctags         &&     ln -s /usr/include/lua5.2/ /usr/include/lua                         &&     ln -s /usr/lib/x86_64-linux-gnu/liblua5.2.so /usr/lib/liblua.so     &&     cd /tmp                                                             && # build and install vim",
+      "mkdir -p ~/.vim/bundle                                              &&     cd  ~/.vim/bundle                                                   &&     git clone --depth 1 https://github.com/gmarik/Vundle.vim.git        &&     git clone --depth 1 https://github.com/fatih/vim-go.git             &&     git clone --depth 1 https://github.com/majutsushi/tagbar.git        &&     git clone --depth 1 https://github.com/Shougo/neocomplete.vim.git   &&     git clone --depth 1 https://github.com/scrooloose/nerdtree.git      &&     git clone --depth 1 https://github.com/bling/vim-airline.git        &&     git clone --depth 1 https://github.com/tpope/vim-fugitive.git       &&     git clone --depth 1 https://github.com/jistr/vim-nerdtree-tabs.git  &&     git clone --depth 1 https://github.com/mbbill/undotree.git          &&     git clone --depth 1 https://github.com/Lokaltog/vim-easymotion.git  &&     git clone --depth 1 https://github.com/scrooloose/nerdcommenter.git &&     vim +PluginInstall +qall                                            && # cleanup"
+    ],
+    "workdir": [],
+    "from": "golang:wheezy",
+    "maintainer": "Michele Bertasi",
+    "user": "dev",
+    "env": {
+      "HOME": "/home/dev"
+    }
+  },
+  "source_repository_url": "https://github.com/michele-bertasi/go-docker-dev.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/michele-bertasi/go-docker-dev",
+  "docker_repository": "mbrt/golang-vim-dev",
+  "docker_image": "mbrt/golang-vim-dev",
+  "parameters_schema": {
+    "HOME": {
+      "default": "/home/dev",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mbrt/golang-vim-dev",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/mbrt/golang-vim-dev",
+    "https://hub.docker.com/v2/repositories/mbrt/golang-vim-dev",
+    "https://github.com/michele-bertasi/go-docker-dev.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Golang"
+  ],
+  "info_url": "https://hub.docker.com/r/mbrt/golang-vim-dev",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

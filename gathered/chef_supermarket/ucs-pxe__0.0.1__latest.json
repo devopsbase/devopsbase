@@ -1,0 +1,43 @@
+{
+  "name": "ucs-pxe Chef cookbook",
+  "chef_cookbook_name": "ucs-pxe",
+  "revision": "0.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/ucs-pxe",
+    "https://supermarket.chef.io/cookbooks/ucs-pxe/download",
+    "https://supermarket.chef.io/cookbooks/ucs-pxe/versions/0.0.1",
+    "https://supermarket.chef.io/cookbooks/ucs-pxe/versions/0.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/ucs-pxe/versions/0.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/ucs-pxe",
+    "https://supermarket.chef.io/api/v1/cookbooks/ucs-pxe/versions/0.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Networking",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/ucs-pxe",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/ucs-pxe/versions/0.0.1/download",
+  "deprecated": false,
+  "created": "2012-12-02T15:48:31.000Z",
+  "updated": "2012-12-02T15:48:31.000Z",
+  "description": "Installs/Configures a PXE Appliance used for bare metal provisioning for Cisco UCS",
+  "maintainer": {
+    "name": "mraju",
+    "email": "eng@velankani.net"
+  },
+  "license": "All rights reserved",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 1252648,
+  "downloads_count_revision": 1252648,
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nA Chef cookbook (beta) that builds a PXE appliance for Cisco UCS bare-metal deployment. This cookbook acts as the stage 2 phase for DC Automation.\nAs of now, the recipes are tied specifically towards the workflow defined by ucs or ucs-solo cookbooks.\n\nRequirements\n============\n\nThe PXE appliance is currently tested on Ubuntu 12.04.1 LTS. Other platform OSs as well as target OS's will be supported in the future.\n\nSupported Targest OS Environments:\n\t\n\tUbuntu 12.04.1 LTS\n\n\nAttributes\n==========\n\n\t#UCS\n\tdefault[:pxe][:ucs][:ip] = '192.168.73.131'\n\tdefault[:pxe][:ucs][:username] = 'admin'\n\tdefault[:pxe][:ucs][:password] = 'admin'\n\n\n\t#DHCP\n\tdefault[:pxe][:dhcpd][:dns_server] = \"192.168.73.250\"\n\tdefault[:pxe][:dhcpd][:next_server] = \"192.168.73.136\"\n\tdefault[:pxe][:dhcpd][:subnet] = \"192.168.73.0\"\n\tdefault[:pxe][:dhcpd][:subnet_mask] = \"255.255.255.0\"\n\tdefault[:pxe][:dhcpd][:broadcast] = \"192.168.73.255\"\n\tdefault[:pxe][:dhcpd][:gateway] = \"192.168.73.1\"\n\tdefault[:pxe][:dhcpd][:host_range] = \"192.168.73.150 192.168.73.200\"\n\tdefault[:pxe][:dhcpd][:interfaces] = ['eth0']\n\tdefault[:pxe][:dhcpd][:filename] = \"pxelinux.0\"\n\tdefault[:pxe][:dhcpd][:databag] = \"dhcpd\"\n\n\n\t#OS \n\tdefault[:pxe][:preseed][:username] = \"chef\"\n\tdefault[:pxe][:preseed][:password] = \"chef101\"\n\n\n\t#Ubuntu\n\tdefault[:pxe][:os][:release] = \"ubuntu-12.04.1\"\n\tdefault[:pxe][:linux][:release][:dist] = \"ubuntu-12.04.1\"\n\tdefault[:pxe][:linux][:release][:path] = \"http://mirror.anl.gov/pub/ubuntu-iso/CDs/12.04/ubuntu-12.04.1-server-amd64.iso\"\n\nUsage\n=====\n\nFollows a convention. include_recipe considered harmful and therefore we do not use it as part of our philosophy. \nWe prefer more explicit ways to do things forcing us to declare all dependencies when orchestrating.\n\nThe run_list order using knife:\n\n\t1. Install packages\n\n\tknife node run_list add <node> recipe[ucs-pxe::default]\n\tknife ssh name:<node> -x <username> -P <password> \"sudo chef-client\"\n\n\t2. Setup the databags needed for generating the custom dhcpd.conf\n\n\tknife node run_list remove <node> recipe[ucs-pxe::default]\n\tknife node run_list add <node> recipe[ucs-pxe::databag]\n\tknife ssh name:<node> -x <username> -P <password> \"sudo chef-client\"\n\n\t3. Setup dhcpd.conf based on mac addresses of all assigned service profiles\n\n\tknife node run_list remove <node> recipe[ucs-pxe::databag]\n\tknife node run_list add <node> recipe[ucs-pxe::dhcpd]\n\tknife ssh name:<node> -x <username> -P <password> \"sudo chef-client\"\n\n\t4. Build target OS environment to be deployed.\n\n\tknife node run_list remove <node> recipe[ucs-pxe::dhcpd]\n\tknife node run_list add <node> recipe[ucs-pxe::ubuntu]\n\tknife ssh name:<node> -x <username> -P <password> \"sudo chef-client\"\n\n\t5. Reboot Service Profile(s). The install should begin.\n\n\t6. The system halts after installation is complete.\n\n\nToDo\n=====\n\n1. Reciple for toggling boot policy to boot from disk to move towards Stage 3 - service provisioning.\n\nLicense\n========\n\n\tAuthor:: Velankani Engineering Team eng@velankani.net\n\n\tCopyright:: Copyright (c) 2011 Murali Raju, murali.raju@appliv.com\n\tCopyright:: Copyright (c) 2012 Velankani Information Systems, Inc.\n\tLicense:: Apache License, Version 2.0\n\nLicensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. You may obtain a copy of the License at\n\nhttp://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.\n\n\n\n\n\n\n"
+}

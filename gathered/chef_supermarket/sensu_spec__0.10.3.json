@@ -1,0 +1,68 @@
+{
+  "name": "sensu_spec Chef cookbook",
+  "chef_cookbook_name": "sensu_spec",
+  "revision": "0.10.3",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/sensu_spec",
+    "https://supermarket.chef.io/cookbooks/sensu_spec/download",
+    "https://supermarket.chef.io/cookbooks/sensu_spec/versions/0.10.3",
+    "https://supermarket.chef.io/cookbooks/sensu_spec/versions/0.10.3/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/sensu_spec/versions/0.10.3",
+    "https://supermarket.chef.io/api/v1/cookbooks/sensu_spec",
+    "https://supermarket.chef.io/api/v1/cookbooks/sensu_spec/versions/0.10.3/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Monitoring/Sensu"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/sensu_spec",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/sensu_spec/versions/0.10.3/download",
+  "deprecated": false,
+  "created": "2014-03-18T09:35:48.000Z",
+  "updated": "2015-12-07T13:27:12.469Z",
+  "description": "Installs/Configures sensu_spec",
+  "maintainer": {
+    "name": "zeroxten",
+    "email": "fraser.scott@gmail.com"
+  },
+  "license": "All rights reserved",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 36827041,
+  "downloads_count_revision": 802673,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "sensu\\_spec cookbook\n===================\n\nsensu\\_spec attempts to blur the line between TDD and monitoring.\n\nOne way to achieve this is to use something like serverspec to write test, then to send the results to Sensu. This is great, but seems to be a limited approach. I think you'd have to jump through a number of hoops to be able to reuse existing monitoring plugins, and getting metrics out would probably be a bit painful.\n\nThis cookbook is an experiment that starts with standard monitoring tools and attempts to turn them into specs.\n\nA quick overview\n==================\n\nIf you want something basic, you can use the definitions that come with this cookbook. But first, you need to use the cookbook.\n\nEdit metadata.rb in your cookbook and add\n\n    depends 'sensu_spec'\n\nThen install using berkshelf\n\n    $ berks update\n\n\nNow, lets say your cookbook is going to install and configure a logstash server. You'll probably want to start off by writing a recipe called spec.rb:\n\n    include_recipe 'sensu_spec'\n\n    describe 'logstash' do\n      describe 'java' do\n        it 'must have command java'\n      end\n\n      describe 'java version' do\n        it 'must match \"1\\.7.*(\\n|.)*HotSpot\" when I run \"java -version\"'\n      end\n    end\n\n    describe 'logstash agent' do\n      describe 'directory' do\n        it 'must have directory /opt/logstash/agent'\n      end\n\n      describe 'jar' do\n        it \"must have readable file /opt/logstash/agent/lib/logstash-#{node.logstash.agent.version}.jar\"\n      end\n\n      describe 'process' do\n        it 'must have 1 java process with args logstash/agent'\n      end\n    end\n\n    describe 'logstash server' do\n      describe 'directory' do\n        it 'must have directory /opt/logstash/server'\n      end\n\n      describe 'jar' do\n        it \"must have readable file /opt/logstash/server/lib/logstash-#{node.logstash.server.version}.jar\"\n      end\n\n      describe 'process' do\n        it 'must have 1 java process with args logstash/server'\n      end\n    end\n\nThat looks pretty straight forward. We're describing our requirements using something like natural language.\n\nThe magic happens because sensu\\_spec::default is including the definitions that come with this cookbook. For example:\n\n    define /must have (?<count>\\d+) (?<name>.+?) process(?:es)? with args (?<args>.*)/ do\n      command 'check-procs-args :::name::: :::count::: \":::args:::\"'\n      code <<-EOF\n        #!/bin/bash\n        num_procs=$(ps --no-headers -f -C $1 | grep $3 | wc -l)\n        [[ $num_procs != $2 ]] && { echo \"CRITICAL - $num_procs $1 process(es) with args $3 found. Expected $2\"; exit 2; }\n        echo \"OK - $2 $1 process(es) with args $3 found\"; exit 0\n      EOF\n    end\n\nThe command should look familiar, it will be mapped to a Sensu check command. The code attribute is optional, but if provided it will create the command specified with that code. In this case we're using bash to write a little check to monitor processes.\n\nWhen a specification matches a definition, some magic happens to combine the two to turn them into standalone checks that can be run during tests, and Sensu client and server configuration\n\nWriting specs\n=============\n\nWriting definitions\n===================\n\nPlumbing\n========\n\nTesting\n=======\n\nSensu client\n============\n\n\nSensu server\n============\n\nConventions\n===========\n\nContributing\n============\n\nAuthor\n======\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 2.6",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 3.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum-epel",
+      "revision": ">= 0.2",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/sensu",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

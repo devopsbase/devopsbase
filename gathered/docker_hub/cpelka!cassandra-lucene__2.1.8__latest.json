@@ -1,0 +1,146 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/cpelka/cassandra-lucene",
+    "repository_url": "https://hub.docker.com/v2/repositories/cpelka/cassandra-lucene",
+    "tags_url": "https://hub.docker.com/v2/repositories/cpelka/cassandra-lucene/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/cpelka/cassandra-lucene/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/cpelka/cassandra-lucene/autobuild",
+    "user": "cpelka",
+    "name": "cassandra-lucene",
+    "namespace": "cpelka",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 32518,
+    "last_updated": "2015-07-28T14:49:35.754621Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2.1.8",
+        "full_size": 422460855,
+        "id": 641190,
+        "repository": 246935,
+        "creator": 358608,
+        "last_updater": 358608,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 422460919,
+        "id": 522566,
+        "repository": 246935,
+        "creator": 358608,
+        "last_updater": 358608,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "2.1.7",
+        "full_size": 422063557,
+        "id": 522560,
+        "repository": 246935,
+        "creator": 358608,
+        "last_updater": 358608,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "cpelka/docker"
+  },
+  "name": "cpelka/cassandra-lucene Docker container",
+  "description": "This repository contains Apache Cassandra bundled with Lucene",
+  "readme": "# Tags & Dockerfiles\r\n* `latest`, `2.1.8`: Cassandra 2.1.8 ([Dockerfile](https://github.com/cpelka/docker/blob/master/cassandra/cassandra-2.1.8-with-lucene/Dockerfile))\r\n* `2.1.7`: Cassandra 2.1.7 ([Dockerfile](https://github.com/cpelka/docker/blob/master/cassandra/cassandra-2.1.7-with-lucene/Dockerfile))\r\n\r\n# About this repository\r\nThe repository adds Lucene Index to Apache Cassandra for full-text search by adding a magic column (see example below, more information here: [Stratio Cassandra Lucene Plugin](https://github.com/Stratio/cassandra-lucene-index))\r\n\r\n# Lucene Example\r\n## Create Keyspace & Table\r\n```bash\r\nCREATE KEYSPACE demo WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor': 1};\r\nUSE demo;\r\nCREATE TABLE tweets (\r\n  id INT PRIMARY KEY,\r\n  user TEXT,\r\n  body TEXT,\r\n  lucene TEXT\r\n);\r\n```\r\nNote the field _lucene_ in the table, which is a magic column to query (see below).\r\n\r\n## Create Lucene Index on Table\r\n```\r\nCREATE CUSTOM INDEX tweets_index ON tweets (lucene)\r\nUSING 'com.stratio.cassandra.lucene.Index'\r\nWITH OPTIONS = {\r\n  'refresh_seconds': '1',\r\n  'schema': '{\r\n    fields: {\r\n      id: {type: \"integer\"},\r\n      user: {type: \"string\"},\r\n      body  : {type : \"text\", analyzer : \"english\"}\r\n    }\r\n  }'\r\n};\r\n```\r\n\r\n## Add some data\r\n```bash\r\nINSERT INTO tweets (id, user, body) VALUES (1, 'Adam', 'some text from Adam');\r\nINSERT INTO tweets (id, user, body) VALUES (2, 'Ben', 'some text from Ben');\r\nINSERT INTO tweets (id, user, body) VALUES (3, 'Ben', 'even more text from Ben');\r\nINSERT INTO tweets (id, user, body) VALUES (4, 'Constantine', 'text without username');\r\n```\r\n\r\n## Run full-text search\r\n```bash\r\nSELECT * FROM tweets WHERE lucene='{ query : {type:\"contains\", field:\"body\", values:[\"without\"]} }';\r\n```\r\n```bash\r\nSELECT * FROM tweets WHERE lucene='{ query : {type:\"match\", field:\"user\", value:\"Constantine\"} }';\r\n```\r\nFor more options, check out [Lucene Homepage](https://lucene.apache.org) and/or [Stratio Cassandra Lucene Plugin](https://github.com/Stratio/cassandra-lucene-index).\r\n\r\n# Links\r\n* [Apache Cassandra](http://cassandra.apache.org)\r\n* [Apache Cassandra @DockerHubRegistry](https://registry.hub.docker.com/_/cassandra/)\r\n* [Apache Lucene](https://lucene.apache.org)\r\n* [Stratio Cassandra Lucene Plugin](https://github.com/Stratio/cassandra-lucene-index)",
+  "dockerfile": "FROM cpelka/java:jdk7-mvn3.3-git\n\nMAINTAINER Carsten Pelka <carsten.pelka@gmail.com>\n\n# Configuration: Cassandra Version & Plugin Version\nENV CASSANDRA_VERSION 2.1.8\nENV PLUGIN_VERSION $CASSANDRA_VERSION.0\n\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 514A2AD631A57A16DD0047EC749D6EEC0353B12C\n\nRUN echo 'deb http://www.apache.org/dist/cassandra/debian 21x main' >> /etc/apt/sources.list.d/cassandra.list\n\nRUN apt-get update \\\n\t&& apt-get install -y cassandra=\"$CASSANDRA_VERSION\" \\\n\t&& rm -rf /var/lib/apt/lists/*\n\nENV CASSANDRA_CONFIG /etc/cassandra\n\n# listen to all rpc\nRUN sed -ri ' \\\n\t\ts/^(rpc_address:).*/\\1 0.0.0.0/; \\\n\t' \"$CASSANDRA_CONFIG/cassandra.yaml\"\n\nCOPY docker-entrypoint.sh /docker-entrypoint.sh\nENTRYPOINT [\"/docker-entrypoint.sh\"]\n\n# Lucene Plugin\nRUN cd /tmp/ \\\n  && git clone https://github.com/Stratio/cassandra-lucene-index \\\n\t&& cd cassandra-lucene-index \\\n\t&& git checkout $PLUGIN_VERSION \\\n\t&& mvn clean package \\\n\t&& cp plugin/target/cassandra-lucene-index-plugin-$PLUGIN_VERSION.jar /usr/share/cassandra/lib/\n\nVOLUME /var/lib/cassandra/data\n\nEXPOSE 9042\n\nCMD [\"cassandra\", \"-f\"]\n\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      9042
+    ],
+    "volume": [
+      "/var/lib/cassandra/data"
+    ],
+    "run": [
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 514A2AD631A57A16DD0047EC749D6EEC0353B12C",
+      "echo 'deb http://www.apache.org/dist/cassandra/debian 21x main' >> /etc/apt/sources.list.d/cassandra.list",
+      "apt-get update \t&& apt-get install -y cassandra=\"$CASSANDRA_VERSION\" \t&& rm -rf /var/lib/apt/lists/*",
+      "sed -ri ' \t\ts/^(rpc_address:).*/\\1 0.0.0.0/; \t' \"$CASSANDRA_CONFIG/cassandra.yaml\"",
+      "cd /tmp/   && git clone https://github.com/Stratio/cassandra-lucene-index \t&& cd cassandra-lucene-index \t&& git checkout $PLUGIN_VERSION \t&& mvn clean package \t&& cp plugin/target/cassandra-lucene-index-plugin-$PLUGIN_VERSION.jar /usr/share/cassandra/lib/"
+    ],
+    "workdir": [],
+    "from": "cpelka/java:jdk7-mvn3.3-git",
+    "maintainer": "Carsten Pelka <carsten.pelka@gmail.com>",
+    "env": {
+      "CASSANDRA_VERSION": "2.1.8",
+      "PLUGIN_VERSION": "$CASSANDRA_VERSION.0",
+      "CASSANDRA_CONFIG": "/etc/cassandra"
+    },
+    "copy": "docker-entrypoint.sh /docker-entrypoint.sh",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"cassandra\", \"-f\"]"
+  },
+  "source_repository_url": "https://github.com/cpelka/docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/cpelka/docker",
+  "docker_repository": "cpelka/cassandra-lucene",
+  "docker_image": "cpelka/cassandra-lucene",
+  "parameters_schema": {
+    "CASSANDRA_VERSION": {
+      "default": "2.1.8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PLUGIN_VERSION": {
+      "default": "$CASSANDRA_VERSION.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CASSANDRA_CONFIG": {
+      "default": "/etc/cassandra",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        9042
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "cpelka/cassandra-lucene",
+  "revision": "2.1.8",
+  "uris": [
+    "https://hub.docker.com/r/cpelka/cassandra-lucene",
+    "https://hub.docker.com/v2/repositories/cpelka/cassandra-lucene",
+    "https://github.com/cpelka/docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Bundle",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/cpelka/cassandra-lucene",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

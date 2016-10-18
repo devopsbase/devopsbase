@@ -1,0 +1,226 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jgiannuzzi/postgres-bdr",
+    "repository_url": "https://hub.docker.com/v2/repositories/jgiannuzzi/postgres-bdr",
+    "tags_url": "https://hub.docker.com/v2/repositories/jgiannuzzi/postgres-bdr/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jgiannuzzi/postgres-bdr/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jgiannuzzi/postgres-bdr/autobuild",
+    "user": "jgiannuzzi",
+    "name": "postgres-bdr",
+    "namespace": "jgiannuzzi",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 555,
+    "last_updated": "2016-09-23T20:45:40.928565Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 101024467,
+        "id": 1172611,
+        "repository": 370260,
+        "creator": 484194,
+        "last_updater": 484194,
+        "last_updated": "2016-09-23T20:42:37.025962Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9",
+        "full_size": 101035247,
+        "id": 1172617,
+        "repository": 370260,
+        "creator": 484194,
+        "last_updater": 484194,
+        "last_updated": "2016-08-31T07:43:28.718372Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9.4",
+        "full_size": 101035275,
+        "id": 1172608,
+        "repository": 370260,
+        "creator": 484194,
+        "last_updater": 484194,
+        "last_updated": "2016-08-31T07:39:53.215729Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9.4.9",
+        "full_size": 101035333,
+        "id": 4596037,
+        "repository": 370260,
+        "creator": 484194,
+        "last_updater": 484194,
+        "last_updated": "2016-08-31T07:36:12.858908Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9.4.8",
+        "full_size": 100785481,
+        "id": 3069053,
+        "repository": 370260,
+        "creator": 484194,
+        "last_updater": 484194,
+        "last_updated": "2016-05-18T15:43:19.737584Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "9.4.5",
+        "full_size": 100651106,
+        "id": 1607997,
+        "repository": 370260,
+        "creator": 484194,
+        "last_updater": 484194,
+        "last_updated": "2016-02-24T09:48:14.964314Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "9.4.4",
+        "full_size": 100574417,
+        "id": 1172610,
+        "repository": 370260,
+        "creator": 484194,
+        "last_updater": 484194,
+        "last_updated": "2015-10-28T01:23:10.793579Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "jgiannuzzi/docker-postgres-bdr"
+  },
+  "name": "jgiannuzzi/postgres-bdr Docker container",
+  "description": "Docker image for PostgreSQL with BDR support",
+  "readme": "# Docker image for PostgreSQL with BDR support\n\nBased on Debian Jessie. Includes a patched postgres with support for [BDR](http://bdr-project.org/)\n\nImage heavily borrowed from the [official image](https://github.com/docker-library/postgres) for postgres.\nLook there for further usage instructions.\n\n## Quick setup\n\nCreate a database on each node, eg named bdrdemo. Then, connect to the\ndatabase on the first node and run:\n\n```SQL\nCREATE EXTENSION IF NOT EXISTS btree_gist;\nCREATE EXTENSION IF NOT EXISTS bdr;\n\nSELECT bdr.bdr_group_create(\n  local_node_name := 'node01',\n  node_external_dsn := 'host=node01.host port=5432 dbname=bdrdemo'\n);\n```\n\nThen, on all other nodes run:\n\n```SQL\nCREATE EXTENSION IF NOT EXISTS btree_gist;\nCREATE EXTENSION IF NOT EXISTS bdr;\n\nSELECT bdr.bdr_group_join(\n  local_node_name := 'nodeXX',\n  node_external_dsn := 'host=nodeXX.host port=5432 dbname=bdrdemo',\n  join_using_dsn := 'host=node01.host port=5432 dbname=bdrdemo'\n);\n```\n\n(Make sure to replace node names and hosts with appropriate values)\n\n[![Build Status](https://travis-ci.org/jgiannuzzi/docker-postgres-bdr.svg?branch=master)](https://travis-ci.org/jgiannuzzi/docker-postgres-bdr)\n",
+  "dockerfile": "# vim:set ft=dockerfile:\nFROM debian:jessie\n\n# explicitly set user/group IDs\nRUN groupadd -r postgres --gid=999 && useradd -r -g postgres --uid=999 postgres\n\n# grab gosu for easy step-down from root\nENV GOSU_VERSION 1.7\nRUN set -x \\\n\t&& apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/* \\\n\t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \\\n\t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \\\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n\t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\n\t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu \\\n\t&& gosu nobody true \\\n\t&& apt-get purge -y --auto-remove ca-certificates wget\n\n# make the \"en_US.UTF-8\" locale so postgres will be utf-8 enabled by default\nRUN apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/* \\\n\t&& localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8\nENV LANG en_US.utf8\n\nRUN mkdir /docker-entrypoint-initdb.d\n\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 855AF5C7B897656417FA73D65D941908AA7A6805\n\nENV PG_MAJOR 9.4\nENV PG_VERSION 9.4.9-1jessie\n\nRUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main' $PG_MAJOR > /etc/apt/sources.list.d/pgdg.list\nRUN echo 'deb http://packages.2ndquadrant.com/bdr/apt/ jessie-2ndquadrant main' > /etc/apt/sources.list.d/2ndquadrant.list\n\nRUN apt-get update \\\n\t&& apt-get install -y postgresql-common \\\n\t&& sed -ri 's/#(create_main_cluster) .*$/\\1 = false/' /etc/postgresql-common/createcluster.conf \\\n\t&& apt-get install -y \\\n\t\tpostgresql-bdr-$PG_MAJOR=$PG_VERSION \\\n\t\tpostgresql-bdr-contrib-$PG_MAJOR=$PG_VERSION \\\n\t\tpostgresql-bdr-$PG_MAJOR-bdr-plugin \\\n\t&& rm -rf /var/lib/apt/lists/*\n\n# make the sample config easier to munge (and \"correct by default\")\nRUN mv -v /usr/share/postgresql/$PG_MAJOR/postgresql.conf.sample /usr/share/postgresql/ \\\n\t&& ln -sv ../postgresql.conf.sample /usr/share/postgresql/$PG_MAJOR/ \\\n\t&& sed -ri \"s!^#?(listen_addresses)\\s*=\\s*\\S+.*!\\1 = '*'!\" /usr/share/postgresql/postgresql.conf.sample\nRUN mkdir -p /var/run/postgresql && chown -R postgres /var/run/postgresql\n\nENV PATH /usr/lib/postgresql/$PG_MAJOR/bin:$PATH\nENV PGDATA /var/lib/postgresql/data\nVOLUME /var/lib/postgresql/data\n\nCOPY docker-entrypoint.sh /\n\nENTRYPOINT [\"/docker-entrypoint.sh\"]\n\nEXPOSE 5432\nCMD [\"postgres\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5432
+    ],
+    "volume": [
+      "/var/lib/postgresql/data"
+    ],
+    "run": [
+      "groupadd -r postgres --gid=999 && useradd -r -g postgres --uid=999 postgres",
+      "set -x \t&& apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/* \t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \t&& export GNUPGHOME=\"$(mktemp -d)\" \t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu \t&& gosu nobody true \t&& apt-get purge -y --auto-remove ca-certificates wget",
+      "apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/* \t&& localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8",
+      "mkdir /docker-entrypoint-initdb.d",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 855AF5C7B897656417FA73D65D941908AA7A6805",
+      "echo 'deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main' $PG_MAJOR > /etc/apt/sources.list.d/pgdg.list",
+      "echo 'deb http://packages.2ndquadrant.com/bdr/apt/ jessie-2ndquadrant main' > /etc/apt/sources.list.d/2ndquadrant.list",
+      "apt-get update \t&& apt-get install -y postgresql-common \t&& sed -ri 's/#(create_main_cluster) .*$/\\1 = false/' /etc/postgresql-common/createcluster.conf \t&& apt-get install -y \t\tpostgresql-bdr-$PG_MAJOR=$PG_VERSION \t\tpostgresql-bdr-contrib-$PG_MAJOR=$PG_VERSION \t\tpostgresql-bdr-$PG_MAJOR-bdr-plugin \t&& rm -rf /var/lib/apt/lists/*",
+      "mv -v /usr/share/postgresql/$PG_MAJOR/postgresql.conf.sample /usr/share/postgresql/ \t&& ln -sv ../postgresql.conf.sample /usr/share/postgresql/$PG_MAJOR/ \t&& sed -ri \"s!^#?(listen_addresses)\\s*=\\s*\\S+.*!\\1 = '*'!\" /usr/share/postgresql/postgresql.conf.sample",
+      "mkdir -p /var/run/postgresql && chown -R postgres /var/run/postgresql"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "env": {
+      "GOSU_VERSION": "1.7",
+      "LANG": "en_US.utf8",
+      "PG_MAJOR": "9.4",
+      "PG_VERSION": "9.4.9-1jessie",
+      "PATH": "/usr/lib/postgresql/$PG_MAJOR/bin:$PATH",
+      "PGDATA": "/var/lib/postgresql/data"
+    },
+    "copy": "docker-entrypoint.sh /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"postgres\"]"
+  },
+  "source_repository_url": "https://github.com/jgiannuzzi/docker-postgres-bdr.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/jgiannuzzi/docker-postgres-bdr",
+  "docker_repository": "jgiannuzzi/postgres-bdr",
+  "docker_image": "jgiannuzzi/postgres-bdr",
+  "parameters_schema": {
+    "GOSU_VERSION": {
+      "default": "1.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "en_US.utf8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PG_MAJOR": {
+      "default": "9.4",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PG_VERSION": {
+      "default": "9.4.9-1jessie",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/usr/lib/postgresql/$PG_MAJOR/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGDATA": {
+      "default": "/var/lib/postgresql/data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5432
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jgiannuzzi/postgres-bdr",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jgiannuzzi/postgres-bdr",
+    "https://hub.docker.com/v2/repositories/jgiannuzzi/postgres-bdr",
+    "https://github.com/jgiannuzzi/docker-postgres-bdr.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/jgiannuzzi/postgres-bdr",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

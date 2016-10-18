@@ -1,0 +1,179 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/appcontainers/haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/appcontainers/haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/appcontainers/haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/appcontainers/haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/appcontainers/haproxy/autobuild",
+    "user": "appcontainers",
+    "name": "haproxy",
+    "namespace": "appcontainers",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 118,
+    "last_updated": "2015-07-21T04:58:05.511872Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 157890402,
+        "id": 107454,
+        "repository": 87508,
+        "creator": 79833,
+        "last_updater": 79833,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "appcontainers/haproxy"
+  },
+  "name": "appcontainers/haproxy Docker container",
+  "description": "CentOS 6.6 based Customizable HaProxy Container - 279.4 MB",
+  "readme": ">HaProxy Container Build\r\n\r\n*Built from appcontainers/centos66*\r\n\r\n**Build container using default values.**\r\n    \r\n    docker build -t appcontainers/haproxy .\r\n\r\n\r\n**Running the container**\r\n\r\nThe container is built to allow several configurable variables to be passed in at runtime. The values are as follows:\r\n\r\n- DOMAIN1 - This is the resolvable name of the first site that haproxy will be configured to Load Balance. (Do not include www)\r\n- DOMAIN2 - This is the resolvable name of the second site that haproxy will be configured to Load Balance. (Do not include www)\r\n- DOMAIN3 - This is the resolvable name of the third site that haproxy will be configured to Load Balance. (Do not include www)\r\n- DOMAIN4 - This is the resolvable name of the forth site that haproxy will be configured to Load Balance. (Do not include www)\r\n- DOMAIN5 - This is the resolvable name of the fifth site that haproxy will be configured to Load Balance. (Do not include www)\r\n- SITE1 - This is the resolvable server name of the server running the first site that haproxy will be configured to Load Balance.\r\n- SITE2 - This is the resolvable server name of the server running the second site that haproxy will be configured to Load Balance.\r\n- SITE3 - This is the resolvable server name of the server running the third site that haproxy will be configured to Load Balance.\r\n- SITE4 - This is the resolvable server name of the server running the forth site that haproxy will be configured to Load Balance.\r\n- SITE5 - This is the resolvable server name of the server running the fifth site that haproxy will be configured to Load Balance.\r\n\r\n**Note: If using links between the haproxy server and the front end web server, then the values of SITE1-5 will simply be the link name. If using a discovery system such as skydock or consul, then SITE1-5 will be the fully qualified domain name of the server in the skydock/consul namespace.**\r\n\r\n**Run the container using default values**\r\n\r\n    docker run -d -it --name haproxy -h haproxy -p 80:80 -p 443:443 --link webserver1:webserver1 -e DOMAIN1=\"test.com\" -e SITE1=\"webserver1\" appcontainers/haproxy\r\n\r\n*This will assume the following*\r\n\r\n- DOMAIN1 = \"\"\r\n- DOMAIN2 = \"\"\r\n- DOMAIN3 = \"\"\r\n- DOMAIN4 = \"\"\r\n- DOMAIN5 = \"\"\r\n- SITE1 = \"\"\r\n- SITE2 = \"\"\r\n- SITE3 = \"\"\r\n- SITE4 = \"\"\r\n- SITE5 = \"\"\r\n\r\n**This container is configured so that every time it is started, it will ping the values of SITE1-5. For the sites that a response was recieved, the application will configure itself for that site, using the IP that the container running the site is currently using. If no SITE variable is supplied it will not configure that site in the haproxy config file.**\r\n\r\n**In the following example, we will assume I am running 2 webservers ran via the following docker commands:**\r\n    \r\n    docker run -it --name wordpress1 -h wordpress1 -e APP_NAME=\"testapp1.com\" -e APACHE_SVRALIAS='www.testapp1.com localhost' appcontainers/wordpress\r\n    \r\n    docker run -it --name wordpress2 -h wordpress2 -e APP_NAME=\"testapp2.com\" -e APACHE_SVRALIAS='www.testapp2.com localhost' appcontainers/wordpress\r\n\r\n**The above statements would run the appcontainers wordpress image, nameing the servers wordpress1 and wordpress2 respectivly, and would set up the servers to run the testapp1 and testapp2 domains. Port 80 would be exposed, but not published, and the rest of the container would accecpt the default values as specified via the appcontianers/wordpress documentation.**\r\n\r\n**Run the haproxy container substituting the $varables with your own custom values**\r\n\r\n    docker run -d -it \\\r\n    --name haproxy \\\r\n    -h haproxy \\\r\n    -p 80:80 \\\r\n    -p 443:443\r\n    --link wordpress1:wordpress1\r\n    --link wordpress2:wordpress2\r\n    -e DOMAIN1='testapp1.com' \\\r\n    -e SITE1='wordpress1' \\\r\n    -e DOMAIN2='testapp2.com' \\\r\n    -e SITE2='wordpress2' \\\r\n    appcontainers/haproxy\r\n\r\n**Running the above statement, would run the container, which would configure the following haproxy rule**\r\n\r\n    acl is_wordpress1 hdr_end(host) -i testapp1.com\r\n    acl is_wordpress1 hdr_end(host) -i www.testapp1.com\r\n    acl is_wordpress2 hdr_end(host) -i testapp2.com\r\n    acl is_wordpress2 hdr_end(host) -i www.testapp2.com\r\n\r\n    use_backend wordpress1 if is_wordpress1\r\n    use_backend wordpress2 if is_wordpress2\r\n\r\n    backend wordpress1\r\n        balance roundrobin\r\n        option httpclose\r\n        option forwardfor\r\n        server wordpress1 172.17.0.10:80 maxconn 50\r\n\r\n    backend wordpress2\r\n        balance roundrobin\r\n        option httpclose\r\n        option forwardfor\r\n        server wordpress2 172.17.0.11:80 maxconn 50\r\n\r\n\r\n\r\n**Navigate to the FQDN of the server to ensure that haproxy is configurd correctly and forwarding port 80 traffic through to the front end webserver**\r\n\r\n**SSL support is not dynaically built in as certificates will need to reside, and be configured on the haproxy server, although the haproxy rpm was build with and will support SSL once configured**",
+  "dockerfile": "############################################################\n# Dockerfile to build HaProxy LB\n# Based on appcontainers/centos66\n############################################################\n\n# Set the base image to Centos 6.6 base\nFROM appcontainers/centos66\n\n# File Author / Maintainer\nMAINTAINER Rich Nason rnason@appcontainers.com\n\n#*************************\n#*       Versions        *\n#*************************\nENV HAPROXYVER haproxy-1.5-3\n\n\n#**********************************\n#* Override Enabled ENV Variables *\n#**********************************\nENV DOMAIN1 site1.com\nENV SITE1 site1\nENV DOMAIN2 site2.com\nENV SITE2 site2\nENV DOMAIN3 site3.com\nENV SITE3 site3\nENV DOMAIN4 site4.com\nENV SITE4 site4\nENV DOMAIN5 site5.com\nENV SITE5 site5\n\n\n#**************************\n#*   Add Required Files   *\n#**************************\nADD /rpms /tmp\nADD haproxy.orig /tmp/\nADD runconfig.sh /tmp/\n\n\n#*************************\n#*  Update and Pre-Reqs  *\n#*************************\nRUN yum clean all && \\\nyum -y update && \\\nrm -fr /var/cache/* \n\n\n#*************************\n#*  Application Install  *\n#*************************\n# Install the HA Proxy RPM\nRUN rpm -Uvh /tmp/$HAPROXYVER.el6.x86_64.rpm\n\n# Make a backup of the original config file\nRUN mv /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.orig\n\n\n#************************\n#* Post Deploy Clean Up *\n#************************\n\n\n#**************************\n#*  Config Startup Items  *\n#**************************\n# Put the services that need to be started into the bashrc file\nRUN echo \"service rpcbind start\" >> ~/.bashrc && \\\nchmod +x /tmp/runconfig.sh && \\\necho \"/tmp/./runconfig.sh\" >> ~/.bashrc\n\nCMD /bin/bash\n\n#****************************\n#* Expose Application Ports *\n#****************************\n# Expose ports to other containers only\nEXPOSE 80\nEXPOSE 443\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "/rpms",
+        "dest": "/tmp"
+      },
+      {
+        "source": "haproxy.orig",
+        "dest": "/tmp/"
+      },
+      {
+        "source": "runconfig.sh",
+        "dest": "/tmp/"
+      }
+    ],
+    "expose": [
+      80,
+      443
+    ],
+    "volume": [],
+    "run": [
+      "yum clean all && yum -y update && rm -fr /var/cache/* ",
+      "rpm -Uvh /tmp/$HAPROXYVER.el6.x86_64.rpm",
+      "mv /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.orig",
+      "echo \"service rpcbind start\" >> ~/.bashrc && chmod +x /tmp/runconfig.sh && echo \"/tmp/./runconfig.sh\" >> ~/.bashrc"
+    ],
+    "workdir": [],
+    "from": "appcontainers/centos66",
+    "maintainer": "Rich Nason rnason@appcontainers.com",
+    "env": {
+      "HAPROXYVER": "haproxy-1.5-3",
+      "DOMAIN1": "site1.com",
+      "SITE1": "site1",
+      "DOMAIN2": "site2.com",
+      "SITE2": "site2",
+      "DOMAIN3": "site3.com",
+      "SITE3": "site3",
+      "DOMAIN4": "site4.com",
+      "SITE4": "site4",
+      "DOMAIN5": "site5.com",
+      "SITE5": "site5"
+    },
+    "cmd": "/bin/bash"
+  },
+  "source_repository_url": "git@bitbucket.org:appcontainers/haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/appcontainers/haproxy",
+  "docker_repository": "appcontainers/haproxy",
+  "docker_image": "appcontainers/haproxy",
+  "parameters_schema": {
+    "HAPROXYVER": {
+      "default": "haproxy-1.5-3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DOMAIN1": {
+      "default": "site1.com",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SITE1": {
+      "default": "site1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DOMAIN2": {
+      "default": "site2.com",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SITE2": {
+      "default": "site2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DOMAIN3": {
+      "default": "site3.com",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SITE3": {
+      "default": "site3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DOMAIN4": {
+      "default": "site4.com",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SITE4": {
+      "default": "site4",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DOMAIN5": {
+      "default": "site5.com",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SITE5": {
+      "default": "site5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80,
+        443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "appcontainers/haproxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/appcontainers/haproxy",
+    "https://hub.docker.com/v2/repositories/appcontainers/haproxy",
+    "git@bitbucket.org:appcontainers/haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System/Linux/CentOS",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/appcontainers/haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

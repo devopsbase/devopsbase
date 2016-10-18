@@ -1,0 +1,62 @@
+{
+  "name": "shinken Chef cookbook",
+  "chef_cookbook_name": "shinken",
+  "revision": "1.4.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/shinken",
+    "https://supermarket.chef.io/cookbooks/shinken/download",
+    "https://supermarket.chef.io/cookbooks/shinken/versions/1.4.0",
+    "https://supermarket.chef.io/cookbooks/shinken/versions/1.4.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/shinken/versions/1.4.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/shinken",
+    "https://supermarket.chef.io/api/v1/cookbooks/shinken/versions/1.4.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/shinken",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/shinken/versions/1.4.0/download",
+  "deprecated": false,
+  "created": "2014-08-07T23:42:05.758Z",
+  "updated": "2016-09-29T19:42:20.380Z",
+  "description": "Installs/Configures shinken",
+  "maintainer": {
+    "name": "evertrue",
+    "email": "devops@evertrue.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 5,
+  "downloads_count": 1555876,
+  "downloads_count_revision": 190757,
+  "repository_url": "https://github.com/evertrue/shinken-cookbook",
+  "issues_url": "https://github.com/evertrue/shinken-cookbook/issues",
+  "chef_source_url": "https://github.com/evertrue/shinken-cookbook",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "![Shinken Logo](http://www.shinken-monitoring.org/img/LogoFrameworkBlack.png)\n\n# shinken-cookbook\n\nSet up the [Shinken Monitor Server](http://www.shinken-monitoring.org/) and its built in Web UI module.\n\n## Supported Platforms\n\nCurrently only tested on Ubuntu (and almost certainly will not work on RedHat).\n\n## Data Bags (Required)\n\nThese define the access credentials, email addresses, and phone numbers of the users for your Shinken system.  You will need two data bag items, one encrypted and one unencrypted:\n\n### Users (this one's unencrypted)\n\nIdeally this data bag is based on the structure from the [Chef Users Cookbook](https://github.com/sethvargo-cookbooks/users), but all that's really required is that you create a data bag called `users` with one user per item, and the user items should look (at minimum) like this:\n\n```json\n{\n  \"id\": \"testuser\",\n  \"shinken\": {\n    \"email\": \"testuser@domain.com\",\n    \"phone\": \"6175551212\",\n    \"is_admin\": \"1\"\n  }\n}\n```\n\n…with `is_admin` being optional.\n\n### Credentials\n\nThis one can be anywhere you want.  It's location is defined by these attributes:\n\n- `node['shinken']['webui']['credentials_data_bag']`\n- `node['shinken']['webui']['credentials_data_bag_item']`\n\n…and its structure should look like this:\n\n```json\n{\n  \"id\": \"example_credentials_data_bag_item\",\n  \"shinken\": {\n    \"testuser\": \"PASSWORD\"\n  }\n}\n```\n\nNote that only the `shinken` key is sourced, so it does not have to be in its own data bag.\n\n## Attributes\n\nAll attributes live under the `node['shinken']` key.  Attributes fall into two basic groups, *global configuration* and *resource definitions*\n\nCurrently only *services* and *hostgroups* resources can be defined.  Everything else is automatically populated.\n\n### Global Configuration\n- `user` - **String** - User to run Shinken (and all plugins) as (and own all of its config files).\n- `group` - **String** - Group to run Shinken (and all plugins) as.\n\nThe following will be parsed into their respective resource definition as such:\n\n`['key'] = 'value'` becomes `key value`\n\n…so you can pretty much add any key detailed in the linked configuration and expect it to end up in the config files.\n\n- `global_defaults` - **Hash** - Subkeys to this key will appear in resource definitions for all *hosts* and *services*.\n- `service_defaults` - **Hash** - Defaults for services (detailed [here](https://shinken.readthedocs.org/en/latest/08_configobjects/service.html \"Shinken>>Docs>>Service Definition\"))\n- `host_defaults` - **Hash** - Defaults for hosts (detailed [here](https://shinken.readthedocs.org/en/latest/08_configobjects/host.html \"Shinken>>Docs>>Host Definition\"))\n\n### Resource Definitions\n\n- `hostgroups` - Hostgroups can either be defined with a search, e.g.:\n    ```json\n    {\n      \"shinken\": {\n        \"hostgroups\": {\n          \"my-hostgroup\": {\n            \"search_str\": \"recipes:important-recipe\\\\:\\\\:default\"\n            \"conf\": {\n              \"alias\": \"My HostGroup\"\n            }\n          }\n        }\n      }\n    }\n    ```\n\n    …or they can be defined with an array of server names:\n\n    ```json\n    {\n      \"shinken\": {\n        \"hostgroups\": {\n          \"my-hostgroup\": {\n            \"members\": [\n              \"server-1\",\n              \"server-2\"\n            ]\n            \"conf\": {\n              \"alias\": \"My HostGroup\"\n            }\n          }\n        }\n      }\n    }\n    ```\n\n    either way, `conf` defines the other keys in the resource, all of which are detailed [in the Shinken docs](https://shinken.readthedocs.org/en/latest/08_configobjects/hostgroup.html \"Shinken>>Docs>>Host Group Definition\").  `hostgroup_name` in the above example will automatically be set to \"my-hostgroup\".\n- `services` - Defined exactly according to [the Shinken docs](https://shinken.readthedocs.org/en/latest/08_configobjects/service.html) with little automation, e.g.:\n    ```json\n    {\n      \"shinken\": {\n        \"services\": {\n          \"my-service\": {\n            \"hostgroup_name\": \"my-hostgroup\",\n            \"service_description\": \"My Service Check\",\n            \"check_command\": \"some_check_command\",\n            \"contact_groups\": \"admins\"\n          }\n        }\n      }\n    }\n    ```\n    \n    key/value pairs are parsed directly into the resource definition file with defaults (defined above) automatically being merged in.\n\n## Usage\n\n### shinken::default\n\nInclude `shinken` in a wrapper cookbook (or a node run list):\n\n```ruby\ninclude_recipe 'shinken::default'\ninclude_recipe 'shinken::webui'\ninclude_recipe 'shinken::broker'\n```\n\n## Contributing\n\n1. Fork the repository on Github\n2. Create a named feature branch (i.e. `add-new-recipe`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request\n\n## License and Authors\n\nAuthor:: EverTrue, Inc. (<devops@evertrue.com>)\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ark",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/python",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

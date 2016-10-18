@@ -1,0 +1,134 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/cedis/rails",
+    "repository_url": "https://hub.docker.com/v2/repositories/cedis/rails",
+    "tags_url": "https://hub.docker.com/v2/repositories/cedis/rails/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/cedis/rails/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/cedis/rails/autobuild",
+    "user": "cedis",
+    "name": "rails",
+    "namespace": "cedis",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 287,
+    "last_updated": "2016-07-25T12:10:44.789382Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 310147293,
+        "id": 3904008,
+        "repository": 807290,
+        "creator": 980098,
+        "last_updater": 980098,
+        "last_updated": "2016-07-25T12:10:44.333158Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "CEDIS-FU-BERLIN/rails_image"
+  },
+  "name": "cedis/rails Docker container",
+  "description": "This is our Standard base image for rails.",
+  "readme": "# README\n\n## Build Status\n[![build status](http://160.45.168.179/a0n/collection_gatherer/badges/master/build.svg)](http://160.45.168.179/a0n/collection_gatherer/commits/master)\n\n## Purpose of this Tool\nWe have to specify this carfully with as little words as possible!\n\n## Used Ruby\nThe currently used Ruby Version is 2.3.1\n\n## System dependencies\nWe use rvm to install the specified Ruby Version\n\n## Configuration\nYou need to create a database.yml in the `config/` directory.\nThere is a sample file included in the same directory.\nThe default Database is sqlite3.\n\n## Database\n\n### Layout\n![alt text](./doc/erd.svg \"Logo Title Text 1\")\n\n\n### Database creation\nYou can create the Database just by migrating.\n```shell\nrake db:migrate\n```\n\n### Database seed\nYou can seed the Database with an default Admin Users.\nYou can find the credentials in `db/seeds.rb`\n\n```shell\nrake db:seed\n```\n\n### Database creation and seeding\nYou can do both in one go with \n```shell\nrake db:reset\n```\n\n## Use Docker\nYou can autosetup the enviorment with docker-compose up\nThis will start a postgresql, minio, and application server\nYou can access the application on http://localhost:3000\n\nTo run commands inside the container use `docker-compose run collection_gatherer bundle exec rake db:setup`\n\nGet a bash inside container \ndocker run -it collectiongather_collection-gatherer /bin/bash\n\n## [TODO](TODO.md)\n\n## Tests\nThere are not tests setup right now\n\n## Services\nWe don't use external Services\n\n## Deployment\nWe don't have a deployment yet\n\n## Debug in Development Mode\nWe have included \"better_errors\" with binding_of_caller for Deep Error Inspection from the Browser.\n",
+  "dockerfile": "FROM ruby:2.3\nMAINTAINER Aaron Alexander Israel <aaron.israel@cedis.fu-berlin.de>\n\nRUN echo \"# Generate locales\" && \\\n    echo \"# Upgrade apt\" && \\\n    sed -i 's/main$/main contrib/g' /etc/apt/sources.list && \\\n    sed -i 's/httpredir.debian.org/debian.tu-bs.de/g' /etc/apt/sources.list && \\\n    apt-get update && apt-get upgrade -y && \\\n    echo \"# Install common dev dependencies via apt\" && \\\n    apt-get install -y \\\n    git curl wget rsync patch build-essential sqlite3 libsqlite3-dev \\\n    graphviz graphviz-dev libgraphviz-dev \\\n    imagemagick libmagickwand-dev libfreetype6-dev libfreetype6 libfontconfig \\\n    openssl libreadline6 libreadline6-dev zlib1g zlib1g-dev libssl-dev libyaml-dev libpq-dev libxml2-dev libxslt-dev libc6-dev \\\n    postgresql-client bzip2 nodejs --fix-missing --no-install-recommends&& \\\n    gem install bundler && \\\n    ln -s /usr/bin/nodejs /usr/local/bin/node && \\\n    ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime && \\\n    apt-get clean\n\nENV APP_HOME /collection_gatherer\nRUN mkdir -p $APP_HOME\nWORKDIR $APP_HOME\n\nADD Gemfile* $APP_HOME/\n\nENV BUNDLE_GEMFILE=$APP_HOME/Gemfile \\\n    BUNDLE_JOBS=4 \\\n    BUNDLE_PATH=/bundle\n#\n# RUN bundle install --jobs $(nproc)\nADD . $APP_HOME\n\n# VOLUME [\"$APP_HOME/public\"]\n# EXPOSE 3000\nCMD ./bin/puma -C config/puma.rb\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "Gemfile*",
+        "dest": "$APP_HOME/"
+      },
+      {
+        "source": ".",
+        "dest": "$APP_HOME"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "echo \"# Generate locales\" &&     echo \"# Upgrade apt\" &&     sed -i 's/main$/main contrib/g' /etc/apt/sources.list &&     sed -i 's/httpredir.debian.org/debian.tu-bs.de/g' /etc/apt/sources.list &&     apt-get update && apt-get upgrade -y &&     echo \"# Install common dev dependencies via apt\" &&     apt-get install -y     git curl wget rsync patch build-essential sqlite3 libsqlite3-dev     graphviz graphviz-dev libgraphviz-dev     imagemagick libmagickwand-dev libfreetype6-dev libfreetype6 libfontconfig     openssl libreadline6 libreadline6-dev zlib1g zlib1g-dev libssl-dev libyaml-dev libpq-dev libxml2-dev libxslt-dev libc6-dev     postgresql-client bzip2 nodejs --fix-missing --no-install-recommends&&     gem install bundler &&     ln -s /usr/bin/nodejs /usr/local/bin/node &&     ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime &&     apt-get clean",
+      "mkdir -p $APP_HOME"
+    ],
+    "workdir": [
+      "$APP_HOME"
+    ],
+    "from": "ruby:2.3",
+    "maintainer": "Aaron Alexander Israel <aaron.israel@cedis.fu-berlin.de>",
+    "env": {
+      "APP_HOME": "/collection_gatherer",
+      "BUNDLE_GEMFILE": "$APP_HOME/Gemfile",
+      "": "",
+      "BUNDLE_JOBS": "4",
+      "BUNDLE_PATH": "/bundle"
+    },
+    "cmd": "./bin/puma -C config/puma.rb"
+  },
+  "source_repository_url": "https://github.com/CEDIS-FU-BERLIN/rails_image.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/CEDIS-FU-BERLIN/rails_image",
+  "docker_repository": "cedis/rails",
+  "docker_image": "cedis/rails",
+  "parameters_schema": {
+    "APP_HOME": {
+      "default": "/collection_gatherer",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_GEMFILE": {
+      "default": "$APP_HOME/Gemfile",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_JOBS": {
+      "default": "4",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_PATH": {
+      "default": "/bundle",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "cedis/rails",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/cedis/rails",
+    "https://hub.docker.com/v2/repositories/cedis/rails",
+    "https://github.com/CEDIS-FU-BERLIN/rails_image.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Mode/Executable/Image"
+  ],
+  "info_url": "https://hub.docker.com/r/cedis/rails",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,109 @@
+{
+  "name": "newrelic-ng Chef cookbook",
+  "chef_cookbook_name": "newrelic-ng",
+  "revision": "0.5.4",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/newrelic-ng",
+    "https://supermarket.chef.io/cookbooks/newrelic-ng/download",
+    "https://supermarket.chef.io/cookbooks/newrelic-ng/versions/0.5.4",
+    "https://supermarket.chef.io/cookbooks/newrelic-ng/versions/0.5.4/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/newrelic-ng/versions/0.5.4",
+    "https://supermarket.chef.io/api/v1/cookbooks/newrelic-ng",
+    "https://supermarket.chef.io/api/v1/cookbooks/newrelic-ng/versions/0.5.4/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Monitoring & Trending",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Monitoring/New Relic"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/newrelic-ng",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/newrelic-ng/versions/0.5.4/download",
+  "deprecated": false,
+  "created": "2013-06-21T16:05:23.000Z",
+  "updated": "2016-06-28T12:49:46.676Z",
+  "description": "Installs/Configures newrelic monitoring",
+  "maintainer": {
+    "name": "chr4",
+    "email": "me@chr4.org"
+  },
+  "license": "GNU Public License 3.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 11,
+  "downloads_count": 13772659,
+  "downloads_count_revision": 284,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# newrelic-ng Cookbook\n\nThis cookbook provides LWRPs and recipes to install and configure different monitoring services for Newrelic.\n\n* Official Newrelic nrsysmond\n* MeetMe [newrelic-plugin-agent](https://github.com/MeetMe/newrelic-plugin-agent)\n* Generic ruby newrelic agents like\n  * [newrelic_sidekiq_agent](https://github.com/eksoverzero/newrelic_sidekiq_agent)\n  * Should work with all ruby newrelic agents that are using `config/newrelic_plugin.yml` configuration file and `newrelic_[NAME]_agent.daemon`\n* PHP Agent\n\nThis cookbook requires Chef 11 or later.\n\n## Attributes\n\n### server monitoring with nrsysmond\n\nYou can set your Newrelic license key in the following attribute\n\n```ruby\nnode['newrelic-ng']['license_key'] = 'CHANGE_ME'\n```\n\nThe 'config' attribute actually supports all other configuration options that nrsysmond accepts.\nYou can e.g. disable ssl\n\n```ruby\nnode['newrelic-ng']['nrsysmond']['config']['ssl'] = false\n```\n\nFor a complete list of attributes, please see [here](https://github.com/flinc-chef/newrelic-ng/blob/master/attributes/nrsysmond.rb)\n\n\n### plugin-agent\n\nYou can set your New Relic license key, as well as other options in the following attribute (default values shown below)\n\n```ruby\nnode['newrelic-ng']['license_key'] = 'CHANGE_ME'\nnode['newrelic-ng']['plugin-agent']['poll_interval'] = 60\nnode['newrelic-ng']['plugin-agent']['pidfile'] = '/var/run/newrelic/newrelic-plugin-agent.pid'\nnode['newrelic-ng']['plugin-agent']['logfile'] = '/var/log/newrelic/newrelic-plugin-agent.log'\n```\n\nSet the pip package to install. Defaults to 'newrelic-plugin-agent'. You can set it e.g. to your GitHub fork\n\n```ruby\nnode.default['newrelic']['plugin-agent']['pip_package'] = 'git+git://github.com/chr4/newrelic-plugin-agent.git@fix-postgres-9.2'\n```\n\nFor configuring your services, you need to insert a YAML string into the `service_config` attribute\n\n```ruby\nnode['newrelic-ng']['plugin-agent']['service_config'] = <<-EOS\npostgresql:\n  host: localhost\n  port: 5432\n  user: postgres\n  dbname: postgres\nEOS\n```\n\n### generic-agent\n\nInstalls a generic plugin agent. E.g.\n\n[newrelic_sidekiq_agent](https://github.com/eksoverzero/newrelic_sidekiq_agent):\n\n```ruby\ndefault['newrelic-ng']['generic-agent']['agents']['sidekiq_status_agent'] = {\n    source: 'https://github.com/eksoverzero/newrelic_sidekiq_agent/archive/V2.0.tar.gz',\n    config: <<-EOS\n- instance_name: \"App name\"\n  uri: \"redis://localhost:6379\"\n  namespace: \"namespace\"\nEOS\n  }\n}\n```\n\n### app-monitoring\n\nThese are used by the PHP Agent, and potentially could be used by the Java Agent & the Python Agent.\n\nYou’ll need to set the license key (shared amongst all the agents & the system monitor):\n\n```\nnode['newrelic-ng']['license_key'] = 'CHANGE_ME'\n```\n\nAdditionally, you have:\n\n#### BASIC\n\n* `node['newrelic-ng']['app_monitoring']['php-agent']['config_file']` – The path to the PHP agent config file; defaults to `#{node['php']['ext_conf_dir']}/newrelic.ini`\n* `node['newrelic-ng']['app_monitoring']['php-agent']['startup_mode']` - The newrelic-daemon startup mode (\"agent\"/\"external\"), defaults to \"agent\"\n* `node['newrelic-ng']['app_monitoring']['php-agent']['server_service_name']` - The web server service name, defaults to \"apache2\"\n\n\n#### ADVANCED\n\nThese are not namespaced to `php-agent`, as they could later be shared amongst the Python agent, and the other non-Ruby-like agents.\n\n[New Relic’s PHP agent settings docs](https://docs.newrelic.com/docs/php/php-agent-phpini-settings) contain more details on these settings.\n\n* `node['newrelic-ng']['app_monitoring']['enabled']`\n* `node['newrelic-ng']['app_monitoring']['logfile']`\n* `node['newrelic-ng']['app_monitoring']['loglevel']`\n* `node['newrelic-ng']['app_monitoring']['appname']`\n* `node['newrelic-ng']['app_monitoring']['daemon']['config_file']`\n* `node['newrelic-ng']['app_monitoring']['daemon']['upgrade_file']`\n* `node['newrelic-ng']['app_monitoring']['daemon']['logfile']`\n* `node['newrelic-ng']['app_monitoring']['daemon']['loglevel']`\n* `node['newrelic-ng']['app_monitoring']['daemon']['port']`\n* `node['newrelic-ng']['app_monitoring']['daemon']['max_threads']`\n* `node['newrelic-ng']['app_monitoring']['daemon']['ssl']`\n* `node['newrelic-ng']['app_monitoring']['daemon']['proxy']`\n* `node['newrelic-ng']['app_monitoring']['daemon']['pidfile']`\n* `node['newrelic-ng']['app_monitoring']['daemon']['location']`\n* `node['newrelic-ng']['app_monitoring']['daemon']['collector_host']`\n* `node['newrelic-ng']['app_monitoring']['daemon']['dont_launch']`\n* `node['newrelic-ng']['app_monitoring']['capture_params']`\n* `node['newrelic-ng']['app_monitoring']['ignored_params']`\n* `node['newrelic-ng']['app_monitoring']['error_collector']['enabled']`\n* `node['newrelic-ng']['app_monitoring']['error_collector']['record_database_errors']`\n* `node['newrelic-ng']['app_monitoring']['error_collector']['prioritize_api_errors']`\n* `node['newrelic-ng']['app_monitoring']['browser_monitoring']['auto_instrument']`\n* `node['newrelic-ng']['app_monitoring']['transaction_tracer']['enabled']`\n* `node['newrelic-ng']['app_monitoring']['transaction_tracer']['threshold']`\n* `node['newrelic-ng']['app_monitoring']['transaction_tracer']['detail']`\n* `node['newrelic-ng']['app_monitoring']['transaction_tracer']['slow_sql']`\n* `node['newrelic-ng']['app_monitoring']['transaction_tracer']['stack_trace_threshold']`\n* `node['newrelic-ng']['app_monitoring']['transaction_tracer']['explain_enabled']`\n* `node['newrelic-ng']['app_monitoring']['transaction_tracer']['explain_threshold']`\n* `node['newrelic-ng']['app_monitoring']['transaction_tracer']['record_sql']`\n* `node['newrelic-ng']['app_monitoring']['transaction_tracer']['custom']`\n* `node['newrelic-ng']['app_monitoring']['framework']`\n* `node['newrelic-ng']['app_monitoring']['webtransaction']['name']['remove_trailing_path']`\n* `node['newrelic-ng']['app_monitoring']['webtransaction']['name']['functions']`\n* `node['newrelic-ng']['app_monitoring']['webtransaction']['name']['files']`\n* `node['newrelic-ng']['app_monitoring']['daemon']['auditlog']`\n* `node['newrelic-ng']['app_monitoring']['analytics']['events']['enabled']`\n* `node['newrelic-ng']['app_monitoring']['high_security']`\n\n## Recipes\n\nTo use the recipes, add the following to your metadata.rb\n\n    depends 'newrelic-ng'\n\n### default\n\n* Includes newrelic-ng::nrsysmond-default\n\n### nrsysmond-default\n\n* Includes newrelic-ng::nrsysmond-install\n* Configures and starts nrsysmond according to the attributes\n\n### nrsysmond-install\n\n* Includes newrelic-ng::newrelic-repository\n* Installs newrelic-sysmond package\n\n### plugin-agent-default\n\n* Includes newrelic-ng::plugin-agent-install\n* Configures and starts newrelic-plugin-agent according to the attributes\n\n### plugin-agent-install\n\n* Install python, python-pip and python-psycopg2\n* Install newrelic-plugin-agent using pip\n* Install newrelic-plugin-agent initscript (Debian, Ubuntu only)\n* Create run/log directories\n\n### generic-agent-default\n\n* Installs a generic newrelic agent.\n\n### newrelic-repository\n\n* Sets up the Newrelic apt/yum repository\n\n### php-agent-default\n\n* Install PHP (via the [`php` cookbook](http://community.opscode.com/cookbooks/php), newrelic-php5\n* Run New Relic install script\n* Set up New Relic daemon according to `startup_mode` attribute:\n    * Agent mode (i.e., no daemon)\n    * External (i.e., daemon mode)\n\n\n## Providers\n\nTo use the providers, add the following to your `metadata.rb`\n\n```ruby\ndepends 'newrelic-ng'\n```\n\n### newrelic\\_ng\\_nrsysmond\n\nWhen nrsysmond is installed (e.g. using the `newrelic-ng::nrsysmond-install` recipe), you can configure it using the LWRP.\n\n```ruby\nnewrelic_ng_nrsysmond 'YOUR_LICENSE_KEY'\n```\n\nFor more sophisticated setups, you can specify the follwoing additional attributes (they default to the node attributes)\n\n```ruby\nnewrelic_ng_nrsysmond 'custom' do\n  license_key 'MY_PRODUCTION_KEY' if node.chef_environment == 'production'\n  license_key 'MY_STAGING_KEY'    if node.chef_environment == 'staging'\n\n  # additional nrsysmond configuration options\n  hostname       node['fqdn']\n  ssl            false\n  loglevel       'info'\n  proxy          nil\n  ssl_ca_bundle  nil\n  ssl_ca_path    '/myca/path'\n  pidfile        '/tmp/nrsysmond.pid'\n  collector_host 'my-collector-host.com'\n  timeout        10\n\n  # You can also set a custom label\n  # labels       'label_type:label_value'\n\n  # path and attributes of nrsysmond.cfg\n  owner       'root'\n  group       'root'\n  mode        00600\n  config_file '/etc/nrsysmond.cfg'\n\n  # you can also specify your own configuration template\n  cookbook    'yourcookbook'\n  source      'yoursourcefile'\nend\n```\n\n### newrelic\\_ngi\\_plugini\\_agent\n\nWhen the plugin-agent is installed (e.g. using the `newrelic-ng::plugin-agent-install` recipe), you can configure it using the LWRP.\n\n```ruby\nnewrelic_ng_plugin_agent 'YOUR_LICENSE_KEY'\n```\n\nFor more sophisticated setups, you can specify the follwoing additional attributes (they default to the node attributes)\n\n```ruby\nnewrelic_ng_plugin_agent 'custom' do\n  license_key 'MY_PRODUCTION_KEY' if node.chef_environment == 'production'\n  license_key 'MY_STAGING_KEY'    if node.chef_environment == 'staging'\n\n  # additional plugin-agent configuration options\n  poll_interval  20\n  logfile        '/tmp/plugin-agent.log'\n  pidfile        '/tmp/plugin-agent.pid'\n\n  # set your service configuration\n  service_config <<-EOS\npostgresql:\n  host: localhost\n  port: 5432\n  user: postgres\n  dbname: postgres\nEOS\n\n  # path and attributes of nrsysmond\n  owner       'root'\n  group       'root'\n  mode        00600\n  config_file '/etc/plugin-agent.cfg'\n\n  # you can also specify your own configuration template\n  cookbook    'yourcookbook'\n  source      'yoursourcefile'\nend\n```\n\n### newrelic\\_ng\\_generic\\_agent\n\nYou can install and configure generic Ruby New Relic agents also via this LWRPs. For more information, see attributes and recipes section above.\n\nExample:\n\n```ruby\nnewrelic_ng_generic_agent 'MY_LICENSE_KEY' do\n  plugin_name 'sidekiq_status_agent'\n  source 'https://github.com/eksoverzero/newrelic_sidekiq_agent/archive/V2.0.tar.gz'\n  config <<-EOS\n- instance_name: \"App name\"\n  uri: \"redis://localhost:6379\"\n  namespace: \"namespace\"\nEOS\nend\n```\n\nYou can specify the following additional attributes\n\n```ruby\ntarget_dir '/opt/newrelic-agents'\nowner      'newrelic'\ngroup      'newrelic'\n```\n\nThe following actions are supported\n\n```ruby\naction :install_and_configure # default\naction :install               # only install the agent\naction :configure             # only configure the agent\n```\n\n\n# Contributing\n\ne.g.\n\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write your change(s)\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using GitHub\n\n# License and Authors\n\nAuthor: Chris Aumann <me@chr4.org>\nContributors: Cameron Johnston <cameron@needle.com>, Jeff Byrnes <jeff@evertrue.com>,\n              Chris Graham <chris.graham@blackboard.com>, Andy Thompson <me@andytson.com>\n\nLicense: GPLv3\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "suse",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/python",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/php",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

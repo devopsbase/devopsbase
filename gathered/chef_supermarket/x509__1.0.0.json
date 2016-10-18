@@ -1,0 +1,51 @@
+{
+  "name": "x509 Chef cookbook",
+  "chef_cookbook_name": "x509",
+  "revision": "1.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/x509",
+    "https://supermarket.chef.io/cookbooks/x509/download",
+    "https://supermarket.chef.io/cookbooks/x509/versions/1.0.0",
+    "https://supermarket.chef.io/cookbooks/x509/versions/1.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/x509/versions/1.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/x509",
+    "https://supermarket.chef.io/api/v1/cookbooks/x509/versions/1.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/x509",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/x509/versions/1.0.0/download",
+  "deprecated": false,
+  "created": "2013-03-12T13:50:51.000Z",
+  "updated": "2013-12-11T11:00:58.000Z",
+  "description": "Deploy a Chef-managed Certificate Authority",
+  "maintainer": {
+    "name": "chrisandrews",
+    "email": "candrews@venda.com"
+  },
+  "license": "Apache",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 5,
+  "downloads_count": 6268523,
+  "downloads_count_revision": 1257903,
+  "repository_url": "https://github.com/VendaTech/chef-cookbook-ssl",
+  "issues_url": "https://github.com/VendaTech/chef-cookbook-ssl/issues",
+  "chef_source_url": "https://github.com/VendaTech/chef-cookbook-ssl",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nCookbook to manage deployment of X509 certificates across an\ninfrastructure.\n\nKeys and CSRs are generated according to \"ssl_certificate\" resources\nduring a chef-client run on the hosts which will use them, with the\nCSRs pushed to the Chef server. Later, certificates are signed by the\nappropriate CAs and pushed to Chef. A subsequent run deploys the\nsigned certificate.\n\nTemporary certificates are issued to enable services to start while\nthe CSRs are waiting to be processed.\n\nGenerated keys are encrypted to a key-vault key, and pushed to Chef\nfor backup.\n\nRequirements\n============\n\nChef Server\n\n\"gpg\" Cookbook\n\n\"eassl2\", \"gpgme\" gems\n\nGnuPG 2.x\n\nAttributes\n==========\n\nGPG is used to encrypt generated keys for archival purposes.\n\n`node['ssl']['key_vault']` - the email address of the GPG/PGP key.\n\nDN components to use when creating certificate names:\n\n * `node['ssl']['country']`\n * `node['ssl']['state']`\n * `node['ssl']['city']`\n * `node['ssl']['organization']`\n * `node['ssl']['department']`\n * `node['ssl']['email']`\n\nUsage\n=====\n\n    include_recipe \"ssl\"\n\nWebserver SSL certificate:\n\n    ssl_certificate \"www.example.com\" do\n      ca \"MyCA\"\n      key \"/etc/ssl/www.example.com.key\"\n      certificate \"/etc/ssl/www.example.com.cert\"\n    end\n\nWebserver SSL certificate specifying key size and validity period:\n\n    ssl_certificate \"www.example.com\" do\n      ca \"MyCA\"\n      key \"/etc/ssl/www.example.com.key\"\n      certificate \"/etc/ssl/www.example.com.cert\"\n      bits 1024\n      days 365\n    end\n\nREST API Server Certificate, with CA Certificate:\n\n    ssl_certificate \"service.example.com\" do\n      ca \"Service-CA\"\n      key \"/etc/ssl/service.example.com.key\"\n      certificate \"/etc/ssl/service.example.com.cert\"\n      cacertificate \"/etc/ssl/service_cacert\"\n    end\n\nREST API Client Certificate:\n\n    ssl_certificate \"service-#{node['fqdn']}\" do\n      cn node['fqdn']\n      ca \"Service-CA\"\n      type \"client\"\n      key \"/etc/service/client_key.pem\"\n      certificate \"/etc/service/client_cert.pem\"\n    end\n\nCA Certificate only, for verification:\n\n    ssl_ca_certificate \"My-CA\" do\n      cacertificate \"/etc/myca.pem\"\n    end\n\nSigning Client\n==============\n\nA client is provided which allows a user to search Chef for\noutstanding CSRs, sign them, and create data bag items containing the\nnew certificates.\n\nThe client is available in this repository, in the `client-gem`\ndirectory, and may be packaged as a gem for installation.\n\nA number of gems are required, and a Gemfile is provided for Bundler's\nuse.\n\nIt also needs access to a Chef admin client key, which may be your own\nclient, and to your ~/.chef/knife.rb which configures the server, key\npath and client name.\n\nThere are a number of  modes of operation:\n\n * Find CSRs to be signed by a specific CA, and sign them with that CA.\n\n * Issue an adhoc certificate to a specific DN.\n\n * Create a new CA.\n\n * Find all CSRs awaiting action.\n\n * Find a specific CSR and provide its signed cert - intended for externally-signed CSRs,\n   such as the public SSL certificate providers.\n\nSee the chef-ssl program's embedded help text for options:\n\n    $ chef-ssl\n    chef-ssl\n\n    Chef-automated SSL certificate signing tool\n\n    Commands:\n      autosign             Search for CSRs and sign them with the given CA\n      help                 Display global or [command] help documentation.\n      issue                Issue an ad hoc certificate\n      makeca               Creates a new CA\n      search               Searches for outstanding CSRs\n      sign                 Search for the given CSR by name and provide a signed certificate\n\n    Global Options:\n      -h, --help           Display help documentation\n      -v, --version        Display version information\n      -t, --trace          Display backtrace when an error occurs\n\n\nWorkflow\n========\n\n1) Use the `ssl_certificate` resource in a recipe, and run chef-client\non the node.  The first converge of the resource does the following:\n\n * Creates a new key, with no passphrase.\n * Generates and installs a certificate, signed by an ephemeral CA.\n * Creates a CSR, which is placed in `node[:csr_outbox]`.\n\n2) Use the `chef-ssl` tool to find and process pending CSRs.  The\nsigned certificate is placed into a databag item.\n\n3) Run chef-client on the node again.  This converge does the\nfollowing:\n\n * Retrieves the certificate databag item.\n * Removes the corresponding entry from `node[:csr_outbox]`.\n * Installs the signed certificate from the databag.\n\n\nFAQ\n===\n\nQ) Can I get my CSR signed by a commercial Certificate Authority?\n\nA) Yes - use the `chef-ssl sign` command to retrieve the CSR, and to\nsupply the text of the signed certificate.\n\nQ) My certificate is about to expire - how can I generate a new CSR?\n\nA) Remove the databag item for the certificate.  The next time\nchef-client is run on the node, a new CSR will be placed in\nnode[:csr_outbox].  The existing key and certificate will not be\ntouched.\n\n\nTODO\n====\n\n\n\nLicence and Author\n==================\n\nAuthor:: Chris Andrews (<candrews@venda.com>)\nAuthor:: Zac Stevens (<zts@cryptocracy.com>)\n\nCopyright 2011-2012 Venda Ltd\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/vt-gpg",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

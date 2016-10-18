@@ -1,0 +1,75 @@
+{
+  "name": "hadoop-client Juju charm",
+  "juju_charm_name": "hadoop-client",
+  "revision": "cs:trusty/hadoop-client-5",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/hadoop-client",
+    "https://jujucharms.com/hadoop-client/trusty",
+    "https://jujucharms.com/hadoop-client/trusty/5",
+    "https://api.jujucharms.com/v5/hadoop-client",
+    "https://api.jujucharms.com/v5/trusty/hadoop-client",
+    "https://api.jujucharms.com/v5/trusty/hadoop-client-5"
+  ],
+  "labels": [
+    "Juju charm",
+    "bigdata",
+    "hadoop",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Mode/CLI",
+    "Style/Virtualization Level/Application",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/JavaScript/Node.js",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Processing/Hadoop"
+  ],
+  "info_url": "https://jujucharms.com/hadoop-client",
+  "package_url": "https://api.jujucharms.com/v5/trusty/hadoop-client-5/archive",
+  "created": "2016-06-23T22:59:03.706Z",
+  "updated": "2016-06-23T22:59:03.706Z",
+  "description": "Client charm for Apache Hadoop platform\n\nHadoop is a software platform that lets one easily write and\nrun applications that process vast amounts of data.\n\nThis charm manages a dedicated client node as a place to\nrun mapreduce jobs.  However, its main purpose is to serve as\na base layer for other client charms, such as Gobblin' or Spark.\n",
+  "maintainer": {
+    "name": "bigdata-charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "bigdata-charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    }
+  ],
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/hadoop-plugin",
+      "juju_interface": "hadoop-plugin",
+      "juju_name": "hadoop",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/java",
+      "juju_interface": "java",
+      "juju_name": "java",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/mahout",
+      "juju_interface": "mahout",
+      "juju_name": "mahout",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "# Overview\n\nThis is the base layer for charms that wish to connect to the core\n[Apache Hadoop cluster][hadoop-core].  [Including this layer][building]\nprovides and manages the relation to [hadoop-plugin][], and all your reactive\ncharm needs to do is respond to one or more of the states listed below.\n\nThe plugin services provides the appropriate Hadoop libraries for the cluster,\nand sets up the standard Hadoop config files in `/etc/hadoop/conf`.\n\n# Usage\n\nTo create a charm layer using this base layer, you need only include it in\na `layer.yaml` file:\n\n```yaml\nincludes: ['layer:hadoop-client']\n```\n\nThis will fetch this layer from [interfaces.juju.solutions][] and incorporate\nit into your charm layer.  You can then add handlers under the `reactive/`\ndirectory.  Note that **any** file under `reactive/` will be expected to\ncontain handlers, whether as Python decorated functions or [executables][non-python]\nusing the [external handler protocol][].\n\n\n# Reactive States\n\nThis layer, via the [hadoop-plugin][] interface, will set the following states:\n\n  * **`hadoop.hdfs.ready`**  The Hadoop cluster has indicated that HDFS is ready\n    to store data.  Handlers reacting to this state will be passed an instance\n    of the [hadoop-plugin][] class, and can use the following methods to access\n    information about HDFS:\n\n    * `hadoop.namenodes()` A list of one or two NameNode addresses.\n    * `hadoop.hdfs_port()` The port on which the NameNodes are listening.\n\n  * **`hadoop.yarn.ready`**  The Hadoop cluster has indicated that Yarn is ready\n    to process data.  Handlers reacting to this state will be passed an instance\n    of the [hadoop-plugin][] class, and can use the following methods to access\n    information about Yarn:\n\n    * `hadoop.resourcemanagers()` A list of one or two ResourceManager addresses.\n    * `hadoop.yarn_port()` The port on which the ResourceManagers are listening.\n    * `hadoop.yarn_hs_ipc_port()` The IPC port for the Yarn HistoryServer.\n    * `hadoop.yarn_hs_http_port()` The HTTP port for the Yarn HistoryServer.\n\n  * **`hadoop.ready`**  The Hadoop cluster has indicated that both HDFS and Yarn\n    are ready.  This is a combination of the previous two states, and also provides\n    an instance upon which any of the previously mentioned methods can be called.\n\nAn example using these states would be:\n\n```python\n@when('hadoop.ready')\ndef configure_service(hadoop):\n    update_config(\n        hadoop.namenodes(), hadoop.hdfs_port(),\n        hadoop.resourcemanagers(), hadoop.yarn_port())\n    restart_service()\n```\n\n\n# Layer Configuration\n\nThis layer supports the following options, which can be set in `layer.yaml`:\n\n  * **packages**  A list of system packages to be installed when Hadoop is\n    being installed.\n\n  * **groups**  A list of system groups to be created when Hadoop is being\n    configured.\n\n  * **users**  A list of system users to be created when Hadoop is being\n    configured.\n\n  * **dirs**  A mapping of directories to be created when Hadoop is being\n    configured.  Each entry should contain the following keys:\n\n    * **path**  Absolute directory path.\n    * **perms**  Octal permissions.\n    * **owner**  User name to own directory.\n    * **group**  Name of group for directory.\n\nAn example `layer.yaml` using these options might be:\n\n```yaml\nincludes: ['layer:hadoop-client']\noptions:\n  hadoop-client:\n    groups: [spark]\n    users: [spark]\n    dirs:\n      spark_home:\n        path: /var/lib/spark\n        perms: 0755\n        owner: spark\n        group: spark\n```\n\n\n# Actions\n\nThis layer currently does not define any actions.\n\n\n[hadoop-core]: https://jujucharms.com/apache-core-batch-processing/\n[building]: https://jujucharms.com/docs/devel/authors-charm-building\n[interfaces.juju.solutions]: http://interfaces.juju.solutions/\n[non-python]: https://pythonhosted.org/charms.reactive/#non-python-reactive-handlers\n[external handler protocol]: https://pythonhosted.org/charms.reactive/charms.reactive.bus.html#charms.reactive.bus.ExternalHandler\n[`data_changed`]: https://pythonhosted.org/charms.reactive/charms.reactive.helpers.html#charms.reactive.helpers.data_changed\n[hadoop-plugin]: https://github.com/juju-solutions/interface-hadoop-plugin\n",
+  "readme": "# Overview\n\nThis is the base layer for charms that wish to connect to the core\n[Apache Hadoop cluster][hadoop-core].  [Including this layer][building]\nprovides and manages the relation to [hadoop-plugin][], and all your reactive\ncharm needs to do is respond to one or more of the states listed below.\n\nThe plugin services provides the appropriate Hadoop libraries for the cluster,\nand sets up the standard Hadoop config files in `/etc/hadoop/conf`.\n\n# Usage\n\nTo create a charm layer using this base layer, you need only include it in\na `layer.yaml` file:\n\n```yaml\nincludes: ['layer:hadoop-client']\n```\n\nThis will fetch this layer from [interfaces.juju.solutions][] and incorporate\nit into your charm layer.  You can then add handlers under the `reactive/`\ndirectory.  Note that **any** file under `reactive/` will be expected to\ncontain handlers, whether as Python decorated functions or [executables][non-python]\nusing the [external handler protocol][].\n\n\n# Reactive States\n\nThis layer, via the [hadoop-plugin][] interface, will set the following states:\n\n  * **`hadoop.hdfs.ready`**  The Hadoop cluster has indicated that HDFS is ready\n    to store data.  Handlers reacting to this state will be passed an instance\n    of the [hadoop-plugin][] class, and can use the following methods to access\n    information about HDFS:\n\n    * `hadoop.namenodes()` A list of one or two NameNode addresses.\n    * `hadoop.hdfs_port()` The port on which the NameNodes are listening.\n\n  * **`hadoop.yarn.ready`**  The Hadoop cluster has indicated that Yarn is ready\n    to process data.  Handlers reacting to this state will be passed an instance\n    of the [hadoop-plugin][] class, and can use the following methods to access\n    information about Yarn:\n\n    * `hadoop.resourcemanagers()` A list of one or two ResourceManager addresses.\n    * `hadoop.yarn_port()` The port on which the ResourceManagers are listening.\n    * `hadoop.yarn_hs_ipc_port()` The IPC port for the Yarn HistoryServer.\n    * `hadoop.yarn_hs_http_port()` The HTTP port for the Yarn HistoryServer.\n\n  * **`hadoop.ready`**  The Hadoop cluster has indicated that both HDFS and Yarn\n    are ready.  This is a combination of the previous two states, and also provides\n    an instance upon which any of the previously mentioned methods can be called.\n\nAn example using these states would be:\n\n```python\n@when('hadoop.ready')\ndef configure_service(hadoop):\n    update_config(\n        hadoop.namenodes(), hadoop.hdfs_port(),\n        hadoop.resourcemanagers(), hadoop.yarn_port())\n    restart_service()\n```\n\n\n# Layer Configuration\n\nThis layer supports the following options, which can be set in `layer.yaml`:\n\n  * **packages**  A list of system packages to be installed when Hadoop is\n    being installed.\n\n  * **groups**  A list of system groups to be created when Hadoop is being\n    configured.\n\n  * **users**  A list of system users to be created when Hadoop is being\n    configured.\n\n  * **dirs**  A mapping of directories to be created when Hadoop is being\n    configured.  Each entry should contain the following keys:\n\n    * **path**  Absolute directory path.\n    * **perms**  Octal permissions.\n    * **owner**  User name to own directory.\n    * **group**  Name of group for directory.\n\nAn example `layer.yaml` using these options might be:\n\n```yaml\nincludes: ['layer:hadoop-client']\noptions:\n  hadoop-client:\n    groups: [spark]\n    users: [spark]\n    dirs:\n      spark_home:\n        path: /var/lib/spark\n        perms: 0755\n        owner: spark\n        group: spark\n```\n\n\n# Actions\n\nThis layer currently does not define any actions.\n\n\n[hadoop-core]: https://jujucharms.com/apache-core-batch-processing/\n[building]: https://jujucharms.com/docs/devel/authors-charm-building\n[interfaces.juju.solutions]: http://interfaces.juju.solutions/\n[non-python]: https://pythonhosted.org/charms.reactive/#non-python-reactive-handlers\n[external handler protocol]: https://pythonhosted.org/charms.reactive/charms.reactive.bus.html#charms.reactive.bus.ExternalHandler\n[`data_changed`]: https://pythonhosted.org/charms.reactive/charms.reactive.helpers.html#charms.reactive.helpers.data_changed\n[hadoop-plugin]: https://github.com/juju-solutions/interface-hadoop-plugin\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

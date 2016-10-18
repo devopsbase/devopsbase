@@ -1,0 +1,119 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/lbischof/kibana",
+    "repository_url": "https://hub.docker.com/v2/repositories/lbischof/kibana",
+    "tags_url": "https://hub.docker.com/v2/repositories/lbischof/kibana/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/lbischof/kibana/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/lbischof/kibana/autobuild",
+    "user": "lbischof",
+    "name": "kibana",
+    "namespace": "lbischof",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 205,
+    "last_updated": "2016-09-23T21:22:55.554767Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 133518777,
+        "id": 2829380,
+        "repository": 660940,
+        "creator": 502557,
+        "last_updater": 502557,
+        "last_updated": "2016-09-23T21:22:55.156853Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "lbischof/openshift3-elk"
+  },
+  "name": "lbischof/kibana Docker container",
+  "description": "ELK-Stack for Openshift v3",
+  "readme": "# ELK-Stack on Openshift v3\n\n**Under construction**\n\nThese are modified dockerfiles from the official docker images. I removed the gosu stuff and made sure relevant files are world readable.\n\n## Usage\nThere is a docker-compose and a openshift template file in the `example` directory.\n### Local\n```\ndocker run -it --rm --name elasticsearch lbischof/elasticsearch\ndocker run -it --rm --link elasticsearch:elasticsearch -p 5601:5601 lbischof/kibana\ns2i build https://github.com/lbischof/openshift3-elk.git lbischof/logstash logstash --context-dir=example\ndocker run -it --rm --link elasticsearch:elasticsearch logstash\n```\n### Openshift\n```\noc new-project elk\noc new-app lbischof/kibana\noc new-app lbischof/elasticsearch\noc new-app lbischof/logstash~https://github.com/lbischof/openshift3-elk.git --context-dir example --name logstash-git\noc expose service kibana\n```\n\n",
+  "dockerfile": "FROM debian:jessie\n\n# add our user and group first to make sure their IDs get assigned consistently\nRUN groupadd -r kibana && useradd -r -m -g kibana kibana\n\nRUN apt-get update && apt-get install -y \\\n\t\tca-certificates \\\n\t\twget \\\n\t--no-install-recommends && rm -rf /var/lib/apt/lists/*\n\n# https://www.elastic.co/guide/en/kibana/4.4/setup.html#kibana-apt\n# https://packages.elasticsearch.org/GPG-KEY-elasticsearch\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4\n\nENV KIBANA_MAJOR 4.5\nENV KIBANA_VERSION 4.5.0\n\nRUN echo \"deb http://packages.elastic.co/kibana/${KIBANA_MAJOR}/debian stable main\" > /etc/apt/sources.list.d/kibana.list\n\nRUN set -x \\\n\t&& apt-get update \\\n\t&& apt-get install -y --no-install-recommends kibana=$KIBANA_VERSION \\\n\t&& chown -R kibana:kibana /opt/kibana \\\n\t&& rm -rf /var/lib/apt/lists/*\n\nENV PATH /opt/kibana/bin:$PATH\n\nCOPY docker-entrypoint.sh /\n\nEXPOSE 5601\n\nRUN chmod -R og+w /opt/kibana\nUSER 1000\n\nENTRYPOINT [\"/docker-entrypoint.sh\"]\nCMD [\"kibana\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5601
+    ],
+    "volume": [],
+    "run": [
+      "groupadd -r kibana && useradd -r -m -g kibana kibana",
+      "apt-get update && apt-get install -y \t\tca-certificates \t\twget \t--no-install-recommends && rm -rf /var/lib/apt/lists/*",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4",
+      "echo \"deb http://packages.elastic.co/kibana/${KIBANA_MAJOR}/debian stable main\" > /etc/apt/sources.list.d/kibana.list",
+      "set -x \t&& apt-get update \t&& apt-get install -y --no-install-recommends kibana=$KIBANA_VERSION \t&& chown -R kibana:kibana /opt/kibana \t&& rm -rf /var/lib/apt/lists/*",
+      "chmod -R og+w /opt/kibana"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "env": {
+      "KIBANA_MAJOR": "4.5",
+      "KIBANA_VERSION": "4.5.0",
+      "PATH": "/opt/kibana/bin:$PATH"
+    },
+    "copy": "docker-entrypoint.sh /",
+    "user": "1000",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"kibana\"]"
+  },
+  "source_repository_url": "https://github.com/lbischof/openshift3-elk.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/lbischof/openshift3-elk",
+  "docker_repository": "lbischof/kibana",
+  "docker_image": "lbischof/kibana",
+  "parameters_schema": {
+    "KIBANA_MAJOR": {
+      "default": "4.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIBANA_VERSION": {
+      "default": "4.5.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/opt/kibana/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5601
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "lbischof/kibana",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/lbischof/kibana",
+    "https://hub.docker.com/v2/repositories/lbischof/kibana",
+    "https://github.com/lbischof/openshift3-elk.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/lbischof/kibana",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,65 @@
+{
+  "name": "storm-platform Chef cookbook",
+  "chef_cookbook_name": "storm-platform",
+  "revision": "1.5.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/storm-platform",
+    "https://supermarket.chef.io/cookbooks/storm-platform/download",
+    "https://supermarket.chef.io/cookbooks/storm-platform/versions/1.5.0",
+    "https://supermarket.chef.io/cookbooks/storm-platform/versions/1.5.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/storm-platform/versions/1.5.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/storm-platform",
+    "https://supermarket.chef.io/api/v1/cookbooks/storm-platform/versions/1.5.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Orchestration/Cluster-based"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/storm-platform",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/storm-platform/versions/1.5.0/download",
+  "deprecated": false,
+  "created": "2015-10-08T00:45:11.625Z",
+  "updated": "2016-05-23T15:35:54.428Z",
+  "description": "Install/Configure a Storm cluster",
+  "maintainer": {
+    "name": "samuel_bernard",
+    "email": "dps.team@s4m.io"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 1598,
+  "downloads_count_revision": 26,
+  "repository_url": "https://gitlab.com/s4m-chef-repositories/storm-platform",
+  "issues_url": "https://gitlab.com/s4m-chef-repositories/storm-platform/issues",
+  "chef_source_url": "https://gitlab.com/s4m-chef-repositories/storm-platform",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Storm Cluster\n=================\n\nDescription\n-----------\n\n[Apache Storm](https://storm.apache.org/) is a free and open source distributed\nrealtime computation system. Storm makes it easy to reliably process unbounded\nstreams of data, doing for realtime processing what Hadoop did for batch\nprocessing. Storm is simple, can be used with any programming language, and is\na lot of fun to use!\n\nRequirements\n------------\n\n### Cookbooks and gems\n\nDeclared in [metadata.rb](metadata.rb) and in [Gemfile](Gemfile).\n\n### Platforms\n\nA *systemd* managed distribution:\n- RHEL Family 7, tested on Centos\n\nNote: it should work quite fine on Debian 8 (with some attributes tuning) but\nthe official docker image does not allow Systemd to work easily, so it could\nnot be tested.\n\nUsage\n-----\n\n### Easy Setup\n\nThis cookbook creates the number of nodes specified by attribute\n`node['storm-platform']['size']` (3 by default). The first node to be created\nwill be setup with a Nimbus, a LogViewer and a UI. All other nodes will host a\nSupervisor and a LogViewer. To get this cookbook to setup the nth node to hold\nthe Nimbus, Supervisor and LogViewer instead of the first one, change attribute\n`node['storm-platform']['nimbus_id']`.\n\nBy default, this cookbook installs *openjdk* from the official repositories\n*(openjdk-headless 8 on centos 7)* just before starting the service. You can\nchange this behavior by setting `node['storm-platform']['java']` to `\"\"`, or\nchoose your package by setting the package name in\n`node['storm-platform']['java'][node[:platform]]`.\n\n### Search\n\nThe recommended way to use this cookbook is through the creation of a role\nper **Storm** cluster. This enables the search by role feature, allowing a\nsimple service discovery.\n\nIn fact, there are two ways to configure the search:\n1. with a static configuration through a list of hostnames (attributes `hosts`\n   that is `['storm-platform']['hosts']`)\n2. with a real search, performed on a role (attributes `role` and `size`\n   like in `['storm-platform']['role']`). The role should be in the run-list\n   of all nodes of the cluster. The size is a safety and should be the number\n   of nodes in the cluster.\n\nIf hosts is configured, `role` and `size` are ignored.\n\nSee [roles](test/integration/roles) for some examples and\n[Cluster Search][cluster-search] documentation for more information.\n\n### Zookeeper Cluster\n\nTo install properly a **Storm** cluster, you need a **Zookeeper** cluster.\nThis is not in the scope of this cookbook but if you need one, you should\nconsider using [Zookeeper Platform][zookeeper-platform].\n\nThe configuration of Zookeeper hosts use search and is done similarly as for\n**Storm** hosts, _ie_ with a static list of hostnames or by using a search on\na role. The attribute to configure is `['storm-platform']['zookeeper']`.\n\n### Test\n\nThis cookbook is fully tested through the installation of the full platform\nin docker hosts. This uses kitchen, docker and some monkey-patching.\n\nIf you run `kitchen list`, you will see 3 suites:\n\n- zookeeper-centos-7\n- storm-nimbus-centos-7\n- storm-supervisor-centos-7\n\nEach corresponds to a different node in the cluster. They are connected through\na bridge network named *kitchen*, which is created if necessary.\n\nFor more information, see [.kitchen.yml](.kitchen.yml) and [test](test)\ndirectory.\n\n### Local cluster\n\nThe cluster installed with `kitchen converge` is fully working and can thus be\nused as a local cluster for developments tests.\n\nYou can access it by using internal DNS of the docker network named *kitchen*\nor by declaring each node in your hosts file. You can get each IP by\nrunning:\n\n    docker inspect --format \\\n      '{{.NetworkSettings.Networks.kitchen.IPAddress}}' container_name\n\nAttributes\n----------\n\nConfiguration is done by overriding default attributes. All configuration keys\nhave a default defined in [attributes/default.rb](attributes/default.rb).\nPlease read it to have a comprehensive view of what and how you can configure\nthis cookbook behavior.\n\nRecipes\n-------\n\n### default\n\nInstall and fully configure a given **Storm** by including the recipes:\n*install*, *create_user*, *config* and *systemd_service*, in that order.\n\n### install\n\nInstall **Storm** from tar archive with **ark** cookbook.\n\n### create\\_user\n\nCreate a system user for **Storm**.\n\n### config\n\nConfigure **Storm**.\n\n### systemd\\_service\n\nCreate Systemd service files and set them up. Different **Storm** services will\nbe set up following the kind of node (both may apply).\n\nFor a *nimbus*:\n- nimbus\n- logviewer\n- ui\n\nFor a *supervisor*:\n- supervisor\n- logviewer\n\nNote: install *java* package (OpenJDK 8 on centos 7) by default, can be\ndisabled by setting `node['confluent-platform']['java']` to \"\". A platform\nspecific configuration for the package to install is also possible.\n\nResources/Providers\n-------------------\n\nNone.\n\nChangelog\n---------\n\nAvailable in [CHANGELOG](CHANGELOG).\n\nContributing\n------------\n\nPlease read carefully [CONTRIBUTING.md](CONTRIBUTING.md) before making a merge\nrequest.\n\nLicense and Author\n------------------\n\n- Author:: Guillaume Alaux (<guillaume.alaux@s4m.io>)\n- Author:: Samuel Bernard (<samuel.bernard@s4m.io>)\n\n```text\nCopyright (c) 2015-2016 Sam4Mobile\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n\n[cluster-search]: https://supermarket.chef.io/cookbooks/cluster-search\n[zookeeper-platform]: https://supermarket.chef.io/cookbooks/zookeeper-platform\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 7.1",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ark",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/cluster-search",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

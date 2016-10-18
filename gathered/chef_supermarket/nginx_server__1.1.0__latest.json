@@ -1,0 +1,89 @@
+{
+  "name": "nginx_server Chef cookbook",
+  "chef_cookbook_name": "nginx_server",
+  "revision": "1.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/nginx_server",
+    "https://supermarket.chef.io/cookbooks/nginx_server/download",
+    "https://supermarket.chef.io/cookbooks/nginx_server/versions/1.1.0",
+    "https://supermarket.chef.io/cookbooks/nginx_server/versions/1.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/nginx_server/versions/1.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/nginx_server",
+    "https://supermarket.chef.io/api/v1/cookbooks/nginx_server/versions/1.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/nginx_server",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/nginx_server/versions/1.1.0/download",
+  "deprecated": false,
+  "created": "2016-01-26T23:21:18.469Z",
+  "updated": "2016-10-14T14:41:09.085Z",
+  "description": "Installs/Configures nginx.",
+  "maintainer": {
+    "name": "kemra102",
+    "email": "danny@thefallenphoenix.net"
+  },
+  "license": "BSD-2-Clause",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 3,
+  "downloads_count": 760,
+  "downloads_count_revision": 13,
+  "repository_url": "https://github.com/kemra102/nginx_server-cookbook",
+  "issues_url": "https://github.com/kemra102/nginx_server-cookbook/issues",
+  "chef_source_url": "https://github.com/kemra102/nginx_server-cookbook",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# nginx_server Cookbook\n[![Build Status](https://travis-ci.org/kemra102/nginx_server-cookbook.svg?branch=master)](https://travis-ci.org/kemra102/nginx_server-cookbook)\n\n#### Table of Contents\n\n1. [Overview](#overview)\n2. [Requirements](#requirements)\n3. [Attributes](#attributes)\n4. [Usage](#usage)\n    * [nginx_server_vhost](#nginx_server_vhost)\n    * [nginx_server_upstream](#nginx_server_upstream)\n5. [Contributing](#contributing)\n6. [License & Authors](#license-and-authors)\n\n## Overview\n\nThis module manages the installation and configuration of NGINX.\n\n## Requirements\n\nRequires Chef 12.5 or later as this cookbook makes use of [Custom Resources](https://www.chef.io/blog/2015/10/08/chef-client-12-5-released/).\n\n## Attributes\n\n### nginx_server::default\n| Key                               | Type      | Description                                   | Default |\n|:---------------------------------:|:---------:|:---------------------------------------------:|:-------:|\n| `['nginx_server']['manage_repo']` | `Boolean` | If the cookbook should manage the NGINX repo. | `true`  |\n| `['nginx_server']['repo']` | `String` | Which repo to install NGINX from. Only used when `['nginx_server']['manage_repo']` is `true`. Possible values are; `epel`, `nginx-stable` & `nginx-mainline`. | `nginx-stable`  |\n| `['nginx_server']['manage_confd']` | `Boolean` | Whether or not we should *zap* `/etc/nginx/conf.d`. | `true`  |\n| `['nginx_server']['error_log_level']` | `String` | [http://nginx.org/en/docs/ngx_core_module.html#error_log](http://nginx.org/en/docs/ngx_core_module.html#error_log) | `warn`  |\n| `['nginx_server']['config']['worker_connections']` | `Integer` | [http://nginx.org/en/docs/ngx_core_module.html#worker_connections](http://nginx.org/en/docs/ngx_core_module.html#worker_connections) | `1024`  |\n| `['nginx_server']['config']['log_format']` | `String` | [http://nginx.org/en/docs/http/ngx_http_log_module.html#log_format](http://nginx.org/en/docs/http/ngx_http_log_module.html#log_format) | ```\"\\'$remote_addr - \\$remote_user [\\$time_local] \\\"\\$request\\\" ' '\\$status \\$body_bytes_sent \\\"\\$http_referer\\\" ' '\\\"\\$http_user_agent\\\" \\\"\\$http_x_forwarded_for\\\"'\"``` |\n| `['nginx_server']['config']['sendfile']` | `String` | [http://nginx.org/en/docs/http/ngx_http_core_module.html#sendfile](http://nginx.org/en/docs/http/ngx_http_core_module.html#sendfile) | `on`  |\n| `['nginx_server']['config']['tcp_nopush']` | `String` | [http://nginx.org/en/docs/http/ngx_http_core_module.html#tcp_nopush](http://nginx.org/en/docs/http/ngx_http_core_module.html#tcp_nopush) | `off`  |\n| `['nginx_server']['config']['keepalive_timeout']` | `Integer` | [http://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_timeout](http://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_timeout) | `65`  |\n| `['nginx_server']['config']['gzip']` | `String` | [http://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip](http://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip) | `off`  |\n| `['nginx_server']['config']['additional']` | `Hash` | Additional config to be applied to the main NGINX config. | `N/A` | \n\n## Usage\n\nYou always need to include the main recipe:\n\n```ruby\ninclude_recipe 'nginx_server::default'\n```\n\nThis recipe:\n\n* Sets up the NGINX repo (**stable** repo by default).\n* Installs the `nginx` package.\n* Writes the main config to `/etc/nginx/nginx.conf`.\n* *zaps* any files in `/etc/nginx/conf.d/` not managed by Chef.\n* Enables & starts the `nginx` service.\n\n### nginx_server_vhost\n\nThis resource defines a standard NGINX vhost.\n\nEach `nginx_server_vhost` has the following attributes:\n\n| Attribute     | Type                 | Description                                                                  | Default                 |\n|:-------------:|:--------------------:|:----------------------------------------------------------------------------:|:-----------------------:|\n| `name`        | `String` or `Symbol` | Resource name.                                                               | `N/A`                   |\n| `listen`      | `Array`              | An array of hashes that describes the NGINX listen statements for the vhost. | `N/A`                   |\n| `server_name` | `String` or `Array`  | Server name(s) that the vhost should respond to.                             | `N/A`                   |\n| `root`        | `String`             | Web root of the vhost.                                                       | `/usr/share/nginx/html` |\n| `index`       | `String`             | Index file for the website.                                                  | `index.html`            |\n| `config`      | `Hash`               | Additional config options to pass to the vhost.                              | `N/A`                   |\n\nTo setup a basic vhost for example:\n\n```ruby\nnginx_server_vhost 'example.org' do\n  server_name [\n    'example.org',\n    'www.example.org'\n  ]\n  root '/var/www/example.org'\n  action :create\nend\n```\n\n#### `listen`\n\nThe `listen` statement is an array of hashes that consists of:\n\n* `ipaddress`\n* `port`\n* `options`\n\nAll parts of each hash are options and have sane defaults:\n\n* `ipaddress` = `0.0.0.0`\n* `port` = `80`\n* `options` = `N/A`\n\nFor example to listen on the loopback address with SSL:\n\n```ruby\nlisten [\n  {\n    'ipaddress': '127.0.0.1',\n    'port': 443,\n    'options': 'ssl'\n  }\n]\n```\n\nthis produces a line like this:\n\n```sh\nlisten 127.0.0.1:443 ssl;\n```\n\nFor more examples see the cookbook's integration test cookbook.\n\n#### `config`\n\nThe `config` is a hash of additional config for the vhost not provided by the other properties.\n\nThis supports nested config such as `location` statements as well, for example:\n\n```ruby\nconfig ({\n    'error_page' => '404 /404.html',\n    'location ~ \\.php$' => {\n      'try_files' => '$uri =404',\n      'fastcgi_pass' => 'unix:/var/run/php5-fpm.sock',\n      'fastcgi_index' => 'index.php',\n      'fastcgi_param' => 'SCRIPT_FILENAME $document_root$fastcgi_script_name',\n      'include' => 'fastcgi_params'\n    }\n  })\n```\n\nthis is rendered as:\n\n```sh\nerror_page 404 /404.html;\nlocation ~ \\.php$ {\n  try_files $uri =404;\n  fastcgi_pass unix:/var/run/php5-fpm.sock;\n  fastcgi_index index.php;\n  fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;\n  include fastcgi_params;\n}\n```\n\nFor more examples see the cookbook's integration test cookbook.\n\n### nginx_server_upstream\n\nThe `nginx_server_upstream` defines an NGINX upstream to be used in tandem with a `nginx_server_vhost` that uses `proxy_pass` or similar to proxy connections to backend servers.\n\nEach `nginx_server_upstream` has the following attributes:\n\n| Attribute       | Type                 | Description                                                                                      | Default |\n|:---------------:|:--------------------:|:------------------------------------------------------------------------------------------------:|:--------|\n| `name`          | `String` or `Symbol` | Resource name.                                                                                   | `N/A`   |\n| `upstream_name` | `String`             | Name of the upstream. Defaults to `name` if not set.                                             | `N/A`   |\n| `servers`       | `Array`              | An Array of Arrays of backend servers that the upstream proxies to including associated options. | `N/A`   |\n| `ip_hash`       | `Boolean`            | Whether or not to turn on the `ip_hash` functionality.                                           | `false` |\n| `keepalive`     | `Integer`            | If set to an Integer turn on and set the `keepalive` functionality with the value supplied.      | `N/A`   |\n| `least_conn`    | `Boolean`            | Whether or not to turn on the `least_conn` functionality.                                        | `false` |\n\nTo proxy through to a group of application servers for example:\n\n```ruby\nnginx_server_upstream 'appservers' do\n  ip_hash true\n  least_conn true\n  servers [\n    ['192.168.0.100:8080', 'max_fails=3', 'fail_timeout=30s'],\n    ['192.168.0.101:8080', 'max_fails=3', 'fail_timeout=30s'],\n    ['192.168.0.102:8080', 'max_fails=3', 'fail_timeout=30s']\n  ]\n  action :create\nend\n```\n\nwill render as:\n\n```sh\nupstream appservers {\n  ip_hash;\n  least_conn;\n\n  server 192.168.0.100:8080 max_fails=3 fail_timeout=30s;\n  server 192.168.0.101:8080 max_fails=3 fail_timeout=30s;\n  server 192.168.0.102:8080 max_fails=3 fail_timeout=30s;\n}\n```\n\n## Contributing\n\nIf you would like to contribute to this cookbook please follow these steps;\n\n1. Fork the repository on Github.\n2. Create a named feature branch (like `add_component_x`).\n3. Write your change.\n4. Write tests for your change (if applicable).\n5. Write documentation for your change (if applicable).\n6. Run the tests, ensuring they all pass.\n7. Submit a Pull Request using GitHub.\n\n## License and Authors\n\nLicense: [BSD 2-clause](https://tldrlegal.com/license/bsd-2-clause-license-\\(freebsd\\)\n\nAuthors:\n\n  * [Danny Roberts](https://github.com/kemra102)\n  * [All Contributors](https://github.com/kemra102/yumserver-cookbook/graphs/contributors)\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 6.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "oracle",
+      "revision": ">= 6.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 6.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 6.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum-epel",
+      "revision": ">= 0.3.6",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum-nginx",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/zap",
+      "revision": ">= 0.6.0",
+      "self_resolve": true
+    }
+  ]
+}

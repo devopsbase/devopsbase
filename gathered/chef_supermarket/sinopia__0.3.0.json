@@ -1,0 +1,96 @@
+{
+  "name": "sinopia Chef cookbook",
+  "chef_cookbook_name": "sinopia",
+  "revision": "0.3.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/sinopia",
+    "https://supermarket.chef.io/cookbooks/sinopia/download",
+    "https://supermarket.chef.io/cookbooks/sinopia/versions/0.3.0",
+    "https://supermarket.chef.io/cookbooks/sinopia/versions/0.3.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/sinopia/versions/0.3.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/sinopia",
+    "https://supermarket.chef.io/api/v1/cookbooks/sinopia/versions/0.3.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Executable/Script/Chef Cookbook",
+    "Type/Middleware/Runtime/JavaScript/Node.js",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Version Control/Git",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Cache"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/sinopia",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/sinopia/versions/0.3.0/download",
+  "deprecated": false,
+  "created": "2014-02-28T22:38:27.000Z",
+  "updated": "2016-01-28T13:47:42.784Z",
+  "description": "Install a sinopia NPM server (cache & private repo)\nSee : https://github.com/rlidwka/sinopia/",
+  "maintainer": {
+    "name": "bvessemont",
+    "email": "bvessemont@gmail.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 5301166,
+  "downloads_count_revision": 471511,
+  "repository_url": "https://github.com/BarthV/sinopia-cookbook",
+  "issues_url": "https://github.com/BarthV/sinopia-cookbook",
+  "chef_source_url": "https://github.com/BarthV/sinopia-cookbook",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# sinopia cookbook\n[![CK Version](http://img.shields.io/cookbook/v/sinopia.svg)](https://supermarket.getchef.com/cookbooks/sinopia) [![Build Status](https://img.shields.io/travis/redguide/nodejs.svg)](https://travis-ci.org/BarthV/sinopia-cookbook)\n\nSinopia project : https://github.com/rlidwka/sinopia/\n\nSinopia is a private/caching npm repository server.\n\nIt allows you to have a local npm registry with zero configuration. You don't have to install and replicate an entire CouchDB database. Sinopia keeps its own small database and, if a package doesn't exist there, it asks npmjs.org for it keeping only those packages you use.\n\n# Requirements\n\n- Chef >= 11\n- Supported platforms : Ubuntu 12.04, 14.04.\n- Sinopia Cookbook heavily depends on `nodejs` community cookbooks.\n\n# Usage\n\nAdd `recipe[sinopia]` to the node runlist.\n\nDefault recipe with no other options will :\n\n- Configure sinopia folders (in /etc, /var & /var/log)\n- Install node + npm from the official repo at the latest version\n- Create a passwordless sinopia user who will run the service\n- Install latest version of sinopia from npmjs.org\n- Configure log rotation to 30d\n- Setup and start sinopia service (based on upstart for now)\n\n## Defaults\n* Sinopia will bind to `127.0.0.1:4873`, so you probably need to setup a web frontend.\n* Access to the npm service is allowed to everyone.\n* All desired packages are cached from https://registry.npmjs.org/\n* A single npm account is provisionned to publish private packages with :\n * login : `admin`\n * passw : `admin`\n\n# Attributes\nEvery single Sinopia configuration item can be managed from node attributes.\nDefault values are specified each time.\n\n## System configuration\n\n- `node['sinopia']['user']` : (sinopia) default user running sinopia\n- `node['sinopia']['confdir']` : (/etc/sinopia) config.yaml file location\n- `node['sinopia']['datadir']` : (/var/lib/sinopia) Sinopia cache & private stores location\n- `node['sinopia']['logdir']` : (/var/log/sinopia) sinopia.log file location\n- `node['sinopia']['logdays']` : (30) log retention policy, `Integer` days\n- `node['sinopia']['loglevel']` : (warn) log level, trace | debug | info | http | warn | error | fatal\n\n## Sinopia global conf\n\n- `node['sinopia']['version']` : (nil) Sinopia npm package version, use `nil` for latest\n- `node['sinopia']['admin']['pass']` : (admin) Sinopia admin account clear password\n- `node['sinopia']['public_url']` : Sinopia rewrite url, url prefix for provided links\n- `node['sinopia']['timeout']` : (nil) Cached repo timeout in ms, software default is 30000 ms\n- `node['sinopia']['maxage']` : (nil) Sinopia metadata cache max age in sec, software defaut is 120s\n- `node['sinopia']['max_body_size']` : (nil) Maximum size of uploaded json document, software default is 1mb\n\n## Users and rights\n\nNo users are created by default.\n\n* You can set user list with a hash under `default['sinopia']['users']`, you need to specify a password for each user\n* You can give admin right to a specific user with `user['admin'] = true` hash\n\nExample:\n```ruby\nnode['sinopia']['users']['bob']['pass'] = 'incredible'\nnode['sinopia']['users']['bob']['admin'] = true\n\nnode['sinopia']['users']['andy']['pass'] = 'toys'\nnode['sinopia']['users']['andy']['admin'] = true\n\nnode['sinopia']['users']['woody']['pass'] = 'buzz'\n```\n\n## NPM Registry\n\nYou can store a list of available npm repositories in `node['sinopia']['repos']` following {'name' => 'url'} syntax. \n\nDefault hash is loaded with official npmjs repo : `default['sinopia']['repos'] = {'npmjs' => 'https://registry.npmjs.org/'}`\n\nExample :\n```ruby\nnode['sinopia']['repos'] = {\n  'npmjs' => 'https://registry.npmjs.org/', # official npmjs repo\n  'myrepo' => 'https://myrepo.local/',\n  'other' => 'https://third-party-repo.com'\n}\n```\n\n`node['sinopia']['mainrepo']` : (npmjs) Caching repository name selected from available repos list\n\n## Filters\n\n- `default['sinopia']['strict_access']` : When set to `true`, this only allow admin and admin users to access sinopia repos, default is `false`\n- You can define access & publish filters based on package name under `default['sinopia']['filters']`\n- Filter format is an Array with one Hash for one rule  \n- Wildcard is accepted in the filter name rule\n- Access can be provided to :\n * Default (all)\n * Specified available users : `['user1', 'user2']`\n * admin account + all admin user : '@admins'\n- publish can be provided to :\n * Default (admin account only)\n * Specified available users + admin : `['user1', 'user2']`\n * admin account + all admin user : '@admins'\n- Storage value is the name of the folder where filtered packages will be set.\n\nExample :\n```ruby\nnode['sinopia']['filters'] = [\n  {\n    'name' => 'private-*',\n    'storage' => 'private-repo'\n  },\n  {\n    'name' => 'admin-*',\n    'access' => ['andy', 'woody']\n  },\n  {\n    'name' => 'test-*',\n    'access' => '@admins'\n  }\n]\n```\n\n## Logging\n\nThis cookbook is reusing specific logging format of Sinopia :\n\n```\ntype: file | stdout | stderr\nlevel: trace | debug | info | http (default) | warn | error | fatal\n\n{type: 'file', path: 'sinopia.log', level: 'debug'},\n\nparameters for stdout and stderr: format: json | pretty\n{type: 'stdout', format: 'pretty', level: 'debug'}\n```\n\nYou can add as much logger as you want (including '{}') in `default['sinopia']['logs']` Array\n\nDefault value is :\n```ruby\nnode['sinopia']['logs'] = [\n  \"{type: file, path: '/var/log/sinopia/sinopia.log', level: warn}\"\n]\n```\n\n## Proxy\n\nSee `attributes/default.rb` to view how to configure `node['sinopia']['use_proxy']` and `node['sinopia']['proxy']`.\n\n## NPM\n\nSee `attributes/default.rb` to view Node & npm install options (version, source/package, ...)\n\n# Recipes\n\n`sinopia::default` recipe includes :\n- `sinopia::users` : creates users\n- `sinopia::nodejs` : install node & npm\n- `sinopia::sinopia` : install sinopia, directories, conf and start service\n\n# Testing\n\nSinopia cookbook is bundled with a Vagrantfile. If you have virtualbox and vagrant ready, just fire a `vagrant up` and this will setup a box running Sinopia and listening 0.0.0.0:4873. Port 4873 is forwaded to your 127.0.0.1:4873 for test purposes.\n\n# Author\n\nAuthor:: Barthelemy Vessemont (<bvessemont@gmail.com>)\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 12.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/nodejs",
+      "revision": "~> 2.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/user",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/logrotate",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

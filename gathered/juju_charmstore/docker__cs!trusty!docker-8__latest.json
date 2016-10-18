@@ -1,0 +1,98 @@
+{
+  "name": "docker Juju charm",
+  "juju_charm_name": "docker",
+  "revision": "cs:trusty/docker-8",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/docker",
+    "https://jujucharms.com/docker/trusty",
+    "https://jujucharms.com/docker/trusty/8",
+    "https://api.jujucharms.com/v5/docker",
+    "https://api.jujucharms.com/v5/trusty/docker",
+    "https://api.jujucharms.com/v5/trusty/docker-8"
+  ],
+  "labels": [
+    "Juju charm",
+    "ops",
+    "application_development",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Devopsware/Deployment/Docker",
+    "Type/Middleware/Runtime"
+  ],
+  "info_url": "https://jujucharms.com/docker",
+  "package_url": "https://api.jujucharms.com/v5/trusty/docker-8/archive",
+  "created": "2015-09-28T15:16:53.019Z",
+  "updated": "2015-09-28T15:16:53.019Z",
+  "description": "Deploys Docker Engine, a lightweight runtime and packaging tool.\n\nDeploys Docker Engine, a portable, lightweight runtime and packaging tool.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/overlay-network",
+      "self_resolve": true,
+      "juju_interface": "overlay-network",
+      "juju_name": "network",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "aufs": {
+      "type": "boolean",
+      "description": "Change the backend storage driver from devicemapper to AUFS.\nThe device mapper storage engine is known to be problematic, and AUFS\nis not enabled by default in Ubuntu. This will install AUFS support and\nswap the backend. **NOTE** It is not recommended to reconfigure this post\ndeployment. You may incur dataloss.\n",
+      "default": true,
+      "mapping": "charm_option"
+    },
+    "compose": {
+      "type": "boolean",
+      "description": "Install docker compose, the formation launch utility\n",
+      "default": true,
+      "mapping": "charm_option"
+    },
+    "latest": {
+      "type": "boolean",
+      "description": "If True, deploy the latest version of docker, when False (default)\ninstalls docker.io from the Ubuntu package archive.\"\n",
+      "default": false,
+      "mapping": "charm_option"
+    },
+    "version": {
+      "type": "string",
+      "description": "When latest = true, specify the version to install from the PPA.\nlatest = false will always assume use the current stable in distro.\n",
+      "default": "1.8.1-0~trusty",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/containers",
+      "juju_interface": "containers",
+      "juju_name": "docker-containers",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/docker-socket",
+      "juju_interface": "docker-socket",
+      "juju_name": "events",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "# Docker Charm\n\n[![Build Status](http://drone.systemzoo.org/api/badge/github.com/chuckbutler/docker-charm/status.svg?branch=master)](http://drone.systemzoo.org/github.com/chuckbutler/docker-charm)\n\nThis charm provides [Docker](http://docker.io). Docker is an open platform for\ndevelopers and sysadmins to build, ship, and run distributed applications.\nConsisting of Docker Engine, a portable, lightweight runtime and packaging tool,\nand Docker Hub, a cloud service for sharing applications and automating\nworkflows, Docker enables apps to be quickly assembled from components and\neliminates the friction between development, QA, and production environments\n\n\n# Did you know?\n\nThere's a full documentation site that serves as a manual/accompanyment to this charm.\nhave a look at the [Github Pages Docsite](http://chuckbutler.github.com/docker-charm)\nfor more in-depth information about the charm, development patterns, and usage\ninstructions.\n\n# Using the Docker Charm\n\nStep by step instructions on using the Docker charm:\n\n    juju deploy cs:~lazypower/trusty/docker\n\n## Scale out Usage\n\nScaling out the Docker service is as simple as adding additional Docker units\nto expand your cluster. However, you will need an SDN solution to provide cross\nhost networking. See the Known Limitations and issues about this.\n\n# Configuration\n\n- latest : By default the charm assumes installation from the ubuntu\nrepositories. If you wish to deploy the latest upstream Docker runtime enable\nthis option.\n\n- version : String representation of the version you wish to deploy. This helps\n    when scaling a cluster post deployment, to ensure you dont have mismatched\n    versions deployed due to a new release\n\n    juju set docker version=1.6.2\n\n- compose : Boolean representtion on if you wish to include `docker compose`\n    to be installed during the installation of `docker`. This allows you to\n    leverage a yaml file to spin up and manage multiple containers that\n    comprise a single application stack.\n\n- aufs : **new as of v0.1.6** Defaults the backend storage driver to AUFS. The\n    older option of device mapper was horribly broken in most setups, and has\n    been completely depreciated by the Docker foundation. Disable to keep the\n    DeviceMapper backend. - Not recommended. **note** this will break existing\n    containers if you upgrade existing setups. Ensure you account for this when\n    upgrading your Docker clusters that are previously deployed with this charm.\n\n    > See blurb under Known Issues for migration instructions.\n\n## Known Limitations and Issues\n\n\n#### AWS t1.micro\n\nPerformance will suffer on an AWS t1.micro unit - as it has such a limited amount of ram. Between\nthe juju unit-agent, and the Docker daemon + workloads - you will only be able to run the smallest\nof deployments on them. Thus it is not recommended.\n\n#### Local Provider Blockers\n\n The Docker Charm will not work out of the box on the\n [local provider](https://jujucharms.com/docs/config-local). LXC containers are goverend by a\n very strict [App Armor](https://wiki.ubuntu.com/AppArmor)\n [policy](https://help.ubuntu.com/lts/serverguide/lxc.html#lxc-apparmor) that prevents accidental\n misuses of privilege inside the container. Thus **running the Docker Charm inside the local provider\n is not a supported deployment method**.\n\n Additional information will be made available after more research has been done on enabling the\n Docker charm to be deployed into a LXC container environment, and while unsupported it will\n outline the process to enable such scenarios for users that wish to test on the local provider.\n\n#### Host Only Networking\n\n By default, Docker deploys a host-only bridge adapter. Containers are able to communicate with one\n another if you forward host ports to the containers using the `-p` option. More on this in the\n[Deploying Containers]({{site.url}}/user/deploying-containers.html) docpage.\n\n There are other ways to enable cross-host communication using\n [Supporting Charms](http://github.com/chuckbutler/flannel-docker-charm) that will enable an\n overlay-network - but are outside the scope of these help pages.\n\n#### Offline Environments\n\nThere is no support for installation of the Docker service in\n[offline environments](https://jujucharms.com/docs/howto-offline-charms).\nThere is however [a bug](https://github.com/chuckbutler/docker-charm/issues/13) to track the\nprogress of this feature.\n\n#### AUFS Upgrade Stopped my containers from working\n\nIf you have older containers deployed and running, you will need to pause them\nand export. Once the tarballs of the containers have been exported - upgrade\nyour cluster and reimport following the CLI instructions below as a guide\n\n    docker export <<container id>> > mycontainer-latest.tgz\n    # upgrade\n    docker import -i mycontainer-latest - mycontainer:latest\n    docker run <<options>> mycontainer:latest\n\n\n# Contact Information\n\n- Author: Charles Butler &lt;[charles.butler@ubuntu.com](mailto:charles.butler@ubuntu.com)&gt;\n\n## Docker Upstream\n\n- [Docker website](http://docker.io)\n- [Docker bug tracker](http://github.com/docker/docker/issues)\n- [Docker users mailing list](https://groups.google.com/forum/?fromgroups#!forum/docker-users)\n- [Docker dev mailing list](https://groups.google.com/forum/?fromgroups#!forum/docker-dev)\n",
+  "readme": "# Docker Charm\n\n[![Build Status](http://drone.systemzoo.org/api/badge/github.com/chuckbutler/docker-charm/status.svg?branch=master)](http://drone.systemzoo.org/github.com/chuckbutler/docker-charm)\n\nThis charm provides [Docker](http://docker.io). Docker is an open platform for\ndevelopers and sysadmins to build, ship, and run distributed applications.\nConsisting of Docker Engine, a portable, lightweight runtime and packaging tool,\nand Docker Hub, a cloud service for sharing applications and automating\nworkflows, Docker enables apps to be quickly assembled from components and\neliminates the friction between development, QA, and production environments\n\n\n# Did you know?\n\nThere's a full documentation site that serves as a manual/accompanyment to this charm.\nhave a look at the [Github Pages Docsite](http://chuckbutler.github.com/docker-charm)\nfor more in-depth information about the charm, development patterns, and usage\ninstructions.\n\n# Using the Docker Charm\n\nStep by step instructions on using the Docker charm:\n\n    juju deploy cs:~lazypower/trusty/docker\n\n## Scale out Usage\n\nScaling out the Docker service is as simple as adding additional Docker units\nto expand your cluster. However, you will need an SDN solution to provide cross\nhost networking. See the Known Limitations and issues about this.\n\n# Configuration\n\n- latest : By default the charm assumes installation from the ubuntu\nrepositories. If you wish to deploy the latest upstream Docker runtime enable\nthis option.\n\n- version : String representation of the version you wish to deploy. This helps\n    when scaling a cluster post deployment, to ensure you dont have mismatched\n    versions deployed due to a new release\n\n    juju set docker version=1.6.2\n\n- compose : Boolean representtion on if you wish to include `docker compose`\n    to be installed during the installation of `docker`. This allows you to\n    leverage a yaml file to spin up and manage multiple containers that\n    comprise a single application stack.\n\n- aufs : **new as of v0.1.6** Defaults the backend storage driver to AUFS. The\n    older option of device mapper was horribly broken in most setups, and has\n    been completely depreciated by the Docker foundation. Disable to keep the\n    DeviceMapper backend. - Not recommended. **note** this will break existing\n    containers if you upgrade existing setups. Ensure you account for this when\n    upgrading your Docker clusters that are previously deployed with this charm.\n\n    > See blurb under Known Issues for migration instructions.\n\n## Known Limitations and Issues\n\n\n#### AWS t1.micro\n\nPerformance will suffer on an AWS t1.micro unit - as it has such a limited amount of ram. Between\nthe juju unit-agent, and the Docker daemon + workloads - you will only be able to run the smallest\nof deployments on them. Thus it is not recommended.\n\n#### Local Provider Blockers\n\n The Docker Charm will not work out of the box on the\n [local provider](https://jujucharms.com/docs/config-local). LXC containers are goverend by a\n very strict [App Armor](https://wiki.ubuntu.com/AppArmor)\n [policy](https://help.ubuntu.com/lts/serverguide/lxc.html#lxc-apparmor) that prevents accidental\n misuses of privilege inside the container. Thus **running the Docker Charm inside the local provider\n is not a supported deployment method**.\n\n Additional information will be made available after more research has been done on enabling the\n Docker charm to be deployed into a LXC container environment, and while unsupported it will\n outline the process to enable such scenarios for users that wish to test on the local provider.\n\n#### Host Only Networking\n\n By default, Docker deploys a host-only bridge adapter. Containers are able to communicate with one\n another if you forward host ports to the containers using the `-p` option. More on this in the\n[Deploying Containers]({{site.url}}/user/deploying-containers.html) docpage.\n\n There are other ways to enable cross-host communication using\n [Supporting Charms](http://github.com/chuckbutler/flannel-docker-charm) that will enable an\n overlay-network - but are outside the scope of these help pages.\n\n#### Offline Environments\n\nThere is no support for installation of the Docker service in\n[offline environments](https://jujucharms.com/docs/howto-offline-charms).\nThere is however [a bug](https://github.com/chuckbutler/docker-charm/issues/13) to track the\nprogress of this feature.\n\n#### AUFS Upgrade Stopped my containers from working\n\nIf you have older containers deployed and running, you will need to pause them\nand export. Once the tarballs of the containers have been exported - upgrade\nyour cluster and reimport following the CLI instructions below as a guide\n\n    docker export <<container id>> > mycontainer-latest.tgz\n    # upgrade\n    docker import -i mycontainer-latest - mycontainer:latest\n    docker run <<options>> mycontainer:latest\n\n\n# Contact Information\n\n- Author: Charles Butler &lt;[charles.butler@ubuntu.com](mailto:charles.butler@ubuntu.com)&gt;\n\n## Docker Upstream\n\n- [Docker website](http://docker.io)\n- [Docker bug tracker](http://github.com/docker/docker/issues)\n- [Docker users mailing list](https://groups.google.com/forum/?fromgroups#!forum/docker-users)\n- [Docker dev mailing list](https://groups.google.com/forum/?fromgroups#!forum/docker-dev)\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

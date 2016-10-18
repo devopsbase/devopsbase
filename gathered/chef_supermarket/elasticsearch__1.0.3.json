@@ -1,0 +1,76 @@
+{
+  "name": "elasticsearch Chef cookbook",
+  "chef_cookbook_name": "elasticsearch",
+  "revision": "1.0.3",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/elasticsearch",
+    "https://supermarket.chef.io/cookbooks/elasticsearch/download",
+    "https://supermarket.chef.io/cookbooks/elasticsearch/versions/1.0.3",
+    "https://supermarket.chef.io/cookbooks/elasticsearch/versions/1.0.3/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/elasticsearch/versions/1.0.3",
+    "https://supermarket.chef.io/api/v1/cookbooks/elasticsearch",
+    "https://supermarket.chef.io/api/v1/cookbooks/elasticsearch/versions/1.0.3/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/elasticsearch",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/elasticsearch/versions/1.0.3/download",
+  "deprecated": false,
+  "created": "2010-06-28T20:57:57.000Z",
+  "updated": "2016-10-12T10:47:15.640Z",
+  "description": "Installs and configures Elasticsearch",
+  "maintainer": {
+    "name": "elastic",
+    "email": "karel.minarik@elasticsearch.org"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 147,
+  "downloads_count": 27656375,
+  "downloads_count_revision": 132741,
+  "repository_url": "https://github.com/elasticsearch/cookbook-elasticsearch",
+  "issues_url": "https://github.com/elasticsearch/cookbook-elasticsearch",
+  "chef_source_url": "https://github.com/elasticsearch/cookbook-elasticsearch",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Elasticsearch Chef Cookbook\n\nThis cookbook has been converted into a library cookbook as of version 1.0.0,\nand supports Chef 12.4.1, 12.3.0, 12.2.1, and higher. It implements supports CI\nas well as more modern testing with chefspec and test-kitchen. It no longer\nsupports some of the more extraneous features such as discovery (use [chef search](http://docs.chef.io/chef_search.html) in your wrapper cookbook) or EBS\ndevice creation (use [the aws cookbook](https://github.com/opscode-cookbooks/aws)).\n\nThe previous version of this cookbook may be found in the [0.3.x branch](https://github.com/elastic/cookbook-elasticsearch/tree/0.3.x).\n\n## Default version, download URLs, and checksums\nPlease consult [attributes/default.rb](attributes/default.rb) for these values.\nBoth the recipes and resources/providers here source their default values for\nElasticsearch version, download URL, and Checksum from `attributes/default.rb`.\n\nPlease take note that you may use `%s` in your URL and this cookbook will use\nsprintf/format to insert the version parameter as a string into your\ndownload_url.\n\nYou may adjust the node attributes to force this cookbook to use different\ndefault values for all three settings.\n\n## Recipes\n\n### default\n\nThe default recipe creates an elasticsearch user and group with the default\noptions.\n\n## Resources\n\n### elasticsearch_user\nActions: `:create`, `:remove`\n\nCreates a user and group on the system for use by elasticsearch. Here is an\nexample with many of the default options and default values (all options except\na resource name may be omitted).\n\nExamples:\n\n```\nelasticsearch_user 'elasticsearch'\n```\n\n```\nelasticsearch_user 'elasticsearch' do\n  username 'elasticsearch'\n  groupname 'elasticsearch'\n  homedir '/usr/local/elasticsearch'\n  shell '/bin/bash'\n  comment 'Elasticsearch User'\n\n  action :create\nend\n```\n\n### elasticsearch_install\nActions: `:install`, `:remove`\n\nDownloads the elasticsearch software, and unpacks it on the system. There are\ncurrently two ways to install -- `package`, which downloads the appropriate\npackage from elasticsearch.org and uses the package manager to install it, and\n`tarball` which downloads a tarball from elasticsearch.org and unpacks it in\n/usr/local on the system. The resource name is not used for anything in\nparticular. This resource also comes with a `:remove` action which will remove\nthe package or directory elasticsearch was unpacked into.\n\nYou may always specify a download_url and/or download_checksum, and you may\ninclude `%s` which will be replaced by the version parameter you supply.\n\nPlease be sure to consult the above section 'Default version, download URLs,\nand checksums' as that controls how Elasticsearch version, download URL and\nchecksum are determined if you omit them.\n\nExamples:\n\n```\nelasticsearch_install 'elasticsearch'\n```\n\n```\nelasticsearch_install 'my_es_installation' do\n  type :tarball # type of install\n  dir '/usr/local' # where to install\n\n  owner 'elasticsearch' # user and group to install under\n  group 'elasticsearch'\n\n  download_url \"https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.7.2.tar.gz\"\n  # sha256\n  download_checksum \"6f81935e270c403681e120ec4395c28b2ddc87e659ff7784608b86beb5223dd2\"\n\n  action :install # could be :remove as well\nend\n```\n\n```\nelasticsearch_install 'my_es_installation' do\n  type :tarball # type of install\n  version '1.7.2'\n  action :install # could be :remove as well\nend\n```\n\n```\nelasticsearch_install 'my_es_installation' do\n  type :package # type of install\n  download_url \"https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.7.2.deb\"\n  # sha256\n  download_checksum \"791fb9f2131be2cf8c1f86ca35e0b912d7155a53f89c2df67467ca2105e77ec2\"\n  action :install # could be :remove as well\nend\n```\n\n```\nelasticsearch_install 'my_es_installation' do\n  type :package # type of install\n  version \"1.7.2\"\n  action :install # could be :remove as well\nend\n```\n\n### elasticsearch_configure\nActions: `:manage`, `:remove`\n\nConfigures an elasticsearch instance; creates directories for configuration,\nlogs, and data. Writes files logging.yml, elasticsearch.in.sh and\nelasticsearch.yml.\n\nThe main attribute for this resource is `configuration`,\nwhich is a hash of any elasticsearch configuration directives. The\nother important attribute is `default_configuration` -- this contains the\nminimal set of required defaults.\n\nNote that these are both _not_ a Chef mash, everything must be in a single level\nof keys and values. Any settings you pass in configuration will be merged into\n(and potentially overwrite) any default settings.\n\nSee the examples, [as well as the attributes in the resource file](libraries/resource_configure.rb),\nfor more.\n\nExamples:\n\nWith all defaults -\n```\nelasticsearch_configure 'elasticsearch'\n```\n\nMore complicated -\n```\nelasticsearch_configure 'my_elasticsearch' do\n  # if you override one of these, you probably want to override all\n  dir '/usr/local/awesome'\n  path_conf \"/usr/local/awesome/etc/elasticsearch\"\n  path_data \"/usr/local/awesome/var/data/elasticsearch\"\n  path_logs \"/usr/local/awesome/var/log/elasticsearch\"\n\n  user 'foo'\n  group 'bar'\n  logging({:\"action\" => 'INFO'})\n\n  allocated_memory '123m'\n  thread_stack_size '512k'\n\n  env_options '-DFOO=BAR'\n  gc_settings <<-CONFIG\n                -XX:+UseParNewGC\n                -XX:+UseConcMarkSweepGC\n                -XX:CMSInitiatingOccupancyFraction=75\n                -XX:+UseCMSInitiatingOccupancyOnly\n                -XX:+HeapDumpOnOutOfMemoryError\n                -XX:+PrintGCDetails\n              CONFIG\n\n  configuration ({\n    'node.name' => 'crazy'\n  })\n\n  action :manage\nend\n```\n\n### elasticsearch_service\nActions: `:configure`, `:remove`\n\nWrites out a system service configuration of the appropriate type, and enables\nit to start on boot. You can override almost all of the relevant settings in\nsuch a way that you may run multiple instances.\n\n```\nelasticsearch_service 'elasticsearch'\n```\n\n```\nelasticsearch_service 'elasticsearch-crazy' do\n  node_name 'crazy'\n  path_conf '/usr/local/awesome/etc/elasticsearch'\n  pid_path '/usr/local/awesome/var/run'\n  user 'foo'\n  group 'bar'\nend\n```\n\n### elasticsearch_plugin\nActions: `:install`, `:remove`\n\nInstalls or removes a plugin to a given elasticsearch instance and plugin\ndirectory.\n\nWhen running a single instance per machine (VM, etc), it's typically\nsufficient to rely on the default value of `plugin_dir`:\n\n```\nelasticsearch_plugin 'mobz/elasticsearch-head'\n```\n\nTo run multiple instances per machine, an explicit `plugin_dir` location\nhas to be provided:\n\n```\nelasticsearch_plugin 'mobz/elasticsearch-head' do\n  plugin_dir '/usr/local/awesome/elasticsearch-1.7.2/plugins'\nend\n```\nNB: You [may encounter issues on certain distros](http://blog.backslasher.net/java-ssl-crash.html) with NSS 3.16.1 and OpenJDK 7.x.\n\n## Testing\n\nThis cookbook is equipped with both unit tests (chefspec) and integration tests\n(test-kitchen and serverspec). It also comes with rubocop and foodcritic tasks\nin the supplied Rakefile. Contributions to this cookbook should include tests\nfor new features or bugfixes, with a preference for unit tests over integration\ntests to ensure speedy testing runs. ***All tests and most other commands here\nshould be run using bundler*** and our standard Gemfile. This ensures that\ncontributions and changes are made in a standardized way against the same\nversions of gems. We recommend installing rubygems-bundler so that bundler is\nautomatically inserting `bundle exec` in front of commands run in a directory\nthat contains a Gemfile.\n\nA full test run of all tests and style checks would look like:\n```bash\n$ bundle exec rake style\n$ bundle exec rake spec\n$ bundle exec rake integration\n$ bundle exec rake destroy\n```\nThe final destroy is intended to clean up any systems that failed a test, and is\nmostly useful when running with kitchen drivers for cloud providers, so that no\nmachines are left orphaned and costing you money.\n\n### Fixtures\n\nThis cookbook supplies a few different test fixtures (under `test/fixtures/`)\nthat can be shared amongst any number of unit or integration tests: cookbooks,\nenvironments, and nodes. Environments and nodes are automatically loaded into\nchef-zero for both chefspec tests that run locally and serverspec tests that run\nfrom test-kitchen.\n\nIt also contains 'platform data' that can be used to drive unit testing, for\nexample, you might read `httpd` for some platforms and `apache2` for others,\nallowing you to write a single test for the Apache webserver. Unfortunately,\nwithout further modifications to `busser` and `busser-serverspec`, the platform\ndata will not be available to serverspec tests.\n\n### Style and Best Practices\n\nRubocop and Foodcritic evaluations may be made by running `rake style`. There\nare no overrides for foodcritic rules, however the adjustments to\nrubocop are made using the supplied `.rubocop.yml` file and have been documented\nby comments within. Most notably, rubocop has been restricted to only apply to\n`.rb` files.\n\nRubocop and foodcritic tests can be executed using `rake style`.\n\n### Unit testing\n\nUnit testing is done using the latest versions of Chefspec. The current default\ntest layout includes running against all supported platforms, as well as\nstubbing data into chef-zero. This allows us to also test against chef search.\nAs is currently a best practice in the community, we will avoid the use of\nchef-solo, but not create barriers to explicitly fail for chef-solo.\n\nUnit tests can be executed using `rake spec`.\n\n### Integration testing\n\nIntegration testing is accomplished using the latest versions of test-kitchen\nand serverspec. Currently, this cookbook uses the busser-serverspec plugin for\ncopying serverspec files to the system being tested. There is some debate in the\ncommunity about whether this should be done using busser-rspec instead, and each\nbusser plugin has a slightly different feature set.\n\nWhile the default test-kitchen configuration uses the vagrant driver, you may\noverride this using `~/.kitchen/config.yml` or by placing a `.kitchen.local.yml`\nin the current directory. This allows you to run these integration tests using\nany supported test-kitchen driver (ec2, rackspace, docker, etc).\n\nIntegration tests can be executed using `rake integration` or `kitchen test`.\n\n## License\n\nThis software is licensed under the Apache 2 license, quoted below.\n\n    Copyright (c) 2015 Elasticsearch <http://www.elasticsearch.org>\n\n    Licensed under the Apache License, Version 2.0 (the \"License\");\n    you may not use this file except in compliance with the License.\n    You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n    Unless required by applicable law or agreed to in writing, software\n    distributed under the License is distributed on an \"AS IS\" BASIS,\n    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n    See the License for the specific language governing permissions and\n    limitations under the License.\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef-sugar",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/curl",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ark",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

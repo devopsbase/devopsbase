@@ -1,0 +1,93 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/fedora/sssd",
+    "repository_url": "https://hub.docker.com/v2/repositories/fedora/sssd",
+    "tags_url": "https://hub.docker.com/v2/repositories/fedora/sssd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/fedora/sssd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/fedora/sssd/autobuild",
+    "user": "fedora",
+    "name": "sssd",
+    "namespace": "fedora",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 249,
+    "last_updated": "2016-09-18T14:41:52.674186Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 150141991,
+        "id": 1012057,
+        "repository": 337761,
+        "creator": 17785,
+        "last_updater": 17785,
+        "last_updated": "2016-09-18T14:41:52.297609Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "fedora-cloud/Fedora-Dockerfiles"
+  },
+  "name": "fedora/sssd Docker container",
+  "description": "sssd image",
+  "readme": "=====================\nSSSD Atomic container\n=====================\n\nConfigure:\n\nIf SSSD has already been configured on the Atomic Host, for example\nthe host was IPA-enrolled, running\n\n   # atomic install sssd --migrate\n\nwill override the sssd.service definition to start the service in\ncontainer via atomic. Existing configuration and data will be re-used.\n\nIf SSSD hasn't been configured yet, run\n\n   # atomic install sssd [ options ]\n\nThe options will be passed to ipa-client-install, so for example\n\n   # atomic install sssd --password the-otp-password\n\nwill attempt to IPA-enroll the machine with the one-time password.\n\nIf the options start with word realm, realm (typically realm join)\nwill be used instead of ipa-client-install:\n\n   # atomic install sssd realm join [ realm join's options ]\n\nOptions to atomic install can also be specified in the following files\non the host:\n\n   /etc/sssd/ipa-client-install-options - parameters to ipa-client-install\n   /etc/sssd/realm-join-options - parameters to realm join\n   /etc/sssd/realm-join-password - file with password for realm join\n\nWhen SSSD and dependent packages are not installed on the host, at least\nthe following libraries need to be present there:\n\n   /usr/lib64/libnss_sss.so.2\n   /usr/lib64/sssd/modules/sssd_krb5_localauth_plugin.so\n   /usr/lib64/libsss_sudo.so\n   /usr/lib64/security/pam_sss.so\n   /usr/lib64/security/pam_oddjob_mkhomedir.so (for realm join setup)\n\nRun:\n\nOn the Atomic Host, run\n\n   # atomic run sssd\n\nor\n\n   # systemctl start sssd.service\n\nThen for example ssh access to the Atomic Host machine with Kerberos\nsingle sign-on will work.\n\nUninstall:\n\n   # atomic uninstall sssd\n\n",
+  "dockerfile": "# Clone from the Fedora image\nFROM fedora\n\nMAINTAINER Jan Pazdziora\n\n# Install FreeIPA client and realmd\nRUN mkdir -p /run/lock ; dnf install -y freeipa-client realmd /etc/selinux/targeted/contexts/dbus_contexts oddjob oddjob-mkhomedir sssd sssd-dbus adcli perl perl-Time-HiRes tar findutils && dnf clean all\nRUN rm -f /usr/bin/sss_ssh_authorizedkeys\nCOPY dbus.service /etc/systemd/system/dbus.service\nCOPY oddjobd.service /etc/systemd/system/oddjobd.service\n\nCOPY systemctl-socket-daemon /usr/bin/systemctl-socket-daemon\nCOPY systemctl /usr/bin/systemctl\n\nCOPY host-data-list /etc/host-data-list\nCOPY install.sh run.sh uninstall.sh /bin/\nRUN chmod +x /usr/bin/systemctl /usr/bin/systemctl-socket-daemon /bin/install.sh /bin/run.sh /bin/uninstall.sh\n\nCOPY rhel-domainname.service /etc/systemd/system/\nCOPY rhel-domainname.service /etc/systemd/system/fedora-domainname.service\nCOPY sssd.service /etc/sssd.service.template\n\nLABEL INSTALL 'docker run --rm=true --privileged --net=host -v /:/host -e NAME=${NAME} -e IMAGE=${IMAGE} -e HOST=/host ${IMAGE} /bin/install.sh'\nLABEL RUN 'docker run -d --restart=always --privileged --net=host --name ${NAME} -e NAME=${NAME} -e IMAGE=${IMAGE} \\\n\t-v /etc/ipa/:/etc/ipa/:ro \\\n\t-v /etc/krb5.conf:/etc/krb5.conf:ro \\\n\t-v /etc/krb5.keytab:/etc/krb5.keytab:ro \\\n\t-v /etc/nsswitch.conf:/etc/nsswitch.conf:ro \\\n\t-v /etc/openldap/:/etc/openldap/:ro \\\n\t-v /etc/pam.d/:/etc/pam.d/:ro \\\n\t-v /etc/passwd:/etc/passwd.host:ro \\\n\t-v /etc/pki/nssdb/:/etc/pki/nssdb/:ro \\\n\t-v /etc/ssh/:/etc/ssh/:ro \\\n\t-v /etc/sssd/:/etc/sssd/:ro \\\n\t-v /etc/systemd/system/sssd.service.d:/etc/systemd/system/sssd.service.d:ro \\\n\t-v /etc/sysconfig/authconfig:/etc/sysconfig/authconfig:ro \\\n\t-v /etc/sysconfig/network:/etc/sysconfig/network:ro \\\n\t-v /etc/sysconfig/sssd:/etc/sysconfig/sssd:ro \\\n\t-v /etc/yp.conf:/etc/yp.conf:ro \\\n\t-v /var/cache/realmd/:/var/cache/realmd/ \\\n\t-v /var/lib/authconfig/last/:/var/lib/authconfig/last/:ro \\\n\t-v /var/lib/ipa-client/sysrestore/:/var/lib/ipa-client/sysrestore/:ro \\\n\t-v /var/lib/samba/:/var/lib/samba/ \\\n\t-v /var/lib/sss/:/var/lib/sss/ \\\n\t-v /var/log/sssd/:/var/log/sssd/ \\\n\t-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \\\n\t${IMAGE} /bin/run.sh'\nLABEL UNINSTALL 'docker run --rm=true --privileged --net=host -v /:/host -e NAME=${NAME} -e IMAGE=${IMAGE} -e HOST=/host ${IMAGE} /bin/uninstall.sh'\nLABEL STOP 'docker kill -s TERM ${NAME}'\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "mkdir -p /run/lock ; dnf install -y freeipa-client realmd /etc/selinux/targeted/contexts/dbus_contexts oddjob oddjob-mkhomedir sssd sssd-dbus adcli perl perl-Time-HiRes tar findutils && dnf clean all",
+      "rm -f /usr/bin/sss_ssh_authorizedkeys",
+      "chmod +x /usr/bin/systemctl /usr/bin/systemctl-socket-daemon /bin/install.sh /bin/run.sh /bin/uninstall.sh"
+    ],
+    "workdir": [],
+    "from": "fedora",
+    "maintainer": "Jan Pazdziora",
+    "copy": "sssd.service /etc/sssd.service.template",
+    "label": "STOP 'docker kill -s TERM ${NAME}'"
+  },
+  "source_repository_url": "https://github.com/fedora-cloud/Fedora-Dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/fedora-cloud/Fedora-Dockerfiles",
+  "docker_repository": "fedora/sssd",
+  "docker_image": "fedora/sssd",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "fedora/sssd",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/fedora/sssd",
+    "https://hub.docker.com/v2/repositories/fedora/sssd",
+    "https://github.com/fedora-cloud/Fedora-Dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/fedora/sssd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

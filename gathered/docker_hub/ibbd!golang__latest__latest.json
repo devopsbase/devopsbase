@@ -1,0 +1,126 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/ibbd/golang",
+    "repository_url": "https://hub.docker.com/v2/repositories/ibbd/golang",
+    "tags_url": "https://hub.docker.com/v2/repositories/ibbd/golang/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/ibbd/golang/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/ibbd/golang/autobuild",
+    "user": "ibbd",
+    "name": "golang",
+    "namespace": "ibbd",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 405,
+    "last_updated": "2016-09-22T09:37:39.009558Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 262463095,
+        "id": 3102200,
+        "repository": 699211,
+        "creator": 419585,
+        "last_updater": 419585,
+        "last_updated": "2016-09-22T09:37:38.624836Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.6.2",
+        "full_size": 319485683,
+        "id": 3208490,
+        "repository": 699211,
+        "creator": 419585,
+        "last_updater": 419585,
+        "last_updated": "2016-05-29T09:44:31.653749Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      }
+    ],
+    "build_name": "IBBD/dockerfile-go"
+  },
+  "name": "ibbd/golang Docker container",
+  "description": "Golang for API",
+  "readme": "# Golang For API\n\n该镜像主要使用于接口服务。\n\n\n## 更新记录\n\n2016.09.22\n\n- 精简了默认的安装包，补全了mysql，redis，mongodb的相关package。\n- 安装了守护程序`supervisor`\n\n2016.05.28\n\n增加一些常用的包\n\n2016.05.20\n\n初始版本`golang:1.6.2`\n\n## 基础说明\n\nweb开发框架：\n\n- **Martini**（如果选择这个，不如选择Gin）\n- **Negroni**: Negroni 是一个很地道的 web 中间件，它是微型，非嵌入式，并鼓励使用原生 net/http 处理器的库。Margini作者新开发的web中间件, 更加符合golang哲学。\n- **Gin**: Gin is a HTTP web framework written in Go (Golang). It features a Martini-like API with much better performance -- up to 40 times faster. If you need smashing performance, get yourself some Gin. https://gin-gonic.github.io/gin/\n- **echo**: Echo is a fast and unfancy HTTP server framework for Go (Golang). Up to 10x faster than the rest. https://labstack.com/echo\n- **iris**: he fastest web framework for Go. Up to 200K rps from more than 1.45M concurrent keep-alive connections http://iris-go.com\n- **goji**: Goji is a minimalistic web framework for Golang that's high in antioxidants.\n\n\n如果需要比较完善的功能，建议选择Gin，如果对效率要求比较高，可以考虑Iris。\n\n## 常见问题\n\n- golang.org被墙的问题\n\n1. 在`https://gopm.io/download`这里下载包，解压到对应的目录即可。另外，如果在容器里面比较难操作，可以将外部的目录映射到容器里面。\n2. 在`$GOPATH/src/golang.org/x/`目录，执行以下命令：\n\n```sh\ngit clone git@github.com:golang/net.git\ngit clone git@github.com:golang/tools.git\ngit clone git@github.com:golang/text.git\ngit clone git@github.com:golang/sys.git\ngit clone git@github.com:golang/crypto.git\n```\n\n一次性将许多包下载好，省得以后麻烦。\n\n",
+  "dockerfile": "#\n# Golang Dockerfile\n# 主要为了满足高并发接口而开发\n#\n# 1. 手动安装包：https://gopm.io/download\n# 2. golang.org的包无法安装可以到github.com/golang上查找\n#\n# https://github.com/ibbd/dockerfile-go\n#\n# sudo docker build -t ibbd/golang ./\n#\n\n# Pull base image.\nFROM golang\n\nMAINTAINER Alex Cai \"cyy0523xc@gmail.com\"\n   \n# 安装守护进程\nRUN apt-get update \\\n    && apt-get install -y  supervisor \\\n    && mkdir -p  /var/log/supervisor \\\n    && apt-get autoremove \\\n    && apt-get clean \\\n    && rm -r /var/lib/apt/lists/*\n\n# Get packages\n# Gopm - Go Package Manager\n# Gopm [global options] command [command options] [arguments...]\n    #&& go get github.com/ant0ine/go-json-rest/rest \\\n    #&& go get github.com/shykes/spdy-go \\\n    #&& go get -u github.com/kataras/iris \\\n    #&& go get github.com/graphql-go/graphql \\\n    #&& go get github.com/asaskevich/govalidator \\\n    #&& go get github.com/dgrijalva/jwt-go \\\n    #&& go get gopkg.in/hlandau/passlib.v1 \\\n    #&& go get golang.org/x/tools \\\n    #&& go get golang.org/x/crypto \\\n    #&& go get golang.org/x/text \\\n    #&& go get golang.org/x/sys \\\n    #&& go get -u -d -t github.com/tinylib/msgp \\\nRUN \\\n    go get golang.org/x/net/context \\\n    && go get github.com/joho/godotenv \\\n    && go get github.com/go-sql-driver/mysql \\\n    && go get github.com/garyburd/redigo/redis \\\n    && go get labix.org/v2/mgo \\\n    && echo \"nameserver 114.114.114.114\" >> /etc/resolv.conf\n\n# 解决时区问题\nENV TZ \"Asia/Shanghai\"\n\n# 终端设置\n# 执行php-fpm时，默认值是dumb，这时在终端操作时可能会出现：terminal is not fully functional\nENV TERM xterm\n\n# Define mountable directories.\nVOLUME /var/www\n\n# 工作目录\nWORKDIR /var/www \n\nEXPOSE 8080 8081 8082\nCMD [\"/usr/bin/supervisord\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [
+      "/var/www"
+    ],
+    "run": [
+      "apt-get update     && apt-get install -y  supervisor     && mkdir -p  /var/log/supervisor     && apt-get autoremove     && apt-get clean     && rm -r /var/lib/apt/lists/*"
+    ],
+    "workdir": [
+      "/var/www "
+    ],
+    "from": "golang",
+    "maintainer": "Alex Cai \"cyy0523xc@gmail.com\"",
+    "env": {
+      "TZ": "\"Asia/Shanghai\"",
+      "TERM": "xterm"
+    },
+    "cmd": "[\"/usr/bin/supervisord\"]"
+  },
+  "source_repository_url": "https://github.com/IBBD/dockerfile-go.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/IBBD/dockerfile-go",
+  "docker_repository": "ibbd/golang",
+  "docker_image": "ibbd/golang",
+  "parameters_schema": {
+    "TZ": {
+      "default": "\"Asia/Shanghai\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TERM": {
+      "default": "xterm",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "ibbd/golang",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/ibbd/golang",
+    "https://hub.docker.com/v2/repositories/ibbd/golang",
+    "https://github.com/IBBD/dockerfile-go.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Golang",
+    "Mode/API"
+  ],
+  "info_url": "https://hub.docker.com/r/ibbd/golang",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,152 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/lysender/mysql",
+    "repository_url": "https://hub.docker.com/v2/repositories/lysender/mysql",
+    "tags_url": "https://hub.docker.com/v2/repositories/lysender/mysql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/lysender/mysql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/lysender/mysql/autobuild",
+    "user": "lysender",
+    "name": "mysql",
+    "namespace": "lysender",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 701,
+    "last_updated": "2016-09-27T01:10:03.718151Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "alpine",
+        "full_size": 63624770,
+        "id": 4160446,
+        "repository": 779256,
+        "creator": 223640,
+        "last_updater": 223640,
+        "last_updated": "2016-09-27T01:10:01.857169Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 170727062,
+        "id": 3681981,
+        "repository": 779256,
+        "creator": 223640,
+        "last_updater": 223640,
+        "last_updated": "2016-09-27T01:07:38.622189Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "ubuntu",
+        "full_size": 170727692,
+        "id": 4154542,
+        "repository": 779256,
+        "creator": 223640,
+        "last_updater": 223640,
+        "last_updated": "2016-09-27T01:03:41.824577Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "lysender/docker-mysql"
+  },
+  "name": "lysender/mysql Docker container",
+  "description": "MySQL base image using Ubuntu 16.04 Xenial",
+  "readme": "# Generic MySQL\n\nUses Ubuntu Xenial as base image.\n\n## Build\n\n~~~\nsudo docker build --rm -t lysender/mysql .\n~~~\n\n## Prepare data\n\nWe need a volume container to hold our MySQL data.\n\n### Create volume container\n\n~~~\nsudo docker create --name mysql-data \\\n    -v /var/lib/mysql \\\n    -v /var/log/mysql \\\n    lysender/mysql /bin/true\n~~~\n\n### Initialize root password\n\n~~~\nsudo docker run --rm \\\n    --volumes-from=mysql-data \\\n    -e \"ROOT_PASSWORD=the_root_password\" \\\n    lysender/mysql /config_root_account.sh\n~~~\n\n### Create power user\n\nNote: Only use this if you need root-like privilege on all databases (ex: on dev environment)\n\n~~~\nsudo docker run --rm \\\n    --volumes-from=mysql-data \\\n    -e \"ROOT_PASSWORD=the_root_password\" \\\n    -e \"DB_USER=genericdb\" \\\n    -e \"DB_PASS=genericdb\" \\\n    lysender/mysql /config_power_credentials.sh\n~~~\n\n### Create a specific database with credentials (access limited to the specified database)\n\n~~~\nsudo docker run --rm \\\n    --volumes-from=mysql-data \\\n    -e \"ROOT_PASSWORD=the_root_password\" \\\n    -e \"DB_NAME=blog\" \\\n    -e \"DB_USER=bloguser\" \\\n    -e \"DB_PASS=blogpassword\" \\\n    lysender/mysql /config_credentials.sh\n~~~\n\n## Running the container\n\nNote: The example below forwards localhost's port 3307 to the mysql container. You may use a different port or use the default port `3306`.\n\n~~~\nsudo docker run --name mysql \\\n    --volumes-from=mysql-data \\\n    -d \\\n    -p 3307:3306 \\\n    lysender/mysql\n~~~\n\n## Connect from local machine\n\n~~~\nmysql --protocol tcp --port 3307 --user blog -p -D blog\n~~~\n\n## Restore a DB dump into the specified database\n\n~~~\nmysql --protocol tcp --port 3307 --user blog -p -D blog < /path/to/blog-backup.sql\n~~~\n\n## Link to another container\n\nNote: This is just an example and may not work without prior preparation like creating volume containers or a web app image.\n\n~~~\nsudo docker run --name \"blog-webapp\" \\\n    -d \\\n    -p 8080:80 \\\n    --volumes-from \"blog-data\" \\\n    --link mysql:db \\\n    my-blog-webapp-image\n~~~\n\nThe `blog-webapp` container will have access to the MySQL server via `db` hostname (note the `db` alias). Set the DB hostname in the blog webapp to `db`.\n",
+  "dockerfile": "FROM alpine:3.4\nMAINTAINER Leonel Baer <leonel@lysender.com>\n\nRUN apk add --no-cache bash mariadb mariadb-client supervisor\n\nADD ./config_mysql.sh /config_mysql.sh\nADD ./config_root_account.sh /config_root_account.sh\nADD ./config_credentials.sh /config_credentials.sh\nADD ./config_power_credentials.sh /config_power_credentials.sh\nRUN chmod 755 /*.sh\n\nRUN mkdir -p /etc/supervisor.d\nADD ./supervisor-mysql.ini /etc/supervisor.d/mysql.ini\n\n# Configure MySQL\n#RUN sed -ri 's/^user\\s/#&/' /etc/mysql/my.cnf \\\n#    && rm -rf /var/lib/mysql && mkdir -p /var/lib/mysql /var/run/mysqld \\\n#    && chown -R mysql:mysql /var/lib/mysql /var/run/mysqld \\\n#    && chmod 777 /var/run/mysqld\n\nRUN sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/my.cnf\n\n# Configure default DB\nRUN /config_mysql.sh\n\nVOLUME [\"/var/lib/mysql\", \"/var/log/mysql\"]\n\nEXPOSE 3306\n\nCMD [\"supervisord\", \"-n\"]\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./config_mysql.sh",
+        "dest": "/config_mysql.sh"
+      },
+      {
+        "source": "./config_root_account.sh",
+        "dest": "/config_root_account.sh"
+      },
+      {
+        "source": "./config_credentials.sh",
+        "dest": "/config_credentials.sh"
+      },
+      {
+        "source": "./config_power_credentials.sh",
+        "dest": "/config_power_credentials.sh"
+      },
+      {
+        "source": "./supervisor-mysql.ini",
+        "dest": "/etc/supervisor.d/mysql.ini"
+      }
+    ],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      "[\"/var/lib/mysql\", \"/var/log/mysql\"]"
+    ],
+    "run": [
+      "apk add --no-cache bash mariadb mariadb-client supervisor",
+      "chmod 755 /*.sh",
+      "mkdir -p /etc/supervisor.d",
+      "sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/my.cnf",
+      "/config_mysql.sh"
+    ],
+    "workdir": [],
+    "from": "alpine:3.4",
+    "maintainer": "Leonel Baer <leonel@lysender.com>",
+    "cmd": "[\"supervisord\", \"-n\"]"
+  },
+  "source_repository_url": "https://github.com/lysender/docker-mysql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/lysender/docker-mysql",
+  "docker_repository": "lysender/mysql",
+  "docker_image": "lysender/mysql",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "lysender/mysql",
+  "revision": "alpine",
+  "uris": [
+    "https://hub.docker.com/r/lysender/mysql",
+    "https://hub.docker.com/v2/repositories/lysender/mysql",
+    "https://github.com/lysender/docker-mysql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/lysender/mysql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

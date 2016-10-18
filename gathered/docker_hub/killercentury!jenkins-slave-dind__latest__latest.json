@@ -1,0 +1,113 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/killercentury/jenkins-slave-dind",
+    "repository_url": "https://hub.docker.com/v2/repositories/killercentury/jenkins-slave-dind",
+    "tags_url": "https://hub.docker.com/v2/repositories/killercentury/jenkins-slave-dind/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/killercentury/jenkins-slave-dind/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/killercentury/jenkins-slave-dind/autobuild",
+    "user": "killercentury",
+    "name": "jenkins-slave-dind",
+    "namespace": "killercentury",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 7,
+    "pull_count": 7716,
+    "last_updated": "2016-08-11T22:29:49.406265Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 227678623,
+        "id": 777112,
+        "repository": 294409,
+        "creator": 152201,
+        "last_updater": 152201,
+        "last_updated": "2016-08-11T22:29:47.522383Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "killercentury/docker-jenkins-slave-dind"
+  },
+  "name": "killercentury/jenkins-slave-dind Docker container",
+  "description": "Generic Jenkins Slave with Docker Engine and Docker Compose inside",
+  "readme": "# Jenkins Slave DinD (Docker in Docker)\n\nThis Jenkins Slave Docker image inherits the same idea as [the master one](https://hub.docker.com/r/killercentury/jenkins-dind/) that provides Docker Engine and Docker Compose inside itself, which allows you to run anything via Docker container in your Jenkins build script. So it also means that you don't need a custom build of Jenkins that pre-install any build tool or runtime anymore. You can provide all these via Docker images in your build script, which guarantees a highly isolated environment between jobs as well.\n\nThis Docker image is based on [jpetazzo/dind](https://registry.hub.docker.com/u/jpetazzo/dind/) to provide the DinD (Docker in Docker) environment. [Supervisord](http://supervisord.org) is used to make sure everything has proper permission and launch in the right order. [Jenkins Swarm Client](http://maven.jenkins-ci.org/content/repositories/releases/org/jenkins-ci/plugins/swarm-client/) is used to connect with the master in an intelligent way. Moreover, [Docker Compose](https://github.com/docker/compose) is available for launching multiple containers inside the CI.\n\nThis Jenkins slave image should be able to connect with any Jenkins master with JNLP enabled, such as [killercentury/jenkins-dind](https://hub.docker.com/r/killercentury/jenkins-dind/) and normal Jenkins installed manually or via package manager.\n\n## Usage\n\nThe environment variable COMMAND_OPTIONS has to be specified with non-empty value, which is a combination of all swarm client options you need. Please refer to this [Swarm Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Swarm+Plugin) for all available options.\n\nFollowing is an example of command used to connect with the master:\n```\ndocker run --name jenkins-slave-dind --privileged -d -e COMMAND_OPTIONS=\"-master http://YOUR-JENKINS-MASTER-HOST:YOUR-JENKINS-MASTER-PORT -username YOUR_SLAVE_USERNAME -password YOUR_SLAVE_PASSWORD\" killercentury/jenkins-slave-dind\n```\n",
+  "dockerfile": "FROM jpetazzo/dind\n\nMAINTAINER Decheng Zhang <killercentury@gmail.com>\n\nENV SWARM_CLIENT_VERSION 2.0\nENV DOCKER_COMPOSE_VERSION 1.3.3\n\n# Add a Jenkins user with permission to run docker commands\nRUN useradd -r -m -G docker jenkins\n\n# Install necessary packages\nRUN apt-get update && apt-get install -y curl zip openjdk-7-jre-headless supervisor && rm -rf /var/lib/apt/lists/*\n\n# Install Jenkins Swarm Client\nRUN wget -q http://maven.jenkins-ci.org/content/repositories/releases/org/jenkins-ci/plugins/swarm-client/${SWARM_CLIENT_VERSION}/swarm-client-${SWARM_CLIENT_VERSION}-jar-with-dependencies.jar -P /home/jenkins\n\n# Install Docker Compose\nRUN curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose\nRUN chmod +x /usr/local/bin/docker-compose\n\nADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf\n\nCMD [\"/usr/bin/supervisord\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "supervisord.conf",
+        "dest": "/etc/supervisor/conf.d/supervisord.conf"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "useradd -r -m -G docker jenkins",
+      "apt-get update && apt-get install -y curl zip openjdk-7-jre-headless supervisor && rm -rf /var/lib/apt/lists/*",
+      "wget -q http://maven.jenkins-ci.org/content/repositories/releases/org/jenkins-ci/plugins/swarm-client/${SWARM_CLIENT_VERSION}/swarm-client-${SWARM_CLIENT_VERSION}-jar-with-dependencies.jar -P /home/jenkins",
+      "curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose",
+      "chmod +x /usr/local/bin/docker-compose"
+    ],
+    "workdir": [],
+    "from": "jpetazzo/dind",
+    "maintainer": "Decheng Zhang <killercentury@gmail.com>",
+    "env": {
+      "SWARM_CLIENT_VERSION": "2.0",
+      "DOCKER_COMPOSE_VERSION": "1.3.3"
+    },
+    "cmd": "[\"/usr/bin/supervisord\"]"
+  },
+  "source_repository_url": "https://github.com/killercentury/docker-jenkins-slave-dind.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/killercentury/docker-jenkins-slave-dind",
+  "docker_repository": "killercentury/jenkins-slave-dind",
+  "docker_image": "killercentury/jenkins-slave-dind",
+  "parameters_schema": {
+    "SWARM_CLIENT_VERSION": {
+      "default": "2.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DOCKER_COMPOSE_VERSION": {
+      "default": "1.3.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "killercentury/jenkins-slave-dind",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/killercentury/jenkins-slave-dind",
+    "https://hub.docker.com/v2/repositories/killercentury/jenkins-slave-dind",
+    "https://github.com/killercentury/docker-jenkins-slave-dind.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Integration/Jenkins",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/killercentury/jenkins-slave-dind",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

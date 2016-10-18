@@ -1,0 +1,131 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/hpess/logstash",
+    "repository_url": "https://hub.docker.com/v2/repositories/hpess/logstash",
+    "tags_url": "https://hub.docker.com/v2/repositories/hpess/logstash/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/hpess/logstash/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/hpess/logstash/autobuild",
+    "user": "hpess",
+    "name": "logstash",
+    "namespace": "hpess",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 3150,
+    "last_updated": "2015-11-15T01:49:34.358699Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 286603290,
+        "id": 68701,
+        "repository": 102245,
+        "creator": 133152,
+        "last_updater": 74074,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "master",
+        "full_size": 286603305,
+        "id": 68697,
+        "repository": 102245,
+        "creator": 133152,
+        "last_updater": 74074,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "Hewlett-Packard-ESS/docker-logstash"
+  },
+  "name": "hpess/logstash Docker container",
+  "description": "",
+  "readme": "![Logstash](/logstash.png?raw=true \"Logstash\")\n\nThis container builds on hpess/jre by adding Logstash. Currently installing logstash 1.5.2\n\n## Use\nOut of the box, we set up a simple udp json listener which pumps data into elasticsearch without really doing much.\n\nAn exmaple docker-compose file would be:\n```\nlogstash:\n  image: hpess/logstash\n  hostname: logstash\n  environment:\n    udp_tags:      'tag1,tag2'\n    udp_codec:     'json'\n    elastic_url:   'elasticsearch:9200'\n\telastic_proto: 'http' \n  ports:\n    - \"9303:9303/udp\"\n```\nDefault values are:\n``` \n  udp_tags:      'udp_in'\n  udp_codec:     'json'\n  elastic_url:   'elasticsearch:9200'\n  elastic_proto: 'http'\n```\n\nOr if you prefer, stick your own config in /storage/logstash.conf\n\n## Plugins\nLogstash has changed the way it handles plugins quite dramatically, the contrib package no longer exists and instead you install specific plugins.  \n\nI didn't want to bloat this image with plugins not everybody uses so subsequently I have left it to you to decide what plugins you want.  The included `docker-compose` file shows how to build an image with the plugins you need.\n\nHowever, I have selfishly included hpess-logstash-codec-cef and logstash-output-syslog, as they're two we use quite heavily :)\n\n## License\nThis docker application is distributed unter the MIT License (MIT).\n\nLogstash itself is licenced under the [Apache](https://github.com/elastic/logstash/blob/master/LICENSE) License.\n",
+  "dockerfile": "FROM hpess/jre:master\nMAINTAINER Karl Stoney <karl.stoney@hp.com> \n\nENV LS_PKG_NAME logstash-1.5.2\n\n# Install logstash.\nRUN cd /opt && \\\n    wget --quiet https://download.elasticsearch.org/logstash/logstash/$LS_PKG_NAME.tar.gz && \\\n    tar xzf $LS_PKG_NAME.tar.gz && \\\n    rm -f $LS_PKG_NAME.tar.gz  && \\\n    mv $LS_PKG_NAME logstash && \\ \n    chown -R docker:docker /opt/logstash && \\\n    chown -R docker:docker /storage\n\n# Install some plugins\nRUN /opt/logstash/bin/plugin install logstash-codec-cef logstash-output-syslog logstash-filter-prune\n   \n# Setup the service and cookbooks\nCOPY services/* /etc/supervisord.d/\nCOPY cookbooks/ /chef/cookbooks/\n\n# Expose the UDP port\nEXPOSE 9303 \n\n# Setup the environment\nENV HPESS_ENV logstash\nENV chef_node_name logstash.docker.local\nENV chef_run_list logstash\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      9303
+    ],
+    "volume": [],
+    "run": [
+      "cd /opt &&     wget --quiet https://download.elasticsearch.org/logstash/logstash/$LS_PKG_NAME.tar.gz &&     tar xzf $LS_PKG_NAME.tar.gz &&     rm -f $LS_PKG_NAME.tar.gz  &&     mv $LS_PKG_NAME logstash && \\ ",
+      "/opt/logstash/bin/plugin install logstash-codec-cef logstash-output-syslog logstash-filter-prune"
+    ],
+    "workdir": [],
+    "from": "hpess/jre:master",
+    "maintainer": "Karl Stoney <karl.stoney@hp.com> ",
+    "env": {
+      "LS_PKG_NAME": "logstash-1.5.2",
+      "HPESS_ENV": "logstash",
+      "chef_node_name": "logstash.docker.local",
+      "chef_run_list": "logstash"
+    },
+    "copy": "cookbooks/ /chef/cookbooks/"
+  },
+  "source_repository_url": "https://github.com/Hewlett-Packard-ESS/docker-logstash.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Hewlett-Packard-ESS/docker-logstash",
+  "docker_repository": "hpess/logstash",
+  "docker_image": "hpess/logstash",
+  "parameters_schema": {
+    "LS_PKG_NAME": {
+      "default": "logstash-1.5.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HPESS_ENV": {
+      "default": "logstash",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "chef_node_name": {
+      "default": "logstash.docker.local",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "chef_run_list": {
+      "default": "logstash",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        9303
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "hpess/logstash",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/hpess/logstash",
+    "https://hub.docker.com/v2/repositories/hpess/logstash",
+    "https://github.com/Hewlett-Packard-ESS/docker-logstash.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Devopsware/Logging/Logstash"
+  ],
+  "info_url": "https://hub.docker.com/r/hpess/logstash",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

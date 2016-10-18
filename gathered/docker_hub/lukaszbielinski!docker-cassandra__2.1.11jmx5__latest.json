@@ -1,0 +1,192 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/lukaszbielinski/docker-cassandra",
+    "repository_url": "https://hub.docker.com/v2/repositories/lukaszbielinski/docker-cassandra",
+    "tags_url": "https://hub.docker.com/v2/repositories/lukaszbielinski/docker-cassandra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/lukaszbielinski/docker-cassandra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/lukaszbielinski/docker-cassandra/autobuild",
+    "user": "lukaszbielinski",
+    "name": "docker-cassandra",
+    "namespace": "lukaszbielinski",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 40,
+    "last_updated": "2016-06-29T08:44:07.033426Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2.1.11jmx5",
+        "full_size": 203444910,
+        "id": 3630074,
+        "repository": 769870,
+        "creator": 442838,
+        "last_updater": 442838,
+        "last_updated": "2016-06-29T08:44:06.635333Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.1.11jmx3",
+        "full_size": 203445168,
+        "id": 3630035,
+        "repository": 769870,
+        "creator": 442838,
+        "last_updater": 442838,
+        "last_updated": "2016-06-29T08:40:34.120033Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.1.11jmx2",
+        "full_size": 203445029,
+        "id": 3629662,
+        "repository": 769870,
+        "creator": 442838,
+        "last_updater": 442838,
+        "last_updated": "2016-06-29T08:30:47.730029Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.1.11jmx1",
+        "full_size": 203449717,
+        "id": 3612509,
+        "repository": 769870,
+        "creator": 442838,
+        "last_updater": 442838,
+        "last_updated": "2016-06-29T07:04:04.184813Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.1.11jmx",
+        "full_size": 203449665,
+        "id": 3611123,
+        "repository": 769870,
+        "creator": 442838,
+        "last_updater": 442838,
+        "last_updated": "2016-06-28T09:13:47.185722Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "lukasz-bielinski/docker-cassandra"
+  },
+  "name": "lukaszbielinski/docker-cassandra Docker container",
+  "description": "docker-cassandra",
+  "readme": "# Docker image containing Cassandra Server\n\nEnvironment variables may be used to customize/update cassandra default properties.\nENV vars should be passed when running container\nBelow you can find a list of files with ENV vars\n\n## cassandra-rackdc.properties\n- **DC_NAME** - indicated dc name\n- **RACK_NAME** - indicated rack name\n\n## address.yaml\n- **OPSCENTER_IP** - stomp interface ip address\n- **OPSCENTER_USE_SSL** - use ssl flag\n- **BROADCAST_ADDRESS** - address to broadcast to other Cassandra nodes\n\n## cassandra.yaml\n- **BROADCAST_ADDRESS** - address to broadcast to other Cassandra nodes / the same for address.yaml\n- **CLUSTER_NAME** - name of the cluster\n- **BROADCAST_RPC** - the address or interface to bind the Thrift RPC service and native transport server to\n- **SEED_1** - sets 1st seed ip address for seed provider \n- **SEED_2** - sets 2nd seed ip address for seed provider (optional)\n- **SEED_N** - sets N seed ip address for seed provider (optional)\n",
+  "dockerfile": "FROM oberthur/docker-ubuntu-java:jdk8_8.65.17\n\nMAINTAINER Dawid Malinowski <d.malinowski@oberthur.com>\n\nENV JVM_OPTS=\"-server -Dcassandra.compaction.priority=1 -XX:+UseCompressedOops -XX:+AlwaysPreTouch\" \\\n  CASSANDRA_VERSION=2.1.11 \\\n  DATASTAX_AGENT_VERSION=5.2.2\n\nRUN echo \"deb http://debian.datastax.com/community stable main\" | tee -a /etc/apt/sources.list.d/cassandra.sources.list \\\n    && curl -L http://debian.datastax.com/debian/repo_key | apt-key add - \\\n    && apt-get update && apt-get install -y --force-yes sudo sysstat libjna-java dsc21=${CASSANDRA_VERSION}* cassandra=${CASSANDRA_VERSION}* cassandra-tools=${CASSANDRA_VERSION}* datastax-agent=${DATASTAX_AGENT_VERSION}* \\\n    && sed -i -e \"s/^rpc_address: localhost/# rpc_address: localhost/\" /etc/cassandra/cassandra.yaml \\\n    && sed -i -e \"s/# rpc_interface: eth1/rpc_interface: eth0/\" /etc/cassandra/cassandra.yaml \\\n    && sed -i -e 's/<appender-ref ref=\"STDOUT\" \\/>/\\r/' /etc/cassandra/logback.xml \\\n    && mkdir /root/.cassandra \\\n    && echo \"[connection]\\nclient_timeout=120\" >> /root/.cassandra/cqlshrc \\\n    && rm -rf /var/lib/apt/lists/* \\\n    && apt-get clean \n\nADD start-cassandra.sh /bin/start-cassandra.sh\n\nEXPOSE 7000 7001 7199 9160 9042 61621 61622\n\nCMD [\"sh\", \"/bin/start-cassandra.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "start-cassandra.sh",
+        "dest": "/bin/start-cassandra.sh"
+      }
+    ],
+    "expose": [
+      7000
+    ],
+    "volume": [],
+    "run": [
+      "echo \"deb http://debian.datastax.com/community stable main\" | tee -a /etc/apt/sources.list.d/cassandra.sources.list     && curl -L http://debian.datastax.com/debian/repo_key | apt-key add -     && apt-get update && apt-get install -y --force-yes sudo sysstat libjna-java dsc21=${CASSANDRA_VERSION}* cassandra=${CASSANDRA_VERSION}* cassandra-tools=${CASSANDRA_VERSION}* datastax-agent=${DATASTAX_AGENT_VERSION}*     && sed -i -e \"s/^rpc_address: localhost/# rpc_address: localhost/\" /etc/cassandra/cassandra.yaml     && sed -i -e \"s/# rpc_interface: eth1/rpc_interface: eth0/\" /etc/cassandra/cassandra.yaml     && sed -i -e 's/<appender-ref ref=\"STDOUT\" \\/>/\\r/' /etc/cassandra/logback.xml     && mkdir /root/.cassandra     && echo \"[connection]\\nclient_timeout=120\" >> /root/.cassandra/cqlshrc     && rm -rf /var/lib/apt/lists/*     && apt-get clean "
+    ],
+    "workdir": [],
+    "from": "oberthur/docker-ubuntu-java:jdk8_8.65.17",
+    "maintainer": "Dawid Malinowski <d.malinowski@oberthur.com>",
+    "env": {
+      "JVM_OPTS": "\"-server",
+      "-Dcassandra.compaction.priority": "1",
+      "-XX:+UseCompressedOops": "-XX:+AlwaysPreTouch\"",
+      "": "",
+      "CASSANDRA_VERSION": "2.1.11",
+      "DATASTAX_AGENT_VERSION": "5.2.2"
+    },
+    "cmd": "[\"sh\", \"/bin/start-cassandra.sh\"]"
+  },
+  "source_repository_url": "https://github.com/lukasz-bielinski/docker-cassandra.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/lukasz-bielinski/docker-cassandra",
+  "docker_repository": "lukaszbielinski/docker-cassandra",
+  "docker_image": "lukaszbielinski/docker-cassandra",
+  "parameters_schema": {
+    "JVM_OPTS": {
+      "default": "\"-server",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "-Dcassandra.compaction.priority": {
+      "default": "1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "-XX:+UseCompressedOops": {
+      "default": "-XX:+AlwaysPreTouch\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CASSANDRA_VERSION": {
+      "default": "2.1.11",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DATASTAX_AGENT_VERSION": {
+      "default": "5.2.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        7000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "lukaszbielinski/docker-cassandra",
+  "revision": "2.1.11jmx5",
+  "uris": [
+    "https://hub.docker.com/r/lukaszbielinski/docker-cassandra",
+    "https://hub.docker.com/v2/repositories/lukaszbielinski/docker-cassandra",
+    "https://github.com/lukasz-bielinski/docker-cassandra.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/lukaszbielinski/docker-cassandra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

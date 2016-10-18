@@ -1,0 +1,100 @@
+{
+  "name": "block-storage-broker Juju charm",
+  "juju_charm_name": "block-storage-broker",
+  "revision": "cs:precise/block-storage-broker-8",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/block-storage-broker",
+    "https://jujucharms.com/block-storage-broker/precise",
+    "https://jujucharms.com/block-storage-broker/precise/8",
+    "https://api.jujucharms.com/v5/block-storage-broker",
+    "https://api.jujucharms.com/v5/precise/block-storage-broker",
+    "https://api.jujucharms.com/v5/precise/block-storage-broker-8"
+  ],
+  "labels": [
+    "Juju charm",
+    "file-servers",
+    "Binding/Provider/Amazon/EC2",
+    "Binding/Region/Europe/EU",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Mode/API/Endpoint",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Middleware/Data Store"
+  ],
+  "info_url": "https://jujucharms.com/block-storage-broker",
+  "package_url": "https://api.jujucharms.com/v5/precise/block-storage-broker-8/archive",
+  "created": "2015-06-17T09:36:11.471Z",
+  "updated": "2015-06-17T09:36:11.471Z",
+  "description": "Block storage broker charm for  Nova or EC2\n\nGeneric storage broker charm which brokers all interaction with storage\nservices such as Nova and EC2. It attaches block storage volumes to the\ninstances designated by instance-id provided by the related charms.\nThe block storage broker is intended to be the single owner of credentials\nfor Nova or EC2. This charm will speak with the underlying services via the\nconfigured storage service endpoint to attach new or existing volumes \nto the cloud instance which is requesting the storage.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "precise",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= precise"
+    }
+  ],
+  "parameters": {
+    "default_volume_size": {
+      "type": "int",
+      "description": "The volume size in GB if the relation does not specify",
+      "default": 5,
+      "mapping": "charm_option"
+    },
+    "endpoint": {
+      "type": "string",
+      "description": "The provider specific api endpoint url",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "key": {
+      "type": "string",
+      "description": "The provider specific api credential key",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "provider": {
+      "type": "string",
+      "description": "The storage provider service, either \"nova\" (openstack) or\n\"ec2\" (aws)\n",
+      "default": "nova",
+      "mapping": "charm_option"
+    },
+    "region": {
+      "type": "string",
+      "description": "The provider specific region name",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "secret": {
+      "type": "string",
+      "description": "The provider specific api credential secret",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "tenant": {
+      "type": "string",
+      "description": "The provider specific api tenant name",
+      "default": "",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/volume-request",
+      "juju_interface": "volume-request",
+      "juju_name": "block-storage",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "Block Storage Broker Charm\n-------------------------\n\nThis charm intends to handle all credentials and interactions with cloud block\nstorage services, such as nova and EC2 clouds, so that other charms don't need\nto have visibility to those credentials or commands necessary to create, attach\nor detach cloud storage volumes. Volume consumers need only request volume size and provide their instance-id.\nThis charm runs as a standalone unit but could easily share resources with a\nmore computationally intensive service.\n\nBlock storage broker provides one interface.\n\n    - volume-request: The volume consumer, your charm or the storage \n      subordinate charm, will specify the instance-id and an optional size,\n      volume-label or volume-id via relation-set calls.\n\n      When creating a new volume, this charm's default_volume_size configuration\n      setting will be used if no size is provided via the relation. A\n      volume label of the format \"<your_juju_unit_name> unit volume\" will be\n      used if no volume-label is provided via the relation data.\n      When reattaching an existing volumes to an instance, the relation data\n      volume-id will be used if set, and as a fallback option, any volume\n      matching the relation volume-label will be attached to the instance.\n      \n      When the volume is attached, the block-storage-broker charm will publish\n      block-device-path via the relation data to announce the\n      device path that is available for mount on the instance-id. \n\n\nUsage\n-----\nThis charm is intended for use with the storage subordinate charm\nwhich will allow the principal units to request and automatically mount volumes.\nThe command set below will relate your charm to storage and storage to the\nblock-storage-broker and allocate an 11 Gig nova volume for each postgresql\nunit.\n\n    $ cat >block-storage-bundle.cfg <<END\n    common:\n        services:\n            postgresql:\n                charm: cs:precise/postgresql\n                constraints: mem=2048\n            storage:\n                charm: cs:precise/storage\n                options:\n                    volume_size: 11\n                    provider: block-storage-broker\n                    root: /srv/data\n    doit-openstack:\n        inherits: common\n        series: precise\n        services:\n            block-storage-broker:\n                charm: cs:precise/block-storage-broker\n                options:\n                    provider: nova\n                    key: <YOUR_OS_USERNAME>\n                    endpoint: <YOUR_OS_AUTH_URL>\n                    region: <YOUR_OS_REGION>\n                    secret: <YOUR_OS_PASSWORD>\n                    tenant: <YOUR_OS_TENANT_NAME>\n        relations:\n            - [\"postgresql\", \"storage\"]\n            - [\"storage\", \"block-storage-broker\"]\n    doit-ec2:\n        inherits: common\n        series: precise\n        services:\n            block-storage-broker:\n                charm: cs:precise/block-storage-broker\n                options:\n                    provider: ec2\n                    key: <YOUR_EC2_ACCESS_KEY>\n                    endpoint: <YOUR_EC2_URL>\n                    secret: <YOUR_EC2_SECRET_KEY>\n        relations:\n            - [\"postgresql\", \"storage\"]\n            - [\"storage\", \"block-storage-broker\"]\n    END\n\n    # To deploy and relate volumes using your openstack credentials\n    $ juju-deployer -c block-storage-bundle.cfg doit-openstack\n\n    # To deploy and relate volumes using your ec2 credentials\n    $ juju-deployer -c block-storage-bundle.cfg doit-ec2\n\nSample Data Relation\n--------------------\n\nThe Block Storage Broker charm is designed to make your life easier when\nrequesting volume attachments to your instances in Openstack and EC2 clouds.\nAs a charm author, implementing the data relation is very straightforward.\n\nSample Metadata:\n\n    requires:\n        block-storage-broker:\n            interface: volume-request\n\nSample Joined Hook:\n\n    #!/bin/bash\n\n    # Grab your instance id\n    METADATA_URL=http://169.254.169.254/openstack/2012-08-10/meta_data.json\n    INSTANCE_ID=`curl $METADATA_URL | jsonpipe | grep uuid | awk '{ print $2 }'`\n\n    relation-set size=11\n    relation-set instance-id=$INSTANCE_ID\n    relation-set volume-label=\"My volume label $JUJU_UNIT_NAME\"\n    # If you are attempting to mount an existing known volume-id 123-123-123\n    relation-set volume-id=123-123-123\n\nSample Changed Hook:\n\n    #!/bin/bash\n    device_path=`relation-get block-device-path`\n    if [ -z \"$device_path\" ] ; then\n        juju-log \"wait for related service to start\"\n        exit 0\n    fi\n    service my_service stop\n    mount $device_path /somewhere\n    change_my_service_to_use_mount /somewhere\n    service my_service start\n\n\nKnown Issues\n----\nSince juju may not set target availability zones when deploying units per\nfeature bug lp:1183831, block-storage-broker charm will avoid trying to attach\nvolumes that exist in a different availability zone than the instance which\nis requesting the volume. Instead of trying to copy volumes from other zones\ninto the existing instance's zone, block-storage-broker will create a new\nvolume and attach it to the instance. This way the admin can manually copy\nneeded files from other region volumes.\n\nTODO\n----\n\n * Investigate Block Storage Broker discovery of instance-id if no instance-id provided\n * Allow config option to automatically destroy a volume upon relation departed/broken\n",
+  "readme": "Block Storage Broker Charm\n-------------------------\n\nThis charm intends to handle all credentials and interactions with cloud block\nstorage services, such as nova and EC2 clouds, so that other charms don't need\nto have visibility to those credentials or commands necessary to create, attach\nor detach cloud storage volumes. Volume consumers need only request volume size and provide their instance-id.\nThis charm runs as a standalone unit but could easily share resources with a\nmore computationally intensive service.\n\nBlock storage broker provides one interface.\n\n    - volume-request: The volume consumer, your charm or the storage \n      subordinate charm, will specify the instance-id and an optional size,\n      volume-label or volume-id via relation-set calls.\n\n      When creating a new volume, this charm's default_volume_size configuration\n      setting will be used if no size is provided via the relation. A\n      volume label of the format \"<your_juju_unit_name> unit volume\" will be\n      used if no volume-label is provided via the relation data.\n      When reattaching an existing volumes to an instance, the relation data\n      volume-id will be used if set, and as a fallback option, any volume\n      matching the relation volume-label will be attached to the instance.\n      \n      When the volume is attached, the block-storage-broker charm will publish\n      block-device-path via the relation data to announce the\n      device path that is available for mount on the instance-id. \n\n\nUsage\n-----\nThis charm is intended for use with the storage subordinate charm\nwhich will allow the principal units to request and automatically mount volumes.\nThe command set below will relate your charm to storage and storage to the\nblock-storage-broker and allocate an 11 Gig nova volume for each postgresql\nunit.\n\n    $ cat >block-storage-bundle.cfg <<END\n    common:\n        services:\n            postgresql:\n                charm: cs:precise/postgresql\n                constraints: mem=2048\n            storage:\n                charm: cs:precise/storage\n                options:\n                    volume_size: 11\n                    provider: block-storage-broker\n                    root: /srv/data\n    doit-openstack:\n        inherits: common\n        series: precise\n        services:\n            block-storage-broker:\n                charm: cs:precise/block-storage-broker\n                options:\n                    provider: nova\n                    key: <YOUR_OS_USERNAME>\n                    endpoint: <YOUR_OS_AUTH_URL>\n                    region: <YOUR_OS_REGION>\n                    secret: <YOUR_OS_PASSWORD>\n                    tenant: <YOUR_OS_TENANT_NAME>\n        relations:\n            - [\"postgresql\", \"storage\"]\n            - [\"storage\", \"block-storage-broker\"]\n    doit-ec2:\n        inherits: common\n        series: precise\n        services:\n            block-storage-broker:\n                charm: cs:precise/block-storage-broker\n                options:\n                    provider: ec2\n                    key: <YOUR_EC2_ACCESS_KEY>\n                    endpoint: <YOUR_EC2_URL>\n                    secret: <YOUR_EC2_SECRET_KEY>\n        relations:\n            - [\"postgresql\", \"storage\"]\n            - [\"storage\", \"block-storage-broker\"]\n    END\n\n    # To deploy and relate volumes using your openstack credentials\n    $ juju-deployer -c block-storage-bundle.cfg doit-openstack\n\n    # To deploy and relate volumes using your ec2 credentials\n    $ juju-deployer -c block-storage-bundle.cfg doit-ec2\n\nSample Data Relation\n--------------------\n\nThe Block Storage Broker charm is designed to make your life easier when\nrequesting volume attachments to your instances in Openstack and EC2 clouds.\nAs a charm author, implementing the data relation is very straightforward.\n\nSample Metadata:\n\n    requires:\n        block-storage-broker:\n            interface: volume-request\n\nSample Joined Hook:\n\n    #!/bin/bash\n\n    # Grab your instance id\n    METADATA_URL=http://169.254.169.254/openstack/2012-08-10/meta_data.json\n    INSTANCE_ID=`curl $METADATA_URL | jsonpipe | grep uuid | awk '{ print $2 }'`\n\n    relation-set size=11\n    relation-set instance-id=$INSTANCE_ID\n    relation-set volume-label=\"My volume label $JUJU_UNIT_NAME\"\n    # If you are attempting to mount an existing known volume-id 123-123-123\n    relation-set volume-id=123-123-123\n\nSample Changed Hook:\n\n    #!/bin/bash\n    device_path=`relation-get block-device-path`\n    if [ -z \"$device_path\" ] ; then\n        juju-log \"wait for related service to start\"\n        exit 0\n    fi\n    service my_service stop\n    mount $device_path /somewhere\n    change_my_service_to_use_mount /somewhere\n    service my_service start\n\n\nKnown Issues\n----\nSince juju may not set target availability zones when deploying units per\nfeature bug lp:1183831, block-storage-broker charm will avoid trying to attach\nvolumes that exist in a different availability zone than the instance which\nis requesting the volume. Instead of trying to copy volumes from other zones\ninto the existing instance's zone, block-storage-broker will create a new\nvolume and attach it to the instance. This way the admin can manually copy\nneeded files from other region volumes.\n\nTODO\n----\n\n * Investigate Block Storage Broker discovery of instance-id if no instance-id provided\n * Allow config option to automatically destroy a volume upon relation departed/broken\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

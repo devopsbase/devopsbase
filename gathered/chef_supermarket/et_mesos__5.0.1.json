@@ -1,0 +1,155 @@
+{
+  "name": "et_mesos Chef cookbook",
+  "chef_cookbook_name": "et_mesos",
+  "revision": "5.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/et_mesos",
+    "https://supermarket.chef.io/cookbooks/et_mesos/download",
+    "https://supermarket.chef.io/cookbooks/et_mesos/versions/5.0.1",
+    "https://supermarket.chef.io/cookbooks/et_mesos/versions/5.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/et_mesos/versions/5.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/et_mesos",
+    "https://supermarket.chef.io/api/v1/cookbooks/et_mesos/versions/5.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Orchestration/Cluster-based/Mesos",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/et_mesos",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/et_mesos/versions/5.0.1/download",
+  "deprecated": false,
+  "created": "2015-08-04T14:06:31.849Z",
+  "updated": "2016-07-11T20:13:36.024Z",
+  "description": "Installs/Configures mesos",
+  "maintainer": {
+    "name": "evertrue",
+    "email": "devops@evertrue.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 49312,
+  "downloads_count_revision": 50,
+  "repository_url": "http://github.com/evertrue/mesos-cookbook",
+  "issues_url": "http://github.com/evertrue/mesos-cookbook/issues",
+  "chef_source_url": "http://github.com/evertrue/mesos-cookbook",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Mesos Cookbook [![Build Status](https://travis-ci.org/evertrue/et_mesos-cookbook.png?branch=master)](https://travis-ci.org/evertrue/et_mesos-cookbook)\n\nInstall Mesos (<http://mesos.apache.org/>) and configure mesos master and slave.\nThis cookbook installs Mesos using [Mesosphere](http://mesosphere.io) packages.\n\nAll credit to @everpeace for the basis for this cookbook, [everpeace/cookbook-mesos](https://github.com/everpeace/cookbook-mesos).\n\n## Platform\n\nCurrently only supports `ubuntu` and `centos`. But `centos` support is  experimental.\n\nIf you would use `cgroups` isolator or `docker` containerizer, Ubuntu 14.04 is highly recommended. Note that `docker` containerizer is only supported by Mesos 0.20.0+.\n\n## Recipes\n\n### et_mesos::default\n\nInstall Java and Mesos, with platform-dependent switches in place.\n\n### et_mesos::package\n\nInstall Mesos using Mesosphere's `mesos` package.\nYou can also install `zookeeper` package by `node['et_mesos']['package']['with_zookeeper']` if required because Mesosphere's Mesos package doesn't necessarily include ZooKeeper.\n\nFor a production use case, however, instead of setting that attribute to true, one should use the [`zookeeper` cookbook](https://supermarket.chef.io/cookbooks/zookeeper) to provision a well-configured ZooKeeper instance or cluster of instances. There is a caveat to this: the `mesos` package on Ubuntu installs the `zookeeper` package, so co-locating Mesos and ZooKeeper using that cookbook is tricky, at best. A separate ZK cluster is encouraged.\n\n### et_mesos::master\n\nConfigure master and cluster deployment configuration files, and start\n`mesos-master`.\n\n* `node['et_mesos']['deploy_dir']/masters`\n* `node['et_mesos']['deploy_dir']/slaves`\n* `node['et_mesos']['deploy_dir']/mesos-deploy-env.sh`\n* `node['et_mesos']['deploy_dir']/mesos-master-env.sh`\n\nFurthermore, this recipe will also configure upstart configuration files.\n\n* `/etc/mesos/zk`\n* `/etc/defaults/mesos`\n* `/etc/defaults/mesos-master`\n\n#### How to configure `mesos-master`\n\nYou can configure `mesos-master` command line options using the `node['et_mesos']['master']` attribute.\n\nIf you have a configuration as shown below:\n\n```\nnode['et_mesos']['master'] = {\n  port:    \"5050\",\n  log_dir: \"/var/log/mesos\",\n  zk:      \"zk://localhost:2181/mesos\",\n  cluster: \"MyCluster\",\n  quorum:  \"1\"\n}\n```\n\nThen `mesos-master` will be invoked with command line options like this:\n\n```\nmesos-master --zk=zk://localhost:2181/mesos --port=5050 --log_dir=/var/log/mesos --cluster=MyCluster\n```\n\nSee the [latest Mesos config docs](http://mesos.apache.org/documentation/latest/configuration/) for available options or the output of `mesos-master --help`.\n\n### et_mesos::slave\n\nConfigure slave configuration files, and start `mesos-slave`.\n\n* `node['et_mesos']['deploy_dir']/mesos-slave-env.sh`\n\nFurthermore, this recipe also configures upstart configuration files.\n\n* `/etc/mesos/zk`\n* `/etc/defaults/mesos`\n* `/etc/defaults/mesos-slave`\n\n#### How to configure `mesos-slave`\n\nYou can configure `mesos-slave` command line options by `node['et_mesos']['slave']` hash.\nIf you have a configuration as shown below:\n\n```\nnode['et_mesos']['slave'] = {\n  master:         'zk://localhost:2181/mesos',\n  log_dir:        '/var/log/mesos',\n  containerizers: 'docker,mesos',\n  isolation:      'cgroups/cpu,cgroups/mem',\n  work_dir:       '/var/run/work'\n}\n```\n\nThen `mesos-slave` will be invoked with command line options like this:\n\n```\nmesos-slave --master=zk://localhost:2181/mesos --log_dir=/var/log/mesos --containerizers=docker,mesos --isolation=cgroups/cpu,cgroups/mem --work_dir=/var/run/work\n```\n\nSee the [latest Mesos config docs](http://mesos.apache.org/documentation/latest/configuration/) for available options or the output of `mesos-slave --help`.\n\n## Usage\n\nWrap this cookbook and `include_recipe 'et_mesos::master'` or `include_recipe 'et_mesos::slave'`, depending on what part of the cluster you need to provision.\n\nThe recommendation would be to have two wrapper cookbooks, one for the master(s), and another for your slave(s).\n\n## Attributes\n\n<table>\n    <tr>\n        <th>Key</th>\n        <th>Type</th>\n        <th>Description</th>\n        <th>Default</th>\n    </tr>\n    <tr>\n        <td><tt>['et_mesos']['version']</tt></td>\n        <td>String</td>\n        <td>Version(branch or tag name at <a href=\"http://github.com/apache/mesos\">http://github.com/apache/mesos</a>).</td>\n        <td><tt>0.22.1</tt></td>\n    </tr>\n    <tr>\n        <td><tt>['et_mesos']['package']['with_zookeeper']</tt></td>\n        <td>String</td>\n        <td>Flag for installing zookeeper package</tt>.</td>\n        <td><tt>false</tt></td>\n    </tr>\n    <tr>\n        <td><tt>['et_mesos']['ssh_opt']</tt></td>\n        <td>String</td>\n        <td>ssh options to be used in <tt>mesos-[start|stop]-cluster</tt></td>\n        <td><tt>-o StrictHostKeyChecking=no <br> -o ConnectTimeout=2</tt></td>\n    </tr>\n    <tr>\n        <td><tt>['et_mesos']['deploy_with_sudo']</tt></td>\n        <td>String</td>\n        <td>Flag whether sudo will be used in <tt>mesos-[start|stop]-cluster</tt></td>\n        <td><tt>1</tt></td>\n    </tr>\n    <tr>\n        <td><tt>['et_mesos']['cluster_name']</tt></td>\n        <td>String</td>\n        <td>[OBSOLETE] Human readable name for the cluster, displayed at webui. </td>\n        <td><tt>MyCluster</tt></td>\n    </tr>\n    <tr>\n        <td><tt>['et_mesos']['master_ips']</tt></td>\n        <td>Array of String</td>\n        <td>IP list of masters used in <tt>mesos-[start|stop]-cluster</tt></td>\n        <td>[ ]</td>\n    </tr>\n    <tr>\n        <td><tt>['et_mesos']['slave_ips']</tt></td>\n        <td>Array of String</td>\n        <td>IP list of slaves used in <tt>mesos-[start|stop]-cluster</tt></td>\n        <td>[ ]</td>\n    </tr>\n    <tr>\n        <td><tt>['et_mesos']['master']['zk']</tt></td>\n        <td>String</td>\n        <td>[REQUIRED(0.19.1+)] ZooKeeper URL (used for leader election amongst masters). May be one of:<br>\n        zk://host1:port1,host2:port2,…path<br>\n        zk://username:password@host1:port1,host2:port2,…/path<br>\n        file://path/to/file (where file contains one of the above)</td>\n        <td></td>\n    </tr>\n    <tr>\n        <td><tt>['et_mesos']['master']['work_dir']</tt></td>\n        <td>String</td>\n        <td>[REQUIRED(0.19.1+)] Where to store the persistent information stored in the Registry.</td>\n        <td><tt>/tmp/mesos</tt></td>\n    </tr>\n    <tr>\n        <td><tt>['et_mesos']['master']['quorum']</tt></td>\n        <td>String</td>\n        <td>[REQUIRED(0.19.1+)] The size of the quorum of replicas when using “replicated_log” based registry. It is imperative to set this value to be a majority of masters, i.e., quorum > (number of masters) / 2.</td>\n        <td></td>\n    </tr>\n    <tr>\n        <td><tt>['et_mesos']['master']['option_name']</tt></td>\n        <td>String</td>\n        <td>You can set arbitrary command line option for <tt>mesos-master</tt>, replace `option_name` with the key for the option to set. See the <a href=\"http://mesos.apache.org/documentation/latest/configuration/\">latest Mesos config docs</a> for available options, or the output of `mesos-master --help`.</td>\n        <td></td>\n    </tr>\n    <tr>\n        <td><tt>['et_mesos']['slave']['master']</tt></td>\n        <td>String</td>\n        <td>[REQUIRED] mesos master url.This should be a `zk://` style address.</td>\n        <td></td>\n    </tr>\n    <tr>\n        <td><tt>['et_mesos']['slave']['option_name']</tt></td>\n        <td>String</td>\n        <td>Like <tt>['et_mesos']['master']['option_name']</tt> above, arbitrary options may be specified as a key for a slave by replacing `option_name` with your option’s key.</td>\n        <td></td>\n    </tr>\n</table>\n\n## Testing\n\nThere are a couple of test suites in place:\n\n* `chefspec` for unit tests.\n* `test-kitchen` with `serverspec` for integration tests (using `kitchen-ec2`).\n\n## Contributing\n\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write you change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n\n## License\n\nMIT License.  see [LICENSE.txt](LICENSE.txt)\n\n(Please note that before 2015-02-06-18:00 PST, this project is opened under Apache License, Version 2.0. See also [README.md in old version](https://github.com/evertrue/et_mesos-cookbook/blob/b9e660382affaba7c3906367fbd135e0de49de02/README.md#license))\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 14.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 6.5",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/java",
+      "revision": "~> 1.35",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ulimit",
+      "revision": "~> 0.3",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": "~> 2.8",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": "~> 3.7",
+      "self_resolve": true
+    }
+  ],
+  "recommends": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/docker",
+      "revision": ">= 0.0.0"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/zookeeper",
+      "revision": ">= 0.0.0"
+    }
+  ],
+  "chef_recipes": {
+    "et_mesos::default": "install mesos.",
+    "et_mesos::package": "install mesos from mesosphere package.",
+    "et_mesos::master": "configure the machine as master.",
+    "et_mesos::slave": "configure the machine as slave."
+  },
+  "parameters": {
+    "et_mesos/version": {
+      "recipes": [
+        "et_mesos::package"
+      ],
+      "display_name": "Version to be installed.",
+      "description": "branch name or tag name at http://github.com/apache/mesos, or mesos's version name",
+      "default": "0.23.0",
+      "mapping": "cookbook_attribute"
+    },
+    "et_mesos/package/with_zookeeper": {
+      "recipes": [
+        "et_mesos::package"
+      ],
+      "display_name": "switch for installing zookeeper packages",
+      "description": "if true, zookeeper packages will be installed with mesosphere's mesos package",
+      "default": "false",
+      "mapping": "cookbook_attribute"
+    },
+    "et_mesos/ssh_opts": {
+      "recipes": [
+        "et_mesos::master"
+      ],
+      "display_name": "ssh options",
+      "description": "passed to be mesos-deploy-env.sh",
+      "default": "-o StrictHostKeyChecking=no -o ConnectTimeout=2",
+      "mapping": "cookbook_attribute"
+    },
+    "et_mesos/deploy_with_sudo": {
+      "recipes": [
+        "et_mesos::master"
+      ],
+      "display_name": "Flag whether sudo will be used in mesos deploy scripts",
+      "description": "Flag whether sudo will be used in mesos deploy scripts",
+      "default": "1",
+      "mapping": "cookbook_attribute"
+    },
+    "et_mesos/master_ips": {
+      "recipes": [
+        "et_mesos::master"
+      ],
+      "display_name": "IP list of masters",
+      "description": "used in mesos-start/stop-cluster scripts.",
+      "mapping": "cookbook_attribute"
+    },
+    "et_mesos/slave_ips": {
+      "recipes": [
+        "et_mesos::master"
+      ],
+      "display_name": "IP list of slaves",
+      "description": "used in mesos-start/stop-cluster scripts.",
+      "mapping": "cookbook_attribute"
+    }
+  }
+}

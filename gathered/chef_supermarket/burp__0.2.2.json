@@ -1,0 +1,77 @@
+{
+  "name": "burp Chef cookbook",
+  "chef_cookbook_name": "burp",
+  "revision": "0.2.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/burp",
+    "https://supermarket.chef.io/cookbooks/burp/download",
+    "https://supermarket.chef.io/cookbooks/burp/versions/0.2.2",
+    "https://supermarket.chef.io/cookbooks/burp/versions/0.2.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/burp/versions/0.2.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/burp",
+    "https://supermarket.chef.io/api/v1/cookbooks/burp/versions/0.2.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Mode/CLI",
+    "Type/Middleware/Data Store"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/burp",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/burp/versions/0.2.2/download",
+  "deprecated": false,
+  "created": "2014-09-11T17:40:29.565Z",
+  "updated": "2016-02-29T20:10:19.818Z",
+  "description": "Installs & configures a BURP ( http://burp.grke.org/ ) backup server and\nits clients. Adds resources to backup or exclude paths, and \"plugin\" scripts to execute before and/or\nafter a backup. (such as dumping a database)\n",
+  "maintainer": {
+    "name": "kevinlamontagne",
+    "email": "kevinlamontagne@gmail.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 1739959,
+  "downloads_count_revision": 253,
+  "repository_url": "https://github.com/klamontagne/chef-burp",
+  "issues_url": "https://github.com/klamontagne/chef-burp/issues",
+  "chef_source_url": "https://github.com/klamontagne/chef-burp",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "[![Build Status](https://travis-ci.org/klamontagne/chef-burp.svg?branch=master)](https://travis-ci.org/klamontagne/chef-burp)\n\n# Description\n\nInstalls & configures a [BURP](http://burp.grke.org/) backup server and\nits clients. Adds\n[definitions](https://docs.getchef.com/essentials_cookbook_definitions.html) to\nadd paths to backup or exclude, and \"plugin\" scripts to execute before and/or\nafter a backup. (such as dumping a database)\n\n\n# Requirements\n\n## Platform:\n\n* Ubuntu (>= 12.04)\n\n## Cookbooks:\n\n* apt\n* build-essential (>= 2.0.0)\n* git\n* partial_search (~> 1.0.8)\n\n# Attributes\n\n* `node['burp']['restrict_search_environment']` - Whether to restrict the search for clients to the same environment as the\nserver. Defaults to `\"false\"`.\n* `node['burp']['servername']` - The server adress or name that clients are expected to connect to. Defaults to `\"node['fqdn']\"`.\n\n# Recipes\n\n## burp::client\n\nInstall BURP and setup a client configuration with a random password.\nSets the server to the content of ```node['burp']['server']```.\nSet this attribute in a\n[wrapper cookbook](http://www.getchef.com/blog/2013/12/03/doing-wrapper-cookbooks-right/),\nor in an environment, for example.\n\n## burp::common\n\nRetrieve burp [from Github](https://github.com/grke/burp), compile and install the binaries.\nAlso installs build dependencies\n*librsync-dev*,\n*libz-dev*,\n*libssl-dev*,\n*uthash-dev*.\n\n## burp::server\n\nInstall BURP and setup a server configuration in /etc/burp-server.\nSearches for clients and installs an individual config file for each one in\n*/etc/burp-server/clientconfdir*.\n\n# Definitions\n\n## burp_include\n\nAdd a path to be backed up by the BURP client.\nThe path is added to node attributes during\n[compile time](http://docs.getchef.com/essentials_nodes_chef_run.html),\nso the burp::client recipe can be added at any point in your run_list.\n\nExample:\n\n```ruby\nburp_include '/var/backups'\n```\n\n## burp_exclude\n\nAdd a path to be excluded by the BURP client.\nThe path is added to node attributes during\n[compile time](http://docs.getchef.com/essentials_nodes_chef_run.html),\nso the burp::client recipe can be added at any point in your run_list.\n\nExample:\n\n```ruby\nburp_exclude '/var/lib/mysoftware/cache'\n```\n\n## burp_exclude_regex\n\nAdd a regex to be excluded by the BURP client.\nThe regex is added to node attributes during\n[compile time](http://docs.getchef.com/essentials_nodes_chef_run.html),\nso the burp::client recipe can be added at any point in your run_list.\nSee the [man page](http://burp.grke.org/docs/manpage.html) for the\nexclude_regex configuration item.\n\nExample:\n\n```ruby\nburp_exclude_regex '.*/bundle/.*'\nburp_exclude_regex '.*/cache/.*'\n```\n\n# Resources\n\n## burp_plugin\n\nCopies a pair of scripts from a Chef template resource to be used as actions\nbefore/after a backup runs.\n\n### Actions\n\n- create: Default action.\n\n### Attribute Parameters\n\n- name: A name for the plugin. Be creative and avoid duplicates.\nex.: ```mycompany_mysql_backup```\nOnly accepts valid Debian cron script names (```^[a-zA-Z0-9_-]+$```)\n- cookbook: The cookbook in which to find the templates.\n- pre_template: The script to run before starting to backup files. if it exits with a non-zero\nstatus, the backup is interrupted. Can be ```nil``` if no script is to be\ninstalled.\n Defaults to```'pre_backup.sh'```\n- post_template: The script to run after the backup completes. If it exits with a non-zero\nstatus, the other plugins **will still run**. Can be ```nil``` if no script is\nto be installed. Defaults to ```'post_backup.sh'```\n- variables: An optional set of variables to pass through to the underlying template resources.\nExamples:\n\n```ruby\nburp_plugin 'cassandra' do\n  cookbook 'mycompany-cassandra'\n  pre_template 'scripts/snapshot.sh'\n  post_template 'clear snapshot'\nend\n\nburp_plugin 'mysql' do\n  cookbook 'mycompany-mysql'\n  pre_template 'dump.sh'\n  post_template nil\n  variables( a: 'b', c: 9)\nend\n```\n\n# License and Maintainer\n\nMaintainer:: Kevin Lamontagne (<kevinlamontagne@gmail.com>)\n\nLicense:: MIT\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 12.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 2.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/git",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/partial_search",
+      "revision": "~> 1.0.8",
+      "self_resolve": true
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/fbender/php54-apache-mysql-dev",
+    "repository_url": "https://hub.docker.com/v2/repositories/fbender/php54-apache-mysql-dev",
+    "tags_url": "https://hub.docker.com/v2/repositories/fbender/php54-apache-mysql-dev/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/fbender/php54-apache-mysql-dev/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/fbender/php54-apache-mysql-dev/autobuild",
+    "user": "fbender",
+    "name": "php54-apache-mysql-dev",
+    "namespace": "fbender",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 602,
+    "last_updated": "2016-10-15T02:57:53.319662Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 184446209,
+        "id": 964453,
+        "repository": 332951,
+        "creator": 449236,
+        "last_updater": 449236,
+        "last_updated": "2016-10-15T02:57:52.975528Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "fbender/Dockerfiles"
+  },
+  "name": "fbender/php54-apache-mysql-dev Docker container",
+  "description": "Image for local development on old projects. It is supposed to be linked with a mysql container. ",
+  "readme": "This image is not to be used on a production server! I use it for local development on old projects (hence the PHP version).\n\nSee Dockerfile for more info, it should be pretty self-explanatory.",
+  "dockerfile": "FROM php:5.4-apache\nMAINTAINER Florian Bender <fb+dockerhub@quantumedia.de>\n\n# This image is not to be used on a production server!\n# I use it for local development on old projects (hence the PHP version).\n\n# Install gd, iconv, mbstring, mcrypt, mysql, soap, sockets, and zip extensions\n# see example at https://hub.docker.com/_/php/\nRUN apt-get update && apt-get install -y \\\n        libbz2-dev \\\n        libfreetype6-dev \\\n        libjpeg62-turbo-dev \\\n        libmcrypt-dev \\\n        libpng12-dev \\\n        libxml2-dev \\\n    && docker-php-ext-install iconv mbstring mcrypt soap sockets zip \\\n    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \\\n    && docker-php-ext-install gd \\\n    && docker-php-ext-configure mysql --with-mysql=mysqlnd \\\n    && docker-php-ext-install mysql\n\n# Add a PHP config file. The file was copied from a php53 dotdeb package and\n# lightly modified (mostly for improving debugging). This may not be the best\n# idea.\nCOPY php.ini /usr/local/etc/php/\n\n# Install xdebug. Couldn't connect to it in my boot2docker instance, useful\n# nonetheless.\n# IMPORTANT: These settings are not recommended for production servers!\nRUN pecl install xdebug; \\\n    echo 'zend_extension=\"/usr/local/lib/php/extensions/no-debug-non-zts-20100525/xdebug.so\"' > /usr/local/etc/php/conf.d/xdebug.ini; \\\n    echo ';xdebug.scream=1' >> /usr/local/etc/php/conf.d/xdebug.ini; \\\n    echo xdebug.remote_enable=1 >> /usr/local/etc/php/conf.d/xdebug.ini; \\\n    echo xdebug.remote_autostart=1 >> /usr/local/etc/php/conf.d/xdebug.ini; \\\n    echo xdebug.remote_connect_back=1 >> /usr/local/etc/php/conf.d/xdebug.ini; \\\n    echo xdebug.remote_port=9000 >> /usr/local/etc/php/conf.d/xdebug.ini; \\\n    echo xdebug.remote_mode=req >> /usr/local/etc/php/conf.d/xdebug.ini; \\\n    echo xdebug.remote_handler=dbgp >> /usr/local/etc/php/conf.d/xdebug.ini; \\\n    echo xdebug.remote_log=/tmp/php5-xdebug.log >> /usr/local/etc/php/conf.d/xdebug.ini;\n\n# enable mod_rewrite\nRUN a2enmod rewrite\n\n# make the webroot a volume\nVOLUME /var/www/html/\n\n# In images building upon this image, copy the src/ directory to the webserver\n# root and correct the owner.\nONBUILD COPY src/ /var/www/html/\nONBUILD RUN chown -R www-data:www-data /var/www/html\n\n# support jwilder/nginx-proxy resp. docker-gen\n# You may wan to overwrite VIRTUAL_HOST in your Docker file.\nEXPOSE 80\nENV VIRTUAL_HOST site.local\nENV UPSTREAM_NAME web-site\n\n# Put something like this into your Dockerfile if you want to add more files.\n# Note that you need to correctly set the owner otherwise PHP will not be able\n# to edit the file system.\n## copy src-extra\n#COPY src-extra/ /var/www/html/extra/\n#RUN chown -R www-data:www-data /var/www/html/extra\n\n# Entrypoint file tries to fix permissions, again\nCOPY entrypoint.sh /entrypoint.sh\nRUN chmod +x /entrypoint.sh\nENTRYPOINT [\"/entrypoint.sh\"]\n\n#EOF\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "/var/www/html/"
+    ],
+    "run": [
+      "apt-get update && apt-get install -y         libbz2-dev         libfreetype6-dev         libjpeg62-turbo-dev         libmcrypt-dev         libpng12-dev         libxml2-dev     && docker-php-ext-install iconv mbstring mcrypt soap sockets zip     && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/     && docker-php-ext-install gd     && docker-php-ext-configure mysql --with-mysql=mysqlnd     && docker-php-ext-install mysql",
+      "pecl install xdebug;     echo 'zend_extension=\"/usr/local/lib/php/extensions/no-debug-non-zts-20100525/xdebug.so\"' > /usr/local/etc/php/conf.d/xdebug.ini;     echo ';xdebug.scream=1' >> /usr/local/etc/php/conf.d/xdebug.ini;     echo xdebug.remote_enable=1 >> /usr/local/etc/php/conf.d/xdebug.ini;     echo xdebug.remote_autostart=1 >> /usr/local/etc/php/conf.d/xdebug.ini;     echo xdebug.remote_connect_back=1 >> /usr/local/etc/php/conf.d/xdebug.ini;     echo xdebug.remote_port=9000 >> /usr/local/etc/php/conf.d/xdebug.ini;     echo xdebug.remote_mode=req >> /usr/local/etc/php/conf.d/xdebug.ini;     echo xdebug.remote_handler=dbgp >> /usr/local/etc/php/conf.d/xdebug.ini;     echo xdebug.remote_log=/tmp/php5-xdebug.log >> /usr/local/etc/php/conf.d/xdebug.ini;",
+      "a2enmod rewrite",
+      "chmod +x /entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "php:5.4-apache",
+    "maintainer": "Florian Bender <fb+dockerhub@quantumedia.de>",
+    "copy": "entrypoint.sh /entrypoint.sh",
+    "onbuild": "RUN chown -R www-data:www-data /var/www/html",
+    "env": {
+      "VIRTUAL_HOST": "site.local",
+      "UPSTREAM_NAME": "web-site"
+    },
+    "entrypoint": "[\"/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/fbender/Dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/fbender/Dockerfiles",
+  "docker_repository": "fbender/php54-apache-mysql-dev",
+  "docker_image": "fbender/php54-apache-mysql-dev",
+  "parameters_schema": {
+    "VIRTUAL_HOST": {
+      "default": "site.local",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "UPSTREAM_NAME": {
+      "default": "web-site",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "fbender/php54-apache-mysql-dev",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/fbender/php54-apache-mysql-dev",
+    "https://hub.docker.com/v2/repositories/fbender/php54-apache-mysql-dev",
+    "https://github.com/fbender/Dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image/Container Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/fbender/php54-apache-mysql-dev",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

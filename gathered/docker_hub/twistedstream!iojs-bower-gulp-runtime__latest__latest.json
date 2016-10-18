@@ -1,0 +1,105 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/twistedstream/iojs-bower-gulp-runtime",
+    "repository_url": "https://hub.docker.com/v2/repositories/twistedstream/iojs-bower-gulp-runtime",
+    "tags_url": "https://hub.docker.com/v2/repositories/twistedstream/iojs-bower-gulp-runtime/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/twistedstream/iojs-bower-gulp-runtime/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/twistedstream/iojs-bower-gulp-runtime/autobuild",
+    "user": "twistedstream",
+    "name": "iojs-bower-gulp-runtime",
+    "namespace": "twistedstream",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 78,
+    "last_updated": "2015-11-14T08:06:37.954789Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 297323551,
+        "id": 116294,
+        "repository": 135111,
+        "creator": 182630,
+        "last_updater": 182630,
+        "last_updated": "2015-11-14T08:06:42.895999Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "twistedstream/docker_iojs-bower-gulp-runtime"
+  },
+  "name": "twistedstream/iojs-bower-gulp-runtime Docker container",
+  "description": "",
+  "readme": "# io.js + Bower/Gulp Runtime Docker image\n\nThis Docker image is essentially the same thing as [dockerfile/nodejs-bower-gulp-runtime](https://registry.hub.docker.com/u/dockerfile/nodejs-bower-gulp-runtime/), with the following changes:\n\n- It's running [io.js](https://iojs.org/) instead of Node.js, allowing ES6 scripts to be executed (ex: [Koa](http://koajs.com/)) without the `--harmony` flag.\n- It copies over a `.bowerrc` file (if it exists) before running `bower install`.\n- It passes the exposed port (`8080`) to the node process via the `PORT` env variable.\n\n### Base Docker Image\n\n* [node:onbuild](https://registry.hub.docker.com/u/library/iojs)\n\n### Installation\n\n1. Install [Docker](https://www.docker.com/).\n\n2. Download [automated build](https://registry.hub.docker.com/u/twistedstream/nodejs-es6-bower-gulp-runtime/) from public [Docker Hub Registry](https://registry.hub.docker.com/): `docker pull twistedstream/nodejs-es6-bower-gulp-runtime`\n\n(alternatively, you can build an image from Dockerfile: `docker build -t=\"twistedstream/nodejs-es6-bower-gulp-runtime\" github.com/twistedstream/docker_nodejs-es6-bower-gulp-runtime`)\n\n### Usage\n\nThis image assumes that your application:\n\n* has a file named [package.json](https://docs.npmjs.com/files/package.json) listing its dependencies.\n* has a file named [bower.json](http://bower.io/docs/creating-packages/) listing its dependencies.\n* might have a file named `.bowerrc` specifying Bower configuration.\n* has a file named [Gulpfile.js](https://github.com/gulpjs/gulp/blob/master/README.md) with a `build` task.\n* has a file named `server.js` as the entrypoint script or define in package.json the attribute: `\"scripts\": {\"start\": \"node <entrypoint_script_js>\"}`\n* listens on port `8080` or uses the port passed by the `PORT` env variable.\n\nWhen building your application docker image, `ONBUILD` triggers install NPM module dependencies of your application using `npm install`.\n\n* **Step 1**: Create a `Dockerfile` in your io.js application directory with the following content:\n\n```dockerfile\nFROM twistedstream/nodejs-es6-bower-gulp-runtime\n```\n\n* **Step 2**: Build your container image by running the following command in your application directory:\n\n```sh\ndocker build -t=\"app\" .\n```\n\n* **Step 3**: Run application by mapping port `8080`:\n\n```sh\nAPP=$(docker run -d -p 8080 app)\nPORT=$(docker port $APP 8080 | awk -F: '{print $2}')\necho \"Open http://localhost:$PORT/\"\n```\n",
+  "dockerfile": "FROM iojs:onbuild\n\nMAINTAINER twistedstream\n\n# Install Bower & Gulp\nRUN npm install -g bower gulp\n\n# Set instructions on build.\nONBUILD ADD package.json /app/\nONBUILD RUN npm install\nONBUILD ADD bower.json .bowerrc /app/\nONBUILD RUN bower install --allow-root\nONBUILD ADD . /app\nONBUILD RUN gulp build\n\n# Define working directory.\nWORKDIR /app\n\n# Set environment\nENV PORT 8080\n\n# Define default command.\nCMD [\"npm\", \"start\"]\n\nEXPOSE 8080\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "npm install -g bower gulp"
+    ],
+    "workdir": [
+      "/app"
+    ],
+    "from": "iojs:onbuild",
+    "maintainer": "twistedstream",
+    "onbuild": "RUN gulp build",
+    "env": {
+      "PORT": "8080"
+    },
+    "cmd": "[\"npm\", \"start\"]"
+  },
+  "source_repository_url": "https://github.com/twistedstream/docker_iojs-bower-gulp-runtime.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/twistedstream/docker_iojs-bower-gulp-runtime",
+  "docker_repository": "twistedstream/iojs-bower-gulp-runtime",
+  "docker_image": "twistedstream/iojs-bower-gulp-runtime",
+  "parameters_schema": {
+    "PORT": {
+      "default": "8080",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "twistedstream/iojs-bower-gulp-runtime",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/twistedstream/iojs-bower-gulp-runtime",
+    "https://hub.docker.com/v2/repositories/twistedstream/iojs-bower-gulp-runtime",
+    "https://github.com/twistedstream/docker_iojs-bower-gulp-runtime.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/VM Image/AMI",
+    "Type/Devopsware/Build/JavaScript/Bower",
+    "Type/Devopsware/Build/JavaScript/Gulp",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://hub.docker.com/r/twistedstream/iojs-bower-gulp-runtime",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

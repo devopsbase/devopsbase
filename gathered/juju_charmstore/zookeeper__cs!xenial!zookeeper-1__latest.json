@@ -1,0 +1,89 @@
+{
+  "name": "zookeeper Juju charm",
+  "juju_charm_name": "zookeeper",
+  "revision": "cs:xenial/zookeeper-1",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/zookeeper",
+    "https://jujucharms.com/zookeeper/xenial",
+    "https://jujucharms.com/zookeeper/xenial/1",
+    "https://api.jujucharms.com/v5/zookeeper",
+    "https://api.jujucharms.com/v5/xenial/zookeeper",
+    "https://api.jujucharms.com/v5/xenial/zookeeper-1"
+  ],
+  "labels": [
+    "Juju charm",
+    "apache",
+    "big_data",
+    "bigtop",
+    "Binding/Provider/HP",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image/VM Image/AMI",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Style/Virtualization Level/Application",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Store/Document-oriented/HBase",
+    "Type/Middleware/Data Processing/Hadoop"
+  ],
+  "info_url": "https://jujucharms.com/zookeeper",
+  "package_url": "https://api.jujucharms.com/v5/xenial/zookeeper-1/archive",
+  "created": "2016-10-10T21:04:01.282Z",
+  "updated": "2016-10-10T21:04:01.282Z",
+  "description": "High-performance coordination service for distributed applications\n\nApache ZooKeeper is a centralized, reliable application for maintaining\nconfiguration information, naming, synchronization, and group services. All\nof these kinds of services are used in some form or another by distributed\napplications. In order to install and configure Apache HBase and other Hadoop\necosystem components, you need ZooKeeper.\n",
+  "maintainer": {
+    "name": "bigdata-charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "xenial",
+  "juju_charm_owner": "bigdata-charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= xenial"
+    }
+  ],
+  "parameters": {
+    "network_interface": {
+      "type": "string",
+      "description": "Network interface to bind the Zookeeper client port to. Defaults\nto accepting connections on all interfaces. Accepts either the\nname of an interface (e.g., 'eth0'), or a CIDR range. If the\nlatter, we\\'ll bind to the first interface that we find with an\nIP address in that range.",
+      "default": "",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/java",
+      "juju_interface": "java",
+      "juju_name": "java",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/zookeeper",
+      "juju_interface": "zookeeper",
+      "juju_name": "zookeeper",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "juju_peers": {
+    "zkpeer": {
+      "Name": "zkpeer",
+      "Role": "peer",
+      "Interface": "zookeeper-quorum",
+      "Optional": false,
+      "Limit": 1,
+      "Scope": "global"
+    }
+  },
+  "license": "<!--\n  Licensed to the Apache Software Foundation (ASF) under one or more\n  contributor license agreements.  See the NOTICE file distributed with\n  this work for additional information regarding copyright ownership.\n  The ASF licenses this file to You under the Apache License, Version 2.0\n  (the \"License\"); you may not use this file except in compliance with\n  the License.  You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n  Unless required by applicable law or agreed to in writing, software\n  distributed under the License is distributed on an \"AS IS\" BASIS,\n  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n  See the License for the specific language governing permissions and\n  limitations under the License.\n-->\n# Overview\n\nApache ZooKeeper is a high-performance coordination service for distributed\napplications. It exposes common services such as naming, configuration\nmanagement, synchronization, and group services in a simple interface. Use it\noff-the-shelf to implement consensus, group management, leader election, and\npresence protocols.\n\nThis charm provides the Zookeeper component of the [Apache Bigtop][] platform.\n\n[Apache Bigtop]: http://bigtop.apache.org/\n\n\n# Deploying\n\nA working Juju installation is assumed to be present. If Juju is not yet set\nup, please follow the [getting-started][] instructions prior to deploying this\ncharm.\n\nDeploy a Zookeeper unit. With only one unit, the application will be running in\n`standalone` mode:\n\n    juju deploy zookeeper\n\n## Network-Restricted Environments\nCharms can be deployed in environments with limited network access. To deploy\nin this environment, configure a Juju model with appropriate proxy and/or\nmirror options. See [Configuring Models][] for more information.\n\n[getting-started]: https://jujucharms.com/docs/stable/getting-started\n[Configuring Models]: https://jujucharms.com/docs/stable/models-config\n\n## Configuring Network Interfaces\nIn some network environments, zookeeper may need to be restricted to\nlisten for incoming connections on a specific network interface\n(e.g.: for security reasons). To do so, configure zookeeper with either a\nnetwork interface name or a CIDR range specifying a subnet. For example:\n\n    juju config zookeeper network_interface=eth0\n    juju config zookeeper network_interface=10.0.2.0/24\n\n> **Note**: The above assumes Juju 2.0 or greater. If using an earlier version\nof Juju, the syntax is `juju set-config zookeeper network_interface=eth0`.\n\nEach zookeeper unit in the cluster will lookup the IP address of that\nnetwork interface, or find the first network interface with an IP\naddress in the specified subnet, and bind Zookeeper to that address.\n\nIf a mistake is made and an invalid name for the network interface is\nconfigured, recover by re-configuring with the correct name and then\nrun \"juju resolved\" on any failed units:\n\n    juju config zookeeper network_interface=eth0\n    juju resolved zookeeper/0\n\n> **Note**: The above assumes Juju 2.0 or greater. If using an earlier version\nof Juju, the syntax is `juju set-config zookeeper network_interface=eth0;\njuju resolved -r zookeeper/0`.\n\nTo go back to listening on all interfaces, configure zookeeper with\n`network_interface=0.0.0.0`:\n\n    juju config zookeeper network_interface=0.0.0.0\n\n> **Note**: The above assumes Juju 2.0 or greater. If using an earlier version\nof Juju, the syntax is `juju set-config zookeeper network_interface=0.0.0.0`.\n\n\n# Verifying\n\n## Status\nApache Bigtop charms provide extended status reporting to indicate when they\nare ready:\n\n    juju status\n\nThis is particularly useful when combined with `watch` to track the on-going\nprogress of the deployment:\n\n    watch -n 2 juju status\n\nThe message column will provide information about a given unit's state.\nThis charm is ready for use once the status message indicates that it is\nready.\n\n## Smoke Test\nThis charm provides a `smoke-test` action that can be used to verify the\napplication is functioning as expected. Run the action as follows:\n\n    juju run-action zookeeper/0 smoke-test\n\n> **Note**: The above assumes Juju 2.0 or greater. If using an earlier version\nof Juju, the syntax is `juju action do zookeeper/0 smoke-test`.\n\nWatch the progress of the smoke test actions with:\n\n    watch -n 2 juju show-action-status\n\n> **Note**: The above assumes Juju 2.0 or greater. If using an earlier version\nof Juju, the syntax is `juju action status`.\n\nEventually, the action should settle to `status: completed`.  If it\nreports `status: failed`, the application is not working as expected. Get\nmore information about a specific smoke test with:\n\n    juju show-action-output <action-id>\n\n> **Note**: The above assumes Juju 2.0 or greater. If using an earlier version\nof Juju, the syntax is `juju action fetch <action-id>`.\n\n## Utilities\nThis charm includes Zookeeper command line utilities that can also be used to\nverify that the application is running as expected. Check the status of the\nZookeeper daemon with `zkServer.sh`:\n\n    juju run --application=zookeeper '/usr/lib/zookeeper/bin/zkServer.sh status'\n\nA successful deployment will report the service mode as either `standalone`\n(if only one Zookeeper unit has been deployed) or `leader` / `follower` (if\na Zookeeper quorum has been formed).\n\n\n# Scaling\n\nRunning ZooKeeper in `standalone` mode is convenient for evaluation, some\ndevelopment, and testing. In production, however, ZooKeeper should be run in\n`replicated` mode. A replicated group of servers in the same application is\ncalled a quorum, and in `replicated` mode, all servers in the quorum have\ncopies of the same configuration file.\n\nIn order to add new Zookeeper servers to the quorum, simply add more units.\nFor example, add two more zookeeper units with:\n\n    juju add-unit -n 2 zookeeper\n\nThe Zookeeper nodes will automatically perform a rolling restart to update the\nZookeeper quorum without losing any jobs in progress. Once the rolling restart\nhas completed, all of the Zookeeper nodes should report the following status:\n\n    ready (n zk nodes)\n\n(Where 'n' is the total number of Zookeeper nodes in your quorum.)\n\n\n# Integrating\n\nTo integrate Zookeeper into solutions with other charms, update the charms\nthat require Zookeeper as follows:\n\n1) Add following lines to `metadata.yaml`:\n\n    requires:\n      zookeeper:\n         interface: zookeeper\n\n2) Add a `zookeeper-relation-changed` hook. Example contents:\n\n    from charmhelpers.core.hookenv import relation_get\n    ZK_hostname = relation_get('private-address')\n    ZK_port = relation_get('port')\n\n\n# Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n# Resources\n\n- [Apache Bigtop](http://bigtop.apache.org/) home page\n- [Apache Bigtop mailing lists](http://bigtop.apache.org/mail-lists.html)\n- [Apache Zookeeper home page](https://zookeeper.apache.org/)\n- [Apache Zookeeper issue tracker](https://issues.apache.org/jira/browse/ZOOKEEPER)\n- [Juju Bigtop charms](https://jujucharms.com/q/apache/bigtop)\n- [Juju mailing list](https://lists.ubuntu.com/mailman/listinfo/juju)\n- [Juju community](https://jujucharms.com/community)\n",
+  "readme": "<!--\n  Licensed to the Apache Software Foundation (ASF) under one or more\n  contributor license agreements.  See the NOTICE file distributed with\n  this work for additional information regarding copyright ownership.\n  The ASF licenses this file to You under the Apache License, Version 2.0\n  (the \"License\"); you may not use this file except in compliance with\n  the License.  You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n  Unless required by applicable law or agreed to in writing, software\n  distributed under the License is distributed on an \"AS IS\" BASIS,\n  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n  See the License for the specific language governing permissions and\n  limitations under the License.\n-->\n# Overview\n\nApache ZooKeeper is a high-performance coordination service for distributed\napplications. It exposes common services such as naming, configuration\nmanagement, synchronization, and group services in a simple interface. Use it\noff-the-shelf to implement consensus, group management, leader election, and\npresence protocols.\n\nThis charm provides the Zookeeper component of the [Apache Bigtop][] platform.\n\n[Apache Bigtop]: http://bigtop.apache.org/\n\n\n# Deploying\n\nA working Juju installation is assumed to be present. If Juju is not yet set\nup, please follow the [getting-started][] instructions prior to deploying this\ncharm.\n\nDeploy a Zookeeper unit. With only one unit, the application will be running in\n`standalone` mode:\n\n    juju deploy zookeeper\n\n## Network-Restricted Environments\nCharms can be deployed in environments with limited network access. To deploy\nin this environment, configure a Juju model with appropriate proxy and/or\nmirror options. See [Configuring Models][] for more information.\n\n[getting-started]: https://jujucharms.com/docs/stable/getting-started\n[Configuring Models]: https://jujucharms.com/docs/stable/models-config\n\n## Configuring Network Interfaces\nIn some network environments, zookeeper may need to be restricted to\nlisten for incoming connections on a specific network interface\n(e.g.: for security reasons). To do so, configure zookeeper with either a\nnetwork interface name or a CIDR range specifying a subnet. For example:\n\n    juju config zookeeper network_interface=eth0\n    juju config zookeeper network_interface=10.0.2.0/24\n\n> **Note**: The above assumes Juju 2.0 or greater. If using an earlier version\nof Juju, the syntax is `juju set-config zookeeper network_interface=eth0`.\n\nEach zookeeper unit in the cluster will lookup the IP address of that\nnetwork interface, or find the first network interface with an IP\naddress in the specified subnet, and bind Zookeeper to that address.\n\nIf a mistake is made and an invalid name for the network interface is\nconfigured, recover by re-configuring with the correct name and then\nrun \"juju resolved\" on any failed units:\n\n    juju config zookeeper network_interface=eth0\n    juju resolved zookeeper/0\n\n> **Note**: The above assumes Juju 2.0 or greater. If using an earlier version\nof Juju, the syntax is `juju set-config zookeeper network_interface=eth0;\njuju resolved -r zookeeper/0`.\n\nTo go back to listening on all interfaces, configure zookeeper with\n`network_interface=0.0.0.0`:\n\n    juju config zookeeper network_interface=0.0.0.0\n\n> **Note**: The above assumes Juju 2.0 or greater. If using an earlier version\nof Juju, the syntax is `juju set-config zookeeper network_interface=0.0.0.0`.\n\n\n# Verifying\n\n## Status\nApache Bigtop charms provide extended status reporting to indicate when they\nare ready:\n\n    juju status\n\nThis is particularly useful when combined with `watch` to track the on-going\nprogress of the deployment:\n\n    watch -n 2 juju status\n\nThe message column will provide information about a given unit's state.\nThis charm is ready for use once the status message indicates that it is\nready.\n\n## Smoke Test\nThis charm provides a `smoke-test` action that can be used to verify the\napplication is functioning as expected. Run the action as follows:\n\n    juju run-action zookeeper/0 smoke-test\n\n> **Note**: The above assumes Juju 2.0 or greater. If using an earlier version\nof Juju, the syntax is `juju action do zookeeper/0 smoke-test`.\n\nWatch the progress of the smoke test actions with:\n\n    watch -n 2 juju show-action-status\n\n> **Note**: The above assumes Juju 2.0 or greater. If using an earlier version\nof Juju, the syntax is `juju action status`.\n\nEventually, the action should settle to `status: completed`.  If it\nreports `status: failed`, the application is not working as expected. Get\nmore information about a specific smoke test with:\n\n    juju show-action-output <action-id>\n\n> **Note**: The above assumes Juju 2.0 or greater. If using an earlier version\nof Juju, the syntax is `juju action fetch <action-id>`.\n\n## Utilities\nThis charm includes Zookeeper command line utilities that can also be used to\nverify that the application is running as expected. Check the status of the\nZookeeper daemon with `zkServer.sh`:\n\n    juju run --application=zookeeper '/usr/lib/zookeeper/bin/zkServer.sh status'\n\nA successful deployment will report the service mode as either `standalone`\n(if only one Zookeeper unit has been deployed) or `leader` / `follower` (if\na Zookeeper quorum has been formed).\n\n\n# Scaling\n\nRunning ZooKeeper in `standalone` mode is convenient for evaluation, some\ndevelopment, and testing. In production, however, ZooKeeper should be run in\n`replicated` mode. A replicated group of servers in the same application is\ncalled a quorum, and in `replicated` mode, all servers in the quorum have\ncopies of the same configuration file.\n\nIn order to add new Zookeeper servers to the quorum, simply add more units.\nFor example, add two more zookeeper units with:\n\n    juju add-unit -n 2 zookeeper\n\nThe Zookeeper nodes will automatically perform a rolling restart to update the\nZookeeper quorum without losing any jobs in progress. Once the rolling restart\nhas completed, all of the Zookeeper nodes should report the following status:\n\n    ready (n zk nodes)\n\n(Where 'n' is the total number of Zookeeper nodes in your quorum.)\n\n\n# Integrating\n\nTo integrate Zookeeper into solutions with other charms, update the charms\nthat require Zookeeper as follows:\n\n1) Add following lines to `metadata.yaml`:\n\n    requires:\n      zookeeper:\n         interface: zookeeper\n\n2) Add a `zookeeper-relation-changed` hook. Example contents:\n\n    from charmhelpers.core.hookenv import relation_get\n    ZK_hostname = relation_get('private-address')\n    ZK_port = relation_get('port')\n\n\n# Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n# Resources\n\n- [Apache Bigtop](http://bigtop.apache.org/) home page\n- [Apache Bigtop mailing lists](http://bigtop.apache.org/mail-lists.html)\n- [Apache Zookeeper home page](https://zookeeper.apache.org/)\n- [Apache Zookeeper issue tracker](https://issues.apache.org/jira/browse/ZOOKEEPER)\n- [Juju Bigtop charms](https://jujucharms.com/q/apache/bigtop)\n- [Juju mailing list](https://lists.ubuntu.com/mailman/listinfo/juju)\n- [Juju community](https://jujucharms.com/community)\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

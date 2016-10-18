@@ -1,0 +1,85 @@
+{
+  "name": "spip Juju charm",
+  "juju_charm_name": "spip",
+  "revision": "cs:precise/spip-3",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/spip",
+    "https://jujucharms.com/spip/precise",
+    "https://jujucharms.com/spip/precise/3",
+    "https://api.jujucharms.com/v5/spip",
+    "https://api.jujucharms.com/v5/precise/spip",
+    "https://api.jujucharms.com/v5/precise/spip-3"
+  ],
+  "labels": [
+    "Juju charm",
+    "cms",
+    "social",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Build/Java/Ant",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/Dart",
+    "Type/Middleware/Data Store/Graph"
+  ],
+  "info_url": "https://jujucharms.com/spip",
+  "package_url": "https://api.jujucharms.com/v5/precise/spip-3/archive",
+  "created": "2015-06-17T09:34:46.617Z",
+  "updated": "2015-06-17T09:34:46.617Z",
+  "description": "website engine for publishing\n\nSPIP is a publishing system for the Internet in which great importance\nis attached to collaborative working, to multilingual environments,\nand to simplicity of use for web authors.  SPIP's benefit consists in:\n* managing a magazine type site i.e. made up mainly of   articles and\nnews items inserted in an arborescence   of sections nested in each\nothers. * completely separating and distributing three kinds of tasks\nover various players: the graphic design, the site editorial   input\nthrough the submission of articles and news items and   the site\neditorial management. * spare the webmaster and all the participants\nto the life of   the site, a number of tedious aspects of web\npublishing as   well as the need to learn lengthy technical skills.\nSPIP allows you to start creating your sections and   articles\nstraight away.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "precise",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= precise"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/mysql",
+      "self_resolve": true,
+      "juju_interface": "mysql",
+      "juju_name": "db",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/mount",
+      "self_resolve": true,
+      "juju_interface": "mount",
+      "juju_name": "nfs",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "spip-origin": {
+      "type": "string",
+      "description": "Where to get the sources of spip from.\ndistro (default): from apt-get\n3.0.5 : upstream http://files.spip.org/spip/stable/spip-3.0.zip?1352900441\n",
+      "default": "distro",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/http",
+      "juju_interface": "http",
+      "juju_name": "website",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "# Overview\n\nThis charm provides an [SPIP service](http://www.spip.net/).\nSPIP is a publication blog plateform.\n\n# Usage\n\n## Simple deployment\n\n    juju deploy mysql\n    juju deploy spip\n    juju add-relation mysql spip\n    juju expose spip\n\n## One box deployment\n\n    juju deploy mysql\n    juju deploy --to <mysql machine number> spip\n    juju add-relation mysql spip\n    juju expose spip\n\n## Associate a floating ip to the spip service.\n\nWith a web browser, go to http://your.spip.service.ip/spip/ecrire. Select your\nsite's language and click on Next. The \"Connection to your database\" Step 1 has\nalready been performed by the charm, click on Next. Do not change the \"prefix\"\nsetting on the \"Choosing your database\" Step 2, just click on Next. Fill in the\nform related to your personal information on Step 3, then click on Next. Step 4\nmay take some time to run. If it fails, go back to\nhttp://your.spip.service.ip/spip/ecrire and perform the same steps. If\neverything worked all right, you should end up on a page with the following\nmessage:\n\n    Done!\n\nSPIP is now ready for use\n\nYou still have to click on the \"private area\" button.\nEven if you experience an error message, the spip site should be installed.\n\nThe public site is available at http://your.spip.service.ip/spip/\nThe admin site is available at  http://your.spip.service.ip/spip/ecrire\n\n## Load balancing deployement\n\nThere are still several problems to cope with when using Spip behind a load\nbalancer:\n\n * Some directories will be shared on an nfs mount point (IMG, plugins and\nsquelettes). As each spip server is unaware of the others, things may not work\nas expected if two spip machines try to write concurrently on the same data (for\nexample, trying to upload two images at the same time).\n\n * Authentication. Each spip server is using some cookies to authenticate users.\nAs each server generate its own set of cookies, any access requiring an\nauthentication may result in generating a new login prompt each time a new Spip\nserver is involved.\n\nIf spip was using sessions to manage authentication, a solution could be to use\nmemcached. However, this does not seems to be the case (even with a php.ini\nconfigured to use a shared memcached server for the session, several\nauthentication prompts happens).\n\nTo work around this problem, cookie authentication is disabled by default in the\ndb-relation-changed hook by setting ignore_remote_user to true in\n/var/www/spip/config/mes_options.php.\n\nThis way, authentication is based on a simple http auth protocol.\n\nEven then, you will have to authenticate at least once on each real SPIP server\nadded as a unit to the spip service.\n\n    juju deploy nfs\n    juju deploy mysql\n    juju deploy spip\n    juju deploy haproxy\n\n    juju set haproxy default_timeouts=\"queue 7000, connect 7000, client 7000, server 7000\"\n\n    juju add-relation spip mysql\n    juju add-relation nfs spip:nfs\n    juju add-relation spip haproxy\n\n    juju expose haproxy\n\n## Associate a floating ip to the haproxy service\n\nWith a web browser, go to http://your.haproxy.service.ip/spip/ecrire. Select your\nsite's language and click on Next. The \"Connection to your database\" Step 1 has\nalready be performed by the charm, click on Next. Do not change the \"prefix\"\nsetting on the \"Choosing your database\" Step 2, just click on Next. Fill the\nform related to your personal information on Step 3, then click on Next. Step 4\nmay take some time to run. If it fail, go back to\nhttp://your.haproxy.service.ip/spip/ecrire and perform the same steps. If\neverything worked all right, you should end up on a page with the following\nmessage:\n\n    Done!\n\nSPIP is now ready for use\n\nYou still have to click on the \"private area\" area button.\nEven if you experience an error message, the spip site should be installed.\n\nThe public site is available at http://your.spip.service.ip/spip/\nThe admin site is available at  http://your.spip.service.ip/spip/ecrire\n\nNow, you can add some spip units:\n\njuju add-unit spip\n\n\n# Configuration\n\nBy default, the charm deploys the packaged version of spip.\nIf you want to deploy another version, use spip-origin. Currently the only available\nvalue is 3.0.5\n\nFor example, create a spip.cfg file with the following content:\n\n    spip:\n       spip-origin: 3.0.5\n\nAnd deploy the charm with:\n\n    juju deploy --config=spip.cfg spip\n\n\n# Contact Information\n\nAuthor: Pierre Amadio <pierre.amadio@canonical.com>\nReport bugs at: http://bugs.launchpad.net/charms\nLocation: http://jujucharms.com\n",
+  "readme": "# Overview\n\nThis charm provides an [SPIP service](http://www.spip.net/).\nSPIP is a publication blog plateform.\n\n# Usage\n\n## Simple deployment\n\n    juju deploy mysql\n    juju deploy spip\n    juju add-relation mysql spip\n    juju expose spip\n\n## One box deployment\n\n    juju deploy mysql\n    juju deploy --to <mysql machine number> spip\n    juju add-relation mysql spip\n    juju expose spip\n\n## Associate a floating ip to the spip service.\n\nWith a web browser, go to http://your.spip.service.ip/spip/ecrire. Select your\nsite's language and click on Next. The \"Connection to your database\" Step 1 has\nalready been performed by the charm, click on Next. Do not change the \"prefix\"\nsetting on the \"Choosing your database\" Step 2, just click on Next. Fill in the\nform related to your personal information on Step 3, then click on Next. Step 4\nmay take some time to run. If it fails, go back to\nhttp://your.spip.service.ip/spip/ecrire and perform the same steps. If\neverything worked all right, you should end up on a page with the following\nmessage:\n\n    Done!\n\nSPIP is now ready for use\n\nYou still have to click on the \"private area\" button.\nEven if you experience an error message, the spip site should be installed.\n\nThe public site is available at http://your.spip.service.ip/spip/\nThe admin site is available at  http://your.spip.service.ip/spip/ecrire\n\n## Load balancing deployement\n\nThere are still several problems to cope with when using Spip behind a load\nbalancer:\n\n * Some directories will be shared on an nfs mount point (IMG, plugins and\nsquelettes). As each spip server is unaware of the others, things may not work\nas expected if two spip machines try to write concurrently on the same data (for\nexample, trying to upload two images at the same time).\n\n * Authentication. Each spip server is using some cookies to authenticate users.\nAs each server generate its own set of cookies, any access requiring an\nauthentication may result in generating a new login prompt each time a new Spip\nserver is involved.\n\nIf spip was using sessions to manage authentication, a solution could be to use\nmemcached. However, this does not seems to be the case (even with a php.ini\nconfigured to use a shared memcached server for the session, several\nauthentication prompts happens).\n\nTo work around this problem, cookie authentication is disabled by default in the\ndb-relation-changed hook by setting ignore_remote_user to true in\n/var/www/spip/config/mes_options.php.\n\nThis way, authentication is based on a simple http auth protocol.\n\nEven then, you will have to authenticate at least once on each real SPIP server\nadded as a unit to the spip service.\n\n    juju deploy nfs\n    juju deploy mysql\n    juju deploy spip\n    juju deploy haproxy\n\n    juju set haproxy default_timeouts=\"queue 7000, connect 7000, client 7000, server 7000\"\n\n    juju add-relation spip mysql\n    juju add-relation nfs spip:nfs\n    juju add-relation spip haproxy\n\n    juju expose haproxy\n\n## Associate a floating ip to the haproxy service\n\nWith a web browser, go to http://your.haproxy.service.ip/spip/ecrire. Select your\nsite's language and click on Next. The \"Connection to your database\" Step 1 has\nalready be performed by the charm, click on Next. Do not change the \"prefix\"\nsetting on the \"Choosing your database\" Step 2, just click on Next. Fill the\nform related to your personal information on Step 3, then click on Next. Step 4\nmay take some time to run. If it fail, go back to\nhttp://your.haproxy.service.ip/spip/ecrire and perform the same steps. If\neverything worked all right, you should end up on a page with the following\nmessage:\n\n    Done!\n\nSPIP is now ready for use\n\nYou still have to click on the \"private area\" area button.\nEven if you experience an error message, the spip site should be installed.\n\nThe public site is available at http://your.spip.service.ip/spip/\nThe admin site is available at  http://your.spip.service.ip/spip/ecrire\n\nNow, you can add some spip units:\n\njuju add-unit spip\n\n\n# Configuration\n\nBy default, the charm deploys the packaged version of spip.\nIf you want to deploy another version, use spip-origin. Currently the only available\nvalue is 3.0.5\n\nFor example, create a spip.cfg file with the following content:\n\n    spip:\n       spip-origin: 3.0.5\n\nAnd deploy the charm with:\n\n    juju deploy --config=spip.cfg spip\n\n\n# Contact Information\n\nAuthor: Pierre Amadio <pierre.amadio@canonical.com>\nReport bugs at: http://bugs.launchpad.net/charms\nLocation: http://jujucharms.com\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

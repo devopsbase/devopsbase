@@ -1,0 +1,56 @@
+{
+  "name": "pacemaker Chef cookbook",
+  "chef_cookbook_name": "pacemaker",
+  "revision": "1.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/pacemaker",
+    "https://supermarket.chef.io/cookbooks/pacemaker/download",
+    "https://supermarket.chef.io/cookbooks/pacemaker/versions/1.0.0",
+    "https://supermarket.chef.io/cookbooks/pacemaker/versions/1.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/pacemaker/versions/1.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/pacemaker",
+    "https://supermarket.chef.io/api/v1/cookbooks/pacemaker/versions/1.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/pacemaker",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/pacemaker/versions/1.0.0/download",
+  "deprecated": false,
+  "created": "2016-01-29T16:13:21.226Z",
+  "updated": "2016-03-14T15:34:21.293Z",
+  "description": "Installs/Configures pacemaker",
+  "maintainer": {
+    "name": "target-cookbooks",
+    "email": "Travis.Killoren@Target.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 2,
+  "downloads_count": 564,
+  "downloads_count_revision": 232,
+  "repository_url": "https://github.com/target/pacemaker-cookbook",
+  "issues_url": "https://github.com/target/pacemaker-cookbook/issues",
+  "chef_source_url": "https://github.com/target/pacemaker-cookbook",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "pacemaker Cookbook\n==================\nCookbook that sets up a pacemaker cluster.\n\nRequirements\n------------\n\n#### platforms\n\n| Platform | CLI | Resource Mgmt |  Engine  | Supported? |\n|----------|-----|---------------|----------|------------|\n| RHEL 7.1 | PCS | Pacemaker     | Corosync | Yes        |\n| RHEL 6.5 | CRM | CMAN          | Corosync | No         |\n\n\nAttributes\n----------\nBelow is a list of attributes that you are most likely to change.\nsee `attributes/default.rb` for a full list of attributes.\n\n* `['pacemaker']['corosync']['cluster_name']` (`'My_Cluster'`) - Name of the cluster\n* `['pacemaker']['corosync']['nodes']` (`{}`) - List of the cluster's nodes and ip addresses\n* `['pacemaker']['pcs']['vault']` (`'vault_pacemaker'`) - Vault containing item with secrets for pacemaker\n* `['pacemaker']['pcs']['vault_item']` (`'secrets'`) - Vault Item containing secrets for pacemaker\n\nResources/Providers\n===================\n\npacemaker_primitive\n-------------------\nConfigure and delete primitive resource.\n\nThis resource manages pacemaker-resource primitives, supporting the following actions:\n* `:create`\n* `:delete`\n\n### Examples\n``` ruby\npacemaker_primitive 'drbd' do\n  agent \"ocf:linbit:drbd\"\n  params 'drbd_resource' => 'r0'\n  op 'monitor' => { 'interval' => '5s', 'role' => 'Master' }\n  action :create\nend\n```\n\n``` ruby\npacemaker_primitive 'galera' do\n  agent \"ocf:heartbeat:galera\"\n  params 'wsrep_cluster_address' => 'node1,node2,node3'\n  op 'monitor' => { 'interval' => '5s', 'role' => 'Master'\n  ms true\n  meta 'master_max' => '1'\n  action :create\nend\n```\n\npacemaker_property\n------------------\nSet and unset pacemaker properties.\n\nThis resource manages pacemaker properties, supporting the following actions:\n* `:set`\n* `:unset`\n\nYou will want to declare this resource after having created the cluster with the `pacemaker::cluster_create` recipe.\n\n### Examples\n``` ruby\npacemaker_property 'default-resource-stickiness' do\n  value 4999\nend\n\npacemaker_property 'cluster-recheck-interval' do\n  action :unset\nend\n```\n\npacemaker_stonith\n-----------------\nConfigure and delete stonith resource.\n\nThis resource manages pacemaker-resource stonith, supporting the following actions:\n* `:create`\n* `:delete`\n\n### Examples\n``` ruby\npacemaker_stonith 'stonith-ucs' do\n  agent  'ucs'\n  params 'location' => 'b0s0'\n  op     'monitor' => { 'interval' => '5s' }\n  action :create\nend\n```\n\n``` ruby\npacemaker_stonith 'stonith-scsi-sda' do\n  agent  'fence_scsi'\n  params 'devices' => '/dev/sda'\n  meta   'provides' => 'unfencing'\n  action :create\nend\n```\n\npacemaker_group\n---------------\nConfigure and delete resource groups.\n\nThis resource manages pacemaker-resource group, supporting the following actions:\n* `:create`\n* `:delete`\n\n### Examples\n``` ruby\npacemaker_clone 'mygroup' do\n  resources ['lbservice', 'vip']\n  meta {}\n  action :create\nend\n```\n\npacemaker_orderset\n------------------\nThis resource manages the order pacemaker-contraint using the order set syntax, supporting the following actions:\n* `:create`\n* `:delete`\n\n### Examples\n``` ruby\npacemaker_orderset 'start_neutron_layer3' do\n  set        ['neutron-netns-clone',\n              'neutron-server-clone',\n              'neutron-l3-agent-clone',\n              'neutron-metadata-agent-clone',\n              'neutron-dhcp-agent-clone']\n  options 'action' => 'start', 'sequential' => 'true'\n  setoptions 'kind' => 'Mandatory'\nend\n```\n\nRecipes\n-------\n#### pacemaker::default\n\nInclude `pacemaker::default` in your node's `run_list`:\n\n```json\n{\n  \"name\":\"my_node\",\n  \"run_list\": [\n    \"recipe[pacemaker::default]\"\n  ]\n}\n```\n\n#### pacemaker::node_prepare\n\nInstalls required components to the node.  Does not create or manage a cluster.\nThis recipe assume you already in your `run_list` a cookbook/recipe to setup repos necessary for packages.\nYou can always choose to just include `yum::default` in your `run_list` for default public repositories.\n\n```json\n{\n  \"name\":\"my_node\",\n  \"run_list\": [\n    \"recipe[pacemaker::node_prepare]\"\n  ]\n}\n```\n\n#### pacemaker::cluster_create\n\nCreates a pacemaker cluster consisting of `node['pacemaker']['corosync']['nodes']`.\n\n`recipe[pacemaker::node_prepare]` must have been ran on all nodes first.\n\nThis should be run only from 1 cluster node.\n\n```json\n{\n  \"name\":\"my_node\",\n  \"run_list\": [\n    \"recipe[pacemaker::cluster_create]\"\n  ]\n}\n```\n\nTesting\n-------\nTesting utilizes ChefDK >= 0.10.0 with its native gems.\n\nIf you run into issues running tests please be sure you do not have extra gems installed in your ChefDK environment as they could cause conflicts.\n\nTo be sure you do not have any extra gems installed you can run `rm -rf ~/.chefdk/gem` to remove any extra gems.\n\nContributing\n------------\n\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n\n\nLicense and Authors\n-------------------\n\nAuthor:: Travis Killoren (<Travis.Killoren@Target.com>)\n\n```text\nCopyright:: 2016, Target Corporation\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/hostsfile",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef-vault",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

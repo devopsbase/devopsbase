@@ -1,0 +1,223 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/amulyas/logstash-docker",
+    "repository_url": "https://hub.docker.com/v2/repositories/amulyas/logstash-docker",
+    "tags_url": "https://hub.docker.com/v2/repositories/amulyas/logstash-docker/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/amulyas/logstash-docker/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/amulyas/logstash-docker/autobuild",
+    "user": "amulyas",
+    "name": "logstash-docker",
+    "namespace": "amulyas",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 1212,
+    "last_updated": "2016-03-21T23:30:04.299552Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2.0",
+        "full_size": 356774479,
+        "id": 2381314,
+        "repository": 535667,
+        "creator": 132744,
+        "last_updater": 132744,
+        "last_updated": "2016-03-21T23:30:02.589368Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.8",
+        "full_size": 356627738,
+        "id": 2285005,
+        "repository": 535667,
+        "creator": 132744,
+        "last_updater": 132744,
+        "last_updated": "2016-03-14T22:44:27.866629Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "2.5",
+        "full_size": 356612691,
+        "id": 2274538,
+        "repository": 535667,
+        "creator": 132744,
+        "last_updater": 132744,
+        "last_updated": "2016-03-11T21:55:01.476029Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.7",
+        "full_size": 356612340,
+        "id": 2255895,
+        "repository": 535667,
+        "creator": 132744,
+        "last_updater": 132744,
+        "last_updated": "2016-03-11T05:59:10.476027Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.6",
+        "full_size": 356606406,
+        "id": 2069517,
+        "repository": 535667,
+        "creator": 132744,
+        "last_updater": 132744,
+        "last_updated": "2016-03-09T22:07:45.113769Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.5",
+        "full_size": 356574504,
+        "id": 2066582,
+        "repository": 535667,
+        "creator": 132744,
+        "last_updater": 132744,
+        "last_updated": "2016-02-21T07:55:46.369735Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 356573817,
+        "id": 2052479,
+        "repository": 535667,
+        "creator": 132744,
+        "last_updater": 132744,
+        "last_updated": "2016-02-20T08:20:56.055213Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "amulyas/logstash-docker"
+  },
+  "name": "amulyas/logstash-docker Docker container",
+  "description": "logstash docker image with Elasticsearch ",
+  "readme": "Elastic Search and Logstash Dockerfile\n======================================\n\nA Dockerfile that produces a Docker Image for [Logstash](logstash.net) and [ElasticSearch](https://www.elastic.co/), with default Logstash configuration for Cloud Foundry application logs.\n",
+  "dockerfile": "FROM frodenas/java7\nMAINTAINER Long Nguyen & Dr Nic Williams & Amulya Shamra\n\nENV DEBIAN_FRONTEND noninteractive\n\nRUN \\\n# Elasticsearch\n    wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | apt-key add - && \\\n    apt-key adv --keyserver pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4 && \\\n    if ! grep \"elasticsearch\" /etc/apt/sources.list; then echo \"deb http://packages.elastic.co/elasticsearch/1.4/debian stable main\" >> /etc/apt/sources.list;fi && \\\n    if ! grep \"logstash\" /etc/apt/sources.list; then echo \"deb http://packages.elastic.co/logstash/1.4/debian stable main\" >> /etc/apt/sources.list;fi && \\\n    if ! grep \"curator\" /etc/apt/sources.list; then echo \"deb http://packages.elastic.co/curator/3/debian stable main\" >> /etc/apt/sources.list;fi && \\\n    apt-get update && \\\n    apt-get install -y supervisor curl && \\\n    apt-get install -y elasticsearch && \\\n    apt-get install -y python-elasticsearch-curator && \\\n    apt-get install -y logstash && \\\n    apt-get clean && \\\n    sed -i '/#path.data: \\/path\\/to\\/data/a path.data: /data' /etc/elasticsearch/elasticsearch.yml\n\n#Add service config\nADD etc/supervisor/conf.d/elasticsearch.conf /etc/supervisor/conf.d/elasticsearch.conf\nADD etc/supervisor/conf.d/logstash.conf /etc/supervisor/conf.d/logstash.conf\nADD etc/supervisor/conf.d/cron.conf /etc/supervisor/conf.d/cron.conf\nADD usr/share/elasticsearch/lib/elasticsearch-http-basic-1.5.1.jar /usr/share/elasticsearch/lib/elasticsearch-http-basic-1.5.1.jar\nADD usr/share/elasticsearch/bin/elasticsearch.in.sh /usr/share/elasticsearch/bin/elasticsearch.in.sh\nRUN chmod +x /usr/share/elasticsearch/bin/*.sh\n\nADD /crontab.root /var/spool/cron/crontabs/root\nRUN chown root:crontab /var/spool/cron/crontabs/root\nRUN chmod 600 /var/spool/cron/crontabs/root\nADD etc/logstash/logstash.conf /etc/logstash/logstash.conf\nADD etc/kibana/config.js /opt/logstash/vendor/kibana/config.js\n\nADD scripts /scripts\nRUN chmod +x /scripts/*.sh\nRUN touch /.firstrun\n\nRUN /usr/share/elasticsearch/bin/plugin install elasticsearch/elasticsearch-cloud-aws/2.4.2\n\nENTRYPOINT [\"/scripts/run.sh\"]\nCMD [\"\"]\n\nEXPOSE 514\nEXPOSE 9200\nEXPOSE 9300\n\nVOLUME [\"/data\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "etc/supervisor/conf.d/elasticsearch.conf",
+        "dest": "/etc/supervisor/conf.d/elasticsearch.conf"
+      },
+      {
+        "source": "etc/supervisor/conf.d/logstash.conf",
+        "dest": "/etc/supervisor/conf.d/logstash.conf"
+      },
+      {
+        "source": "etc/supervisor/conf.d/cron.conf",
+        "dest": "/etc/supervisor/conf.d/cron.conf"
+      },
+      {
+        "source": "usr/share/elasticsearch/lib/elasticsearch-http-basic-1.5.1.jar",
+        "dest": "/usr/share/elasticsearch/lib/elasticsearch-http-basic-1.5.1.jar"
+      },
+      {
+        "source": "usr/share/elasticsearch/bin/elasticsearch.in.sh",
+        "dest": "/usr/share/elasticsearch/bin/elasticsearch.in.sh"
+      },
+      {
+        "source": "/crontab.root",
+        "dest": "/var/spool/cron/crontabs/root"
+      },
+      {
+        "source": "etc/logstash/logstash.conf",
+        "dest": "/etc/logstash/logstash.conf"
+      },
+      {
+        "source": "etc/kibana/config.js",
+        "dest": "/opt/logstash/vendor/kibana/config.js"
+      },
+      {
+        "source": "scripts",
+        "dest": "/scripts"
+      }
+    ],
+    "expose": [
+      514,
+      9200,
+      9300
+    ],
+    "volume": [
+      "[\"/data\"]"
+    ],
+    "run": [
+      "# Elasticsearch",
+      "chmod +x /usr/share/elasticsearch/bin/*.sh",
+      "chown root:crontab /var/spool/cron/crontabs/root",
+      "chmod 600 /var/spool/cron/crontabs/root",
+      "chmod +x /scripts/*.sh",
+      "touch /.firstrun",
+      "/usr/share/elasticsearch/bin/plugin install elasticsearch/elasticsearch-cloud-aws/2.4.2"
+    ],
+    "workdir": [],
+    "from": "frodenas/java7",
+    "maintainer": "Long Nguyen & Dr Nic Williams & Amulya Shamra",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "entrypoint": "[\"/scripts/run.sh\"]",
+    "cmd": "[\"\"]"
+  },
+  "source_repository_url": "https://github.com/amulyas/logstash-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/amulyas/logstash-docker",
+  "docker_repository": "amulyas/logstash-docker",
+  "docker_image": "amulyas/logstash-docker",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        514,
+        9200,
+        9300
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "amulyas/logstash-docker",
+  "revision": "2.0",
+  "uris": [
+    "https://hub.docker.com/r/amulyas/logstash-docker",
+    "https://hub.docker.com/v2/repositories/amulyas/logstash-docker",
+    "https://github.com/amulyas/logstash-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Logging/Logstash",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/amulyas/logstash-docker",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

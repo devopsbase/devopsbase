@@ -1,0 +1,80 @@
+{
+  "name": "osquery Chef cookbook",
+  "chef_cookbook_name": "osquery",
+  "revision": "1.4.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/osquery",
+    "https://supermarket.chef.io/cookbooks/osquery/download",
+    "https://supermarket.chef.io/cookbooks/osquery/versions/1.4.1",
+    "https://supermarket.chef.io/cookbooks/osquery/versions/1.4.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/osquery/versions/1.4.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/osquery",
+    "https://supermarket.chef.io/api/v1/cookbooks/osquery/versions/1.4.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/osquery",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/osquery/versions/1.4.1/download",
+  "deprecated": false,
+  "created": "2016-04-28T02:35:09.313Z",
+  "updated": "2016-09-27T06:28:56.133Z",
+  "description": "Install and configure osquery (osquery.io)",
+  "maintainer": {
+    "name": "jacknagz",
+    "email": "jacknagzdev@gmail.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 832,
+  "downloads_count_revision": 21,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "osquery chef cookbook\n====================\n[![Build Status](https://travis-ci.org/jacknagz/osquery-cookbook.svg?branch=master)](https://travis-ci.org/jacknagz/osquery-cookbook)\n[![Cookbook Version](https://img.shields.io/cookbook/v/osquery.svg)](https://supermarket.chef.io/cookbooks/osquery)\n\n* Installs, configures, and starts [osquery](https://osquery.io/).\n* Configurations are generated based on node attributes.\n\nRequirements\n------------\n* Chef >= 12.1.0\n* OS X\n* Ubuntu\n  * 12.04\n  * 14.04\n* Centos/Redhat\n  * 6.5+\n  * 7.0+\n\nGeneral Attributes\n----------\n`attributes/default.rb`:\n\n| name   | type | default | description |\n|--------|------|---------|-------------|\n| `['osquery']['version']` | `String` | `1.7.4` | osquery version to install |\n| `['osquery']['packs']` | `Array` | `%w(incident-response osx-attacks)` | osquery packs found in `files/default/packs/` |\n| `['osquery']['pack_source']` | `String` | `osquery` | cookbook to load osquery packs from |\n| `['osquery']['repo']['el6_checksum']` | `String` | - | SHA256 Hash of the centos6 repo |\n| `['osquery']['repo']['el7_checksum']` | `String` | - | SHA256 Hash of the centos7 repo |\n| `['osquery']['repo']['osx_checksum']` | `String` | - | SHA256 Hash of the os x pkg file |\n| `['osquery']['audit']['enabled']` | `Boolean` | `true` | flag to enable/disable chef audits |\n\nConfiguration Attributes\n----------\n`attributes/config.rb`:\n\n| name   | type | default | description |\n|--------|------|---------|-------------|\n| `['osquery']['options']['config_plugin']` | `String` | `filesystem` | configuration plugin |\n| `['osquery']['options']['logger_plugin']` | `String` | `filesystem` | logger plugin |\n| `['osquery']['options']['schedule_splay_percent']` | `Fixnum` | `10` | query schedule splay percentage |\n| `['osquery']['options']['events_expiry']` | `Fixnum` | `3600` | timeout to expire eventing pubsub results |\n| `['osquery']['options']['verbose']` | `Boolean` | `false` | enable verbose informational messages |\n| `['osquery']['options']['worker_threads']` | `Fixnum` | `2` | number of work dispatch threads |\n| `['osquery']['options']['enable_monitor']` | `Boolean` | `false` | enable schedule monitor |\n| `['osquery']['syslog']['enabled']` | `Boolean` | `true` | enable syslog tables |\n| `['osquery']['syslog']['filename']` | `String` | `/etc/rsyslog.d/60-osquery.conf` | syslog conf file path |\n\nQuery Schedule Attributes\n----------\n`attributes/schedule.rb`:\n\n| name   | type | default | description |\n|--------|------|---------|-------------|\n| `['osquery']['schedule']` | `Hash` | osquery_info and file_events | osquery schedule |\n\nFile Integrity Monitoring Attributes\n----------\n`attributes/file_paths.rb`:\n\n| name   | type | default | description |\n|--------|------|---------|-------------|\n| `['osquery']['file_paths']` | `Hash` | homes, etc, and tmp | file paths to monitor events from |\n| `['osquery']['fim_enabled']` | `Boolean` | false | enable/disable file event tracking in config |\n\nCustom Resources\n----------------\n`osquery_conf`: creates osquery config from selected options and packs.\n\n`create`:\n\n```ruby\nosquery_conf osquery_config_path do\n  action :create\n  schedule node['osquery']['schedule']\n  fim_paths node['osquery']['file_paths']\n  packs node['osquery']['packs']\n  pack_source node['osquery']['pack_source']\nend\n```\n\n`delete`:\n\n```ruby\nosquery_conf 'delete osquery config' do\n  action :delete\nend\n```\n\nosquery_conf attributes:\n* action: `:create` or `:delete`\n* schedule: (required) Hash of scheduled queries to run\n* fim_paths: (optional) Hash of file integrity monitoring path descriptions and array of their paths\n* packs: (optional) List of osquery packs to install.  Based on filenames ending in `*.conf` in `pack_source/packs`\n* pack_source: (optional) Cookbook source for osquery packs\n* The daemon configuration is compiled from the node`['osquery']['options']` attributes.\n\nTesting\n-----\nRun `$ rake` to execute:\n* foodcritic\n* rubocop\n* chefspec\n\nRequirements: VirtualBox with Extension Pack (for the OS X vm)\n* `$ kitchen list` to show integration test suites <br />\n* `$ kitchen converge` to run test suites\n\nNote: Audit mode is enabled in the Kitchen yaml by default.  The tests are found in `./recipes/audit.rb` and run post converge.  To disable, override the `node['osquery']['audit']['enabled']` attribute to `false`.\n\nUsage\n-----\n* Include `osquery` in your node's `run_list`\n* Override attributes to fit your desired setup\n\nContributing\n------------\n1. Fork the repository on Github.\n2. Create a named feature branch (like `add_component_x`).\n3. Write your change.\n4. Write tests for your change.\n5. Run the tests, ensuring they all pass (`rubocop; rspec`).\n6. Submit a Pull Request using Github.\n\nLicense and Authors\n-------------------\n* Authors: Jack Naglieri (jacknagzdev@gmail.com)\n\n```text\nCopyright 2013-2014 Jack Naglieri <jacknagzdev@gmail.com>\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "mac_os_x",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "osquery::default": "convergence/audit requirements.",
+    "osquery::centos": "centos/redhat osquery installation.",
+    "osquery::mac_os_x": "mac os x osquery installation.",
+    "osquery::ubuntu": "ubuntu osquery installation.",
+    "osquery::audit": "chef audits for osquery installation."
+  }
+}

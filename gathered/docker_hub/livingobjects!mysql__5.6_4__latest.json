@@ -1,0 +1,187 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/livingobjects/mysql",
+    "repository_url": "https://hub.docker.com/v2/repositories/livingobjects/mysql",
+    "tags_url": "https://hub.docker.com/v2/repositories/livingobjects/mysql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/livingobjects/mysql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/livingobjects/mysql/autobuild",
+    "user": "livingobjects",
+    "name": "mysql",
+    "namespace": "livingobjects",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 352,
+    "last_updated": "2016-10-06T14:01:35.391152Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "5.6_4",
+        "full_size": 143986369,
+        "id": 5278237,
+        "repository": 503577,
+        "creator": 608223,
+        "last_updater": 608223,
+        "last_updated": "2016-10-06T14:01:35.067144Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5.6_3",
+        "full_size": 143986440,
+        "id": 5200850,
+        "repository": 503577,
+        "creator": 608223,
+        "last_updater": 608223,
+        "last_updated": "2016-10-03T13:36:23.920245Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 143981342,
+        "id": 1862669,
+        "repository": 503577,
+        "creator": 608223,
+        "last_updater": 608223,
+        "last_updated": "2016-09-05T13:26:58.741251Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5.6_2",
+        "full_size": 142091347,
+        "id": 2085749,
+        "repository": 503577,
+        "creator": 608223,
+        "last_updater": 608223,
+        "last_updated": "2016-02-23T08:58:26.651097Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "5.6_1",
+        "full_size": 142079072,
+        "id": 1963016,
+        "repository": 503577,
+        "creator": 608223,
+        "last_updater": 608223,
+        "last_updated": "2016-02-10T08:33:19.011665Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "5.6",
+        "full_size": 142092640,
+        "id": 1862728,
+        "repository": 503577,
+        "creator": 608223,
+        "last_updater": 608223,
+        "last_updated": "2016-01-29T14:23:00.889233Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "livingobjects/docker-common"
+  },
+  "name": "livingobjects/mysql Docker container",
+  "description": "MySQL",
+  "readme": "# Images Docker MySQL\n\n[![](https://badge.imagelayers.io/livingobjects/mysql:latest.svg)](https://imagelayers.io/?images=livingobjects/mysql:latest 'Get your own badge on imagelayers.io')\n\nMysql 5.6 debian based\n\n## Configuration\n\n * PORTS : [ `3306` ]\n * VOLUMES : [ `/etc/mysql`, `/var/lib/mysql` ]\n\nAt MySQL startup, if `/create_mysql_admin_user.sh` is present, it is executed, useful for initializing database\n\n## Build\n\n    docker build -t livingobjects/mysql .\n\n## Annexes\n\n### /create_mysql_admin_user.sh Example\n\n    #!/bin/bash\n\n    /usr/bin/mysqld_safe > /dev/null 2>&1 &\n\n    RET=1\n    while [[ RET -ne 0 ]]; do\n        echo \"=> Waiting for confirmation of MySQL service startup\"\n        sleep 5\n        mysql -uroot -e \"status\" > /dev/null 2>&1\n        RET=$?\n    done\n\n    echo \"=> Creating MySQL user longback with ${_word} password\"\n\n    mysql -uroot -e \"CREATE USER 'myuser'@'%' IDENTIFIED BY 'mypassword'\"\n    mysql -uroot -e \"GRANT ALL PRIVILEGES ON *.* TO 'myuser'@'%' WITH GRANT OPTION\"\n\n    echo \"=> Done!\"\n\n    echo \"========================================================================\"\n    echo \"You can now connect to this MySQL Server using:\"\n    echo \"\"\n    echo \"    mysql -umyuser -pmypassword -h<host> -P<port>\"\n    echo \"\"\n    echo \"Please remember to change the above password as soon as possible!\"\n    echo \"MySQL user 'root' has no password but only allows local connections\"\n    echo \"========================================================================\"\n\n    mysqladmin -uroot shutdown",
+  "dockerfile": "FROM debian:8.3\n\nRUN echo \"force-unsafe-io\" > /etc/dpkg/dpkg.cfg.d/02apt-speedup && \\\n\techo \"Acquire::http {No-Cache=True;};\" > /etc/apt/apt.conf.d/no-cache && \\\n    echo \"APT::Install-Recommends \\\"0\\\";\" > /etc/apt/apt.conf.d/no-recommends && \\\n\techo \"APT::Install-Suggests \\\"0\\\";\" >> /etc/apt/apt.conf.d/no-recommends && \\\n\techo \"Dpkg::Options { \\\"--force-confdef\\\"; \\\"--force-confold\\\"; }\" >> /etc/apt/apt.conf.d/local && \\\n\n# Install minimal packages\n\texport DEBIAN_FRONTEND=noninteractive && \\\n\tapt-get -y update && \\\n\tapt-get -y install runit wget bzip2 unzip vim netcat locales && \\\n\trm -Rf /etc/sv/* && \\\n\tapt-get clean && \\\n\tapt-get autoclean && \\\n\trm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \\\n\n# Set locale\n\techo \"en_US.UTF-8 UTF-8\" >> /etc/locale.gen && \\\n\tlocale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8 && \\\n\n# Set timezone\n\tln -sf /usr/share/zoneinfo/UTC /etc/localtime && \\\n\techo \"Etc/UTC\" > /etc/timezone && \\\n\n# Create lo-daemon\n    groupadd -g 10000 lo-logger && \\\n    groupadd -g 999 lo-daemon && \\\n    useradd lo-daemon --uid 999 --gid 999 --system --home /services/ --shell /bin/bash && \\\n    gpasswd -a lo-daemon lo-logger\n\n# Set env vars\nENV LANG=en_US.UTF-8 \\\n\tLC_ALL=en_US.UTF-8\n\n\n\nADD mysql-apt-config_0.3.3-2debian7_all.deb /mysql-apt-config_0.3.3-2debian7_all.deb\nRUN export DEBIAN_FRONTEND=\"noninteractive\" && \\\n\techo \"mysql-apt-config mysql-apt-config/select-product select Server\" | debconf-set-selections && \\\n\techo \"mysql-apt-config mysql-apt-config/select-server select mysql-5.6\" | debconf-set-selections && \\\n\tdpkg -i mysql-apt-config_0.3.3-2debian7_all.deb &&\\\n\techo \"mysql-server mysql-server/root_password password root\" | debconf-set-selections && \\\n    echo \"mysql-server mysql-server/root_password_again password root\" | debconf-set-selections && \\\n\tapt-get -y update && \\\n    apt-get -q -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\"  install perl-modules mysql-server mysql-client && \\\n    rm -rf /var/lib/mysql/* && \\ \n    apt-get clean && \\ \n    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /mysql-apt-config_0.3.3-2debian7_all.deb\n\n# Add MySQL configuration\nADD mysql/ /etc/mysql/\n\n# Install services\nADD services /etc/sv\nRUN chmod +x /etc/sv/**/run\n\n# Add VOLUMEs to allow backup of config and databases\nVOLUME [\"/etc/mysql\", \"/var/lib/mysql\"]\n\nCMD [\"/usr/bin/runsvdir\", \"-P\", \"/etc/sv\"]\n\nEXPOSE 3306\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "mysql-apt-config_0.3.3-2debian7_all.deb",
+        "dest": "/mysql-apt-config_0.3.3-2debian7_all.deb"
+      },
+      {
+        "source": "mysql/",
+        "dest": "/etc/mysql/"
+      },
+      {
+        "source": "services",
+        "dest": "/etc/sv"
+      }
+    ],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      "[\"/etc/mysql\", \"/var/lib/mysql\"]"
+    ],
+    "run": [
+      "echo \"force-unsafe-io\" > /etc/dpkg/dpkg.cfg.d/02apt-speedup && \techo \"Acquire::http {No-Cache=True;};\" > /etc/apt/apt.conf.d/no-cache &&     echo \"APT::Install-Recommends \\\"0\\\";\" > /etc/apt/apt.conf.d/no-recommends && \techo \"APT::Install-Suggests \\\"0\\\";\" >> /etc/apt/apt.conf.d/no-recommends && \techo \"Dpkg::Options { \\\"--force-confdef\\\"; \\\"--force-confold\\\"; }\" >> /etc/apt/apt.conf.d/local && ",
+      "export DEBIAN_FRONTEND=\"noninteractive\" && \techo \"mysql-apt-config mysql-apt-config/select-product select Server\" | debconf-set-selections && \techo \"mysql-apt-config mysql-apt-config/select-server select mysql-5.6\" | debconf-set-selections && \tdpkg -i mysql-apt-config_0.3.3-2debian7_all.deb &&\techo \"mysql-server mysql-server/root_password password root\" | debconf-set-selections &&     echo \"mysql-server mysql-server/root_password_again password root\" | debconf-set-selections && \tapt-get -y update &&     apt-get -q -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\"  install perl-modules mysql-server mysql-client &&     rm -rf /var/lib/mysql/* && \\ ",
+      "chmod +x /etc/sv/**/run"
+    ],
+    "workdir": [],
+    "from": "debian:8.3",
+    "env": {
+      "LANG": "en_US.UTF-8",
+      "\tLC_ALL": "en_US.UTF-8"
+    },
+    "cmd": "[\"/usr/bin/runsvdir\", \"-P\", \"/etc/sv\"]"
+  },
+  "source_repository_url": "https://github.com/livingobjects/docker-common.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/livingobjects/docker-common",
+  "docker_repository": "livingobjects/mysql",
+  "docker_image": "livingobjects/mysql",
+  "parameters_schema": {
+    "LANG": {
+      "default": "en_US.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "\tLC_ALL": {
+      "default": "en_US.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "livingobjects/mysql",
+  "revision": "5.6_4",
+  "uris": [
+    "https://hub.docker.com/r/livingobjects/mysql",
+    "https://hub.docker.com/v2/repositories/livingobjects/mysql",
+    "https://github.com/livingobjects/docker-common.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/livingobjects/mysql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

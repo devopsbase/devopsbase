@@ -1,0 +1,104 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/bringnow/bacula-dir-postgres",
+    "repository_url": "https://hub.docker.com/v2/repositories/bringnow/bacula-dir-postgres",
+    "tags_url": "https://hub.docker.com/v2/repositories/bringnow/bacula-dir-postgres/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/bringnow/bacula-dir-postgres/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/bringnow/bacula-dir-postgres/autobuild",
+    "user": "bringnow",
+    "name": "bacula-dir-postgres",
+    "namespace": "bringnow",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 326,
+    "last_updated": "2016-10-15T05:16:29.385465Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 423545257,
+        "id": 2309528,
+        "repository": 579216,
+        "creator": 213020,
+        "last_updater": 213020,
+        "last_updated": "2016-10-15T05:16:28.987906Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "bringnow/docker-bacula-dir-postgres"
+  },
+  "name": "bringnow/bacula-dir-postgres Docker container",
+  "description": "Docker Image for bacula-director using PostgreSQL backend.",
+  "readme": "# Configuration\n\nExample `docker-compose.yml`:\n\n```\nsd:\n  image: bringnow/bacula-sd-postgres\n  ports:\n    - \"9103:9103\"\n  volumes:\n    - ./config/bacula-sd:/etc/bacula/\n    - /srv/bacula-sd/var:/var/lib/bacula\n    - /srv/bacula-sd/dhparam:/etc/dhparam\n    - /mnt/backup:/mnt/backup\ndir:\n  image: bringnow/bacula-dir-postgres\n  volumes:\n    - ./config/bacula-dir:/etc/bacula/\n    - /srv/bacula-dir/var:/var/lib/bacula\n    - /srv/bacula-dir/dhparam:/etc/dhparam\n  links:\n    - db\ndb:\n  image: postgres:9.5\n  environment:\n    - POSTGRES_PASSWORD=mysecretpassword\n  volumes:\n    - /srv/postgres:/var/lib/postgresql/data\n```\n\n# Initial setup\n\nFirst, bring up database:\n\n```\n# docker-compose up -d db\n```\n\nWait for it to fully start, then create the Bacula database layout (skip that, if you imported an existing database dump):\n```\n# docker-compose run --rm --entrypoint first_run.sh dir\n```\n\nNow you can start the bacula director:\n```\ndocker-compose up -d dir\n```\n\nVerify that everything is working as expected using bconsole:\n\n```\ndocker exec -it $(docker-compose ps | grep dir | cut -d\" \" -f 1) bconsole\n```\n\n# Database update\n\nWhen upgrading to a new version of Bacula, you might have to update the database. You can easily do this by executing the following command:\n\n```\ndocker-compose run --rm --entrypoint update_database.sh dir\n```\n",
+  "dockerfile": "FROM gentoo/stage3-amd64-hardened\nMAINTAINER Fabian Köster <koesterreich@fastmail.fm>\n\n# Install portage tree\nRUN emerge-webrsync\n\n# Enable compilation of director and postgres backend only\nRUN echo -e \"app-backup/bacula postgres -sqlite bacula-nosd \\n dev-db/postgresql -server threads\" > /etc/portage/package.use/bacula\n\n# Use latest version of bacula\nRUN echo \"app-backup/bacula\" > /etc/portage/package.keywords/bacula\n\n# Install required packages\nRUN emerge -q sys-fs/inotify-tools app-backup/bacula\n\nVOLUME /etc/bacula\nVOLUME /var/lib/bacula\nVOLUME /etc/dhparam\n\nCOPY create_dhparam.sh first_run.sh mail_wrapper.sh entrypoint.sh update_database.sh /usr/local/bin/\n\nENTRYPOINT /usr/local/bin/entrypoint.sh\n\nEXPOSE 9101\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      9101
+    ],
+    "volume": [
+      "/etc/bacula",
+      "/var/lib/bacula",
+      "/etc/dhparam"
+    ],
+    "run": [
+      "emerge-webrsync",
+      "echo -e \"app-backup/bacula postgres -sqlite bacula-nosd \\n dev-db/postgresql -server threads\" > /etc/portage/package.use/bacula",
+      "echo \"app-backup/bacula\" > /etc/portage/package.keywords/bacula",
+      "emerge -q sys-fs/inotify-tools app-backup/bacula"
+    ],
+    "workdir": [],
+    "from": "gentoo/stage3-amd64-hardened",
+    "maintainer": "Fabian Köster <koesterreich@fastmail.fm>",
+    "copy": "create_dhparam.sh first_run.sh mail_wrapper.sh entrypoint.sh update_database.sh /usr/local/bin/",
+    "entrypoint": "/usr/local/bin/entrypoint.sh"
+  },
+  "source_repository_url": "https://github.com/bringnow/docker-bacula-dir-postgres.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/bringnow/docker-bacula-dir-postgres",
+  "docker_repository": "bringnow/bacula-dir-postgres",
+  "docker_image": "bringnow/bacula-dir-postgres",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        9101
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "bringnow/bacula-dir-postgres",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/bringnow/bacula-dir-postgres",
+    "https://hub.docker.com/v2/repositories/bringnow/bacula-dir-postgres",
+    "https://github.com/bringnow/docker-bacula-dir-postgres.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/bringnow/bacula-dir-postgres",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,123 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/google/cloud-sdk",
+    "repository_url": "https://hub.docker.com/v2/repositories/google/cloud-sdk",
+    "tags_url": "https://hub.docker.com/v2/repositories/google/cloud-sdk/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/google/cloud-sdk/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/google/cloud-sdk/autobuild",
+    "user": "google",
+    "name": "cloud-sdk",
+    "namespace": "google",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 89,
+    "pull_count": 793853,
+    "last_updated": "2016-09-23T21:23:17.674807Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 489270481,
+        "id": 12549,
+        "repository": 10191,
+        "creator": 4362,
+        "last_updater": 4362,
+        "last_updated": "2016-09-23T21:23:17.320697Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "GoogleCloudPlatform/cloud-sdk-docker"
+  },
+  "name": "google/cloud-sdk Docker container",
+  "description": "Google Cloud SDKbundle with all components and dependencies ",
+  "readme": "cloud-sdk-docker\n================\n\n[`google/cloud-sdk`](https://index.docker.io/u/google/cloud-sdk/) is a [Docker](https://docker.io) image bundling all the components and dependencies of the [Google Cloud SDK](https://cloud.google.com/sdk/) including alpha and beta components.\n\n## Usage\n\nFollow these instructions if you are running docker *outside* of Google Compute Engine:\n\n    # Get the cloud sdk image:\n    $ docker pull google/cloud-sdk\n\n    # Auth & save the credentials in gcloud-config volumes:\n    $ docker run -t -i --name gcloud-config google/cloud-sdk gcloud init\n\n    # If you would like to use service account instead please look here:\n    $ docker run -t -i --name gcloud-config google/cloud-sdk gcloud auth activate-service-account <your-service-account-email> --key-file /tmp/your-key.p12 --project <your-project-id>\n\n    # Re-use the credentials from gcloud-config volumes & run sdk commands:\n    $ docker run --rm -ti --volumes-from gcloud-config google/cloud-sdk gcloud info\n    $ docker run --rm -ti --volumes-from gcloud-config google/cloud-sdk gcloud components list\n    $ docker run --rm -ti --volumes-from gcloud-config google/cloud-sdk gcutil listinstances\n    $ docker run --rm -ti --volumes-from gcloud-config google/cloud-sdk gsutil ls\n\nIf you are using this image from *within* [Google Compute Engine](https://cloud.google.com/compute/). If you enable a Service Account with the necessary scopes, there is no need to auth or use a config volume:\n\n    # Get the cloud sdk image:\n    $ docker pull google/cloud-sdk\n\n    # Just start using the sdk commands:\n    $ docker run --rm -ti google/cloud-sdk gcloud info\n    $ docker run --rm -ti google/cloud-sdk gcloud components list\n    $ docker run --rm -ti google/cloud-sdk gcutil listinstances\n    $ docker run --rm -ti google/cloud-sdk gsutil ls\n",
+  "dockerfile": "FROM gcr.io/google_appengine/base\n\n# Prepare the image.\nENV DEBIAN_FRONTEND noninteractive\nRUN apt-get update && apt-get install -y -qq --no-install-recommends wget unzip python php5-mysql php5-cli php5-cgi openjdk-7-jre-headless openssh-client python-openssl && apt-get clean\n\n# Install the Google Cloud SDK.\nENV HOME /\nENV CLOUDSDK_PYTHON_SITEPACKAGES 1\nRUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.zip && unzip google-cloud-sdk.zip && rm google-cloud-sdk.zip\nRUN google-cloud-sdk/install.sh --usage-reporting=true --path-update=true --bash-completion=true --rc-path=/.bashrc --additional-components app-engine-java app-engine-python app kubectl alpha beta gcd-emulator pubsub-emulator cloud-datastore-emulator app-engine-go bigtable\n\n\n# Disable updater check for the whole installation.\n# Users won't be bugged with notifications to update to the latest version of gcloud.\nRUN google-cloud-sdk/bin/gcloud config set --installation component_manager/disable_update_check true\n\n# Disable updater completely.\n# Running `gcloud components update` doesn't really do anything in a union FS.\n# Changes are lost on a subsequent run.\nRUN sed -i -- 's/\\\"disable_updater\\\": false/\\\"disable_updater\\\": true/g' /google-cloud-sdk/lib/googlecloudsdk/core/config.json\n\n\nRUN mkdir /.ssh\nENV PATH /google-cloud-sdk/bin:$PATH\nVOLUME [\"/.config\"]\nCMD [\"/bin/bash\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "[\"/.config\"]"
+    ],
+    "run": [
+      "apt-get update && apt-get install -y -qq --no-install-recommends wget unzip python php5-mysql php5-cli php5-cgi openjdk-7-jre-headless openssh-client python-openssl && apt-get clean",
+      "wget https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.zip && unzip google-cloud-sdk.zip && rm google-cloud-sdk.zip",
+      "google-cloud-sdk/install.sh --usage-reporting=true --path-update=true --bash-completion=true --rc-path=/.bashrc --additional-components app-engine-java app-engine-python app kubectl alpha beta gcd-emulator pubsub-emulator cloud-datastore-emulator app-engine-go bigtable",
+      "google-cloud-sdk/bin/gcloud config set --installation component_manager/disable_update_check true",
+      "sed -i -- 's/\\\"disable_updater\\\": false/\\\"disable_updater\\\": true/g' /google-cloud-sdk/lib/googlecloudsdk/core/config.json",
+      "mkdir /.ssh"
+    ],
+    "workdir": [],
+    "from": "gcr.io/google_appengine/base",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "HOME": "/",
+      "CLOUDSDK_PYTHON_SITEPACKAGES": "1",
+      "PATH": "/google-cloud-sdk/bin:$PATH"
+    },
+    "cmd": "[\"/bin/bash\"]"
+  },
+  "source_repository_url": "git://github.com/GoogleCloudPlatform/cloud-sdk-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/GoogleCloudPlatform/cloud-sdk-docker",
+  "docker_repository": "google/cloud-sdk",
+  "docker_image": "google/cloud-sdk",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CLOUDSDK_PYTHON_SITEPACKAGES": {
+      "default": "1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/google-cloud-sdk/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "google/cloud-sdk",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/google/cloud-sdk",
+    "https://hub.docker.com/v2/repositories/google/cloud-sdk",
+    "git://github.com/GoogleCloudPlatform/cloud-sdk-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/Google",
+    "Mode/Executable/Bundle",
+    "Mode/API/Toolkit"
+  ],
+  "info_url": "https://hub.docker.com/r/google/cloud-sdk",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

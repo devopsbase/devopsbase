@@ -1,0 +1,58 @@
+{
+  "name": "resource-control Chef cookbook",
+  "chef_cookbook_name": "resource-control",
+  "revision": "0.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/resource-control",
+    "https://supermarket.chef.io/cookbooks/resource-control/download",
+    "https://supermarket.chef.io/cookbooks/resource-control/versions/0.0.1",
+    "https://supermarket.chef.io/cookbooks/resource-control/versions/0.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/resource-control/versions/0.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/resource-control",
+    "https://supermarket.chef.io/api/v1/cookbooks/resource-control/versions/0.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Process Management",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Provider",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/resource-control",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/resource-control/versions/0.0.1/download",
+  "deprecated": false,
+  "created": "2013-02-25T01:50:35.000Z",
+  "updated": "2015-05-13T19:17:29.439Z",
+  "description": "Lightweight resource providers for project and task management in Solaris",
+  "maintainer": {
+    "name": "sax",
+    "email": "ops@wanelo.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 3,
+  "downloads_count": 5629123,
+  "downloads_count_revision": 1260661,
+  "repository_url": "https://github.com/wanelo-chef/resource-control",
+  "issues_url": "https://github.com/wanelo-chef/resource-control",
+  "chef_source_url": "https://github.com/wanelo-chef/resource-control",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Resource Control\n================\n\nResource Control is a chef cookbook for managing Solaris projects, tasks and resource\nlimits using the Resource Control Facility.\n\n* http://docs.oracle.com/cd/E19683-01/817-1592/rmctrls-1/index.html\n\n## Provides\n\nLWRPs:\n* project\n\nRecipes:\n* default - does nothing\n\n## Requirements\n\n* Solaris or Illumos-based operating system\n* Tested on SmartOS\n\nDue to differences in hash behaviors, it is recommended that the LWRPs in this cookbook\nonly be used with Ruby 1.9 or greater. In earlier versions of Ruby, notifications may\nfire from resource blocks even if the resource does not change.\n\n## Project LWRP\n\nSolaris projects are useful in a number of ways. Processes for a service can be grouped together\nto better report on aggregate resource utilization. Limits can also be set on numerous metrics,\nor altered from system defaults.\n\nProjects are the only way that certain settings can be relaxed for process groups, for instance\nmax file descriptors or shared memory limits.\n\n### Attributes\n\n* project_limits\n* task_limits\n* process_limits\n* comment\n* users\n\n### Actions\n\n* `:create` - default\n* `:nothing`\n\n### Overview\n\n```ruby\nresource_control_project \"postgres\" do\n  comment \"PostgreSQL 9.2\"\n  users \"postgres\"\n\n  project_limits \"max-shm-memory\" => 12000000,\n                 \"max-lwps\"       => 6\n  task_limits    \"max-cpu-time\"   => 3600\n  process_limits \"max-cpu-time\" => [\n                     {\"value\" => 3600, \"signal\" => \"TERM\"},\n                     {\"value\" => 3660, \"deny\" => true}\n                 ],\n                 \"max-file-descriptor\" => {\n                     \"value\" => 32768, \"deny\" => true\n                 }\n  action :create\nend\n```\n\nSee the documentation of resource controls in the References section below for available\nresource limits.\n\n#### Users\n\nTasks started as a superuser can be added to any project, but if a task or process is started\nby a non-privileged user, that user should be added to the project.\n\nThe `users` attribute can be set as a String or an Array.\n\n#### Local actions and signalling\n\nBy default limits will not be enforced (local action set to `none`). This may seem\ncounter-intuitive, but can be useful for monitoring purposes when overages are logged\nto syslog.\n\nThe local action can be set to either `deny` or `signal` through the following syntax:\n\n```ruby\nresource_control_project \"redis\" do\n  process_limits \"max-cpu-time\" => {\n          \"value\" => 3600,\n          \"deny\"  => true\n      }\nend\n```\n\n```ruby\nresource_control_project \"sidekiq\" do\n  process_limits \"max-cpu-time\" => {\n          \"value\" => 7200,\n          \"signal\"  => \"TERM\"\n      }\nend\n```\n\nAvailable signals are:\n\n* ABRT - Terminate the process\n* HUP - Send a hangup signal. Occurs when carrier drops on an open line. Signal sent to the process group that controls the terminal.\n* TERM - Terminate the process. Termination signal sent by software.\n* KILL - Terminate the process and kill the program\n* STOP - Stop the process. Job control signal.\n* XRES - Resource control limit exceeded. Generated by resource control facility.\n* XFSZ - Terminate the process. File size limit exceeded.\n* XCPU - Terminate the process. CPU time limit exceeded.\n\nNote that in a lot of documentation, signals take the form \"SIGTERM\" whereas we just\nuse \"TERM\". This is to avoid complicating the provider code, as the text actually set in\nthe projects database is the short version.\n\nAlso note that not every signal or action can be set for every resource limit. Please read the documentation\nand man pages for more information.\n\n#### Cascading limits\n\nIn some cases, multiple limits may be desirable for a key. In this case, use an Array for the value\nof the key:\n\n```ruby\nresource_control_project \"sidekiq\" do\n  process_limits \"max-cpu-time\" => [\n          { \"value\" => 7200, \"signal\" => \"TERM\" },\n          { \"value\" => 7260, \"signal\" => \"KILL\" }\n      ]\nend\n```\n\n#### Privilege level\n\nBy default, the limits set by the project provider can only be modified by superusers. Assuming\nthat the chef run is executed by root, this should never need to be changed.\n\n## References\n\n* http://docs.oracle.com/cd/E19683-01/817-1592/rmctrls-1/index.html\n* `man rctladm`\n* `man prctl`\n* `man resource_controls`\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "smartos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "solaris2",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ]
+}

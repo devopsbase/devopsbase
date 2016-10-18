@@ -1,0 +1,91 @@
+{
+  "name": "apache-kafka Juju charm",
+  "juju_charm_name": "apache-kafka",
+  "revision": "cs:trusty/apache-kafka-7",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/apache-kafka",
+    "https://jujucharms.com/apache-kafka/trusty",
+    "https://jujucharms.com/apache-kafka/trusty/7",
+    "https://api.jujucharms.com/v5/apache-kafka",
+    "https://api.jujucharms.com/v5/trusty/apache-kafka",
+    "https://api.jujucharms.com/v5/trusty/apache-kafka-7"
+  ],
+  "labels": [
+    "Juju charm",
+    "bigdata",
+    "apache",
+    "Type/Infrastructure/Operating System/macOS",
+    "Type/Middleware/Runtime/Java",
+    "Binding/Provider/HP",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Mode/CLI",
+    "Type/Devopsware/Build/Java/Ant",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Devopsware/Logging",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://jujucharms.com/apache-kafka",
+  "package_url": "https://api.jujucharms.com/v5/trusty/apache-kafka-7/archive",
+  "created": "2016-09-21T20:10:57.576Z",
+  "updated": "2016-09-21T20:10:57.576Z",
+  "description": "High-performance pub/sub as distributed commit log.\n\nFast\nA single Kafka broker can handle hundreds of megabytes of reads and writes per\nsecond from thousands of clients.\n\nScalable\nKafka is designed to allow a single cluster to serve as the central data\nbackbone for a large organization. It can be elastically and transparently\nexpanded without downtime. Data streams are partitioned and spread over a\ncluster of machines to allow data streams larger than the capability of any\nsingle machine and to allow clusters of co-ordinated consumers.\n\nDurable\nMessages are persisted on disk and replicated within the cluster to prevent\ndata loss. Each broker can handle terabytes of messages without performance\nimpact.\n\nDistributed by Design\nKafka has a modern cluster-centric design that offers strong durability and\nfault-tolerance guarantees.\n",
+  "maintainer": {
+    "name": "bigdata-charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "bigdata-charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/zookeeper",
+      "self_resolve": true,
+      "juju_interface": "zookeeper",
+      "juju_name": "zookeeper",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "hostname": {
+      "type": "string",
+      "description": "Specify the hostname that kafka will set as its advertised\nhostname. Note that all clients connecting to kafka will\nuse this hostname. We\\'ll setup a good default hostname\nfor you, based on your cloud provider\\'s DNS settings. You\nshould set this manually only if you know what you\\'re\ndoing!\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "network_interface": {
+      "type": "string",
+      "description": "A string containing the name of a network interface, or a\nCIDR range. For split network environments, or for other\nsecure environments, you may wish to bind to a specific\nnetwork interface. You may either name the interface here,\nor specify a CIDR range that contains the IP of the\nnetwork interface. The charm will translate that into a\nspecific IP address to bind to, and drop that into the\nKafka config. To reset the bindings, pass in 0.0.0.0.\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "resources_mirror": {
+      "type": "string",
+      "description": "URL used to fetch resources (e.g., Kafka binaries) instead of the\nlocation specified in resources.yaml.\n",
+      "default": "",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/kafka",
+      "juju_interface": "kafka",
+      "juju_name": "client",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "## Overview\n\nApache Kafka is an open-source message broker project developed by the Apache\nSoftware Foundation written in Scala. The project aims to provide a unified,\nhigh-throughput, low-latency platform for handling real-time data feeds. Learn\nmore at [kafka.apache.org](http://kafka.apache.org/).\n\n\n## Usage\n\nKafka requires the Zookeeper distributed coordination service. Deploy and\nrelate them as follows:\n\n    juju deploy apache-zookeeper zookeeper\n    juju deploy apache-kafka kafka\n    juju add-relation kafka zookeeper\n\nOnce deployed, we can list the zookeeper servers that our kafka brokers\nare connected to. The following will list `<ip>:<port>` information for each\nzookeeper unit in the environment (e.g.: `10.0.3.221:2181`).\n\n    juju action do kafka/0 list-zks\n    juju action fetch <id>  # <-- id from above command\n\nWe can create a Kafka topic with:\n\n    juju action do kafka/0 create-topic topic=<topic_name> \\\n     partitions=<#> replication=<#>\n    juju action fetch <id>  # <-- id from above command\n\nWe can list topics with:\n\n    juju action do kafka/0 list-topics\n    juju action fetch <id>  # <-- id from above command\n\nWe can write to a topic with:\n\n    juju action do kafka/0 write-topic topic=<topic_name> data=<data>\n    juju action fetch <id>  # <-- id from above command\n\nWe can read from a topic with:\n\n    juju action do kafka/0 read-topic topic=<topic_name> partition=<#>\n    juju action fetch <id>  # <-- id from above command\n\nAnd finally, we can delete a topic with:\n\n    juju action do kafka/0 delete-topic topic=<topic_name>\n    juju action fetch <id>  # <-- id from above command\n\n\n## Status and Smoke Test\n\nKafka provides extended status reporting to indicate when it is ready:\n\n    juju status --format=tabular\n\nThis is particularly useful when combined with `watch` to track the on-going\nprogress of the deployment:\n\n    watch -n 0.5 juju status --format=tabular\n\nThe message for each unit will provide information about that unit's state.\nOnce they all indicate that they are ready, you can perform a \"smoke test\"\nto verify that Kafka is working as expected using the built-in `smoke-test`\naction:\n\n    juju action do kafka/0 smoke-test\n\nAfter a few seconds or so, you can check the results of the smoke test:\n\n    juju action status\n\nYou will see `status: completed` if the smoke test was successful, or\n`status: failed` if it was not.  You can get more information on why it failed\nvia:\n\n    juju action fetch <action-id>\n\n\n## Scaling\n\nCreating a cluster with many brokers is as easy as adding more units to your\nKafka service:\n\n    juju add-unit kafka\n\nAfter adding additional brokers, you will be able to create topics with\nreplication up to the number of kafka units.\n\nTo verify replication is working you can do the following:\n\n    juju add-unit kafka -n 2\n    juju action do kafka/0 create-topic topic=my-replicated-topic \\\n        partitions=1 replication=2\n\nQuery for the description of the just created topic:\n\n    juju ssh kafka/0\n    kafka-topics.sh --describe --topic my-replicated-topic \\\n        --zookeeper <zookeeperip>:2181\n\nYou should get a response similar to:\n\n    Topic: my-replicated-topic PartitionCount:1 ReplicationFactor:2 Configs:\n    Topic: my-replicated-topic Partition: 0 Leader: 2 Replicas: 2,0 Isr: 2,0\n\n\n## Connecting External Clients\n\nBy default, this charm does not expose Kafka outside of the provider's network.\nTo allow external clients to connect to Kafka, first expose the service:\n\n    juju expose kafka\n\nNext, ensure the external client can resolve the short hostname of the kafka\nunit. A simple way to do this is to add an `/etc/hosts` entry on the external\nkafka client machine. Gather the needed info from juju:\n\n    user@juju-client$ juju run --unit kafka/0 'hostname -s'\n    kafka-0\n    user@juju-client$ juju status --format=yaml kafka/0 | grep public-address\n    public-address: 40.784.149.135\n\nUpdate `/etc/hosts` on the external kafka client:\n\n    user@kafka-client$ echo \"40.784.149.135 kafka-0\" | sudo tee -a /etc/hosts\n\nThe external kafka client should now be able to access Kafka by using\n`kafka-0:9092` as the broker.\n\n\n## Deploying in Network-Restricted Environments\n\nThis charm can be deployed in environments with limited network access. To\ndeploy in this environment, you will need a local mirror to serve the packages\nand resources required by this charm.\n\n### Mirroring Packages\n\nYou can setup a local mirror for apt packages using squid-deb-proxy.\nFor instructions on configuring juju to use this, see the\n[Juju Proxy Documentation](https://juju.ubuntu.com/docs/howto-proxies.html).\n\n### Mirroring Resources\n\nIn addition to apt packages, this charm requires a few binary resources\nwhich are normally hosted on Launchpad. If access to Launchpad is not\navailable, the `jujuresources` library makes it easy to create a mirror\nof these resources:\n\n    sudo pip install jujuresources\n    juju-resources fetch --all /path/to/resources.yaml -d /tmp/resources\n    juju-resources serve -d /tmp/resources\n\nThis will fetch all of the resources needed by this charm and serve them via a\nsimple HTTP server. The output from `juju-resources serve` will give you a\nURL that you can set as the `resources_mirror` config option for this charm.\nSetting this option will cause all resources required by this charm to be\ndownloaded from the configured URL.\n\n\n## Contact Information\n- <bigdata@lists.ubuntu.com>\n\n\n## Help\n- [Apache Kafka home page](http://kafka.apache.org/)\n- [Apache Kafka issue tracker](https://issues.apache.org/jira/browse/KAFKA)\n- [Juju mailing list](https://lists.ubuntu.com/mailman/listinfo/juju)\n- [Juju community](https://jujucharms.com/community)\n",
+  "readme": "## Overview\n\nApache Kafka is an open-source message broker project developed by the Apache\nSoftware Foundation written in Scala. The project aims to provide a unified,\nhigh-throughput, low-latency platform for handling real-time data feeds. Learn\nmore at [kafka.apache.org](http://kafka.apache.org/).\n\n\n## Usage\n\nKafka requires the Zookeeper distributed coordination service. Deploy and\nrelate them as follows:\n\n    juju deploy apache-zookeeper zookeeper\n    juju deploy apache-kafka kafka\n    juju add-relation kafka zookeeper\n\nOnce deployed, we can list the zookeeper servers that our kafka brokers\nare connected to. The following will list `<ip>:<port>` information for each\nzookeeper unit in the environment (e.g.: `10.0.3.221:2181`).\n\n    juju action do kafka/0 list-zks\n    juju action fetch <id>  # <-- id from above command\n\nWe can create a Kafka topic with:\n\n    juju action do kafka/0 create-topic topic=<topic_name> \\\n     partitions=<#> replication=<#>\n    juju action fetch <id>  # <-- id from above command\n\nWe can list topics with:\n\n    juju action do kafka/0 list-topics\n    juju action fetch <id>  # <-- id from above command\n\nWe can write to a topic with:\n\n    juju action do kafka/0 write-topic topic=<topic_name> data=<data>\n    juju action fetch <id>  # <-- id from above command\n\nWe can read from a topic with:\n\n    juju action do kafka/0 read-topic topic=<topic_name> partition=<#>\n    juju action fetch <id>  # <-- id from above command\n\nAnd finally, we can delete a topic with:\n\n    juju action do kafka/0 delete-topic topic=<topic_name>\n    juju action fetch <id>  # <-- id from above command\n\n\n## Status and Smoke Test\n\nKafka provides extended status reporting to indicate when it is ready:\n\n    juju status --format=tabular\n\nThis is particularly useful when combined with `watch` to track the on-going\nprogress of the deployment:\n\n    watch -n 0.5 juju status --format=tabular\n\nThe message for each unit will provide information about that unit's state.\nOnce they all indicate that they are ready, you can perform a \"smoke test\"\nto verify that Kafka is working as expected using the built-in `smoke-test`\naction:\n\n    juju action do kafka/0 smoke-test\n\nAfter a few seconds or so, you can check the results of the smoke test:\n\n    juju action status\n\nYou will see `status: completed` if the smoke test was successful, or\n`status: failed` if it was not.  You can get more information on why it failed\nvia:\n\n    juju action fetch <action-id>\n\n\n## Scaling\n\nCreating a cluster with many brokers is as easy as adding more units to your\nKafka service:\n\n    juju add-unit kafka\n\nAfter adding additional brokers, you will be able to create topics with\nreplication up to the number of kafka units.\n\nTo verify replication is working you can do the following:\n\n    juju add-unit kafka -n 2\n    juju action do kafka/0 create-topic topic=my-replicated-topic \\\n        partitions=1 replication=2\n\nQuery for the description of the just created topic:\n\n    juju ssh kafka/0\n    kafka-topics.sh --describe --topic my-replicated-topic \\\n        --zookeeper <zookeeperip>:2181\n\nYou should get a response similar to:\n\n    Topic: my-replicated-topic PartitionCount:1 ReplicationFactor:2 Configs:\n    Topic: my-replicated-topic Partition: 0 Leader: 2 Replicas: 2,0 Isr: 2,0\n\n\n## Connecting External Clients\n\nBy default, this charm does not expose Kafka outside of the provider's network.\nTo allow external clients to connect to Kafka, first expose the service:\n\n    juju expose kafka\n\nNext, ensure the external client can resolve the short hostname of the kafka\nunit. A simple way to do this is to add an `/etc/hosts` entry on the external\nkafka client machine. Gather the needed info from juju:\n\n    user@juju-client$ juju run --unit kafka/0 'hostname -s'\n    kafka-0\n    user@juju-client$ juju status --format=yaml kafka/0 | grep public-address\n    public-address: 40.784.149.135\n\nUpdate `/etc/hosts` on the external kafka client:\n\n    user@kafka-client$ echo \"40.784.149.135 kafka-0\" | sudo tee -a /etc/hosts\n\nThe external kafka client should now be able to access Kafka by using\n`kafka-0:9092` as the broker.\n\n\n## Deploying in Network-Restricted Environments\n\nThis charm can be deployed in environments with limited network access. To\ndeploy in this environment, you will need a local mirror to serve the packages\nand resources required by this charm.\n\n### Mirroring Packages\n\nYou can setup a local mirror for apt packages using squid-deb-proxy.\nFor instructions on configuring juju to use this, see the\n[Juju Proxy Documentation](https://juju.ubuntu.com/docs/howto-proxies.html).\n\n### Mirroring Resources\n\nIn addition to apt packages, this charm requires a few binary resources\nwhich are normally hosted on Launchpad. If access to Launchpad is not\navailable, the `jujuresources` library makes it easy to create a mirror\nof these resources:\n\n    sudo pip install jujuresources\n    juju-resources fetch --all /path/to/resources.yaml -d /tmp/resources\n    juju-resources serve -d /tmp/resources\n\nThis will fetch all of the resources needed by this charm and serve them via a\nsimple HTTP server. The output from `juju-resources serve` will give you a\nURL that you can set as the `resources_mirror` config option for this charm.\nSetting this option will cause all resources required by this charm to be\ndownloaded from the configured URL.\n\n\n## Contact Information\n- <bigdata@lists.ubuntu.com>\n\n\n## Help\n- [Apache Kafka home page](http://kafka.apache.org/)\n- [Apache Kafka issue tracker](https://issues.apache.org/jira/browse/KAFKA)\n- [Juju mailing list](https://lists.ubuntu.com/mailman/listinfo/juju)\n- [Juju community](https://jujucharms.com/community)\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

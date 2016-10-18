@@ -1,0 +1,161 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/csanchez/selenium-maven",
+    "repository_url": "https://hub.docker.com/v2/repositories/csanchez/selenium-maven",
+    "tags_url": "https://hub.docker.com/v2/repositories/csanchez/selenium-maven/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/csanchez/selenium-maven/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/csanchez/selenium-maven/autobuild",
+    "user": "csanchez",
+    "name": "selenium-maven",
+    "namespace": "csanchez",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 69,
+    "last_updated": "2016-06-17T13:28:23.476205Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "master",
+        "full_size": 343960280,
+        "id": 3469507,
+        "repository": 749977,
+        "creator": 18793,
+        "last_updater": 18793,
+        "last_updated": "2016-06-17T13:28:23.040194Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 343960281,
+        "id": 3469481,
+        "repository": 749977,
+        "creator": 18793,
+        "last_updater": 18793,
+        "last_updated": "2016-06-17T13:24:53.672033Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "carlossg/docker-selenium-maven"
+  },
+  "name": "csanchez/selenium-maven Docker container",
+  "description": "Selenium with Maven",
+  "readme": "# docker-selenium-maven",
+  "dockerfile": "FROM selenium/standalone-firefox\n\nUSER root\n\n################################################################################################################\n# Install JDK\n# https://github.com/docker-library/openjdk/blob/master/8-jdk/Dockerfile\n# Selenum is based on Xenial, so it is a bit different\n################################################################################################################\n\n\nRUN apt-get update && apt-get install -y --no-install-recommends \\\n    bzip2 \\\n    unzip \\\n    xz-utils \\\n  && rm -rf /var/lib/apt/lists/*\n\n# Default to UTF-8 file.encoding\nENV LANG C.UTF-8\n\n# add a simple script that can auto-detect the appropriate JAVA_HOME value\n# based on whether the JDK or only the JRE is installed\nRUN { \\\n    echo '#!/bin/sh'; \\\n    echo 'set -e'; \\\n    echo; \\\n    echo 'dirname \"$(dirname \"$(readlink -f \"$(which javac || which java)\")\")\"'; \\\n  } > /usr/local/bin/docker-java-home \\\n  && chmod +x /usr/local/bin/docker-java-home\n\nENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64\n\nENV JAVA_VERSION 8u91\nENV JAVA_DEBIAN_VERSION 8u91-b14-0ubuntu4~16.04.1\n\nRUN set -x \\\n  && apt-get update \\\n  && apt-get install -y \\\n    openjdk-8-jdk=\"$JAVA_DEBIAN_VERSION\" \\\n  && rm -rf /var/lib/apt/lists/* \\\n  && [ \"$JAVA_HOME\" = \"$(docker-java-home)\" ]\n\n# see CA_CERTIFICATES_JAVA_VERSION notes above\nRUN /var/lib/dpkg/info/ca-certificates-java.postinst configure\n\n\n\n################################################################################################################\n# Install Maven\n# https://github.com/carlossg/docker-maven\n################################################################################################################\n\n\nENV MAVEN_VERSION 3.3.9\n\nRUN apt-get update && apt-get install -y curl git && rm -rf /var/lib/apt/lists/*\n\nRUN mkdir -p /usr/share/maven /usr/share/maven/ref \\\n  && curl -fsSL http://apache.osuosl.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz \\\n    | tar -xzC /usr/share/maven --strip-components=1 \\\n  && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn\n\nENV MAVEN_HOME /usr/share/maven\nENV MAVEN_CONFIG /home/seluser/.m2\nENV COPY_REFERENCE_FILE_LOG $MAVEN_CONFIG/copy_reference_file.log\n\nCOPY mvn-entrypoint.sh /usr/local/bin/mvn-entrypoint.sh\nCOPY settings-docker.xml /usr/share/maven/ref/\n\nUSER seluser\n\nRUN mkdir /home/seluser/.m2\nVOLUME /home/seluser/.m2\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "/home/seluser/.m2"
+    ],
+    "run": [
+      "apt-get update && apt-get install -y --no-install-recommends     bzip2     unzip     xz-utils   && rm -rf /var/lib/apt/lists/*",
+      "{     echo '#!/bin/sh';     echo 'set -e';     echo;     echo 'dirname \"$(dirname \"$(readlink -f \"$(which javac || which java)\")\")\"';   } > /usr/local/bin/docker-java-home   && chmod +x /usr/local/bin/docker-java-home",
+      "set -x   && apt-get update   && apt-get install -y     openjdk-8-jdk=\"$JAVA_DEBIAN_VERSION\"   && rm -rf /var/lib/apt/lists/*   && [ \"$JAVA_HOME\" = \"$(docker-java-home)\" ]",
+      "/var/lib/dpkg/info/ca-certificates-java.postinst configure",
+      "apt-get update && apt-get install -y curl git && rm -rf /var/lib/apt/lists/*",
+      "mkdir -p /usr/share/maven /usr/share/maven/ref   && curl -fsSL http://apache.osuosl.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz     | tar -xzC /usr/share/maven --strip-components=1   && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn",
+      "mkdir /home/seluser/.m2"
+    ],
+    "workdir": [],
+    "from": "selenium/standalone-firefox",
+    "user": "seluser",
+    "env": {
+      "LANG": "C.UTF-8",
+      "JAVA_HOME": "/usr/lib/jvm/java-8-openjdk-amd64",
+      "JAVA_VERSION": "8u91",
+      "JAVA_DEBIAN_VERSION": "8u91-b14-0ubuntu4~16.04.1",
+      "MAVEN_VERSION": "3.3.9",
+      "MAVEN_HOME": "/usr/share/maven",
+      "MAVEN_CONFIG": "/home/seluser/.m2",
+      "COPY_REFERENCE_FILE_LOG": "$MAVEN_CONFIG/copy_reference_file.log"
+    },
+    "copy": "settings-docker.xml /usr/share/maven/ref/"
+  },
+  "source_repository_url": "https://github.com/carlossg/docker-selenium-maven.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/carlossg/docker-selenium-maven",
+  "docker_repository": "csanchez/selenium-maven",
+  "docker_image": "csanchez/selenium-maven",
+  "parameters_schema": {
+    "LANG": {
+      "default": "C.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_HOME": {
+      "default": "/usr/lib/jvm/java-8-openjdk-amd64",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_VERSION": {
+      "default": "8u91",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_DEBIAN_VERSION": {
+      "default": "8u91-b14-0ubuntu4~16.04.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_VERSION": {
+      "default": "3.3.9",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_HOME": {
+      "default": "/usr/share/maven",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_CONFIG": {
+      "default": "/home/seluser/.m2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "COPY_REFERENCE_FILE_LOG": {
+      "default": "$MAVEN_CONFIG/copy_reference_file.log",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "csanchez/selenium-maven",
+  "revision": "master",
+  "uris": [
+    "https://hub.docker.com/r/csanchez/selenium-maven",
+    "https://hub.docker.com/v2/repositories/csanchez/selenium-maven",
+    "https://github.com/carlossg/docker-selenium-maven.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Build/Java/Maven"
+  ],
+  "info_url": "https://hub.docker.com/r/csanchez/selenium-maven",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

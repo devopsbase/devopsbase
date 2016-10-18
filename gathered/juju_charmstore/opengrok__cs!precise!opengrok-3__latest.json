@@ -1,0 +1,75 @@
+{
+  "name": "opengrok Juju charm",
+  "juju_charm_name": "opengrok",
+  "revision": "cs:precise/opengrok-3",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/opengrok",
+    "https://jujucharms.com/opengrok/precise",
+    "https://jujucharms.com/opengrok/precise/3",
+    "https://api.jujucharms.com/v5/opengrok",
+    "https://api.jujucharms.com/v5/precise/opengrok",
+    "https://api.jujucharms.com/v5/precise/opengrok-3"
+  ],
+  "labels": [
+    "Juju charm",
+    "misc",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Application Server/Tomcat",
+    "Type/Middleware/Search"
+  ],
+  "info_url": "https://jujucharms.com/opengrok",
+  "package_url": "https://api.jujucharms.com/v5/precise/opengrok-3/archive",
+  "created": "2015-06-17T09:33:31.656Z",
+  "updated": "2015-06-17T09:33:31.656Z",
+  "description": "OpenGrok source code search and cross-reference\n\nInstalls the opengrok source code search and cross-reference engine\n\nCurrently configured as a standalone tomcat6 service. Opengrok is\nspace, cpu, and i/o intensive service.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "precise",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= precise"
+    }
+  ],
+  "parameters": {
+    "grok_data": {
+      "type": "string",
+      "description": "Location where opengrok generated indexes live.",
+      "default": "/var/opengrok/data",
+      "mapping": "charm_option"
+    },
+    "grok_src": {
+      "type": "string",
+      "description": "Location where user supplied code lives, always preserved.",
+      "default": "/var/opengrok/src",
+      "mapping": "charm_option"
+    },
+    "og_content": {
+      "type": "string",
+      "description": "List of bzr, lp, or git repos using JSON arrays for opengrok to pull\nand index once. Example syntax:\n\n  og_content='{\n    \"repos\":[\n      { \"url\" : \"lp:juju\", \"alias\" : \"juju\"},\n      {..., ...},\n      {..., ...}\n    ]\n }'\n\nWhere url is the repo link and alias is the directory name to create on it's\nbehalf, both must be set.\n",
+      "default": "{ \"repos\":[ { \"url\"   : \"lp:juju\", \"alias\" : \"juju\" } ] }",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/http",
+      "juju_interface": "http",
+      "juju_name": "website",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "\"A wicked fast source browser\"\n\nOpenGrok is a fast and usable source code search and cross reference engine.\nIt helps you search, cross-reference and navigate your source tree. It can\nunderstand various program file formats and version control histories like\nMercurial, Git, SCCS, RCS, CVS, Subversion, Teamware, ClearCase, Perforce,\nMonotone and Bazaar. In other words it lets you grok (profoundly understand)\nsource code and is developed in the open, hence the name OpenGrok. It is\nwritten in Java.\n\nTo deploy:\n\n    juju bootstrap\n    juju deploy opengrok\n    juju expose opengrok\n\nThen do a `juju status` to determine the IP of the service, and\ngvfs-open http://IPADDRESS:8080/source (open browser by mime type).\n\nThe opengrok charm uses a standalone tomcat6 instance and is very space,\nI/O, and CPU intensive. It is not recommended to co-op this service with\nan existing servlet engine unless you really know what you're doing. A\n\"large\" instance is recommended for anything more than a 100MB source code.\n\nTo configure:\n    juju set opengrok og_content='{\n>       \"repos\":[\n>         {\n>           \"url\"   : \"lp:juju\",\n>           \"alias\" : \"juju\"\n>         }\n>        ]\n>     }'\n\nOr use the deploy.yaml as a template:\n    juju set opengrok --config deploy.yaml\n\nOnly bzr, lp, & git repos are supported at this time. You can add as many repos as\nyou wish, see deploy.yaml for example. Config format is simple JSON array, to add\nmore entries simply duplicate the { \"url\" : \"value\", \"alias\" : \"value\"} and separate\nthem with a \",\". Both fields are required as opposed to developing heuristics to\ndetermine unique project names, we require you define it upfront. Otherwise,\nlp:foo/precise/opengrok/trunk and lp:/foo/quantal/opengrok/trunk both checkout\na directory named trunk and there's no way to determine which project was actually\ncloned.\n\nThe indexer will automatically kick off to update the project and database after\ndeploy has completed and whenever a new configuration is provided via the juju\ninterface.\n\nTo check on the status of the indexer\n\n    juju ssh opengrok/INSTANCE_ID initctl status opengrok-index\n    \n    opengrok-index start/running, process 10090\n\nA daily cronjob is installed to update the indexes.\n\nWhen reporting bugs please be sure to include: /var/log/juju/opengrok-common.log\n\nKnown Issues:\n * To maintain idempotent contract, config-changed is completely synchronous.\n   Meaning it will not exit until all specified branches have been cloned and\n   the indexing has completed. config-changed may abort due to an unspecified\n   deadline timer, there is no way to extend this timer. Should you encounter\n   this, 1) file a bug 2) ssh into the instance and clone/index the tree directly.\n    * cloning & indexing Linux kernels (~30 mins) may hit this issue.\n    * To update these \"off config\" trees:\n     - juju ssh opengrok/N\n     - sudo -i\n     - initctl start --no-wait opengrok-index\n\n * While only git and bzr are supported by config-changed. You can ssh in\n   and install any VCS you wish and clone into $grok_src. config-changed skips\n   over any existing directories and the charm never destroys user data in\n   $grok_src.\n\n * A bug was discovered with the history index building and has been disabled\n   in the meanwhile by this charm. Tracked upstream by:\n\n    http://defect.opensolaris.org/bz/show_bug.cgi?id=19245\n\n    NOTE: a dedicated opensolaris login is required to update bugs. OpenID is\n          unsupported.\n\n * Updating existing sandboxes: currently this is a manual affair, eventually a\n   cron job will exist that will walk sandboxes, pull them and kickoff an update\n\nLinks:\n * Stable opengrok-charm:      lp:~peter-petrakis/charms/precise/opengrok/trunk\n * Developemnt opengrok-charm: lp:~peter-petrakis/charms/precise/opengrok/devel\n * Homepage: http://hub.opensolaris.org/bin/view/Project+opengrok/\n * BugTracker: http://defect.opensolaris.org/bz/describecomponents.cgi?product=opengrok\n * Binary: http://hub.opensolaris.org/bin/download/Project+opengrok/files/opengrok-0.11.1.tar.gz\n * Code: hg clone ssh://anon@hg.opensolaris.org/hg/opengrok/trunk opengrok-dev\n# vim:ts=4:sw=4:et:\n",
+  "readme": "\"A wicked fast source browser\"\n\nOpenGrok is a fast and usable source code search and cross reference engine.\nIt helps you search, cross-reference and navigate your source tree. It can\nunderstand various program file formats and version control histories like\nMercurial, Git, SCCS, RCS, CVS, Subversion, Teamware, ClearCase, Perforce,\nMonotone and Bazaar. In other words it lets you grok (profoundly understand)\nsource code and is developed in the open, hence the name OpenGrok. It is\nwritten in Java.\n\nTo deploy:\n\n    juju bootstrap\n    juju deploy opengrok\n    juju expose opengrok\n\nThen do a `juju status` to determine the IP of the service, and\ngvfs-open http://IPADDRESS:8080/source (open browser by mime type).\n\nThe opengrok charm uses a standalone tomcat6 instance and is very space,\nI/O, and CPU intensive. It is not recommended to co-op this service with\nan existing servlet engine unless you really know what you're doing. A\n\"large\" instance is recommended for anything more than a 100MB source code.\n\nTo configure:\n    juju set opengrok og_content='{\n>       \"repos\":[\n>         {\n>           \"url\"   : \"lp:juju\",\n>           \"alias\" : \"juju\"\n>         }\n>        ]\n>     }'\n\nOr use the deploy.yaml as a template:\n    juju set opengrok --config deploy.yaml\n\nOnly bzr, lp, & git repos are supported at this time. You can add as many repos as\nyou wish, see deploy.yaml for example. Config format is simple JSON array, to add\nmore entries simply duplicate the { \"url\" : \"value\", \"alias\" : \"value\"} and separate\nthem with a \",\". Both fields are required as opposed to developing heuristics to\ndetermine unique project names, we require you define it upfront. Otherwise,\nlp:foo/precise/opengrok/trunk and lp:/foo/quantal/opengrok/trunk both checkout\na directory named trunk and there's no way to determine which project was actually\ncloned.\n\nThe indexer will automatically kick off to update the project and database after\ndeploy has completed and whenever a new configuration is provided via the juju\ninterface.\n\nTo check on the status of the indexer\n\n    juju ssh opengrok/INSTANCE_ID initctl status opengrok-index\n    \n    opengrok-index start/running, process 10090\n\nA daily cronjob is installed to update the indexes.\n\nWhen reporting bugs please be sure to include: /var/log/juju/opengrok-common.log\n\nKnown Issues:\n * To maintain idempotent contract, config-changed is completely synchronous.\n   Meaning it will not exit until all specified branches have been cloned and\n   the indexing has completed. config-changed may abort due to an unspecified\n   deadline timer, there is no way to extend this timer. Should you encounter\n   this, 1) file a bug 2) ssh into the instance and clone/index the tree directly.\n    * cloning & indexing Linux kernels (~30 mins) may hit this issue.\n    * To update these \"off config\" trees:\n     - juju ssh opengrok/N\n     - sudo -i\n     - initctl start --no-wait opengrok-index\n\n * While only git and bzr are supported by config-changed. You can ssh in\n   and install any VCS you wish and clone into $grok_src. config-changed skips\n   over any existing directories and the charm never destroys user data in\n   $grok_src.\n\n * A bug was discovered with the history index building and has been disabled\n   in the meanwhile by this charm. Tracked upstream by:\n\n    http://defect.opensolaris.org/bz/show_bug.cgi?id=19245\n\n    NOTE: a dedicated opensolaris login is required to update bugs. OpenID is\n          unsupported.\n\n * Updating existing sandboxes: currently this is a manual affair, eventually a\n   cron job will exist that will walk sandboxes, pull them and kickoff an update\n\nLinks:\n * Stable opengrok-charm:      lp:~peter-petrakis/charms/precise/opengrok/trunk\n * Developemnt opengrok-charm: lp:~peter-petrakis/charms/precise/opengrok/devel\n * Homepage: http://hub.opensolaris.org/bin/view/Project+opengrok/\n * BugTracker: http://defect.opensolaris.org/bz/describecomponents.cgi?product=opengrok\n * Binary: http://hub.opensolaris.org/bin/download/Project+opengrok/files/opengrok-0.11.1.tar.gz\n * Code: hg clone ssh://anon@hg.opensolaris.org/hg/opengrok/trunk opengrok-dev\n# vim:ts=4:sw=4:et:\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

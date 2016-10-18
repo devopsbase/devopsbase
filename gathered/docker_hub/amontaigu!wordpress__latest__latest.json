@@ -1,0 +1,181 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/amontaigu/wordpress",
+    "repository_url": "https://hub.docker.com/v2/repositories/amontaigu/wordpress",
+    "tags_url": "https://hub.docker.com/v2/repositories/amontaigu/wordpress/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/amontaigu/wordpress/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/amontaigu/wordpress/autobuild",
+    "user": "amontaigu",
+    "name": "wordpress",
+    "namespace": "amontaigu",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 414,
+    "last_updated": "2016-10-16T10:43:03.752676Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 196413559,
+        "id": 561343,
+        "repository": 255188,
+        "creator": 247737,
+        "last_updater": 247737,
+        "last_updated": "2016-10-16T10:43:02.503954Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "4.6.1",
+        "full_size": 196413530,
+        "id": 5484378,
+        "repository": 255188,
+        "creator": 247737,
+        "last_updater": 247737,
+        "last_updated": "2016-10-16T10:39:12.573919Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "4.6",
+        "full_size": 198640960,
+        "id": 4666019,
+        "repository": 255188,
+        "creator": 247737,
+        "last_updater": 247737,
+        "last_updated": "2016-09-04T16:56:41.343204Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "4.5.2",
+        "full_size": 197693508,
+        "id": 3115606,
+        "repository": 255188,
+        "creator": 247737,
+        "last_updater": 247737,
+        "last_updated": "2016-05-22T20:02:39.552173Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "4.4",
+        "full_size": 186673326,
+        "id": 1514182,
+        "repository": 255188,
+        "creator": 247737,
+        "last_updater": 247737,
+        "last_updated": "2015-12-19T15:23:49.072088Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "4.3.1",
+        "full_size": 185625878,
+        "id": 1084803,
+        "repository": 255188,
+        "creator": 247737,
+        "last_updater": 247737,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "AlbanMontaigu/docker-wordpress"
+  },
+  "name": "amontaigu/wordpress Docker container",
+  "description": "A wordpress image with php-fpm + nginx.",
+  "readme": "# docker-wordpress\n\nThis is a fork of the official wordpress docker image.\n\nThe full readme is generated over in [docker-library/docs](https://github.com/docker-library/docs),\nspecificially in [docker-library/docs/wordpress](https://github.com/docker-library/docs/tree/master/wordpress).\n\nThis forks objective is to get wordpress working with php fpm and nginx thanks to [amontaigu/docker-nginx-php](https://github.com/AlbanMontaigu/docker-nginx-php).\n",
+  "dockerfile": "# ================================================================================================================\n#\n# Wordpress with NGINX and PHP-FPM\n#\n# @see https://github.com/AlbanMontaigu/docker-nginx-php/blob/master/Dockerfile\n# @see https://github.com/docker-library/wordpress/blob/master/fpm/Dockerfile\n# @see https://wordpress.org/download/release-archive/\n# ================================================================================================================\n\n# Base is a nginx install with php\nFROM amontaigu/nginx-php:5.6.26\n\n# Maintainer\nMAINTAINER alban.montaigu@gmail.com\n\n# Wordpress env variables\nENV WORDPRESS_VERSION=\"4.6.1\" \\\n    WORDPRESS_SHA1=\"027e065d30a64720624a7404a1820e6c6fff1202\"\n\n# System update & install the PHP extensions we need\nRUN apt-get update && apt-get upgrade -y \\\n    && apt-get install -y libpng12-dev libjpeg-dev && rm -rf /var/lib/apt/lists/* \\\n    && docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \\\n    && docker-php-ext-install gd mysqli bcmath\n\n# Getting Wordpress and install it\n# upstream tarballs include ./wordpress/ so this gives us /usr/src/wordpress\nRUN curl -o wordpress.tar.gz -SL https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz \\\n    && echo \"$WORDPRESS_SHA1 *wordpress.tar.gz\" | sha1sum -c - \\\n    && tar -xzf wordpress.tar.gz -C /usr/src/ \\\n    && rm wordpress.tar.gz \\\n    && chown -Rfv nginx:nginx /usr/src/wordpress\n\n# NGINX tuning for WORDPRESS\nCOPY ./nginx/conf/sites-enabled/default.conf /etc/nginx/sites-enabled/default.conf\n\n# Entrypoint to enable live customization\nCOPY docker-entrypoint.sh /docker-entrypoint.sh\n\n# grr, ENTRYPOINT resets CMD now\nENTRYPOINT [\"/docker-entrypoint.sh\"]\nCMD [\"/usr/bin/supervisord\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get upgrade -y     && apt-get install -y libpng12-dev libjpeg-dev && rm -rf /var/lib/apt/lists/*     && docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr     && docker-php-ext-install gd mysqli bcmath",
+      "curl -o wordpress.tar.gz -SL https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz     && echo \"$WORDPRESS_SHA1 *wordpress.tar.gz\" | sha1sum -c -     && tar -xzf wordpress.tar.gz -C /usr/src/     && rm wordpress.tar.gz     && chown -Rfv nginx:nginx /usr/src/wordpress"
+    ],
+    "workdir": [],
+    "from": "amontaigu/nginx-php:5.6.26",
+    "maintainer": "alban.montaigu@gmail.com",
+    "env": {
+      "WORDPRESS_VERSION": "\"4.6.1\"",
+      "": "",
+      "WORDPRESS_SHA1": "\"027e065d30a64720624a7404a1820e6c6fff1202\""
+    },
+    "copy": "docker-entrypoint.sh /docker-entrypoint.sh",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"/usr/bin/supervisord\"]"
+  },
+  "source_repository_url": "https://github.com/AlbanMontaigu/docker-wordpress.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/AlbanMontaigu/docker-wordpress",
+  "docker_repository": "amontaigu/wordpress",
+  "docker_image": "amontaigu/wordpress",
+  "parameters_schema": {
+    "WORDPRESS_VERSION": {
+      "default": "\"4.6.1\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WORDPRESS_SHA1": {
+      "default": "\"027e065d30a64720624a7404a1820e6c6fff1202\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "amontaigu/wordpress",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/amontaigu/wordpress",
+    "https://hub.docker.com/v2/repositories/amontaigu/wordpress",
+    "https://github.com/AlbanMontaigu/docker-wordpress.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/amontaigu/wordpress",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

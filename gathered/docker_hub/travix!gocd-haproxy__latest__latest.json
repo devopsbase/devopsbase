@@ -1,0 +1,167 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/travix/gocd-haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/travix/gocd-haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/travix/gocd-haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/travix/gocd-haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/travix/gocd-haproxy/autobuild",
+    "user": "travix",
+    "name": "gocd-haproxy",
+    "namespace": "travix",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 8783,
+    "last_updated": "2016-09-23T19:20:25.457507Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 2983715,
+        "id": 820008,
+        "repository": 306073,
+        "creator": 126544,
+        "last_updater": 100853,
+        "last_updated": "2016-09-23T19:20:03.164346Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "core",
+        "full_size": 2957175,
+        "id": 2233501,
+        "repository": 306073,
+        "creator": 100853,
+        "last_updater": 100853,
+        "last_updated": "2016-03-08T11:47:08.829770Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "xivart/docker-gocd-haproxy"
+  },
+  "name": "travix/gocd-haproxy Docker container",
+  "description": "A HAProxy container tailored for gocd-server; listens to default http and https.",
+  "readme": "# Usage\n\nTo run this docker container use the following command\n\n```sh\ndocker run -d travix/gocd-haproxy:latest\n```\n\n# Environment variables\n\nIn order to configure the haproxy load balancer for providing ssl on port 443 for your gocd server you can use the following environment variables\n\n| Name                 | Description                                               | Default value               |\n| -------------------- | ----------------------------------------------------------| --------------------------- |\n| BACKEND_SERVER       | The ip address of the gocd server                         | localhost                   |\n| BACKEND_SERVER_PORT  | The http port the gocd server listens to                  | 8153                        |\n| SSL_CERTIFICATE_NAME | The pem filename for the ssl certificate used on port 443 | self-signed-certificate.pem |\n\nTo run haproxy to redirect to ssl and provide access through normal https port (443) to gocd server run the following command\n\n```sh\ndocker run -d \\\n    -e \"BACKEND_SERVER=gocd-origin.yourdomain.com\" \\\n    -e \"BACKEND_SERVER_PORT=8153\" \\\n    -e \"SSL_CERTIFICATE_NAME=gocd.yourdomain.com.pem\" \\\n    travix/gocd-haproxy:latest\n```\n\n# Mounting volumes\n\nIn order to keep your ssl certificate outside of the container on the host machine you can mount the following directories\n\n| Directory         | Description               | Importance                                                           |\n| ----------------- | ------------------------- | -------------------------------------------------------------------- |\n| /etc/haproxy      | Configuration for haproxy | If configuration needs to be different from the one in the container |\n| /etc/ssl/certs    | CA certificates           | Keep these files safe                                                |\n| /etc/ssl/private/ | SSL certificates          | Keep these files safe                                                |\n\nStart the container like this to mount the directories\n\n```sh\ndocker run -d \\\n    -e \"BACKEND_SERVER=gocd-origin.yourdomain.com\" \\\n    -e \"BACKEND_SERVER_PORT=8153\" \\\n    -e \"SSL_CERTIFICATE_NAME=gocd.yourdomain.com.pem\" \\\n    -v /mnt/persistent-disk/gocd-haproxy/config:/etc/haproxy\n    -v /mnt/persistent-disk/gocd-haproxy/ssl-certs:/etc/ssl/certs\n    -v /mnt/persistent-disk/gocd-haproxy/ssl-private:/etc/ssl/private\n    travix/gocd-haproxy:latest\n```\n\nTo make sure the process in the container can read and write to those directories create a user and group with same gid and uid on the host machine\n\n```sh\ngroupadd -r -g 999 haproxy\nuseradd -r -g haproxy -u 999 haproxy\n```\n\nAnd then change the owner of the host directories\n\n```sh\nchown -R haproxy:haproxy /mnt/persistent-disk/gocd-haproxy/config\nchown -R haproxy:haproxy /mnt/persistent-disk/gocd-haproxy/ssl-certs\nchown -R haproxy:haproxy /mnt/persistent-disk/gocd-haproxy/ssl-private\n```",
+  "dockerfile": "FROM travix/base-alpine:latest\n\nMAINTAINER Travix\n\n# build time environment variables\nENV USER_NAME=haproxy \\\n    USER_ID=999 \\\n    GROUP_NAME=haproxy \\\n    GROUP_ID=999\n\n# install haproxy\nRUN addgroup -S -g $GROUP_ID $GROUP_NAME \\\n    && adduser -S -G $GROUP_NAME -u $USER_ID $USER_NAME \\\n    && apk --update add \\\n    haproxy \\\n    && rm /var/cache/apk/*\n\nADD haproxy.cfg /etc/haproxy/haproxy.cfg\nADD self-signed-certificate.pem /etc/ssl/private/self-signed-certificate.pem\n\n# expose ports\nEXPOSE 80 443\n\n# Define working directory\nWORKDIR /etc/haproxy\n\n# runtime environment variables\nENV BACKEND_SERVER=localhost \\\n    BACKEND_SERVER_PORT=8080 \\\n    SSL_CERTIFICATE_NAME=self-signed-certificate.pem\n\n# define default command\nCMD deluser $USER_NAME; \\\n    delgroup $GROUP_NAME; \\\n    addgroup -S -g $GROUP_ID $GROUP_NAME; \\\n    adduser -S -G $GROUP_NAME -u $USER_ID $USER_NAME; \\\n    sed -i -e \"s/localhost:8080/${BACKEND_SERVER}:${BACKEND_SERVER_PORT}/\" /etc/haproxy/haproxy.cfg; \\\n    sed -i -e \"s/self-signed-certificate.pem/${SSL_CERTIFICATE_NAME}/\" /etc/haproxy/haproxy.cfg; \\    \n    exec haproxy -db -f /etc/haproxy/haproxy.cfg;",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "haproxy.cfg",
+        "dest": "/etc/haproxy/haproxy.cfg"
+      },
+      {
+        "source": "self-signed-certificate.pem",
+        "dest": "/etc/ssl/private/self-signed-certificate.pem"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "addgroup -S -g $GROUP_ID $GROUP_NAME     && adduser -S -G $GROUP_NAME -u $USER_ID $USER_NAME     && apk --update add     haproxy     && rm /var/cache/apk/*"
+    ],
+    "workdir": [
+      "/etc/haproxy"
+    ],
+    "from": "travix/base-alpine:latest",
+    "maintainer": "Travix",
+    "env": {
+      "USER_NAME": "haproxy",
+      "": "",
+      "USER_ID": "999",
+      "GROUP_NAME": "haproxy",
+      "GROUP_ID": "999",
+      "BACKEND_SERVER": "localhost",
+      "BACKEND_SERVER_PORT": "8080",
+      "SSL_CERTIFICATE_NAME": "self-signed-certificate.pem"
+    },
+    "cmd": "deluser $USER_NAME;     delgroup $GROUP_NAME;     addgroup -S -g $GROUP_ID $GROUP_NAME;     adduser -S -G $GROUP_NAME -u $USER_ID $USER_NAME;     sed -i -e \"s/localhost:8080/${BACKEND_SERVER}:${BACKEND_SERVER_PORT}/\" /etc/haproxy/haproxy.cfg;     sed -i -e \"s/self-signed-certificate.pem/${SSL_CERTIFICATE_NAME}/\" /etc/haproxy/haproxy.cfg; \\    "
+  },
+  "source_repository_url": "git@bitbucket.org:xivart/docker-gocd-haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/xivart/docker-gocd-haproxy",
+  "docker_repository": "travix/gocd-haproxy",
+  "docker_image": "travix/gocd-haproxy",
+  "parameters_schema": {
+    "USER_NAME": {
+      "default": "haproxy",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "USER_ID": {
+      "default": "999",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GROUP_NAME": {
+      "default": "haproxy",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GROUP_ID": {
+      "default": "999",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BACKEND_SERVER": {
+      "default": "localhost",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BACKEND_SERVER_PORT": {
+      "default": "8080",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_CERTIFICATE_NAME": {
+      "default": "self-signed-certificate.pem",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "travix/gocd-haproxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/travix/gocd-haproxy",
+    "https://hub.docker.com/v2/repositories/travix/gocd-haproxy",
+    "git@bitbucket.org:xivart/docker-gocd-haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Integration/Go CD",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/travix/gocd-haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

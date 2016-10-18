@@ -1,0 +1,72 @@
+{
+  "name": "sitecore Chef cookbook",
+  "chef_cookbook_name": "sitecore",
+  "revision": "0.4.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/sitecore",
+    "https://supermarket.chef.io/cookbooks/sitecore/download",
+    "https://supermarket.chef.io/cookbooks/sitecore/versions/0.4.0",
+    "https://supermarket.chef.io/cookbooks/sitecore/versions/0.4.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/sitecore/versions/0.4.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/sitecore",
+    "https://supermarket.chef.io/api/v1/cookbooks/sitecore/versions/0.4.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/sitecore",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/sitecore/versions/0.4.0/download",
+  "deprecated": false,
+  "created": "2015-03-12T19:38:14.825Z",
+  "updated": "2015-05-08T14:48:01.993Z",
+  "description": "Installs/Configures Sitecore",
+  "maintainer": {
+    "name": "tomharrison",
+    "email": "sysops@hugeinc.com"
+  },
+  "license": "Apache v2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 696050,
+  "downloads_count_revision": 301191,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Sitecore Cookbook\n\nCookbook to install the [Sitecore 7.0 content management system](http://www.sitecore.net/).\n\n# About\n\nThis cookbook implements resources useful for installing and/or configuring Sitecore:\n\nThe **sitecore_cms** resource installs the files, sets permissions, and makes IIS configurations\nfor serving a website powered by Sitecore. There's also an optional action to enable the Solr\ncontent search provider.\n\nThe **sitecore_config** resource enables and disables settings in the App_Config\\Includes directory.\n\nThe **sitecore_db** resource attaches the Sitecore databases, creates a user account, and grants\nit permissions on those DBs.\n\nThese resource can be used together to spin up a VM on a developer workstation, or independently\nto provision separate database & application server nodes in other environments.\n\nThere's also an IIS helper recipe which can be used to quickly install some common features.\nThis recipe is optional and you're welcome to set up IIS however you like as long as it has\nall the requirements for Sitecore 7.\n\nThis cookbook expands on some of the ideas found in the\n[Sitecore Powershell Library](https://github.com/Sitecore/PowerShell-Script-Library).\n\nNeither the Sitecore CMS, Windows, nor a license file are included with this cookbook. Users are\nresponsible for obtaining and licensing the proprietary bits of a Sitecore tech stack on their own.\nThe licensing of this cookbook does not apply to Sitecore or Windows.\n\nThis cookbook references proprietary software. See [NOTICES](NOTICES) for more information.\n\n# Requirements\n\n- Chef 11.10 or higher\n- Ruby 1.9 or higher\n- Windows\n    - Tested with Windows Server 2012\n- IIS\n    - Tested with IIS 8\n- SQL Server\n    - Tested with SQL Server 2012 and SQL Server Express 2014\n- Powershell with SQL Server Management Objects\n\n# Attributes\n\nAttributes live in `node['sitecore']`. Read the source code in attributes/ to see what attributes are\navailable, and their default values.\n\n# Resource/Provider Usage\n\n## sitecore_cms\n\nInstalls Sitecore to inetpub, creates an IIS website and app pool.\n\nPaths to assets such as the sitecore zip, license file, etc... can be local, i.e. you've\nplaced them in a temporary location using chef resources such as\n[cookbook_file](https://docs.getchef.com/resource_cookbook_file.html), or remote,\nsuch as a secured and restricted URL accessible by Chef.\n\n### Example Usage\n\n    sitecore_cms 'MySite' do\n      source 'c:/path/to/sitecore7.zip'\n      license 'c:/path/to/license.xml'\n      bindings [\n        { host: 'example.com', proto: 'http', port: 80 }\n      ]\n      connection_strings [\n        {\n          name: 'core',\n          database: 'Sitecore.Core',\n          user_id: 'sitecore_user',\n          password: 'foobar123',\n          data_source: '(local)\\SQLEXPRESS'\n        },\n        {\n          name: 'master',\n          database: 'Sitecore.Master',\n          user_id: 'sitecore_user',\n          password: 'foobar123',\n          data_source: '(local)\\SQLEXPRESS'\n        },\n        {\n          name: 'web',\n          database: 'Sitecore.Web',\n          user_id: 'sitecore_user',\n          password: 'foobar123',\n          data_source: '(local)\\SQLEXPRESS'\n        }\n      ]\n    end\n\n### Example of using the Solr content search provider\n\n    sitecore_cms 'MySite' do\n      action [:install, :enable_solr]\n      source 'c:/path/to/sitecore7.zip'\n      solr_libs 'c:/path/to/solr_libs.zip'\n      bindings [\n        # My site's bindings\n      ]\n      connection_strings [\n        # My site's connection strings\n      ]\n      license 'c:/path/to/license.xml'\n    end\n\nIn this example we add the `:enable_solr` action and supply the path to a zip file\nof Sitecore's Solr dlls, which will be placed in the website's bin directory, i.e.\nc:/inetpub/wwwroot/mysite/website/bin.\n\n## sitecore_config\n\nEnables or disables configuration files. If the name of a site is given, the\nprovider will look in the default location of\nc:\\inetpub\\wwwroot\\SiteName\\App_Config\\Include. The full path to your includes\ndirectory can be specified via the `configs_path` attribute.\n\nIf both `site` and `configs_path` are given, `configs_path` takes precedence.\n\n### Example Usage\n\n    sitecore_config 'Sitecore.Mvc' do\n      site 'MySite'\n      action :enable\n    end\n\n    sitecore_config 'Sitecore.MvcAnalytics' do\n      configs_path 'D:\\MySite\\App_Config\\Includes'\n      action :disable\n    end\n\n## sitecore_db\n\nSets up one or more Sitecore databases.\n\nAssumes that SQL Server is present, and the account running Chef has\npermission to create databases, users, and assign roles. If you're using\nvagrant, this means the vagrant user on your development box.\n\n### Example Usage\n\n    sitecore_db '.\\SQLEXPRESS' do\n      action [:install, :create_login, :assign_roles]\n      site 'MySite'\n      databases [\n        { name: 'Sitecore.Core', type: :core },\n        { name: 'Sitecore.Master', type: :master },\n        { name: 'Sitecore.Web', type: :web },\n        { name: 'Sitecore.Analytics', type: :analytics }\n      ]\n      source_directory 'c:/inetpub/wwwroot/MySite/Databases'\n      username 'sitecore_user'\n      password 'foobar123'\n    end\n\nThis resource will look for mdf and ldf files corresponding to each\n`database` name in the `source_directory` and attach them to the\nSQL server at `.\\SQLEXPRESS` (or whichever host you provide).\n\nA login named \"sitecore_user\" will be created with the given password,\nand granted the roles defined in `node['sitecore']['roles']`.\n\nRefer to\n\"[Evolution of Cookbook Development](https://www.getchef.com/blog/2014/02/03/evolution-of-cookbook-development/)\"\nby Opscode for information on handling sensitive data with Chef.\n\n# Recipes\n\n**default** recipe takes no action.\n\n**iis** recipe is included as a tool for setting up the roles needed to serve a\nSitecore site. Using it is optional, and you're welcome to implement your own\nlogic for configuring IIS.\n\n# Testing\n\nUse Rspec to execute the ChefSpec tests:\n\n    $ rspec\n\n# Troubleshooting\n\n## Unable to Attach Database(s)\n\nA FailedOperationException is thrown when attaching databases with the\nsitecore_db resource:\n\n    Exception calling \"AttachDatabase\" with \"2\" argument(s): \"Attach database failed for Server [your server here].\"\n    ...\n    FullyQualifiedErrorId : FailedOperationException\n\nEnsure the user account running the Chef client has permission to create databases.\n\n# Authors\n\n- Huge (<sysops@hugeinc.com>)\n- Tom Harrison ([@tomharrison](http://twitter.com/tomharrison))\n\n# License\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n   http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/windows",
+      "revision": "~> 1.31",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/powershell",
+      "revision": "~> 3.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/iis",
+      "revision": "~> 2.1",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/openssl",
+      "revision": "~> 1.1",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/git",
+      "revision": "~> 4.0",
+      "self_resolve": true
+    }
+  ]
+}

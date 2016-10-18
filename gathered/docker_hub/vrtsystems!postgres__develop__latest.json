@@ -1,0 +1,198 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/vrtsystems/postgres",
+    "repository_url": "https://hub.docker.com/v2/repositories/vrtsystems/postgres",
+    "tags_url": "https://hub.docker.com/v2/repositories/vrtsystems/postgres/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/vrtsystems/postgres/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/vrtsystems/postgres/autobuild",
+    "user": "vrtsystems",
+    "name": "postgres",
+    "namespace": "vrtsystems",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 365,
+    "last_updated": "2016-10-15T14:02:22.446081Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "develop",
+        "full_size": 119014408,
+        "id": 4522176,
+        "repository": 261491,
+        "creator": 327862,
+        "last_updater": 1052393,
+        "last_updated": "2016-10-15T14:02:22.119885Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 118981632,
+        "id": 597481,
+        "repository": 261491,
+        "creator": 245531,
+        "last_updater": 327862,
+        "last_updated": "2016-09-23T20:01:50.693503Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.3.0",
+        "full_size": 118981697,
+        "id": 4571753,
+        "repository": 261491,
+        "creator": 327862,
+        "last_updater": 327862,
+        "last_updated": "2016-09-23T20:00:31.400973Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.2.2",
+        "full_size": 118966135,
+        "id": 3955881,
+        "repository": 261491,
+        "creator": 585477,
+        "last_updater": 585477,
+        "last_updated": "2016-07-22T04:34:46.637887Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.2.1",
+        "full_size": 118963838,
+        "id": 3153398,
+        "repository": 261491,
+        "creator": 327862,
+        "last_updater": 327862,
+        "last_updated": "2016-05-31T19:08:50.411711Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "0.2.0",
+        "full_size": 117549690,
+        "id": 2231612,
+        "repository": 261491,
+        "creator": 327862,
+        "last_updater": 327862,
+        "last_updated": "2016-03-30T01:30:48.675473Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "vrtsystems/docker-postgres"
+  },
+  "name": "vrtsystems/postgres Docker container",
+  "description": "PostgreSQL image with added init hooks, built on vrtsystems/baseimage.",
+  "readme": "# VRT Systems Docker PostgreSQL\n\nA postgres image made with a Dockerfile derived from the official Postgres docker image, using vrtsystems/baseimage and the supervisord entry point.\n\nThe image pulls in the PostgreSQL 9.3 series.\n\n## How to use this image\n\n### start a postgres instance\n\n\tdocker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d vrtsystems/postgres\n\nThis image includes `EXPOSE 5432` (the postgres port), so standard container linking will make it automatically available to the linked containers. The default `postgres` user and database are created in the entrypoint with `initdb`.\n\n### connect to it from an application\n\n\tdocker run --name some-app --link some-postgres:postgres -d application-that-uses-postgres\n\n### ... or via `psql`\n\n\tdocker run -it --link some-postgres:postgres --rm postgres sh -c 'exec psql -h \"$POSTGRES_PORT_5432_TCP_ADDR\" -p \"$POSTGRES_PORT_5432_TCP_PORT\" -U postgres'\n\n### Environment Variables\n\nThis image implements the same environment variables as the official PostgreSQL image:\n\n* `POSTGRES_PASSWORD` - sets the superuser password for PostgreSQL. The default superuser is defined by the `POSTGRES_USER` environment variable. In the above example, it is being set to \"mysecretpassword\".\n* `POSTGRES_USER` - used in conjunction with `POSTGRES_PASSWORD` to set a user and its password. This variable will create the specified user with superuser power and a database with the same name. If it is not specified, then the default user of `postgres` will be used.\n\nThere are also three variables that control the `supervisord` instance to allow\nstarting and stopping the server for testing purposes.\n\n* `SUPERVISOR_XMLRPC_PORT`: TCP port number used for XML-RPC.  If set, this\n  enables XML-RPC on the nominated port.  The suggested port for this is 9001\n  as per `supervisord` documentation; this is `EXPOSE`d to other containers.\n* `SUPERVISOR_XMLRPC_USERNAME`: If set, this defines the username required for\n  authentication with XML-RPC.  Otherwise, no authentication is required.\n* `SUPERVISOR_XMLRPC_PASSWORD`: If set, this defines the password required for\n  authentication with XML-RPC.\n\n## How to extend this image\n\n### With a Dockerfile\n\nYou can also extend the image with a `Dockerfile` to add features or alter its behaviour. An example of this is the [vrtsystems/postgres-st image](https://hub.docker.com/r/vrtsystems/postgres-st/) on [bitbucket](https://bitbucket.org/vrtsystems/docker-postgres-st).\n\n### With a shell script in prestart-init.d\n\nIf you would like to do additional initialization before the database is started, add a `*.sh` script under `/usr/local/etc/docker-postgres/prestart-init.d/`. After the entrypoint calls `initdb` to create the user and database, it will source any `*.sh` script found in that directory to do further initialization before starting the service. The database is not running at this point. If you need to execute SQL commands as part of your initialization, the use of Postgres'' [single user mode](http://www.postgresql.org/docs/9.3/static/app-postgres.html#AEN90580) is recommended, but note that it comes with [limitations](http://www.postgresql.org/message-id/29161.1422337002@sss.pgh.pa.us).\n\n### With a shell script in poststart-init.d\n\nIn addition to the prestart hook above, this image provides a further init capability specifically for running SQL scripts against a full version of the database server. Add `*.sh` scripts under `/usr/local/etc/docker-postgres/poststart-init.d/` and once the database is started these will be sourced and run with the postgres system user. Note that you can access `POSTGRES_USER` and `POSTGRES_DB` in these scripts to run commands against the specific database. An example of how to execute SQL against the running database:\n\n\t#!/bin/sh\n\tpsql -h localhost -d $POSTGRES_DB -U $POSTGRES_USER <<- EOSQL\n\t\tCREATE EXTENSION postgis;\n\t\tCREATE EXTENSION postgis_topology;\n\t\tCREATE EXTENSION temporal_tables;\n\tEOSQL\n\n## Caveats\n\nIf there is no database when `postgres` starts in a container, then `postgres` will create the default database for you. While this is the expected behavior of `postgres`, this means that it will not accept incoming connections during that time. This may cause issues when using automation tools, such as `docker-compose` (or `fig`), that start several containers simultaneously.\n",
+  "dockerfile": "# vim:set ft=dockerfile:\n\n# Base on VRT Base image \nFROM vrtsystems/baseimage:0.1.0\nMAINTAINER VRT Engineering <engineering@vrt.com.au>\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\nRUN groupadd -r postgres && useradd -r -g postgres postgres\n\n# NOTE: If you change postgres versions here, there is also a reference\n# in supervisord.conf that needs to be updated.\nENV PG_MAJOR 9.3\nENV PG_VERSION 9.3.14-1.pgdg80+1\n\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8\nRUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main' $PG_MAJOR > /etc/apt/sources.list.d/pgdg.list\n\nRUN apt-get update \\\n\t&& apt-get install -y postgresql-common \\\n\t&& sed -ri 's/#(create_main_cluster) .*$/\\1 = false/' /etc/postgresql-common/createcluster.conf \\\n\t&& apt-get install -y postgresql-$PG_MAJOR=$PG_VERSION \\\n\t&& mkdir -p /usr/local/etc/docker-postgres/prestart-init.d \\\n\t&& mkdir -p /usr/local/etc/docker-postgres/poststart-init.d \\\n\t&& mkdir -p /var/run/postgresql \\\n\t&& chown -R postgres /var/run/postgresql \\\n\t&& rm -rf /var/lib/apt/lists/*\n\nENV PATH /usr/lib/postgresql/$PG_MAJOR/bin:$PATH\nENV PGDATA /var/lib/postgresql/data\nVOLUME [\"/var/lib/postgresql/data\"]\n\nCOPY docker-entrypoint.sh /usr/local/sbin/\nCOPY supervisord-postinit.sh /usr/local/sbin/\nCOPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf\n\n# PostgreSQL port\nEXPOSE 5432\n\n# Suggested port for XML-RPC to supervisord, if enabled.\nEXPOSE 9001\n\nENTRYPOINT [\"/usr/local/sbin/docker-entrypoint.sh\"]\n\nCMD [\"supervisor\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5432,
+      9001
+    ],
+    "volume": [
+      "[\"/var/lib/postgresql/data\"]"
+    ],
+    "run": [
+      "groupadd -r postgres && useradd -r -g postgres postgres",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8",
+      "echo 'deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main' $PG_MAJOR > /etc/apt/sources.list.d/pgdg.list",
+      "apt-get update \t&& apt-get install -y postgresql-common \t&& sed -ri 's/#(create_main_cluster) .*$/\\1 = false/' /etc/postgresql-common/createcluster.conf \t&& apt-get install -y postgresql-$PG_MAJOR=$PG_VERSION \t&& mkdir -p /usr/local/etc/docker-postgres/prestart-init.d \t&& mkdir -p /usr/local/etc/docker-postgres/poststart-init.d \t&& mkdir -p /var/run/postgresql \t&& chown -R postgres /var/run/postgresql \t&& rm -rf /var/lib/apt/lists/*"
+    ],
+    "workdir": [],
+    "from": "vrtsystems/baseimage:0.1.0",
+    "maintainer": "VRT Engineering <engineering@vrt.com.au>",
+    "env": {
+      "PG_MAJOR": "9.3",
+      "PG_VERSION": "9.3.14-1.pgdg80+1",
+      "PATH": "/usr/lib/postgresql/$PG_MAJOR/bin:$PATH",
+      "PGDATA": "/var/lib/postgresql/data"
+    },
+    "copy": "supervisord.conf /etc/supervisor/conf.d/supervisord.conf",
+    "entrypoint": "[\"/usr/local/sbin/docker-entrypoint.sh\"]",
+    "cmd": "[\"supervisor\"]"
+  },
+  "source_repository_url": "https://bitbucket.org/vrtsystems/docker-postgres.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/vrtsystems/docker-postgres",
+  "docker_repository": "vrtsystems/postgres",
+  "docker_image": "vrtsystems/postgres",
+  "parameters_schema": {
+    "PG_MAJOR": {
+      "default": "9.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PG_VERSION": {
+      "default": "9.3.14-1.pgdg80+1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/usr/lib/postgresql/$PG_MAJOR/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGDATA": {
+      "default": "/var/lib/postgresql/data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5432,
+        9001
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "vrtsystems/postgres",
+  "revision": "develop",
+  "uris": [
+    "https://hub.docker.com/r/vrtsystems/postgres",
+    "https://hub.docker.com/v2/repositories/vrtsystems/postgres",
+    "https://bitbucket.org/vrtsystems/docker-postgres.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/vrtsystems/postgres",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

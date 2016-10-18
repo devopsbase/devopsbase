@@ -1,0 +1,220 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/oondeo/php",
+    "repository_url": "https://hub.docker.com/v2/repositories/oondeo/php",
+    "tags_url": "https://hub.docker.com/v2/repositories/oondeo/php/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/oondeo/php/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/oondeo/php/autobuild",
+    "user": "oondeo",
+    "name": "php",
+    "namespace": "oondeo",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 255,
+    "last_updated": "2016-10-15T11:08:39.340927Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "7",
+        "full_size": 215285243,
+        "id": 2529796,
+        "repository": 617351,
+        "creator": 685915,
+        "last_updater": 673498,
+        "last_updated": "2016-10-15T11:08:38.852246Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "7.1",
+        "full_size": 215945037,
+        "id": 5242885,
+        "repository": 617351,
+        "creator": 685915,
+        "last_updater": 685915,
+        "last_updated": "2016-10-15T04:35:23.893204Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5",
+        "full_size": 210201068,
+        "id": 2529803,
+        "repository": 617351,
+        "creator": 685915,
+        "last_updater": 685915,
+        "last_updated": "2016-10-15T04:10:11.976510Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "7.1-alpine",
+        "full_size": 82757047,
+        "id": 5244021,
+        "repository": 617351,
+        "creator": 685915,
+        "last_updater": 685915,
+        "last_updated": "2016-10-15T03:47:28.337409Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 214782693,
+        "id": 2527095,
+        "repository": 617351,
+        "creator": 685915,
+        "last_updater": 685915,
+        "last_updated": "2016-10-15T03:37:53.872255Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "7.0",
+        "full_size": 214782666,
+        "id": 5433731,
+        "repository": 617351,
+        "creator": 673498,
+        "last_updater": 685915,
+        "last_updated": "2016-10-15T03:26:27.698869Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "oondeo/php"
+  },
+  "name": "oondeo/php Docker container",
+  "description": "Dockerized php 7  and tools",
+  "readme": "# php\nDocker php image with basic utils and libs\n",
+  "dockerfile": "FROM php:7.1-fpm\n\n\n\nRUN apt-get update && apt-get install -y --no-install-recommends unzip \\\n        libmcrypt-dev libicu-dev libfreetype6-dev libpcre3-dev libxml2-dev libxslt1.1 libxslt1-dev \\\n        libjpeg62-turbo-dev libpng12-dev libsqlite3-dev curl libssl-dev libcurl4-openssl-dev \\\n        && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nRUN docker-php-ext-install -j$(nproc) soap bcmath mcrypt intl iconv \\\n    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \\\n    && docker-php-ext-install -j$(nproc) mysqli mcrypt xsl zip gd pdo pdo_mysql pdo_sqlite json curl dom hash bcmath gettext mbstring phar simplexml \\\n    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/local/etc/php/conf.d/*\n\nENV PHPREDIS_VERSION=3.0.0 APCU_VERSION=5.1.5 APCU_BC_VERSION=1.0.3 XDEBUG_VERSION=2.4.1\n\nRUN pecl install apcu-$APCU_VERSION apcu_bc-$APCU_BC_VERSION xdebug-$XDEBUG_VERSION \\\n    && pear install DB MDB2 Mail Mail_Mime Mail_mimeDecode Log  HTTP_Request2 XML_RPC2 Date \\\n    && mkdir -p  /usr/src/php/ext && cd /usr/src/php/ext \\\n   && curl -sL https://github.com/phpredis/phpredis/archive/$PHPREDIS_VERSION.zip -o phpredis.zip \\\n   && unzip phpredis.zip && rm phpredis.zip \\\n   && docker-php-ext-install -j$(nproc) phpredis-$PHPREDIS_VERSION \\\n   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/local/etc/php/conf.d/*\n\n# Install php tools (composer / phpunit)\nRUN cd /tmp && \\\n    curl -sL https://getcomposer.org/composer.phar > composer.phar && \\\n    chmod +x composer.phar && \\\n    mv composer.phar /usr/local/bin/composer && \\\n    curl -sL https://phar.phpunit.de/phpunit.phar > phpunit.phar && \\\n    chmod +x phpunit.phar && \\\n    mv phpunit.phar /usr/local/bin/phpunit && \\\n    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nRUN chown -R www-data /usr/local/etc\n\nADD php.ini /usr/local/etc/php/\nADD docker.conf /usr/local/etc/php-fpm.d/docker.conf\nADD zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf\n\nADD start.sh /start.sh\n\nENV OPTS=\"\" ROOT=\"/var/www\"\n\nVOLUME [ \"/etc/php\" ]\n\nCMD [ \"/start.sh\" ]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "php.ini",
+        "dest": "/usr/local/etc/php/"
+      },
+      {
+        "source": "docker.conf",
+        "dest": "/usr/local/etc/php-fpm.d/docker.conf"
+      },
+      {
+        "source": "zz-docker.conf",
+        "dest": "/usr/local/etc/php-fpm.d/zz-docker.conf"
+      },
+      {
+        "source": "start.sh",
+        "dest": "/start.sh"
+      }
+    ],
+    "expose": [],
+    "volume": [
+      "[ \"/etc/php\" ]"
+    ],
+    "run": [
+      "apt-get update && apt-get install -y --no-install-recommends unzip         libmcrypt-dev libicu-dev libfreetype6-dev libpcre3-dev libxml2-dev libxslt1.1 libxslt1-dev         libjpeg62-turbo-dev libpng12-dev libsqlite3-dev curl libssl-dev libcurl4-openssl-dev         && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "docker-php-ext-install -j$(nproc) soap bcmath mcrypt intl iconv     && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/     && docker-php-ext-install -j$(nproc) mysqli mcrypt xsl zip gd pdo pdo_mysql pdo_sqlite json curl dom hash bcmath gettext mbstring phar simplexml     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/local/etc/php/conf.d/*",
+      "pecl install apcu-$APCU_VERSION apcu_bc-$APCU_BC_VERSION xdebug-$XDEBUG_VERSION     && pear install DB MDB2 Mail Mail_Mime Mail_mimeDecode Log  HTTP_Request2 XML_RPC2 Date     && mkdir -p  /usr/src/php/ext && cd /usr/src/php/ext    && curl -sL https://github.com/phpredis/phpredis/archive/$PHPREDIS_VERSION.zip -o phpredis.zip    && unzip phpredis.zip && rm phpredis.zip    && docker-php-ext-install -j$(nproc) phpredis-$PHPREDIS_VERSION    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/local/etc/php/conf.d/*",
+      "cd /tmp &&     curl -sL https://getcomposer.org/composer.phar > composer.phar &&     chmod +x composer.phar &&     mv composer.phar /usr/local/bin/composer &&     curl -sL https://phar.phpunit.de/phpunit.phar > phpunit.phar &&     chmod +x phpunit.phar &&     mv phpunit.phar /usr/local/bin/phpunit &&     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "chown -R www-data /usr/local/etc"
+    ],
+    "workdir": [],
+    "from": "php:7.1-fpm",
+    "env": {
+      "PHPREDIS_VERSION": "3.0.0",
+      "APCU_VERSION": "5.1.5",
+      "APCU_BC_VERSION": "1.0.3",
+      "XDEBUG_VERSION": "2.4.1",
+      "OPTS": "\"\"",
+      "ROOT": "\"/var/www\""
+    },
+    "cmd": "[ \"/start.sh\" ]"
+  },
+  "source_repository_url": "https://github.com/oondeo/php.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/oondeo/php",
+  "docker_repository": "oondeo/php",
+  "docker_image": "oondeo/php",
+  "parameters_schema": {
+    "PHPREDIS_VERSION": {
+      "default": "3.0.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APCU_VERSION": {
+      "default": "5.1.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APCU_BC_VERSION": {
+      "default": "1.0.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "XDEBUG_VERSION": {
+      "default": "2.4.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OPTS": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ROOT": {
+      "default": "\"/var/www\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "oondeo/php",
+  "revision": "7",
+  "uris": [
+    "https://hub.docker.com/r/oondeo/php",
+    "https://hub.docker.com/v2/repositories/oondeo/php",
+    "https://github.com/oondeo/php.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Middleware/Runtime/PHP"
+  ],
+  "info_url": "https://hub.docker.com/r/oondeo/php",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

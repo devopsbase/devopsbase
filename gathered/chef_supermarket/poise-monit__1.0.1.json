@@ -1,0 +1,60 @@
+{
+  "name": "poise-monit Chef cookbook",
+  "chef_cookbook_name": "poise-monit",
+  "revision": "1.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/poise-monit",
+    "https://supermarket.chef.io/cookbooks/poise-monit/download",
+    "https://supermarket.chef.io/cookbooks/poise-monit/versions/1.0.1",
+    "https://supermarket.chef.io/cookbooks/poise-monit/versions/1.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/poise-monit/versions/1.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/poise-monit",
+    "https://supermarket.chef.io/api/v1/cookbooks/poise-monit/versions/1.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/poise-monit",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/poise-monit/versions/1.0.1/download",
+  "deprecated": false,
+  "created": "2016-01-09T00:04:06.633Z",
+  "updated": "2016-05-27T22:54:41.258Z",
+  "description": "A Chef cookbook for managing the Monit process manager.",
+  "maintainer": {
+    "name": "coderanger",
+    "email": "noah@coderanger.net"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 348330,
+  "downloads_count_revision": 22721,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Poise-Monit Cookbook\n\n[![Build Status](https://img.shields.io/travis/poise/poise-monit.svg)](https://travis-ci.org/poise/poise-monit)\n[![Gem Version](https://img.shields.io/gem/v/poise-monit.svg)](https://rubygems.org/gems/poise-monit)\n[![Cookbook Version](https://img.shields.io/cookbook/v/poise-monit.svg)](https://supermarket.chef.io/cookbooks/poise-monit)\n[![Coverage](https://img.shields.io/codecov/c/github/poise/poise-monit.svg)](https://codecov.io/github/poise/poise-monit)\n[![Gemnasium](https://img.shields.io/gemnasium/poise/poise-monit.svg)](https://gemnasium.com/poise/poise-monit)\n[![License](https://img.shields.io/badge/license-Apache_2-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)\n\nA [Chef](https://www.chef.io/) cookbook to manage [Monit](https://mmonit.com/monit/).\n\n## Quick Start\n\nTo install Monit and configure a mail server:\n\n```ruby\ninclude_recipe 'poise-monit'\n\nmonit_config 'mailconfig' do\n  content <<-EOH\nSET MAILSERVER mail.example.com\nSET ALERT devoops@example.com\nEOH\nend\n```\n\nTo create a service managed by Monit with a health check:\n\n```ruby\npoise_service 'apache2' do\n  command '/usr/sbin/apache2 -f /etc/apache2/apache2.conf -DFOREGROUND'\n  stop_signal 'WINCH'\n  reload_signal 'USR1'\n  provider :monit\n  options :monit, checks: 'if failed host localhost port 80 protocol HTTP request \"/\" then restart'\nend\n```\n\n## Recipes\n\n* `poise-monit::default` – Install Monit.\n\n## Attributes\n\n* `node['poise-monit']['default_recipe']` – Recipe used by the `poise_service`\n  provider to install Monit if not already available. *(default: poise-monit)*\n* `node['pose-monit']['provider']` – Default provider for `monit` resource\n  instances. *(default: auto)*\n* `node['poise-monit']['recipe'][*]` – All subkeys of `'recipe'` will be passed\n  as properties to the `monit` resource before installation.\n\nFor example, the `poise-monit` recipe can be customized by setting:\n\n```ruby\noverride_attributes({\n  'poise-monit' => {\n    'recipe' => {\n      'daemon_interval' => 60,\n      'event_slots' => 0,\n    }\n  }\n})\n```\n\n## Resources\n\n### `monit`\n\nThe `monit` resource installs and configures Monit.\n\n```ruby\nmonit 'monit' do\n  daemon_interval 60\n  event_slots 1000\nend\n```\n\n#### Actions\n\n* `:enable` – Install, enable and start Monit. *(default)*\n* `:disable` – Stop, disable, and uninstall Monit.\n* `:start` – Start Monit.\n* `:stop` – Stop Monit.\n* `:restart` – Stop and then start Monit.\n* `:reload` – Send SIGHUP signal to Monit.\n\n#### Properties\n\n* `service_name` – Name of the Monit instance. *(name attribute)*\n* `daemon_interval` – Number of seconds between service checks. *(default: 120)*\n* `event_slots` – Number of slots in the Monit event buffer. Set to 0 to disable\n  event buffering, or -1 for an unlimited queue. *(default: 100)*\n* `httpd_port` – Port to listen on for Monit's HTTPD. If a path is specified, it\n  is used as a Unix socket path. If set to nil or false, no HTTPD configuration\n  is generated. This may break some other poise-monit resources. *(default:\n  /var/run/monit.sock if the version of Monit supports it, otherwise 2812)*\n* `httpd_password` – Cleartext password for authentication between the Monit\n  daemon and CLI. Set to nil or false to disable authentication. *(default: nil\n  for Unix socket connections, otherwise auto-generated)*\n* `httpd_username` – Username for authentication between the Monit daemon and\n  CLI. *(default: cli)*\n* `group` – System group to deploy Monit as.\n* `logfile` – Path to the Monit log file. *(default: /var/log/monit.log)*\n* `owner` – System user to deploy Monit as.\n* `path` – Path to the Monit configuration directory. *(default: /etc/monit)*\n* `pidfile` – Path to the Monit PID file. *(default: /var/run/monit.pid)*\n* `var_path` – Path the Monit state directory. *(default: /var/lib/monit)*\n* `version` – Version of Monit to install.\n\n#### Provider Options\n\nThe `monit` resource uses provide options for per-provider configuration. See\n[the poise-service documentation](https://github.com/poise/poise-service#service-options)\nfor more information on using provider options.\n\n### `monit_config`\n\nThe `monit_config` resource writes out a Monit configuration file to the\n`conf.d/` directory.\n\n```ruby\nmonit_config 'ssh' do\n  source 'monit_ssh.conf.erb'\n  variables threshold: 5\nend\n```\n\n#### Actions\n\n* `:create` – Create and manage the configuration file. *(default)*\n* `:delete` – Delete the configuration file.\n\n#### Properties\n\n* `config_name` – Name of the configuration file. *(name attribute)*\n* `content` – File content to write.\n* `cookbook` – Cookbook to search for `source` in.\n* `parent` – Name or reference for the parent `monit` resource. *(required, default: automatic)*\n* `path` – Path to the configuration file. *(default: automatic)*\n* `source` – Template path to render.\n* `variables` – Template variables.\n\nOne of `source` or `content` is required.\n\n## Monit Providers\n\n### `binaries`\n\nThe `binaries_bitbucket` provider supports installing Monit from static binaries\nmirrored to BitBucket. This is the default provider if you are installing on an\nOS that has binaries available.\n\n```ruby\nmonit 'monit' do\n  provider :binaries\nend\n```\n\n*NOTE:* If BitBucket is unavailable you can set the `url` provider option to\n`https://mmonit.com/monit/dist/binary/%{version}/monit-%{version}-%{machine_label}.tar.gz`\nto use downloads directly from `mmonit.com`, however this server has a relatively\nstrict download quota system so this is not recommended.\n\n#### Provider Options\n\n* `path` – Path to install Monit to. *(default: /opt/monit-<version>)*\n* `retries` – Number of times to retry failed downloads. *(default: 5)*\n* `static_version` – Full version number for use in interpolation. *(default: automatic)*\n* `strip_components` – Value to pass to tar --strip-components. *(default: 1)*\n* `url` – URL template to download from. *(default: `https://bitbucket.org/tildeslash/monit/downloads/monit-%{version}-%{machine_label}.tar.gz`)*\n\n### `system`\n\nThe `system` provider supports installing Monit from system packages. This\nrequires EPEL for RHEL/CentOS as they do not ship Monit in the base OS\nrepositories. Because this is not a default provider, EPEL is *not* a dependency\nof this cookbook, you will have to add it to your run list or as a dependency of\na wrapper cookbook.\n\n```ruby\nmonit 'monit' do\n  provider :system\nend\n```\n\n#### Provider Options\n\n* `no_epel` – Do not try to enable EPEL on EL nodes. *(default: false)*\n* `package` – Package name to install. *(default: monit)*\n\n### `dummy`\n\nThe `dummy` provider supports using the `monit` resource with ChefSpec or other\ntesting frameworks to not actually install Monit. It is used by default under\nChefSpec.\n\n```ruby\nmonit 'monit' do\n  provider :dummy\nend\n```\n\n## Service Provider\n\nThe `monit` service provider is included to allow [`poise_service` resources](https://github.com/poise/poise-service)\nto use Monit as the service manager. This uses the normal `sysvinit` provider\nfrom `poise-service` to generate the init scripts, but manages service state\nthrough Monit.\n\n```ruby\npoise_service 'apache2' do\n  command '/usr/sbin/apache2 -f /etc/apache2/apache2.conf -DFOREGROUND'\n  stop_signal 'WINCH'\n  reload_signal 'USR1'\n  provider :monit\n  options :monit, checks: 'if failed host localhost port 80 protocol HTTP request \"/\" then restart'\nend\n```\n\nTo set the `monit` provider as the global default, use [`poise-sevice-monit`](https://github.com/poise/poise-service-monit).\n\n## Sponsors\n\nDevelopment sponsored by [Bloomberg](http://www.bloomberg.com/company/technology/).\n\nThe Poise test server infrastructure is sponsored by [Rackspace](https://rackspace.com/).\n\n## License\n\nCopyright 2015, Noah Kantrowitz\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\nhttp://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/poise",
+      "revision": "~> 2.5",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/poise-languages",
+      "revision": "~> 1.3",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/poise-service",
+      "revision": "~> 1.1",
+      "self_resolve": true
+    }
+  ]
+}

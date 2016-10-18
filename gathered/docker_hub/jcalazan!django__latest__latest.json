@@ -1,0 +1,115 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jcalazan/django",
+    "repository_url": "https://hub.docker.com/v2/repositories/jcalazan/django",
+    "tags_url": "https://hub.docker.com/v2/repositories/jcalazan/django/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jcalazan/django/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jcalazan/django/autobuild",
+    "user": "jcalazan",
+    "name": "django",
+    "namespace": "jcalazan",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 776,
+    "last_updated": "2016-09-17T22:00:34.701214Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 298313094,
+        "id": 67380,
+        "repository": 72308,
+        "creator": 87423,
+        "last_updater": 87423,
+        "last_updated": "2016-09-17T22:00:33.671223Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "ubuntu_14.04",
+        "full_size": 202498959,
+        "id": 1442160,
+        "repository": 72308,
+        "creator": 87423,
+        "last_updater": 87423,
+        "last_updated": "2015-11-29T13:19:20.027824Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "jcalazan/docker-django-local"
+  },
+  "name": "jcalazan/django Docker container",
+  "description": "",
+  "readme": "docker-django-local\n===================\n\nDockerfiles to create images for use in local Django development environments.\n\nDesigned to be used with [Docker Compose](https://docs.docker.com/compose/), it will make things a lot easier.\n\nI took most of these Dockerfiles from existing projects and modified them to work for my setup.\n\nHere's a sample Django application that uses these Docker images: https://github.com/jcalazan/youtube-audio-dl\n\n## Images Info\n\n- **base** - Ubuntu 14.04 with commonly used packages for Django/Python development.\n- **postgresql** - PostgreSQL 9.5 database (default username/password is docker/docker).\n- **django** - Not much difference from the base image except port 80 is exposed and contains a few additional packages/libraries.\n- **rabbitmq** - RabbitMQ message broker usually used with Celery. \n\n## Docker Registry\n\nYou can pull these images directly from the Docker Registry: https://hub.docker.com/u/jcalazan/\n\nThis repo is configured for automated builds.\n\n## Sample ```docker-compose.yml``` Configuration\n\n```\npostgresql:\n  image: jcalazan/postgresql\n  environment:\n    - POSTGRESQL_DB=youtubeadl\n    - POSTGRESQL_USER=youtubeadl\n    - POSTGRESQL_PASSWORD=password\n  volumes:\n    - ~/dockerfiles/youtube-audio-dl/postgresql:/var/lib/postgresql\n  ports:\n    - \"5432:5432\"\n\nrabbitmq:\n  image: jcalazan/rabbitmq\n  ports:\n    - \"15672:15672\"\n\n# NOTES:\n#   - The C_FORCE_ROOT variable allows celery to run as the root user.\ncelery:\n  image: jcalazan/django\n  environment:\n    - C_FORCE_ROOT=true\n    - DATABASE_HOST=postgresql\n    - BROKER_URL=amqp://guest:guest@rabbitmq//\n  working_dir: /youtube-audio-dl\n  command: bash -c \"sleep 3 && celery -A youtubeadl worker -E -l info --concurrency=3\"\n  volumes:\n    - .:/youtube-audio-dl\n    - ~/dockerfiles/youtube-audio-dl/python:/usr/local/lib/python2.7\n    - ~/dockerfiles/youtube-audio-dl/bin:/usr/local/bin\n  links:\n    - postgresql\n    - rabbitmq\n\n# NOTES:\n#   - The C_FORCE_ROOT variable allows celery to run as the root user.\nflower:\n  image: jcalazan/django\n  environment:\n    - C_FORCE_ROOT=true\n    - DATABASE_HOST=postgresql\n    - BROKER_URL=amqp://guest:guest@rabbitmq//\n  working_dir: /youtube-audio-dl\n  command: bash -c \"sleep 3 && celery -A youtubeadl flower --port=5555\"\n  volumes:\n    - .:/youtube-audio-dl\n    - ~/dockerfiles/youtube-audio-dl/python:/usr/local/lib/python2.7\n    - ~/dockerfiles/youtube-audio-dl/bin:/usr/local/bin\n  ports:\n    - \"5555:5555\"\n  links:\n    - postgresql\n    - rabbitmq\n\ndjango:\n  image: jcalazan/django\n  environment:\n    - DATABASE_HOST=postgresql\n    - BROKER_URL=amqp://guest:guest@rabbitmq//\n  working_dir: /youtube-audio-dl\n  command: bash -c \"sleep 3 && python manage.py runserver_plus 0.0.0.0:80\" \n  volumes:\n    - .:/youtube-audio-dl\n    - ~/dockerfiles/youtube-audio-dl/python:/usr/local/lib/python2.7\n    - ~/dockerfiles/youtube-audio-dl/bin:/usr/local/bin\n  ports:\n    - \"80:80\"\n  links:\n    - postgresql\n    - rabbitmq\n```\n\n#### A few things to note about this sample configuration:\n\n- Under `volumes:`, local directories are mapped to the containers.  It expects `docker-compose.yml` to be in the root project directory.  Python packages are also mapped from the local directory to make the image more reusable (i.e. no need to rebuild the images every time you add a new package to your project).\n- For the `youtube-audio-dl` project, the `manage.py` file is in the project root, that's why I set that path as the `working_dir`.\n- You can run Django management commands inside the `django` container by prepending `fig run django` (e.g. `fig run django python manage.py migrate`).\n- By default, everything run as `root` in the Docker containers.\n- The `sleep` part in the command is to make sure the PostgreSQL service is ready to accept the connections before running a command that depends on it (see https://github.com/docker/compose/issues/374).",
+  "dockerfile": "FROM jcalazan/base\nMAINTAINER Jonathan Calazan \"jonathan@calazan.com\"\n\nENV PYTHONUNBUFFERED 1\n\nRUN apt-get update && apt-get install -qq -y \\\n    libav-tools \\\n    libjpeg-dev \\\n    libpng-dev \\\n    libpq-dev \\\n    libxml2-dev \\\n    libxslt1-dev \\\n    postgresql-client\n\n# Needed by 'pillow' package.\nRUN ln -s /usr/lib/x86_64-linux-gnu/libjpeg.so /usr/lib\nRUN ln -s /usr/lib/x86_64-linux-gnu/libfreetype.so.6 /usr/lib/libfreetype.so\nRUN ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib\n\n# Django service\nEXPOSE 80\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -qq -y     libav-tools     libjpeg-dev     libpng-dev     libpq-dev     libxml2-dev     libxslt1-dev     postgresql-client",
+      "ln -s /usr/lib/x86_64-linux-gnu/libjpeg.so /usr/lib",
+      "ln -s /usr/lib/x86_64-linux-gnu/libfreetype.so.6 /usr/lib/libfreetype.so",
+      "ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib"
+    ],
+    "workdir": [],
+    "from": "jcalazan/base",
+    "maintainer": "Jonathan Calazan \"jonathan@calazan.com\"",
+    "env": {
+      "PYTHONUNBUFFERED": "1"
+    }
+  },
+  "source_repository_url": "https://github.com/jcalazan/docker-django-local.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/jcalazan/docker-django-local",
+  "docker_repository": "jcalazan/django",
+  "docker_image": "jcalazan/django",
+  "parameters_schema": {
+    "PYTHONUNBUFFERED": {
+      "default": "1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jcalazan/django",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jcalazan/django",
+    "https://hub.docker.com/v2/repositories/jcalazan/django",
+    "https://github.com/jcalazan/docker-django-local.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python"
+  ],
+  "info_url": "https://hub.docker.com/r/jcalazan/django",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

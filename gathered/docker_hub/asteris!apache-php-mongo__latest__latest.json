@@ -1,0 +1,135 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/asteris/apache-php-mongo",
+    "repository_url": "https://hub.docker.com/v2/repositories/asteris/apache-php-mongo",
+    "tags_url": "https://hub.docker.com/v2/repositories/asteris/apache-php-mongo/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/asteris/apache-php-mongo/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/asteris/apache-php-mongo/autobuild",
+    "user": "asteris",
+    "name": "apache-php-mongo",
+    "namespace": "asteris",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 1238,
+    "last_updated": "2016-09-27T01:29:18.635447Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 217602605,
+        "id": 64578,
+        "repository": 81764,
+        "creator": 8946,
+        "last_updater": 8946,
+        "last_updated": "2016-09-27T01:29:18.329319Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "asteris-llc/apache-php-mongo-dockerfiles"
+  },
+  "name": "asteris/apache-php-mongo Docker container",
+  "description": "Apache2.4 + PHP + Mongo + mod_rewrite",
+  "readme": "\n##Overview\n\nThis dockerfile allows you to build a container that is suitable for running and testing PHP applications that use Mongo as a Data store.\n\n\n##Components\n\n- Base: Ubuntu 14.04\n- PHP: 5.5x\n- Mongo PHP driver (PECL install): 1.5x\n- PHP composer\n- MongoDB 2.2x binaries \n- Apache 2.4 with mod_rewrite enabled\n\n\n##Running & Building\n###Using this container as a base \nUse this container as a base for your application. Below is an example Dockerfile in which we add a VHost to the apache config:\n\n\tFROM asteris/apache-php-mongo:latest\n\n    ADD MyVhost.conf /etc/apache2/sites-enabled/\n\n    CMD [\"/run.sh\"]\n    \n###Running\n    \n    docker run -d -v /host/www:/app -p 80 asteris/apache-php-mongo:latest\n\n##Copyright\nAsteris, LLC 2014. Released under the Apache 2.0 License",
+  "dockerfile": "FROM ubuntu:14.04\n\nMAINTAINER Steven Borrelli <steve@aster.is>\n\n#Mongo PHP driver version\n\nENV MONGO_VERSION 2.2.7\nENV MONGO_PGP 2.2\nENV MONGO_PHP_VERSION 1.5.5\n\n#Install php and dependenceis\nENV DEBIAN_FRONTEND noninteractive\nRUN apt-get update && \\\n    apt-get -yq install \\\n        curl \\\n        git \\\n        make \\\n        apache2 \\\n        libapache2-mod-php5 \\\n        php5 \\\n        php5-dev \\\n        php5-gd \\\n        php5-curl \\\n        php5-mcrypt \\\n        php-pear \\\n        php-apc && \\\n    rm -rf /var/lib/apt/lists/*\n\nRUN sed -i \"s/variables_order.*/variables_order = \\\"EGPCS\\\"/g\" /etc/php5/apache2/php.ini\nRUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer\n\n\nRUN curl -SL \"https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-$MONGO_VERSION.tgz\" -o mongo.tgz \\\n  && curl -SL \"https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-$MONGO_VERSION.tgz.sig\" -o mongo.tgz.sig \\\n  && curl -SL \"https://www.mongodb.org/static/pgp/server-$MONGO_PGP.asc\" -o server-$MONGO_PGP.asc \\\n  && gpg --import server-$MONGO_PGP.asc \\\n  && gpg --verify mongo.tgz.sig \\\n  && tar -xvf mongo.tgz -C /usr/local --strip-components=1 \\\n  && rm mongo.tgz*\n\nRUN pecl install mongo-$MONGO_PHP_VERSION && \\\n    mkdir -p /etc/php5/mods-available && \\\n    echo \"extension=mongo.so\" > /etc/php5/mods-available/mongo.ini && \\\n    ln -s /etc/php5/mods-available/mongo.ini /etc/php5/cli/conf.d/mongo.ini && \\\n    ln -s /etc/php5/mods-available/mongo.ini /etc/php5/apache2/conf.d/mongo.ini && \\\n    ln -s /etc/php5/mods-available/mcrypt.ini /etc/php5/cli/conf.d/mcrypt.ini && \\\n    ln -s /etc/php5/mods-available/mcrypt.ini /etc/php5/apache2/conf.d/mcrypt.ini\n\n\nRUN a2enmod rewrite\nRUN rm -f /etc/apache2/sites-enabled/000-default.conf\n\nADD run.sh /run.sh\n\nVOLUME [\"/var/log/apache2\"]\n\nEXPOSE 80\n\nCMD [\"/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "run.sh",
+        "dest": "/run.sh"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/var/log/apache2\"]"
+    ],
+    "run": [
+      "apt-get update &&     apt-get -yq install         curl         git         make         apache2         libapache2-mod-php5         php5         php5-dev         php5-gd         php5-curl         php5-mcrypt         php-pear         php-apc &&     rm -rf /var/lib/apt/lists/*",
+      "sed -i \"s/variables_order.*/variables_order = \\\"EGPCS\\\"/g\" /etc/php5/apache2/php.ini",
+      "curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer",
+      "curl -SL \"https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-$MONGO_VERSION.tgz\" -o mongo.tgz   && curl -SL \"https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-$MONGO_VERSION.tgz.sig\" -o mongo.tgz.sig   && curl -SL \"https://www.mongodb.org/static/pgp/server-$MONGO_PGP.asc\" -o server-$MONGO_PGP.asc   && gpg --import server-$MONGO_PGP.asc   && gpg --verify mongo.tgz.sig   && tar -xvf mongo.tgz -C /usr/local --strip-components=1   && rm mongo.tgz*",
+      "pecl install mongo-$MONGO_PHP_VERSION &&     mkdir -p /etc/php5/mods-available &&     echo \"extension=mongo.so\" > /etc/php5/mods-available/mongo.ini &&     ln -s /etc/php5/mods-available/mongo.ini /etc/php5/cli/conf.d/mongo.ini &&     ln -s /etc/php5/mods-available/mongo.ini /etc/php5/apache2/conf.d/mongo.ini &&     ln -s /etc/php5/mods-available/mcrypt.ini /etc/php5/cli/conf.d/mcrypt.ini &&     ln -s /etc/php5/mods-available/mcrypt.ini /etc/php5/apache2/conf.d/mcrypt.ini",
+      "a2enmod rewrite",
+      "rm -f /etc/apache2/sites-enabled/000-default.conf"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "Steven Borrelli <steve@aster.is>",
+    "env": {
+      "MONGO_VERSION": "2.2.7",
+      "MONGO_PGP": "2.2",
+      "MONGO_PHP_VERSION": "1.5.5",
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/asteris-llc/apache-php-mongo-dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/asteris-llc/apache-php-mongo-dockerfiles",
+  "docker_repository": "asteris/apache-php-mongo",
+  "docker_image": "asteris/apache-php-mongo",
+  "parameters_schema": {
+    "MONGO_VERSION": {
+      "default": "2.2.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGO_PGP": {
+      "default": "2.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGO_PHP_VERSION": {
+      "default": "1.5.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "asteris/apache-php-mongo",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/asteris/apache-php-mongo",
+    "https://hub.docker.com/v2/repositories/asteris/apache-php-mongo",
+    "https://github.com/asteris-llc/apache-php-mongo-dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB"
+  ],
+  "info_url": "https://hub.docker.com/r/asteris/apache-php-mongo",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,60 @@
+{
+  "name": "dcos-grid Chef cookbook",
+  "chef_cookbook_name": "dcos-grid",
+  "revision": "0.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/dcos-grid",
+    "https://supermarket.chef.io/cookbooks/dcos-grid/download",
+    "https://supermarket.chef.io/cookbooks/dcos-grid/versions/0.1.0",
+    "https://supermarket.chef.io/cookbooks/dcos-grid/versions/0.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/dcos-grid/versions/0.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/dcos-grid",
+    "https://supermarket.chef.io/api/v1/cookbooks/dcos-grid/versions/0.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Operating Systems & Virtualization",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/dcos-grid",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/dcos-grid/versions/0.1.0/download",
+  "deprecated": false,
+  "created": "2016-09-03T06:43:05.895Z",
+  "updated": "2016-10-15T06:56:48.434Z",
+  "description": "Installs/Configures DC/OS Cluster Node.",
+  "maintainer": {
+    "name": "whitestar-dev"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 162,
+  "downloads_count_revision": 20,
+  "repository_url": "http://scm.osdn.jp/gitroot/metasearch/grid-chef-repo.git",
+  "issues_url": "https://osdn.jp/projects/metasearch/ticket",
+  "chef_source_url": "http://scm.osdn.jp/gitroot/metasearch/grid-chef-repo.git",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "dcos-grid Cookbook\n==================\n\nThis cookbook sets up your customized DC/OS cluster on bare metal, virtual machines and every cloud. This install method is based on [_Advanced DC/OS Installation Guide_](https://dcos.io/docs/1.8/administration/installing/custom/advanced/).\n\nRequirements\n------------\n\n#### packages\n- none.\n\nAttributes\n----------\n\n|Key|Type|Description, example|Default|\n|:--|:--|:--|:--|\n|`['dcos-grid']['dcos_release_url']`|String|DC/OS download URL.|`'https://downloads.dcos.io/dcos/EarlyAccess/dcos_generate_config.sh'`|\n|`['dcos-grid']['docker-engine']['version']`|String|Docker 1.9.x - 1.11.x is recommended for stability reasons.|`'1.11.2-1.el7.centos'`|\n|`['dcos-grid']['bootstrap']['ip']`|String|Bootstrap node IP address.|`'127.0.0.1'`|\n|`['dcos-grid']['bootstrap']['port']`|String|Bootstrap node port number.|`'8080'`|\n|`['dcos-grid']['bootstrap']['genconf_dir']`|String|genconf directory path.|`'/opt/dcos-grid/genconf'`|\n|`['dcos-grid']['bootstrap']['config']`|Hash|Install configurations.|see [_Install Configuration Parameters_](https://dcos.io/docs/1.8/administration/installing/custom/configuration-parameters/)|\n|`['dcos-grid']['bootstrap']['config']['bootstrap_url']`|String||`\"http://#{node['dcos-grid']['bootstrap']['ip']}:#{node['dcos-grid']['bootstrap']['port']}\"`|\n|`['dcos-grid']['bootstrap']['config']['cluster_name']`|String||`'dcos0'`|\n|`['dcos-grid']['bootstrap']['config']['exhibitor_storage_backend']`|String||`'static'`|\n|`['dcos-grid']['bootstrap']['config']['ip_detect_filename']`|String||`'/genconf/ip-detect'`|\n|`['dcos-grid']['bootstrap']['config']['master_list']`|Array|e.g. `['192.168.1.101','192.168.1.102','192.168.1.103']`|`nil`|\n|`['dcos-grid']['bootstrap']['config']['resolvers']`|Array|e.g. `['8.8.8.8','8.8.4.4']` (Google DNS)|`nil`|\n|`['dcos-grid']['bootstrap']['bootstrap']['ip-detect']['interface']`|String|Network interface on each node for ip-detect.|`'eth0'`|\n|`['dcos-grid']['node']['auto_setup']`|Boolean|execute the node setup script automatically or not.|`false`|\n\nUsage\n-----\n### Recipes\n\n#### dcos-grid::default\n- This recipe does nothing.\n\n#### dcos-grid::agent\n- This recipe sets up a private agent node. Note: If `node['dcos-grid']['node']['auto_setup']` is `false`, you must execute the following manually.\n```\n$ cd /opt/dcos-grid\n$ ./node_setup.sh slave\n```\n\n#### dcos-grid::bootstrap\n- This recipe sets up a bootstrap node. Note: Please execute the following manually.\n```\n$ cd /opt/dcos-grid\n$ ./bootstrap_setup.sh\n```\n\n#### dcos-grid::cloud-config (for CoreOS only)\n- This recipe generates a `/opt/dcos-grid/cloud-config.yaml` template file on local machine by the following `chef-solo` command.\n```\n$ sudo chef-solo -c solo.rb -j nodes/local-dcos0-cloud-config.json\n```\n    - `nodes/local-dcos0-cloud-config.json`\n```json\n{\n  \"run_list\": [\n    \"role[dcos0-cloud-config]\"\n  ]\n}\n```\n    - `roles/dcos0-cloud-config.rb`\n```ruby\nname 'dcos0-cloud-config'\ndescription 'dcos0 cloud-config.yaml file.'\nrun_list(\n  'role[dcos0]',  # includes common attributes.\n  'recipe[dcos-grid::cloud-config]',\n)\n```\n- Edit this yaml template (hostname, ssh_authorized_keys, IP address and so on) and install CoreOS by the `cloud-config.yaml`.\n```\n$ coreos-cloudinit -from-file ~/cloud-config.yaml -validate\n...\n$ sudo coreos-install -d /dev/sda -C stable -c ~/cloud-config.yaml\n```\n\n#### dcos-grid::master\n- This recipe sets up a master node. Note: If `node['dcos-grid']['node']['auto_setup']` is `false`, you must execute the following manually.\n```\n$ cd /opt/dcos-grid\n$ ./node_setup.sh master\n```\n\n#### dcos-grid::node\n- This recipe sets up a base node (particular role is not assigned yet). Note: Please execute the following manually.\n```\n$ cd /opt/dcos-grid\n$ ./node_setup.sh {master|slave|slave_public}\n```\n\n#### dcos-grid::node-commons\n- This recipe sets up common environment for DC/OS node.\n\n#### dcos-grid::public-agent\n- This recipe sets up a public node. Note: If `node['dcos-grid']['node']['auto_setup']` is `false`, you must execute the following manually.\n```\n$ cd /opt/dcos-grid\n$ ./node_setup.sh slave_public\n```\n\n### Role Examples\n- `roles/dcos0.rb`: Common attributes.\n```ruby\nname 'dcos0'\ndescription 'dcos0 cluster'\nrun_list(\n)\noverride_attributes(\n  'dcos-grid' => {\n    'dcos_release_url' => 'https://downloads.dcos.io/dcos/EarlyAccess/dcos_generate_config.sh',\n    'docker-engine' => {\n      'version' => '1.11.2-1.el7.centos',\n    },\n    'bootstrap' => {\n      'ip' => '192.168.56.100',\n      'port' => '8080',\n      'config' => {\n        'cluster_name' => 'dcos0',\n        'master_list' => [\n          '192.168.56.101',\n          '192.168.56.102',\n          '192.168.56.103',\n        ],\n        'resolvers' => [\n          '8.8.8.8',\n          '8.8.4.4',\n        ],\n      },\n      'ip-detect' => {\n        'interface' => 'enp0s8',\n      },\n    },\n    'node' => {\n      'auto_setup' => false,\n    },\n  },\n)\n```\n- `roles/dcos0-boot.rb`\n```ruby\nname 'dcos0-boot'\ndescription 'dcos0 cluster bootstrap node'\nrun_list(\n  'role[dcos0]',\n  'recipe[dcos-grid::bootstrap]',\n)\n```\n- `roles/dcos-master.rb`\n```ruby\nname 'dcos0-master'\ndescription 'dcos0 cluster master node'\nrun_list(\n  'role[dcos0]',\n  'recipe[dcos-grid::master]',\n)\noverride_attributes(\n  'dcos-grid' => {\n    'node' => {\n      'auto_setup' => false,\n    },\n  },\n)\n```\n- `roles/dcos0-agent.rb`\n```ruby\nname 'dcos0-agent'\ndescription 'dcos0 cluster private agent node'\nrun_list(\n  'role[dcos0]',\n  'recipe[dcos-grid::agent]',\n)\noverride_attributes(\n  'dcos-grid' => {\n    'node' => {\n      'auto_setup' => true,\n    },\n  },\n)\n```\n\n### Uninstall DC/OS\n- Please log in each node and execute the following.\n```\n$ cd /opt/dcos-grid\n$ ./uninstall.sh\n```\n\nLicense and Authors\n-------------------\n- Author:: whitestar at osdn.jp\n\n```text\nCopyright 2016, whitestar\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 7.2",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 7.2",
+      "one_of_group": "os"
+    }
+  ]
+}

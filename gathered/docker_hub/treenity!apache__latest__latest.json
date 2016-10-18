@@ -1,0 +1,100 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/treenity/apache",
+    "repository_url": "https://hub.docker.com/v2/repositories/treenity/apache",
+    "tags_url": "https://hub.docker.com/v2/repositories/treenity/apache/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/treenity/apache/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/treenity/apache/autobuild",
+    "user": "treenity",
+    "name": "apache",
+    "namespace": "treenity",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 69,
+    "last_updated": "2016-10-13T07:55:09.024606Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 176540186,
+        "id": 3616896,
+        "repository": 770658,
+        "creator": 682782,
+        "last_updater": 682782,
+        "last_updated": "2016-10-13T07:55:08.689570Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Treenity/docker"
+  },
+  "name": "treenity/apache Docker container",
+  "description": "Apache2 with php/xdebug",
+  "readme": null,
+  "dockerfile": "FROM php:5.6-apache\nMAINTAINER Ronan Pozzi <contact@treenity-web.fr>\n\n# fix osx permissions\nRUN usermod -u 1000 www-data\nRUN groupmod -g 1000 www-data\nRUN a2enmod rewrite\n\nRUN apt-get update && \\\n\tapt-get install -y --no-install-recommends \\\n\n# For bz2\n\n\t\tlibbz2-dev \\\n\n# For gd\n\n\t\tlibfreetype6-dev \\\n\t\tlibjpeg62-turbo-dev \\\n\t\tlibpng12-dev \\\n\t\tlibxpm-dev \\\n\t\tlibvpx-dev \\\n\n# For ftp\n\n\t\tlibssl-dev \\\n\n# For mcrypt\n\n\t\tlibmcrypt-dev \\\n\n# For memcached\n\n\t\tlibmemcached-dev \\\n\t&& \\\n\n# Cleanup\n\n\tapt-get clean && \\\n\trm -rf /var/lib/apt/lists/* && \\\n\n# Configure GD package for JPEG support\n\n\tdocker-php-ext-configure gd \\\n\t\t--with-freetype-dir=/usr/lib/x86_64-linux-gnu/ \\\n\t\t--with-jpeg-dir=/usr/lib/x86_64-linux-gnu/ \\\n\t\t--with-xpm-dir=/usr/lib/x86_64-linux-gnu/ \\\n\t\t--with-vpx-dir=/usr/lib/x86_64-linux-gnu/ \\\n\t&& \\\n\n# Install some extra PHP Extension\n\n\tdocker-php-ext-install \\\n\t\tbcmath \\\n\t\tbz2 \\\n\t\texif \\\n\t\tftp \\\n\t\tgd \\\n\t\tgettext \\\n\t\tmbstring \\\n\t\tmcrypt \\\n\t\tmysqli \\\n\t\topcache \\\n\t\tpdo_mysql \\\n\t\tshmop \\\n\t\tsockets \\\n\t\tsysvmsg \\\n\t\tsysvsem \\\n\t\tsysvshm \\\n\t\tzip \\\n\t&& \\\n\n# Some extensions need to be installed via PECL\n\n\tpecl install apcu-4.0.8 memcached && \\\n\techo 'extension = apcu.so' > /usr/local/etc/php/conf.d/apcu.ini && \\\n\techo 'extension = memcached.so' > /usr/local/etc/php/conf.d/memcached.ini\n\n# php5 apache2 stuff\n\nCOPY ./php.ini /usr/local/etc/php/php.ini\n\nRUN echo \"ServerName localhost\" >>/etc/apache2/apache2.conf\n\nRUN touch /usr/local/etc/php/conf.d/php.ini \\\n    && echo \"memory_limit  = 128M\" >> /usr/local/etc/php/conf.d/php.ini \\\n    && echo \"upload_max_filesize = 64M\" >> /usr/local/etc/php/conf.d/php.ini \\\n    && echo \"post_max_size = 64M\" >> /usr/local/etc/php/conf.d/php.ini \\\n    && echo \"error_reporting = E_ALL\" >> /usr/local/etc/php/conf.d/php.ini \\\n    && echo \"display_errors = On\" >> /usr/local/etc/php/conf.d/php.ini \\\n    && echo \"date.timezone = Europe/Paris\" >> /usr/local/etc/php/conf.d/php.ini\n\n# xdebug\nRUN yes | pecl install xdebug \\\n    && echo \"zend_extension=$(find /usr/local/lib/php/extensions/ -name xdebug.so)\" > /usr/local/etc/php/conf.d/xdebug.ini \\\n    && echo \"xdebug.default_enable = 0\">> /usr/local/etc/php/conf.d/xdebug.ini \\\n    && echo \"xdebug.remote_enable= 1\" >> /usr/local/etc/php/conf.d/xdebug.ini \\\n    && echo \"xdebug.remote_autostart= 0\" >> /usr/local/etc/php/conf.d/xdebug.ini \\\n    && echo \"xdebug.remote_connect_back = 0\" >> /usr/local/etc/php/conf.d/xdebug.ini \\\n    && echo \"xdebug.profiler_enable = 0\" >> /usr/local/etc/php/conf.d/xdebug.ini \\\n    && echo \"xdebug.remote_host = 10.254.254.254\" >> /usr/local/etc/php/conf.d/xdebug.ini\n   \n\nVOLUME /var/www/html\n\nCMD [\"apache2-foreground\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "/var/www/html"
+    ],
+    "run": [
+      "usermod -u 1000 www-data",
+      "groupmod -g 1000 www-data",
+      "a2enmod rewrite",
+      "apt-get update && \tapt-get install -y --no-install-recommends ",
+      "echo \"ServerName localhost\" >>/etc/apache2/apache2.conf",
+      "touch /usr/local/etc/php/conf.d/php.ini     && echo \"memory_limit  = 128M\" >> /usr/local/etc/php/conf.d/php.ini     && echo \"upload_max_filesize = 64M\" >> /usr/local/etc/php/conf.d/php.ini     && echo \"post_max_size = 64M\" >> /usr/local/etc/php/conf.d/php.ini     && echo \"error_reporting = E_ALL\" >> /usr/local/etc/php/conf.d/php.ini     && echo \"display_errors = On\" >> /usr/local/etc/php/conf.d/php.ini     && echo \"date.timezone = Europe/Paris\" >> /usr/local/etc/php/conf.d/php.ini",
+      "yes | pecl install xdebug     && echo \"zend_extension=$(find /usr/local/lib/php/extensions/ -name xdebug.so)\" > /usr/local/etc/php/conf.d/xdebug.ini     && echo \"xdebug.default_enable = 0\">> /usr/local/etc/php/conf.d/xdebug.ini     && echo \"xdebug.remote_enable= 1\" >> /usr/local/etc/php/conf.d/xdebug.ini     && echo \"xdebug.remote_autostart= 0\" >> /usr/local/etc/php/conf.d/xdebug.ini     && echo \"xdebug.remote_connect_back = 0\" >> /usr/local/etc/php/conf.d/xdebug.ini     && echo \"xdebug.profiler_enable = 0\" >> /usr/local/etc/php/conf.d/xdebug.ini     && echo \"xdebug.remote_host = 10.254.254.254\" >> /usr/local/etc/php/conf.d/xdebug.ini"
+    ],
+    "workdir": [],
+    "from": "php:5.6-apache",
+    "maintainer": "Ronan Pozzi <contact@treenity-web.fr>",
+    "copy": "./php.ini /usr/local/etc/php/php.ini",
+    "cmd": "[\"apache2-foreground\"]"
+  },
+  "source_repository_url": "https://github.com/Treenity/docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Treenity/docker",
+  "docker_repository": "treenity/apache",
+  "docker_image": "treenity/apache",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "treenity/apache",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/treenity/apache",
+    "https://hub.docker.com/v2/repositories/treenity/apache",
+    "https://github.com/Treenity/docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/treenity/apache",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,205 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/toughiq/mariadb-cluster",
+    "repository_url": "https://hub.docker.com/v2/repositories/toughiq/mariadb-cluster",
+    "tags_url": "https://hub.docker.com/v2/repositories/toughiq/mariadb-cluster/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/toughiq/mariadb-cluster/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/toughiq/mariadb-cluster/autobuild",
+    "user": "toughiq",
+    "name": "mariadb-cluster",
+    "namespace": "toughiq",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 20412,
+    "last_updated": "2016-10-15T02:59:04.961332Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2.1",
+        "full_size": 133191942,
+        "id": 4430597,
+        "repository": 820076,
+        "creator": 468704,
+        "last_updater": 468704,
+        "last_updated": "2016-10-15T02:59:03.893318Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 133191952,
+        "id": 4003682,
+        "repository": 820076,
+        "creator": 468704,
+        "last_updater": 468704,
+        "last_updated": "2016-10-15T02:58:58.556268Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.0",
+        "full_size": 133191738,
+        "id": 4414411,
+        "repository": 820076,
+        "creator": 468704,
+        "last_updater": 468704,
+        "last_updated": "2016-10-15T02:48:51.877798Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.0",
+        "full_size": 133191797,
+        "id": 4420940,
+        "repository": 820076,
+        "creator": 468704,
+        "last_updater": 468704,
+        "last_updated": "2016-10-15T02:47:32.656346Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "rancher",
+        "full_size": 133401459,
+        "id": 4505795,
+        "repository": 820076,
+        "creator": 468704,
+        "last_updater": 468704,
+        "last_updated": "2016-10-15T02:41:24.176522Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "debug",
+        "full_size": 133192069,
+        "id": 4350745,
+        "repository": 820076,
+        "creator": 468704,
+        "last_updater": 468704,
+        "last_updated": "2016-10-15T02:37:35.921825Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "toughIQ/docker-mariadb-cluster"
+  },
+  "name": "toughiq/mariadb-cluster Docker container",
+  "description": "Dockerized Automated MariaDB Galera Cluster - Built for use with Docker 1.12+",
+  "readme": "# docker-mariadb-cluster\n__Version 2__\nDockerized Automated MariaDB Galera Cluster\n\nVersion 2 is the advanced branch and is featured on DockerHub as `latest` from now on.\nOld version 1.0 can be found here: https://github.com/toughIQ/docker-mariadb-cluster/tree/v1.\nTo get V1.0 Docker images, just `docker pull toughiq/mariadb-cluster:1.0`\n\nThe idea of this project is to create an automated and fully ephemeral MariaDB Galera cluster.\nNo static bindings, no persistent volumes. Like a disk RAID the data gets replicated across the cluster. \nIf one node fails, another node will be brought up and the data will be initialized.\n\n__Consider this a POC and not a production ready system!__ \n\nBuilt for use with Docker __1.12.1__+ in __Swarm Mode__\n\n# WORK in Progress!\n\nSee [Issues](https://github.com/toughIQ/docker-mariadb-cluster/issues) for known problems and [Wiki](https://github.com/toughIQ/docker-mariadb-cluster/wiki) for notes and ideas.\n\n## Setup\n### Init Swarm Nodes/Cluster\n\nSwarm Master:\n\t\t\n\tdocker swarm init\n\t\t\nAdditional Swarm Node(s):\n\n\tdocker swarm join <MasterNodeIP>:2377 + join-tokens shown at swarm init\n\nTo get the tokens at a later time, run `docker swarm join-token (manager|worker)`\n\n### Create DB network\n\n\tdocker network create -d overlay mydbnet\n\n### Init/Bootstrap DB Cluster \n\nAt first we start with a new service, which is set to `--replicas=1` to turn this instance into a bootstrapping node.\nIf there is just one service task running within the cluster, this instance automatically starts with `bootstrapping` enabled. \n\n\tdocker service create --name dbcluster \\\n\t--network mydbnet \\\n\t--replicas=1 \\\n\t--env DB_SERVICE_NAME=dbcluster \\\n\ttoughiq/mariadb-cluster\n\nNote: the service name provided by `--name` has to match the environment variable __DB_SERVICE_NAME__ set with `--env DB_SERVICE_NAME`.\n\t\nOf course there are the default MariaDB options to define a root password, create a database, create a user and set a password for this user.\nExample:\n\n\tdocker service create --name dbcluster \\\n\t--network mydbnet \\\n\t--replicas=1 \\\n\t--env DB_SERVICE_NAME=dbcluster \\\n\t--env MYSQL_ROOT_PASSWORD=rootpass \\\n\t--env MYSQL_DATABASE=mydb \\\n\t--env MYSQL_USER=mydbuser \\\n\t--env MYSQL_PASSWORD=mydbpass \\\n\ttoughiq/mariadb-cluster\n\n### Scale out additional cluster members\nJust after the first service instance/task is running with we are good to scale out.\nCheck service with `docker service ps dbcluster`. The result should look like this, with __CURRENT STATE__ telling something like __Running__.\n\n\tID                         NAME         IMAGE                    NODE    DESIRED STATE  CURRENT STATE           ERROR\n\t7c81muy053eoc28p5wrap2uzn  dbcluster.1  toughiq/mariadb-cluster  node01  Running        Running 41 seconds ago  \n\nLets scale out now:\n\n\tdocker service scale dbcluster=3\n\nThis additional 2 nodes start will come up in \"cluster join\"-mode. Lets check again: `docker service ps dbcluster`\n\n\tID                         NAME         IMAGE                    NODE    DESIRED STATE  CURRENT STATE               ERROR\n\t7c81muy053eoc28p5wrap2uzn  dbcluster.1  toughiq/mariadb-cluster  node01  Running        Running 6 minutes ago       \n\t8ht037ka0j4g6lnhc194pxqfn  dbcluster.2  toughiq/mariadb-cluster  node02  Running        Running about a minute ago  \n\tbgk07betq9pwgkgpd3eoozu6u  dbcluster.3  toughiq/mariadb-cluster  node03  Running        Running about a minute ago \n\n### Create MaxScale Proxy Service and connect to DBCluster\n\nThere is no absolute need for a MaxScale Proxy service with this Docker Swarm enabled DB cluster, since Swarm provides a loadbalancer. So it would be possible to connect to the cluster by using the loadbalancer DNS name, which is in our case __dbcluster__. Its the same name, which is provided at startup by `--name`.\n\nBut MaxScale provides some additional features regarding loadbalancing database traffic. And its an easy way to get information on the status of the cluster.\n\nDetails on this MaxScale image can be found here: https://github.com/toughIQ/docker-maxscale\n\n\tdocker service create --name maxscale \\\n\t--network mydbnet \\\n\t--env DB_SERVICE_NAME=dbcluster \\\n\t--env ENABLE_ROOT_USER=1 \\\n\t--publish 3306:3306 \\\n\ttoughiq/maxscale\n\t\nTo disable root access to the database via MaxScale just set `--env ENABLE_ROOT_USER=0` or remove this line at all.\nRoot access is disabled by default.\n\n### Check successful startup of Cluster & MaxScale\nExecute the following command. Just use autocompletion to get the `SLOT` and `ID`.\n\n\tdocker exec -it maxscale.<SLOT>.<ID> maxadmin -pmariadb list servers\n\nThe result should report the cluster up and running:\n\n\t-------------------+-----------------+-------+-------------+--------------------\n\tServer             | Address         | Port  | Connections | Status              \n\t-------------------+-----------------+-------+-------------+--------------------\n\t10.0.0.3           | 10.0.0.3        |  3306 |           0 | Slave, Synced, Running\n\t10.0.0.4           | 10.0.0.4        |  3306 |           0 | Slave, Synced, Running\n\t10.0.0.5           | 10.0.0.5        |  3306 |           0 | Master, Synced, Running\n\t-------------------+-----------------+-------+-------------+--------------------\n\n\n",
+  "dockerfile": "FROM mariadb:10.1\nMAINTAINER toughiq@gmail.com\n\nRUN apt-get update && apt-get upgrade -y \\\n    && rm -rf /var/lib/apt/lists/*\n    \nCOPY scripts/ /docker-entrypoint-initdb.d/.\n\n# we need to touch and chown config files, since we cant write as mysql user\nRUN touch /etc/mysql/conf.d/galera.cnf \\\n    && chown mysql.mysql /etc/mysql/conf.d/galera.cnf \\\n    && chown mysql.mysql /docker-entrypoint-initdb.d/*.sql\n\n# we expose all Cluster related Ports\n# 3306: default MySQL/MariaDB listening port\n# 4444: for State Snapshot Transfers\n# 4567: Galera Cluster Replication\n# 4568: Incremental State Transfer\nEXPOSE 3306 4444 4567 4568\n\n# we set some defaults\nENV GALERA_USER=galera \\\n    GALERA_PASS=galerapass \\\n    MAXSCALE_USER=maxscale \\\n    MAXSCALE_PASS=maxscalepass \\ \n    CLUSTER_NAME=docker_cluster \\\n    MYSQL_ALLOW_EMPTY_PASSWORD=1\n    \nCMD [\"mysqld\"]\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3306
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get upgrade -y     && rm -rf /var/lib/apt/lists/*",
+      "touch /etc/mysql/conf.d/galera.cnf     && chown mysql.mysql /etc/mysql/conf.d/galera.cnf     && chown mysql.mysql /docker-entrypoint-initdb.d/*.sql"
+    ],
+    "workdir": [],
+    "from": "mariadb:10.1",
+    "maintainer": "toughiq@gmail.com",
+    "copy": "scripts/ /docker-entrypoint-initdb.d/.",
+    "env": {
+      "GALERA_USER": "galera",
+      "": "",
+      "GALERA_PASS": "galerapass",
+      "MAXSCALE_USER": "maxscale",
+      "MAXSCALE_PASS": "maxscalepass",
+      "\\": ""
+    },
+    "cmd": "[\"mysqld\"]"
+  },
+  "source_repository_url": "https://github.com/toughIQ/docker-mariadb-cluster.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/toughIQ/docker-mariadb-cluster",
+  "docker_repository": "toughiq/mariadb-cluster",
+  "docker_image": "toughiq/mariadb-cluster",
+  "parameters_schema": {
+    "GALERA_USER": {
+      "default": "galera",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GALERA_PASS": {
+      "default": "galerapass",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAXSCALE_USER": {
+      "default": "maxscale",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAXSCALE_PASS": {
+      "default": "maxscalepass",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "\\": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "toughiq/mariadb-cluster",
+  "revision": "2.1",
+  "uris": [
+    "https://hub.docker.com/r/toughiq/mariadb-cluster",
+    "https://hub.docker.com/v2/repositories/toughiq/mariadb-cluster",
+    "https://github.com/toughIQ/docker-mariadb-cluster.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/toughiq/mariadb-cluster",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

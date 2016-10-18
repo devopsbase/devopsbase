@@ -1,0 +1,128 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/couchpotato/couchpotato",
+    "repository_url": "https://hub.docker.com/v2/repositories/couchpotato/couchpotato",
+    "tags_url": "https://hub.docker.com/v2/repositories/couchpotato/couchpotato/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/couchpotato/couchpotato/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/couchpotato/couchpotato/autobuild",
+    "user": "couchpotato",
+    "name": "couchpotato",
+    "namespace": "couchpotato",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 8,
+    "pull_count": 29902,
+    "last_updated": "2016-03-11T17:00:14.870206Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "develop",
+        "full_size": 83703707,
+        "id": 2166928,
+        "repository": 490247,
+        "creator": 596181,
+        "last_updater": 596181,
+        "last_updated": "2016-03-11T17:00:14.426267Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "3.0.1",
+        "full_size": 83702617,
+        "id": 2167236,
+        "repository": 490247,
+        "creator": 596181,
+        "last_updater": 596181,
+        "last_updated": "2016-03-01T23:50:17.887228Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 83702644,
+        "id": 1836196,
+        "repository": 490247,
+        "creator": 301758,
+        "last_updater": 596181,
+        "last_updated": "2016-03-01T22:34:15.254248Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "domibarton/docker-couchpotato"
+  },
+  "name": "couchpotato/couchpotato Docker container",
+  "description": "CouchPotato - the internet movie PVR for usenet and torrents.",
+  "readme": "## About\n\nThis is a Docker image for [CouchPotato](https://couchpota.to/) - the awesome movie PVR for usenet and torrents.\n\nThe Docker image currently supports:\n\n* running CouchPotato under its __own user__ (not `root`)\n* changing of the __UID and GID__ for the CouchPotato user\n* support for OpenSSL / HTTPS encryption\n\n## Run\n\n### Run via Docker CLI client\n\nTo run the CouchPotato container you can execute:\n\n```bash\ndocker run --name couchpotato -v <datadir path>:/datadir -v <media path>:/media -p 5050:5050 couchpotato/couchpotato\n```\n\nOpen a browser and point it to [http://my-docker-host:5050](http://my-docker-host:5050)\n\n### Run via Docker Compose\n\nYou can also run the CouchPotato container by using [Docker Compose](https://www.docker.com/docker-compose).\n\nIf you've cloned the [git repository](https://github.com/domibarton/docker-couchpotato) you can build and run the Docker container locally (without the Docker Hub):\n\n```bash\ndocker-compose up -d\n```\n\nIf you want to use the Docker Hub image within your existing Docker Compose file you can use the following YAML snippet:\n\n```yaml\ncouchpotato:\n    image: \"couchpotato/couchpotato\"\n    container_name: \"couchpotato\"\n    volumes:\n        - \"<datadir path>:/datadir\"\n        - \"<media path>:/media\"\n    ports:\n        - \"5050:5050\"\n    restart: always\n```\n\n## Configuration\n\n### Volumes\n\nPlease mount the following volumes inside your CouchPotato container:\n\n* `/datadir`: Holds all the CouchPotato data files (e.g. config, postProcessing)\n* `/media`: Directory for TV shows\n\n### Configuration file\n\nBy default the CouchPotato configuration is located on `/datadir/config.ini`.\nIf you want to change this you've to set the `CONFIG` environment variable, for example:\n\n```\nCONFIG=/datadir/couchpotato.ini\n```\n\n### UID and GID\n\nBy default CouchPotato runs with user ID and group ID `666`.\nIf you want to run CouchPotato with different ID's you've to set the `CP_UID` and/or `CP_GID` environment variables, for example:\n\n```\nCP_UID=1234\nCP_GID=1234\n```",
+  "dockerfile": "FROM debian:8\nMAINTAINER Dominique Barton\n\n#\n# Create user and group for CouchPotato.\n#\n\nRUN groupadd -r -g 666 couchpotato \\\n    && useradd -r -u 666 -g 666 -d /couchpotato couchpotato\n\n#\n# Add CouchPotato init script.\n#\n\nADD couchpotato.sh /couchpotato.sh\nRUN chmod 755 /couchpotato.sh\n\n#\n# Install CouchPotato and all required dependencies.\n#\n\nRUN export VERSION=3.0.1 \\\n    && apt-get -q update \\\n    && apt-get install -qy curl ca-certificates python-pip python-dev libz-dev libxml2-dev libxslt1-dev gcc \\\n    && curl -o /tmp/couchpotato.tar.gz https://codeload.github.com/CouchPotato/CouchPotatoServer/tar.gz/build/${VERSION} \\\n    && tar xzf /tmp/couchpotato.tar.gz \\\n    && mv CouchPotatoServer-* couchpotato \\\n    && chown -R couchpotato: couchpotato \\\n    && pip install cheetah lxml pyopenssl \\\n    && apt-get -y remove curl python-dev libz-dev libxml2-dev libxslt1-dev gcc \\\n    && apt-get -y autoremove \\\n    && apt-get -y clean \\\n    && rm -rf /var/lib/apt/lists/* \\\n    && rm -rf /tmp/*\n\n#\n# Define container settings.\n#\n\nVOLUME [\"/datadir\", \"/download\"]\n\nEXPOSE 5050\n\n#\n# Start CouchPotato.\n#\n\nWORKDIR /couchpotato\nCMD [\"/couchpotato.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "couchpotato.sh",
+        "dest": "/couchpotato.sh"
+      }
+    ],
+    "expose": [
+      5050
+    ],
+    "volume": [
+      "[\"/datadir\", \"/download\"]"
+    ],
+    "run": [
+      "groupadd -r -g 666 couchpotato     && useradd -r -u 666 -g 666 -d /couchpotato couchpotato",
+      "chmod 755 /couchpotato.sh",
+      "export VERSION=3.0.1     && apt-get -q update     && apt-get install -qy curl ca-certificates python-pip python-dev libz-dev libxml2-dev libxslt1-dev gcc     && curl -o /tmp/couchpotato.tar.gz https://codeload.github.com/CouchPotato/CouchPotatoServer/tar.gz/build/${VERSION}     && tar xzf /tmp/couchpotato.tar.gz     && mv CouchPotatoServer-* couchpotato     && chown -R couchpotato: couchpotato     && pip install cheetah lxml pyopenssl     && apt-get -y remove curl python-dev libz-dev libxml2-dev libxslt1-dev gcc     && apt-get -y autoremove     && apt-get -y clean     && rm -rf /var/lib/apt/lists/*     && rm -rf /tmp/*"
+    ],
+    "workdir": [
+      "/couchpotato"
+    ],
+    "from": "debian:8",
+    "maintainer": "Dominique Barton",
+    "cmd": "[\"/couchpotato.sh\"]"
+  },
+  "source_repository_url": "https://github.com/domibarton/docker-couchpotato.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/domibarton/docker-couchpotato",
+  "docker_repository": "couchpotato/couchpotato",
+  "docker_image": "couchpotato/couchpotato",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5050
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "couchpotato/couchpotato",
+  "revision": "develop",
+  "uris": [
+    "https://hub.docker.com/r/couchpotato/couchpotato",
+    "https://hub.docker.com/v2/repositories/couchpotato/couchpotato",
+    "https://github.com/domibarton/docker-couchpotato.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Binding/Region/North America/US",
+    "Style/Virtualization Level/Hardware/Hypervisor/Paravirtualization"
+  ],
+  "info_url": "https://hub.docker.com/r/couchpotato/couchpotato",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

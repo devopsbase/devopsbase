@@ -1,0 +1,166 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dreamcat4/nginx",
+    "repository_url": "https://hub.docker.com/v2/repositories/dreamcat4/nginx",
+    "tags_url": "https://hub.docker.com/v2/repositories/dreamcat4/nginx/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dreamcat4/nginx/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dreamcat4/nginx/autobuild",
+    "user": "dreamcat4",
+    "name": "nginx",
+    "namespace": "dreamcat4",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 242,
+    "last_updated": "2016-10-17T02:54:08.473088Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 56676496,
+        "id": 3139031,
+        "repository": 704648,
+        "creator": 190978,
+        "last_updater": 190978,
+        "last_updated": "2016-10-17T02:54:08.100006Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "dreamcat4/docker-images"
+  },
+  "name": "dreamcat4/nginx Docker container",
+  "description": "A high-performance Nginx base image for Docker to serve static websites.",
+  "readme": "***Source: [kyma/docker-nginx](https://github.com/KyleAMathews/docker-nginx)***\n\n[![logo](http://nginx.org/nginx.png)](http://nginx.org)\n\n# Nginx\n\nA docker image of Nginx v1.9.5+. [DockerHub Page](https://registry.hub.docker.com/u/dreamcat4/nginx/). A high-performance Nginx base image for Docker to serve static websites. It will serve anything in the `/www` directory.\n\n\n### Enable SSL\n\nFirst, to obtain an SSL certificate: https://letsencrypt.org/getting-started/\n\nTo enable SSL, put your certs in a `/ssl` volume and then to enable the `default-ssl` site: `docker run -e nginx_ssl=true dreamcat4/nginx`. You will need the following 2 certificate files in your mounted `/ssl` volume:\n\n    /ssl/server.crt\n    /ssl/server.key\n\nNote: Enabling SSL does not disable HTTP access. Both methods are available and there is no automiatic redirect from HTTP --> SSL. Although there should be in here a reqrite rule to do this, unfortunately there isn't one.\n\n\n### nginx.conf\n\nThe nginx.conf and mime.types are pulled with slight modifications from\nthe h5bp Nginx HTTP server boilerplate configs project at\nhttps://github.com/h5bp/server-configs-nginx\n\n### File permissions\n\nBy default nginx will run as the `nginx` user and group. With a default `uid:gid` of `8080:8080`. This is a typical / sensible value for such a service.\n\nYou can change it's UID and GID to your liking by setting the following docker env vars:\n\n```sh\nnginx_uid=XXX\nnginx_gid=YYY\n```\n\nBy specifying an alternative uid and gid as a number, this lets you control which folder(s) nginx has read/write access to.\n\n#### Add your host user account to the nginx group\n\nThis shouldn't really be necessary except for in the case of file uploads. If you do not wish change nginx's gid number you can instead permit your own host account(s) file access to nginx's folders by making them group permissions writable e.g. chmod `0664` and `0775`.\n\nOn the host side you will need to create an `nginx` group, adding your own user account to be a member of the same group gid (the default value of nginx's gid is `8080`). Copy-paste these commands:\n\n```sh\nsudo groupadd -g 8080 nginx\nsudo usermod -a -G nginx $(id -un)\n```\n\n### Docker Compose\n\nSorry there is no example for Docker Compose at this time. But you may do something similar:\n\n```sh\ncrane.yml:\n\ncontainers:\n\n  nginx:\n    image: dreamcat4/nginx\n    run:\n      net: none\n      log-opt:\n        - max-size=10m\n        - max-file=2\n      volume:\n        - /www\n      env:\n        - nginx_uid=65534\n        - nginx_gid=65534\n        - pipework_wait=eth0\n        - pipework_cmd_eth0=eth0 -i eth0 @CONTAINER_NAME@ 192.168.1.15\n      detach: true\n```\n\nThe `pipework_` variables are used to setup networking with the `dreamcat4/pipework` helper image.\n\n\n",
+  "dockerfile": "FROM ubuntu:16.04\nMAINTAINER dreamcat4 <dreamcat4@gmail.com>\n\n\nENV _clean=\"rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\"\nENV _apt_clean=\"eval apt-get clean && $_clean\"\n\n\n# Install s6-overlay\nENV s6_overlay_version=\"1.17.1.1\"\nADD https://github.com/just-containers/s6-overlay/releases/download/v${s6_overlay_version}/s6-overlay-amd64.tar.gz /tmp/\nRUN tar zxf /tmp/s6-overlay-amd64.tar.gz -C / && $_clean\nENV S6_LOGGING=\"1\"\n# ENV S6_KILL_GRACETIME=\"3000\"\n\n\n# Install pipework\nADD https://github.com/jpetazzo/pipework/archive/master.tar.gz /tmp/pipework-master.tar.gz\nRUN tar -zxf /tmp/pipework-master.tar.gz -C /tmp && cp /tmp/pipework-master/pipework /sbin/ && $_clean\n\n\n# Install nginx\nRUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ABF5BD827BD9BF62 \\\n && echo \"deb http://nginx.org/packages/mainline/ubuntu xenial nginx\" >> /etc/apt/sources.list \\\n && apt-get update && apt-get install -y ca-certificates nginx && $_apt_clean\n\n\n# Forward request and error logs to docker log collector\nRUN ln -sf /dev/stdout /var/log/nginx/access.log \\\n && ln -sf /dev/stderr /var/log/nginx/error.log\n\n\n# Setup nginx user\nRUN groupmod -o -g 8080 nginx \\\n && usermod -o -u 8080 -g nginx --shell /bin/sh -d /www nginx \\\n && install -o nginx -g nginx -d /www /ssl\n\n\n# Copy config files\nCOPY nginx.conf /etc/nginx/nginx.conf\nCOPY mime.types /etc/nginx/mime.types\nCOPY default /etc/nginx/sites-enabled/default\nCOPY default-ssl /etc/nginx/sites-available/default-ssl\n\n\n# Start scripts\nENV S6_LOGGING=\"0\"\nADD services.d /etc/services.d\n\n\n# Default container settings\nVOLUME /www\nEXPOSE 80 443\nENTRYPOINT [\"/init\"]\n\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "https://github.com/just-containers/s6-overlay/releases/download/v${s6_overlay_version}/s6-overlay-amd64.tar.gz",
+        "dest": "/tmp/"
+      },
+      {
+        "source": "https://github.com/jpetazzo/pipework/archive/master.tar.gz",
+        "dest": "/tmp/pipework-master.tar.gz"
+      },
+      {
+        "source": "services.d",
+        "dest": "/etc/services.d"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "/www"
+    ],
+    "run": [
+      "tar zxf /tmp/s6-overlay-amd64.tar.gz -C / && $_clean",
+      "tar -zxf /tmp/pipework-master.tar.gz -C /tmp && cp /tmp/pipework-master/pipework /sbin/ && $_clean",
+      "apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ABF5BD827BD9BF62  && echo \"deb http://nginx.org/packages/mainline/ubuntu xenial nginx\" >> /etc/apt/sources.list  && apt-get update && apt-get install -y ca-certificates nginx && $_apt_clean",
+      "ln -sf /dev/stdout /var/log/nginx/access.log  && ln -sf /dev/stderr /var/log/nginx/error.log",
+      "groupmod -o -g 8080 nginx  && usermod -o -u 8080 -g nginx --shell /bin/sh -d /www nginx  && install -o nginx -g nginx -d /www /ssl"
+    ],
+    "workdir": [],
+    "from": "ubuntu:16.04",
+    "maintainer": "dreamcat4 <dreamcat4@gmail.com>",
+    "env": {
+      "_clean": "\"rm",
+      "-rf": "/var/lib/apt/lists/*",
+      "/tmp/*": "/var/tmp/*\"",
+      "_apt_clean": "\"eval",
+      "apt-get": "clean",
+      "&&": "$_clean\"",
+      "s6_overlay_version": "\"1.17.1.1\"",
+      "S6_LOGGING": "\"0\""
+    },
+    "copy": "default-ssl /etc/nginx/sites-available/default-ssl",
+    "entrypoint": "[\"/init\"]"
+  },
+  "source_repository_url": "https://github.com/dreamcat4/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/dreamcat4/docker-images",
+  "docker_repository": "dreamcat4/nginx",
+  "docker_image": "dreamcat4/nginx",
+  "parameters_schema": {
+    "_clean": {
+      "default": "\"rm",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "-rf": {
+      "default": "/var/lib/apt/lists/*",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "/tmp/*": {
+      "default": "/var/tmp/*\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "_apt_clean": {
+      "default": "\"eval",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "apt-get": {
+      "default": "clean",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "&&": {
+      "default": "$_clean\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "s6_overlay_version": {
+      "default": "\"1.17.1.1\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "S6_LOGGING": {
+      "default": "\"0\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dreamcat4/nginx",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/dreamcat4/nginx",
+    "https://hub.docker.com/v2/repositories/dreamcat4/nginx",
+    "https://github.com/dreamcat4/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/dreamcat4/nginx",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

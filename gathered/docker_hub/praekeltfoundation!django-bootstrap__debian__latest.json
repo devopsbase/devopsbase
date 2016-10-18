@@ -1,0 +1,138 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/praekeltfoundation/django-bootstrap",
+    "repository_url": "https://hub.docker.com/v2/repositories/praekeltfoundation/django-bootstrap",
+    "tags_url": "https://hub.docker.com/v2/repositories/praekeltfoundation/django-bootstrap/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/praekeltfoundation/django-bootstrap/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/praekeltfoundation/django-bootstrap/autobuild",
+    "user": "praekeltfoundation",
+    "name": "django-bootstrap",
+    "namespace": "praekeltfoundation",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 2380,
+    "last_updated": "2016-10-13T08:18:37.946359Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "debian",
+        "full_size": 77428314,
+        "id": 3944910,
+        "repository": 552509,
+        "creator": 589290,
+        "last_updater": 589290,
+        "last_updated": "2016-10-13T08:18:37.615959Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 77428241,
+        "id": 2144859,
+        "repository": 552509,
+        "creator": 589290,
+        "last_updater": 589290,
+        "last_updated": "2016-10-13T08:16:02.353522Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "alpine",
+        "full_size": 27632126,
+        "id": 3944927,
+        "repository": 552509,
+        "creator": 589290,
+        "last_updater": 589290,
+        "last_updated": "2016-10-13T08:14:46.879052Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "praekeltfoundation/docker-django-bootstrap"
+  },
+  "name": "praekeltfoundation/django-bootstrap Docker container",
+  "description": "Dockerfile for quickly running Django projects in a Docker container.",
+  "readme": "# docker-django-bootstrap\nDockerfile for quickly running Django projects in a Docker container.\n\nRun [Django](https://www.djangoproject.com) projects from source using [Gunicorn](http://gunicorn.org) and [Nginx](http://nginx.org).\n\n## Usage\n#### Step 0: Get your Django project in shape\nThere are a few ways that your Django project needs to be set up in order to be compatible with this Docker image.\n\n**setup.py**  \nYour project must have a `setup.py`. All dependencies (including Django itself) need to be listed as `install_requires`.\n\n**Static files**  \nYour project's [static files](https://docs.djangoproject.com/en/1.9/howto/static-files/) must be set up as follows:\n* `STATIC_URL = '/static/'`\n* `STATIC_ROOT` = `BASE_DIR/static` or `BASE_DIR/staticfiles`\n\n**Media files**  \nIf your project makes use of user-uploaded media files, it must be set up as follows:\n* `MEDIA_URL = '/media/'`\n* `MEDIA_ROOT` = `BASE_DIR/media` or `BASE_DIR/mediafiles`\n\n***Note:*** Any files stored in directories called `static`, `staticfiles`, `media`, or `mediafiles` in the project root directory will be served by Nginx. Do not store anything here that you do not want the world to see.\n\n#### Step 1: Write a Dockerfile\nIn the root of the repo for your Django project, add a Dockerfile for the project. For example, this file could contain:\n```dockerfile\nFROM praekeltfoundation/django-bootstrap\nENV DJANGO_SETTINGS_MODULE \"my_django_project.settings\"\nRUN django-admin collectstatic --noinput\nENV APP_MODULE \"my_django_project.wsgi:application\"\n```\n\nLet's go through these lines one-by-one:\n 1. The `FROM` instruction here tells us which image to base this image on. We use the `django-bootstrap` base image.\n 2. We set the `DJANGO_SETTINGS_MODULE` environment variable so that Django knows where to find its settings. This is necessary for any `django-admin` commands to work.\n 3. *Optional:* If you need to run any build-time tasks, such as collecting static assets, now's the time to do that.\n 4. We set the `APP_MODULE` environment variable that will be passed to `gunicorn`, which is installed and run in the `django-bootstrap` base image. `gunicorn` needs to know which WSGI application to run.\n\nThe `django-bootstrap` base image actually does a few steps automatically using Docker's `ONBUILD` instruction. It will:\n 1. `COPY . /app` - copies the source of your project into the image\n 2. `RUN chown -R gunicorn:gunicorn /app` - ensures the `gunicorn` user can write to `/app` and its subdirectories\n 3. `RUN pip install -e .` - installs your project using `pip`\nAll these instructions occur directly after the `FROM` instruction in your Dockerfile.\n\nBy default, the [`django-entrypoint.sh`](django-entrypoint.sh) script is run when the container is started. This script runs a once-off `django-admin migrate` to update the database schemas and then launches `nginx` and `gunicorn` to run the application.\n\nThis [`django-entrypoint.sh`](django-entry-point.sh) script also allows you to create a Django super user account if needed. Setting the `SUPERUSER_PASSWORD` environment variable will result in a Django superuser account being made with the `admin` username. This will only happen if no `admin` user exists.\n\nYou can skip the execution of this script and run other commands by overriding the `CMD` instruction. For example, to run a Celery worker, add the following to your Dockerfile:\n```dockerfile\nCMD [\"celery\", \"worker\", \\\n     \"--app\", \"my_django_project\", \\\n     \"--loglevel\", \"info\"]\n```\n\nAlternatively, you can override the command at runtime:\n```shell\ndocker run my_django_project_image celery worker --app my_django_project --loglevel info\n```\n\n#### Step 2: Add a `.dockerignore` file\nAdd a file called `.dockerignore` to the root of your project. A good start is just to copy in the [`.dockerignore` file](example/.dockerignore) from the example Django project in this repo.\n\nThis image automatically copies in the entire source of your project, but some of those files probably *aren't* needed inside the Docker image you're building. We tell Docker about those unneeded files using a `.dockerignore` file, much like how one would tell Git not to track files using a `.gitignore` file.\n\nAs a general rule, you should list all the files in your `.gitignore` in your `.dockerignore` file. If you don't need it in Git, you shouldn't need it in Docker.\n\nAdditionally, you shouldn't need any *Git* stuff inside your Docker image. It's especially important to have Docker ignore the `.git` directory because every Git operation you perform will result in files changing in that directory (whether you end up in the same state in Git as you were previously or not). This could result in unnecessary invalidation of Docker's cached image layers.\n\n**NOTE:** Unlike `.gitignore` files, `.dockerignore` files do *not* apply recursively to subdirectories. So, for example, while the entry `*.pyc` in a `.gitignore` file will cause Git to ignore `./abc.pyc` and `./def/ghi.pyc`, in a `.dockerignore` file, that entry will cause Docker to ignore only `./abc.pyc`. This is very unfortunate. In order to get the same behaviour from a `.dockerignore` file, you need to add an extra leading `**/` glob pattern — i.e. `**/*.pyc`. For more information on the `.dockerignore` file syntax, see the [Docker documentation](https://docs.docker.com/engine/reference/builder/#dockerignore-file).\n\n## Celery\nIt's common for Django applications to have [Celery](http://docs.celeryproject.org/en/latest/django/first-steps-with-django.html) workers performing tasks alongside the actual website. In most cases it makes sense to run each Celery process in a container separate from the Django/Gunicorn one, so as to follow the rule of one(*-ish*) process per container. But in some cases, running a whole bunch of containers for a relatively simple site may be overkill. Additional containers generally have some overhead in terms of CPU and, especially, memory usage.\n\nThis image provides the option to run a Celery worker inside the container, alongside Gunicorn/Nginx. To run a Celery worker you must set the `CELERY_APP` environment variable.\n\nNote that, as with Django, your project needs to specify Celery in its `install_requires` in order to use Celery. Celery is not installed in this image by default.\n\n### Configuration\nThe following environment variables can be used to configure Celery. A number of these can also be configured via the Django project's settings.\n\n#### `CELERY_APP`:\n* Required: yes\n* Default: none\n* Celery option: `-A`/`--app`\n\n#### `CELERY_BROKER`:\n* Required: no\n* Default: none\n* Celery option: `-b`/`--broker`\n\n#### `CELERY_LOGLEVEL`:\n* Required: no\n* Default: `INFO`\n* Celery option: `-l`/`--loglevel`\n\n#### `CELERY_CONCURRENCY`:\nNote that by default Celery runs as many worker processes as there are processors. **We instead default to 1 worker process** here to ensure containers use a consistent and small amount of resources. If you need to run many worker processes, they should be in separate containers.\n* Required: no\n* Default: **1**\n* Celery option: `-c`/`--concurrency`\n\n#### `CELERY_BEAT`:\nSet this option to any non-empty value to have a [Celery beat](http://docs.celeryproject.org/en/latest/userguide/periodic-tasks.html) scheduler process run as well.\n* Required: no\n* Default: none\n* Celery option: n/a\n\n## Other configuration\n### Gunicorn\nGunicorn is run with some basic configuration:\n* Runs WSGI app defined in `APP_MODULE` environment variable\n* Starts workers under the `gunicorn` user and group\n* Listens on a Unix socket at `/var/run/gunicorn/gunicorn.sock`\n* Access logs can be logged to stderr by setting the `GUNICORN_ACCESS_LOGS` environment variable to a non-empty value.\n\nExtra settings can be provided by overriding the `CMD` instruction to pass extra parameters to the entrypoint script. For example:\n```dockerfile\nCMD [\"django-entrypoint.sh\", \"--threads\", \"5\", \"--timeout\", \"50\"]\n```\n\nSee all the settings available for gunicorn [here](http://docs.gunicorn.org/en/latest/settings.html). A common setting is the number of Gunicorn workers which can be set with the `WEB_CONCURRENCY` environment variable.\n\n### Nginx\nNginx is set up with mostly default config:\n* Access logs are sent to stdout, error logs to stderr\n* Listens on port 8000 (and this port is exposed in the Dockerfile)\n* Serves files from `/static/` and `/media/`\n* All other requests are proxied to the Gunicorn socket\n\nGenerally you shouldn't need to adjust Nginx's settings. If you do, the configuration files of interest are at:\n* `/etc/nginx/nginx.conf`: Main configuration\n* `/etc/nginx/conf.d/django.conf`: Proxy configuration\n",
+  "dockerfile": "FROM praekeltfoundation/python-base:debian\nMAINTAINER Praekelt Foundation <dev@praekeltfoundation.org>\n\n# Install libpq for PostgreSQL support and Nginx to serve everything\n# Get Nginx from the upstream repo so that we're up-to-date with Alpine and have\n# a compatible config file.\nENV NGINX_VERSION 1.10.1-1~jessie\nRUN apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62 \\\n    && echo \"deb http://nginx.org/packages/debian/ jessie nginx\" >> /etc/apt/sources.list \\\n    && apt-get-install.sh \\\n        libpq5 \\\n        nginx=${NGINX_VERSION}\n\n# Install gunicorn\nRUN pip install gunicorn\n\n# Copy in the Nginx config\nCOPY ./nginx/ /etc/nginx/\nRUN rm /etc/nginx/conf.d/default.conf\n\n# Create gunicorn user and group, make directory for socket, and add nginx user\n# to gunicorn group so that it can read/write to the socket.\nRUN addgroup gunicorn \\\n    && adduser --system --ingroup gunicorn gunicorn \\\n    && mkdir /var/run/gunicorn \\\n    && chown gunicorn:gunicorn /var/run/gunicorn \\\n    && adduser nginx gunicorn\n\n# Create celery user and group, make directory for beat schedule file.\nRUN addgroup celery \\\n    && adduser --system --ingroup celery celery \\\n    && mkdir /var/run/celery \\\n    && chown celery:celery /var/run/celery\n\nEXPOSE 8000\n\nCOPY ./django-entrypoint.sh /scripts/\nCMD [\"django-entrypoint.sh\"]\n\nWORKDIR /app\n\nONBUILD COPY . /app\n# chown the app directory after copying in case the copied files include\n# subdirectories that will be written to, e.g. the media directory\nONBUILD RUN chown -R gunicorn:gunicorn /app\nONBUILD RUN pip install -e .\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8000
+    ],
+    "volume": [],
+    "run": [
+      "apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62     && echo \"deb http://nginx.org/packages/debian/ jessie nginx\" >> /etc/apt/sources.list     && apt-get-install.sh         libpq5         nginx=${NGINX_VERSION}",
+      "pip install gunicorn",
+      "rm /etc/nginx/conf.d/default.conf",
+      "addgroup gunicorn     && adduser --system --ingroup gunicorn gunicorn     && mkdir /var/run/gunicorn     && chown gunicorn:gunicorn /var/run/gunicorn     && adduser nginx gunicorn",
+      "addgroup celery     && adduser --system --ingroup celery celery     && mkdir /var/run/celery     && chown celery:celery /var/run/celery"
+    ],
+    "workdir": [
+      "/app"
+    ],
+    "from": "praekeltfoundation/python-base:debian",
+    "maintainer": "Praekelt Foundation <dev@praekeltfoundation.org>",
+    "env": {
+      "NGINX_VERSION": "1.10.1-1~jessie"
+    },
+    "copy": "./django-entrypoint.sh /scripts/",
+    "cmd": "[\"django-entrypoint.sh\"]",
+    "onbuild": "RUN pip install -e ."
+  },
+  "source_repository_url": "https://github.com/praekeltfoundation/docker-django-bootstrap.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/praekeltfoundation/docker-django-bootstrap",
+  "docker_repository": "praekeltfoundation/django-bootstrap",
+  "docker_image": "praekeltfoundation/django-bootstrap",
+  "parameters_schema": {
+    "NGINX_VERSION": {
+      "default": "1.10.1-1~jessie",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "praekeltfoundation/django-bootstrap",
+  "revision": "debian",
+  "uris": [
+    "https://hub.docker.com/r/praekeltfoundation/django-bootstrap",
+    "https://hub.docker.com/v2/repositories/praekeltfoundation/django-bootstrap",
+    "https://github.com/praekeltfoundation/docker-django-bootstrap.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Mode/Executable/Script/Dockerfile"
+  ],
+  "info_url": "https://hub.docker.com/r/praekeltfoundation/django-bootstrap",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

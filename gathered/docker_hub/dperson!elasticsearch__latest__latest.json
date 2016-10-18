@@ -1,0 +1,96 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dperson/elasticsearch",
+    "repository_url": "https://hub.docker.com/v2/repositories/dperson/elasticsearch",
+    "tags_url": "https://hub.docker.com/v2/repositories/dperson/elasticsearch/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dperson/elasticsearch/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dperson/elasticsearch/autobuild",
+    "user": "dperson",
+    "name": "elasticsearch",
+    "namespace": "dperson",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 1147,
+    "last_updated": "2016-10-09T09:25:31.050027Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 159466853,
+        "id": 52626,
+        "repository": 172609,
+        "creator": 102881,
+        "last_updater": 102881,
+        "last_updated": "2016-10-09T09:25:30.668935Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "dperson/elasticsearch"
+  },
+  "name": "dperson/elasticsearch Docker container",
+  "description": "",
+  "readme": "[![logo](https://raw.githubusercontent.com/dperson/elasticsearch/master/logo.png)](https://www.elastic.co/)\n\n# Elasticsearch\n\nElasticsearch docker container\n\n# What is Elasticsearch?\n\nElasticsearch is a search server based on Lucene. It provides a distributed,\nmultitenant-capable full-text search engine with a RESTful web interface and\nschema-free JSON documents. Elasticsearch is developed in Java and is released\nas open source under the terms of the Apache License. Elasticsearch is the\nsecond most popular enterprise search engine.\n\n# How to use this image\n\nWhen started Elasticsearch container will listen on ports 9200 and 9300.\n\n## Hosting a Elasticsearch instance\n\n    sudo docker run -it -d dperson/elasticsearch\n\n## Configuration\n\n    sudo docker run -it --rm dperson/elasticsearch -h\n\n    Usage: elasticsearch.sh [-opt] [command]\n    Options (fields in '[]' are optional, '<>' are required):\n        -h          This help\n        -t \"\"       Configure timezone\n                    possible arg: \"[timezone]\" - zoneinfo timezone for container\n\n    The 'command' (if provided and valid) will be run instead of elasticsearch\n\nENVIRONMENT VARIABLES (only available with `docker run`)\n\n * `TZ` - As above, configure the zoneinfo timezone, IE `EST5EDT`\n * `USERID` - Set the UID for the app user\n * `GROUPID` - Set the GID for the app user\n\n## Examples\n\nAny of the commands can be run at creation with `docker run` or later with\n`docker exec -it elasticsearch.sh` (as of version 1.3 of docker).\n\n### Setting the Timezone\n\n    sudo docker run -it -p 9200:9200 -p 9300:9300 -d dperson/elasticsearch \\\n                -t EST5EDT\n\nOR using `environment variables`\n\n    sudo docker run -it -p 9200:9200 -p 9300:9300 -e TZ=EST5EDT -d \\\n                dperson/elasticsearch\n\nWill get you the same settings as\n\n    sudo docker run -it --name es -p 9200:9200 -p 9300:9300 -d \\\n                dperson/elasticsearch\n    sudo docker exec -it es elasticsearch.sh -t EST5EDT ls -AlF /etc/localtime\n    sudo docker restart es\n\n## Complex configuration\n\n[Example configs](http://www.elastic.co/guide/)\n\nIf you wish to adapt the default configuration, use something like the following\nto copy it from a running container:\n\n    sudo docker cp es:/opt/elasticsearch/config /some/path\n\nYou can use the modified configuration with:\n\n    sudo docker run -it --name es -p 9200:9200 -p 9300:9300 \\\n                -v /some/path:/opt/elasticsearch/config:ro \\\n                -d dperson/elasticsearch\n\n# User Feedback\n\n## Issues\n\nIf you have any problems with or questions about this image, please contact me\nthrough a [GitHub issue](https://github.com/dperson/elasticsearch/issues).",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER David Personette <dperson@gmail.com>\n\n# Install elasticsearch\nRUN export DEBIAN_FRONTEND='noninteractive' && \\\n    export version='2.4.1' && \\\n    export sha1sum='6a6acfc7bf7b4354dc6136daea54db1c844d632f' && \\\n    export url='https://download.elasticsearch.org/elasticsearch/release/org'&&\\\n    export url=\"$url/elasticsearch/distribution/tar/elasticsearch/$version\" && \\\n    groupadd -r elasticsearch && \\\n    useradd -c 'Elasticsearch' -d /opt/elasticsearch -g elasticsearch -r \\\n                elasticsearch && \\\n    echo \"deb http://httpredir.debian.org/debian jessie-backports main\" \\\n                >>/etc/apt/sources.list && \\\n    apt-get update -qq && \\\n    apt-get install -qqy --no-install-recommends ca-certificates curl \\\n                openjdk-8-jre \\\n                $(apt-get -s dist-upgrade|awk '/^Inst.*ecurity/ {print $2}') &&\\\n    echo \"downloading: elasticsearch-${version}.tar.gz ...\" && \\\n    curl -LOC- -s ${url}/elasticsearch-${version}.tar.gz && \\\n    sha1sum elasticsearch-${version}.tar.gz | grep -q \"$sha1sum\" && \\\n    tar -xf elasticsearch-${version}.tar.gz -C /tmp && \\\n    mv /tmp/elasticsearch-* /opt/elasticsearch && \\\n    (echo '\\nhttp.cors.enabled: true\\n#http.cors.allow-origin:' && \\\n    echo 'network.host: 0.0.0.0') \\\n                >>/opt/elasticsearch/config/elasticsearch.yml && \\\n    cp /opt/elasticsearch/config/logging.yml \\\n                /opt/elasticsearch/config/logging.yml.orig && \\\n    sed -i '/org.apache.http/,+19d; /deprecation_log_file:/,$d; /depreca/,+2d' \\\n                /opt/elasticsearch/config/logging.yml && \\\n    chown -Rh elasticsearch. /opt/elasticsearch && \\\n    apt-get purge -qqy curl && \\\n    apt-get autoremove -qqy && apt-get clean -qqy && \\\n    rm -rf /tmp/* /var/lib/apt/lists/* elasticsearch-${version}.tar.gz\nCOPY elasticsearch.sh /usr/bin/\n\nEXPOSE 9200 9300\n\nVOLUME [\"/opt/elasticsearch/config\", \"/opt/elasticsearch/data\", \\\n            \"/opt/elasticsearch/logs\", \"/opt/elasticsearch/plugins\"]\n\nENTRYPOINT [\"elasticsearch.sh\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      9200
+    ],
+    "volume": [
+      "[\"/opt/elasticsearch/config\", \"/opt/elasticsearch/data\",             \"/opt/elasticsearch/logs\", \"/opt/elasticsearch/plugins\"]"
+    ],
+    "run": [
+      "export DEBIAN_FRONTEND='noninteractive' &&     export version='2.4.1' &&     export sha1sum='6a6acfc7bf7b4354dc6136daea54db1c844d632f' &&     export url='https://download.elasticsearch.org/elasticsearch/release/org'&&    export url=\"$url/elasticsearch/distribution/tar/elasticsearch/$version\" &&     groupadd -r elasticsearch &&     useradd -c 'Elasticsearch' -d /opt/elasticsearch -g elasticsearch -r                 elasticsearch &&     echo \"deb http://httpredir.debian.org/debian jessie-backports main\"                 >>/etc/apt/sources.list &&     apt-get update -qq &&     apt-get install -qqy --no-install-recommends ca-certificates curl                 openjdk-8-jre                 $(apt-get -s dist-upgrade|awk '/^Inst.*ecurity/ {print $2}') &&    echo \"downloading: elasticsearch-${version}.tar.gz ...\" &&     curl -LOC- -s ${url}/elasticsearch-${version}.tar.gz &&     sha1sum elasticsearch-${version}.tar.gz | grep -q \"$sha1sum\" &&     tar -xf elasticsearch-${version}.tar.gz -C /tmp &&     mv /tmp/elasticsearch-* /opt/elasticsearch &&     (echo '\\nhttp.cors.enabled: true\\n#http.cors.allow-origin:' &&     echo 'network.host: 0.0.0.0')                 >>/opt/elasticsearch/config/elasticsearch.yml &&     cp /opt/elasticsearch/config/logging.yml                 /opt/elasticsearch/config/logging.yml.orig &&     sed -i '/org.apache.http/,+19d; /deprecation_log_file:/,$d; /depreca/,+2d'                 /opt/elasticsearch/config/logging.yml &&     chown -Rh elasticsearch. /opt/elasticsearch &&     apt-get purge -qqy curl &&     apt-get autoremove -qqy && apt-get clean -qqy &&     rm -rf /tmp/* /var/lib/apt/lists/* elasticsearch-${version}.tar.gz"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "David Personette <dperson@gmail.com>",
+    "copy": "elasticsearch.sh /usr/bin/",
+    "entrypoint": "[\"elasticsearch.sh\"]"
+  },
+  "source_repository_url": "https://github.com/dperson/elasticsearch.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/dperson/elasticsearch",
+  "docker_repository": "dperson/elasticsearch",
+  "docker_image": "dperson/elasticsearch",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        9200
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dperson/elasticsearch",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/dperson/elasticsearch",
+    "https://hub.docker.com/v2/repositories/dperson/elasticsearch",
+    "https://github.com/dperson/elasticsearch.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/dperson/elasticsearch",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,129 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/zostera/django-ci",
+    "repository_url": "https://hub.docker.com/v2/repositories/zostera/django-ci",
+    "tags_url": "https://hub.docker.com/v2/repositories/zostera/django-ci/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/zostera/django-ci/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/zostera/django-ci/autobuild",
+    "user": "zostera",
+    "name": "django-ci",
+    "namespace": "zostera",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 110,
+    "last_updated": "2016-07-01T13:44:30.821099Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 293697334,
+        "id": 3647924,
+        "repository": 774324,
+        "creator": 940970,
+        "last_updater": 940970,
+        "last_updated": "2016-07-01T13:44:30.389151Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "zostera/docker-django-ci"
+  },
+  "name": "zostera/django-ci Docker container",
+  "description": "Ubuntu with PostgreSQL/PostGIS, Python, pip, Django and GIS tools for CI purposes",
+  "readme": "# docker-django-ci\n\nAutomated build for Docker Hub zostera/django-ci\n",
+  "dockerfile": "#\n# Dockerfile for Ubuntu with PostGIS, gdal, Python and pip\n#\n\nFROM ubuntu:trusty\nMAINTAINER Dylan Verheul <dylan@zostera.nl>\n\n# Postgres version\nENV POSTGRES_VERSION 9.5\nENV POSTGIS_VERSION 2.2\n\n# Locale\nRUN locale-gen --no-purge en_US.UTF-8\nENV LC_ALL en_US.UTF-8\nRUN update-locale LANG=en_US.UTF-8\n\n# Install GDAL and wget\nRUN apt-get update && apt-get install -y \\\n  libgdal-dev \\\n  libgdal1h \\\n  libgdal1-dev \\\n  wget\n\n# Export CFLAGS for compilation requiring GDAL\nRUN export CFLAGS=$(gdal-config --cflags)\n\n# Install PostGIS according to http://trac.osgeo.org/postgis/wiki/UsersWikiPostGIS22UbuntuPGSQL95Apt\nRUN sudo sh -c 'echo \"deb http://apt.postgresql.org/pub/repos/apt trusty-pgdg main\" >> /etc/apt/sources.list'\nRUN wget --quiet -O - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | sudo apt-key add -\n\n# Install ``python-software-properties``, ``software-properties-common`` and PostgreSQL ${POSTGRES_VERSION}\n#  There are some warnings (in red) that show up during the build. You can hide\n#  them by prefixing each apt-get statement with DEBIAN_FRONTEND=noninteractive\nRUN apt-get update && apt-get install -y \\\n  python-software-properties \\\n  software-properties-common \\\n  postgresql-${POSTGRES_VERSION}-postgis-${POSTGIS_VERSION} \\\n  postgresql-client-${POSTGRES_VERSION} \\\n  postgresql-contrib-${POSTGRES_VERSION} \\\n  python-dev \\\n  python-pip \\\n  python-setuptools \\\n  python-gdal\n\n# Adjust PostgreSQL configuration so that remote connections to the\n# database are possible.\nRUN echo \"local  all                        trust\" >> /etc/postgresql/${POSTGRES_VERSION}/main/pg_hba.conf\nRUN echo \"host   all  all    127.0.0.1/32   trust\"   >> /etc/postgresql/${POSTGRES_VERSION}/main/pg_hba.conf\nRUN echo \"host   all  all    ::1/128        trust\"   >> /etc/postgresql/${POSTGRES_VERSION}/main/pg_hba.conf\nRUN echo \"host   all  all    0.0.0.0/0      md5\"   >> /etc/postgresql/${POSTGRES_VERSION}/main/pg_hba.conf\n\n# And add ``listen_addresses`` to ``/etc/postgresql/${POSTGRES_VERSION}/main/postgresql.conf``\nRUN echo \"listen_addresses='*'\" >> /etc/postgresql/${POSTGRES_VERSION}/main/postgresql.conf\n\n# Expose the PostgreSQL port\nEXPOSE 5432\n\n# Add VOLUMEs to allow backup of config, logs and databases\nVOLUME  [\"/etc/postgresql\", \"/var/log/postgresql\", \"/var/lib/postgresql\"]\n\n# Set the default command to run when starting the container\nCMD [\"/usr/lib/postgresql/${POSTGRES_VERSION}/bin/postgres\", \"-D\", \"/var/lib/postgresql/${POSTGRES_VERSION}/main\", \"-c\", \"config_file=/etc/postgresql/${POSTGRES_VERSION}/main/postgresql.conf\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5432
+    ],
+    "volume": [
+      " [\"/etc/postgresql\", \"/var/log/postgresql\", \"/var/lib/postgresql\"]"
+    ],
+    "run": [
+      "locale-gen --no-purge en_US.UTF-8",
+      "update-locale LANG=en_US.UTF-8",
+      "apt-get update && apt-get install -y   libgdal-dev   libgdal1h   libgdal1-dev   wget",
+      "export CFLAGS=$(gdal-config --cflags)",
+      "sudo sh -c 'echo \"deb http://apt.postgresql.org/pub/repos/apt trusty-pgdg main\" >> /etc/apt/sources.list'",
+      "wget --quiet -O - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | sudo apt-key add -",
+      "apt-get update && apt-get install -y   python-software-properties   software-properties-common   postgresql-${POSTGRES_VERSION}-postgis-${POSTGIS_VERSION}   postgresql-client-${POSTGRES_VERSION}   postgresql-contrib-${POSTGRES_VERSION}   python-dev   python-pip   python-setuptools   python-gdal",
+      "echo \"local  all                        trust\" >> /etc/postgresql/${POSTGRES_VERSION}/main/pg_hba.conf",
+      "echo \"host   all  all    127.0.0.1/32   trust\"   >> /etc/postgresql/${POSTGRES_VERSION}/main/pg_hba.conf",
+      "echo \"host   all  all    ::1/128        trust\"   >> /etc/postgresql/${POSTGRES_VERSION}/main/pg_hba.conf",
+      "echo \"host   all  all    0.0.0.0/0      md5\"   >> /etc/postgresql/${POSTGRES_VERSION}/main/pg_hba.conf",
+      "echo \"listen_addresses='*'\" >> /etc/postgresql/${POSTGRES_VERSION}/main/postgresql.conf"
+    ],
+    "workdir": [],
+    "from": "ubuntu:trusty",
+    "maintainer": "Dylan Verheul <dylan@zostera.nl>",
+    "env": {
+      "POSTGRES_VERSION": "9.5",
+      "POSTGIS_VERSION": "2.2",
+      "LC_ALL": "en_US.UTF-8"
+    },
+    "cmd": "[\"/usr/lib/postgresql/${POSTGRES_VERSION}/bin/postgres\", \"-D\", \"/var/lib/postgresql/${POSTGRES_VERSION}/main\", \"-c\", \"config_file=/etc/postgresql/${POSTGRES_VERSION}/main/postgresql.conf\"]"
+  },
+  "source_repository_url": "https://github.com/zostera/docker-django-ci.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/zostera/docker-django-ci",
+  "docker_repository": "zostera/django-ci",
+  "docker_image": "zostera/django-ci",
+  "parameters_schema": {
+    "POSTGRES_VERSION": {
+      "default": "9.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "POSTGIS_VERSION": {
+      "default": "2.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LC_ALL": {
+      "default": "en_US.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5432
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "zostera/django-ci",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/zostera/django-ci",
+    "https://hub.docker.com/v2/repositories/zostera/django-ci",
+    "https://github.com/zostera/docker-django-ci.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Binding/Provider/HP",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/zostera/django-ci",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

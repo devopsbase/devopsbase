@@ -1,0 +1,140 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/asux/rails-phantomjs",
+    "repository_url": "https://hub.docker.com/v2/repositories/asux/rails-phantomjs",
+    "tags_url": "https://hub.docker.com/v2/repositories/asux/rails-phantomjs/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/asux/rails-phantomjs/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/asux/rails-phantomjs/autobuild",
+    "user": "asux",
+    "name": "rails-phantomjs",
+    "namespace": "asux",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 6070,
+    "last_updated": "2016-06-20T13:28:22.574455Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 405113034,
+        "id": 1168657,
+        "repository": 369258,
+        "creator": 269010,
+        "last_updater": 269010,
+        "last_updated": "2016-06-20T13:28:22.252458Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "asux/docker-images"
+  },
+  "name": "asux/rails-phantomjs Docker container",
+  "description": "Rails + Puma + PhantomJS",
+  "readme": "Docker base image: Rails + Puma + PhantomJS\n===========================================\n\nDocker base image for [Rails](http://rubyonrails.org) runned with [Puma](http://puma.io) and [PhantomJS](http://phantomjs.org) 2.1.1 prepared for deploy on [AWS Elasticbeanstalk](http://aws.amazon.com/ru/elasticbeanstalk/).\n\n[![](https://badge.imagelayers.io/asux/rails-phantomjs:latest.svg)](https://imagelayers.io/?images=asux/rails-phantomjs:latest 'Get your own badge on imagelayers.io')\n\n## Dockerfile\n\nDockerfile on [Github](https://github.com/asux/docker-images/blob/master/rails-phantomjs/Dockerfile).\n\n## Build\nCommmit changes and create new tag.\n\nTo build base image use:\n\n```shell\nmake build\n```\n\nTo tag latest image:\n\n```shell\nmake tag_latest\n```\n\nTo push to [Docker Hub repo](https://hub.docker.com/r/asux/rails/):\n\n```shell\nmake push\n```\n\nOr do this all:\n\n```shell\nmake\n```\n\n## Usage\n\nThis image made for AWS EB multicontainer environment and assumes:\n  * The [nginx](https://github.com/asux/docker-images/blob/master/nginx/) links this service as **web**.\n  * The code mounts to `/usr/src/app`.\n  * The startup script `bin/start.sh` prepares and runs web service or worker service if `WORKER=true`.\n\nExample files you can find in [examples](https://github.com/asux/docker-images/blob/master/rails-phantomjs/examples/) folder.\n",
+  "dockerfile": "FROM asux/rails\nMAINTAINER Alex Ulianytskyi <a.ulyanitsky@gmail.com>\n\n# Packages\nENV MAIN_PACKAGES git postgresql-client python python-pip\n\n# PhantomJS from https://github.com/fgrehm/docker-phantomjs2/blob/master/Dockerfile.buildphantomjs\n\n# Dependencies we just need for building phantomjs\n# ENV BUILD_DEPENDENCIES\\\n#   wget tar gzip build-essential g++ flex bison gperf\\\n#   ruby perl libsqlite3-dev libssl-dev libpng-dev\n\n# Dependencies we need for running phantomjs\nENV PHANTOM_JS_DEPENDENCIES\\\n  libicu-dev libfontconfig1-dev libjpeg-dev libfreetype6\n\nENV PHANTOM_JS_TAG 2.1.1\n\n# Installing phantomjs\n# Installing dependencies\nRUN apt-get update\nRUN apt-get install -fyq ${MAIN_PACKAGES} ${PHANTOM_JS_DEPENDENCIES}\n\n# Downloading bin, unzipping & removing zip\nWORKDIR /tmp\nRUN wget -q http://cnpmjs.org/mirrors/phantomjs/phantomjs-${PHANTOM_JS_TAG}-linux-x86_64.tar.bz2 -O phantomjs.tar.bz2 \\\n  && tar xjf phantomjs.tar.bz2 \\\n  && rm -rf phantomjs.tar.bz2 \\\n  && mv phantomjs-* phantomjs \\\n  && mv /tmp/phantomjs/bin/phantomjs /usr/local/bin/phantomjs\n\nRUN echo \"phantomjs binary is located at `which phantomjs`\" \\\n  && echo \"just run 'phantomjs' (version `phantomjs -v`)\"\n\n# Removing build dependencies, clean temporary files\n# RUN apt-get purge -yq ${BUILD_DEPENDENCIES}\n\n# Make sure required packages installed\nRUN apt-get install -yq ${MAIN_PACKAGES} ${PHANTOM_JS_DEPENDENCIES}\nRUN apt-get autoremove -yq \\\n  && apt-get clean \\\n  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nRUN aws --version\nRUN eb --version\nRUN rails --version\nRUN puma --version\nRUN phantomjs -v\n\nWORKDIR /usr/src/app\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update",
+      "apt-get install -fyq ${MAIN_PACKAGES} ${PHANTOM_JS_DEPENDENCIES}",
+      "wget -q http://cnpmjs.org/mirrors/phantomjs/phantomjs-${PHANTOM_JS_TAG}-linux-x86_64.tar.bz2 -O phantomjs.tar.bz2   && tar xjf phantomjs.tar.bz2   && rm -rf phantomjs.tar.bz2   && mv phantomjs-* phantomjs   && mv /tmp/phantomjs/bin/phantomjs /usr/local/bin/phantomjs",
+      "echo \"phantomjs binary is located at `which phantomjs`\"   && echo \"just run 'phantomjs' (version `phantomjs -v`)\"",
+      "apt-get install -yq ${MAIN_PACKAGES} ${PHANTOM_JS_DEPENDENCIES}",
+      "apt-get autoremove -yq   && apt-get clean   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "aws --version",
+      "eb --version",
+      "rails --version",
+      "puma --version",
+      "phantomjs -v"
+    ],
+    "workdir": [
+      "/tmp",
+      "/usr/src/app"
+    ],
+    "from": "asux/rails",
+    "maintainer": "Alex Ulianytskyi <a.ulyanitsky@gmail.com>",
+    "env": {
+      "MAIN_PACKAGES": "git",
+      "postgresql-client": "python",
+      "PHANTOM_JS_DEPENDENCIES": "",
+      "libicu-dev": "libfontconfig1-dev",
+      "libjpeg-dev": "libfreetype6",
+      "PHANTOM_JS_TAG": "2.1.1"
+    }
+  },
+  "source_repository_url": "https://github.com/asux/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/asux/docker-images",
+  "docker_repository": "asux/rails-phantomjs",
+  "docker_image": "asux/rails-phantomjs",
+  "parameters_schema": {
+    "MAIN_PACKAGES": {
+      "default": "git",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "postgresql-client": {
+      "default": "python",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PHANTOM_JS_DEPENDENCIES": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "libicu-dev": {
+      "default": "libfontconfig1-dev",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "libjpeg-dev": {
+      "default": "libfreetype6",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PHANTOM_JS_TAG": {
+      "default": "2.1.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "asux/rails-phantomjs",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/asux/rails-phantomjs",
+    "https://hub.docker.com/v2/repositories/asux/rails-phantomjs",
+    "https://github.com/asux/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Type/Devopsware/Build/Java/Ant"
+  ],
+  "info_url": "https://hub.docker.com/r/asux/rails-phantomjs",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,148 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/gencatcloud/httpd",
+    "repository_url": "https://hub.docker.com/v2/repositories/gencatcloud/httpd",
+    "tags_url": "https://hub.docker.com/v2/repositories/gencatcloud/httpd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/gencatcloud/httpd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/gencatcloud/httpd/autobuild",
+    "user": "gencatcloud",
+    "name": "httpd",
+    "namespace": "gencatcloud",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 76,
+    "last_updated": "2016-10-06T12:36:08.024863Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2.2",
+        "full_size": 67696789,
+        "id": 5276258,
+        "repository": 761678,
+        "creator": 926040,
+        "last_updater": 926040,
+        "last_updated": "2016-10-06T12:36:06.844179Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.4",
+        "full_size": 70680426,
+        "id": 5274530,
+        "repository": 761678,
+        "creator": 926040,
+        "last_updater": 926040,
+        "last_updated": "2016-10-06T10:54:19.786071Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "suportcloud/httpd"
+  },
+  "name": "gencatcloud/httpd Docker container",
+  "description": "Image Apache",
+  "readme": "# Apache Httpd Docker Image\n\nThis is the official Apache Httpd Docker Image based on Debian for Gencat applications\n\n[![](https://images.microbadger.com/badges/image/gencatcloud/httpd.svg)](https://microbadger.com/images/gencatcloud/httpd \"Get your own image badge on microbadger.com\")\n",
+  "dockerfile": "FROM debian:jessie\r\n\r\nMAINTAINER suport.gencat@gencat.cat\r\n#Aquesta imatge es basa en la imatge oficial de APACHE https://hub.docker.com/_/httpd/\r\n\r\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\r\n#RUN groupadd -r www-data && useradd -r --create-home -g www-data www-data\r\n\r\nENV HTTPD_PREFIX /usr/local/apache2\r\nENV PATH $HTTPD_PREFIX/bin:$PATH\r\nRUN mkdir -p \"$HTTPD_PREFIX\" \\\r\n\t&& chown www-data:www-data \"$HTTPD_PREFIX\"\r\nWORKDIR $HTTPD_PREFIX\r\n\r\n# install httpd runtime dependencies\r\n# https://httpd.apache.org/docs/2.4/install.html#requirements\r\nRUN apt-get update \\\r\n\t&& apt-get install -y --no-install-recommends \\\r\n\t\tlibapr1 \\\r\n\t\tlibaprutil1 \\\r\n\t\tlibaprutil1-ldap \\\r\n\t\tlibapr1-dev \\\r\n\t\tlibaprutil1-dev \\\r\n\t\tlibpcre++0 \\\r\n\t\tlibssl1.0.0 \\\r\n\t&& rm -r /var/lib/apt/lists/*\r\n\r\nENV HTTPD_VERSION 2.4.23\r\nENV HTTPD_SHA1 5101be34ac4a509b245adb70a56690a84fcc4e7f\r\nENV HTTPD_BZ2_URL https://www.apache.org/dist/httpd/httpd-$HTTPD_VERSION.tar.bz2\r\n\r\nRUN set -x \\\r\n\t&& buildDeps=' \\\r\n\t\tbzip2 \\\r\n\t\tca-certificates \\\r\n\t\tgcc \\\r\n\t\tlibpcre++-dev \\\r\n\t\tlibssl-dev \\\r\n\t\tmake \\\r\n\t\twget \\\r\n\t' \\\r\n\t&& apt-get update \\\r\n\t&& apt-get install -y --no-install-recommends $buildDeps \\\r\n\t&& rm -r /var/lib/apt/lists/* \\\r\n\t\\\r\n\t&& wget -O httpd.tar.bz2 \"$HTTPD_BZ2_URL\" \\\r\n\t&& echo \"$HTTPD_SHA1 *httpd.tar.bz2\" | sha1sum -c - \\\r\n# see https://httpd.apache.org/download.cgi#verify\r\n\t&& wget -O httpd.tar.bz2.asc \"$HTTPD_BZ2_URL.asc\" \\\r\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\r\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys A93D62ECC3C8EA12DB220EC934EA76E6791485A8 \\\r\n\t&& gpg --batch --verify httpd.tar.bz2.asc httpd.tar.bz2 \\\r\n\t&& rm -r \"$GNUPGHOME\" httpd.tar.bz2.asc \\\r\n\t\\\r\n\t&& mkdir -p src \\\r\n\t&& tar -xvf httpd.tar.bz2 -C src --strip-components=1 \\\r\n\t&& rm httpd.tar.bz2 \\\r\n\t&& cd src \\\r\n\t\\\r\n\t&& ./configure \\\r\n\t\t--prefix=\"$HTTPD_PREFIX\" \\\r\n\t\t--enable-mods-shared=reallyall \\\r\n\t&& make -j\"$(nproc)\" \\\r\n\t&& make install \\\r\n\t\\\r\n\t&& cd .. \\\r\n\t&& rm -r src \\\r\n\t\\\r\n\t&& sed -ri \\\r\n\t\t-e 's!^(\\s*CustomLog)\\s+\\S+!\\1 /proc/self/fd/1!g' \\\r\n\t\t-e 's!^(\\s*ErrorLog)\\s+\\S+!\\1 /proc/self/fd/2!g' \\\r\n\t\t\"$HTTPD_PREFIX/conf/httpd.conf\" \\\r\n\t\\\r\n\t&& apt-get purge -y --auto-remove $buildDeps\r\n\r\nCOPY httpd-foreground /usr/local/bin/\r\n\r\nRUN chmod 0755 /usr/local/bin/httpd-foreground\r\n\r\n#Fitxer d'entrada\r\nCOPY run.sh /entrypoint.sh\r\nRUN chmod 0755 /entrypoint.sh\r\n\r\n#Copiem el fitxer wait-for-it\r\nCOPY wait-for-it.sh /\r\nRUN chmod 0755 /wait-for-it.sh\r\n\r\nCOPY httpd.conf $HTTPD_PREFIX/conf/\r\n\r\nEXPOSE 80\r\nCMD [\"/entrypoint.sh\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "mkdir -p \"$HTTPD_PREFIX\" \\",
+      "apt-get update \\",
+      "set -x \\",
+      "chmod 0755 /usr/local/bin/httpd-foreground",
+      "chmod 0755 /entrypoint.sh",
+      "chmod 0755 /wait-for-it.sh"
+    ],
+    "workdir": [
+      "$HTTPD_PREFIX"
+    ],
+    "from": "debian:jessie",
+    "maintainer": "suport.gencat@gencat.cat",
+    "env": {
+      "HTTPD_PREFIX": "/usr/local/apache2",
+      "PATH": "$HTTPD_PREFIX/bin:$PATH",
+      "HTTPD_VERSION": "2.4.23",
+      "HTTPD_SHA1": "5101be34ac4a509b245adb70a56690a84fcc4e7f",
+      "HTTPD_BZ2_URL": "https://www.apache.org/dist/httpd/httpd-$HTTPD_VERSION.tar.bz2"
+    },
+    "copy": "httpd.conf $HTTPD_PREFIX/conf/",
+    "cmd": "[\"/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/suportcloud/httpd.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/suportcloud/httpd",
+  "docker_repository": "gencatcloud/httpd",
+  "docker_image": "gencatcloud/httpd",
+  "parameters_schema": {
+    "HTTPD_PREFIX": {
+      "default": "/usr/local/apache2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$HTTPD_PREFIX/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HTTPD_VERSION": {
+      "default": "2.4.23",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HTTPD_SHA1": {
+      "default": "5101be34ac4a509b245adb70a56690a84fcc4e7f",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HTTPD_BZ2_URL": {
+      "default": "https://www.apache.org/dist/httpd/httpd-$HTTPD_VERSION.tar.bz2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "gencatcloud/httpd",
+  "revision": "2.2",
+  "uris": [
+    "https://hub.docker.com/r/gencatcloud/httpd",
+    "https://hub.docker.com/v2/repositories/gencatcloud/httpd",
+    "https://github.com/suportcloud/httpd.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/gencatcloud/httpd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

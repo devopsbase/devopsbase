@@ -1,0 +1,177 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/stocksoftware/java",
+    "repository_url": "https://hub.docker.com/v2/repositories/stocksoftware/java",
+    "tags_url": "https://hub.docker.com/v2/repositories/stocksoftware/java/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/stocksoftware/java/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/stocksoftware/java/autobuild",
+    "user": "stocksoftware",
+    "name": "java",
+    "namespace": "stocksoftware",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 113,
+    "last_updated": "2016-09-23T18:29:06.251406Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 75123434,
+        "id": 3663518,
+        "repository": 776189,
+        "creator": 861779,
+        "last_updater": 861779,
+        "last_updated": "2016-09-23T18:25:45.281935Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "jdk7",
+        "full_size": 75118659,
+        "id": 3855971,
+        "repository": 776189,
+        "creator": 861779,
+        "last_updater": 861779,
+        "last_updated": "2016-07-25T05:14:44.539160Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "jdk8",
+        "full_size": 96398664,
+        "id": 3855988,
+        "repository": 776189,
+        "creator": 861779,
+        "last_updater": 861779,
+        "last_updated": "2016-07-25T05:12:59.917251Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "stocksoftware/docker-java"
+  },
+  "name": "stocksoftware/java Docker container",
+  "description": "A minimal docker image containing Java.",
+  "readme": "# docker-java\n\n[![](http://dockeri.co/image/stocksoftware/java)](https://hub.docker.com/r/stocksoftware/java)\n\nA minimal docker image containing Java and a few minor updates to fix DNS\nresolution within java and force ipv4. The images is based on Alpine linux.\nThe image is derived from the most excellent [alpine-java](https://github.com/anapsix/docker-alpine-java)\ndocker project.\n\n## Tags\n\n* **latest**: Oracle jdk7. [![Build Status](https://secure.travis-ci.org/stocksoftware/docker-java.png?branch=master)](http://travis-ci.org/stocksoftware/docker-java)\n* **jdk7**: Oracle jdk7. [![Build Status](https://secure.travis-ci.org/stocksoftware/docker-java.png?branch=jdk7)](http://travis-ci.org/stocksoftware/docker-java)\n* **jdk8**: Oracle jdk8. [![Build Status](https://secure.travis-ci.org/stocksoftware/docker-java.png?branch=jdk8)](http://travis-ci.org/stocksoftware/docker-java)\n\n### Usage\n\nExample:\n\n    docker run -it --rm stocksoftware/java:latest\n",
+  "dockerfile": "#\n# Licensed under the Apache License, Version 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions and\n# limitations under the License.\n#\n# AlpineLinux with a glibc-2.23 and Oracle Java\nFROM alpine:3.4\n\nMAINTAINER Stock Software\n\n# Java Version and other ENV\nENV JAVA_VERSION_MAJOR=7 \\\n    JAVA_VERSION_MINOR=80 \\\n    JAVA_VERSION_BUILD=15 \\\n    JAVA_PACKAGE=jdk \\\n    JAVA_HOME=/opt/jdk \\\n    PATH=${PATH}:/opt/jdk/bin \\\n    GLIBC_VERSION=2.23-r3 \\\n    LANG=C.UTF-8\n\n# Install Java. This differs from anapsix/docker-alpine-java in that it does not delete /opt/jdk/jre/plugin\n# Add curl and ca-certificates as all downstream images make use of this\n# Add bash to ease manual inspection of images\nRUN apk upgrade --update && \\\n    apk add --update bash curl ca-certificates && \\\n    for pkg in glibc-${GLIBC_VERSION} glibc-bin-${GLIBC_VERSION} glibc-i18n-${GLIBC_VERSION}; do curl -sSL https://github.com/andyshinn/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/${pkg}.apk -o /tmp/${pkg}.apk; done && \\\n    apk add --allow-untrusted /tmp/*.apk && \\\n    rm -v /tmp/*.apk && \\\n    ( /usr/glibc-compat/bin/localedef --force --inputfile POSIX --charmap UTF-8 C.UTF-8 || true ) && \\\n    echo \"export LANG=C.UTF-8\" > /etc/profile.d/locale.sh && \\\n    /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib && \\\n    mkdir /opt && curl -jksSLH \"Cookie: oraclelicense=accept-securebackup-cookie\" -o /tmp/java.tar.gz \\\n    http://download.oracle.com/otn-pub/java/jdk/${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-b${JAVA_VERSION_BUILD}/${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-linux-x64.tar.gz && \\\n    gunzip /tmp/java.tar.gz && \\\n    tar -C /opt -xf /tmp/java.tar && \\\n    apk del glibc-i18n && \\\n    rm -rf  /tmp/* /var/cache/apk/* && \\\n    ln -s /opt/jdk1.${JAVA_VERSION_MAJOR}.0_${JAVA_VERSION_MINOR} /opt/jdk && \\\n    rm -rf /opt/jdk/*src.zip \\\n           /opt/jdk/lib/missioncontrol \\\n           /opt/jdk/lib/visualvm \\\n           /opt/jdk/lib/*javafx*\n\n# Fix DNS resolution issues when nss is not installed\nRUN echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' > /etc/nsswitch.conf\n\n# Set DNS cache to 10 seconds (Cache is permanent by default). Network hosts are volatile in Docker clusters.\nRUN grep '^networkaddress.cache.ttl=' ${JAVA_HOME}/jre/lib/security/java.security || echo 'networkaddress.cache.ttl=10' >> ${JAVA_HOME}/jre/lib/security/java.security\n\n# Disable ipv6 as several apps do not work with it, and in a docker container DNS failures occurs from within java apps.\nRUN echo \"net.ipv6.conf.all.disable_ipv6 = 1\" >> /etc/sysctl.conf\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apk upgrade --update &&     apk add --update bash curl ca-certificates &&     for pkg in glibc-${GLIBC_VERSION} glibc-bin-${GLIBC_VERSION} glibc-i18n-${GLIBC_VERSION}; do curl -sSL https://github.com/andyshinn/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/${pkg}.apk -o /tmp/${pkg}.apk; done &&     apk add --allow-untrusted /tmp/*.apk &&     rm -v /tmp/*.apk &&     ( /usr/glibc-compat/bin/localedef --force --inputfile POSIX --charmap UTF-8 C.UTF-8 || true ) &&     echo \"export LANG=C.UTF-8\" > /etc/profile.d/locale.sh &&     /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib &&     mkdir /opt && curl -jksSLH \"Cookie: oraclelicense=accept-securebackup-cookie\" -o /tmp/java.tar.gz     http://download.oracle.com/otn-pub/java/jdk/${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-b${JAVA_VERSION_BUILD}/${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-linux-x64.tar.gz &&     gunzip /tmp/java.tar.gz &&     tar -C /opt -xf /tmp/java.tar &&     apk del glibc-i18n &&     rm -rf  /tmp/* /var/cache/apk/* &&     ln -s /opt/jdk1.${JAVA_VERSION_MAJOR}.0_${JAVA_VERSION_MINOR} /opt/jdk &&     rm -rf /opt/jdk/*src.zip            /opt/jdk/lib/missioncontrol            /opt/jdk/lib/visualvm            /opt/jdk/lib/*javafx*",
+      "echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' > /etc/nsswitch.conf",
+      "grep '^networkaddress.cache.ttl=' ${JAVA_HOME}/jre/lib/security/java.security || echo 'networkaddress.cache.ttl=10' >> ${JAVA_HOME}/jre/lib/security/java.security",
+      "echo \"net.ipv6.conf.all.disable_ipv6 = 1\" >> /etc/sysctl.conf"
+    ],
+    "workdir": [],
+    "from": "alpine:3.4",
+    "maintainer": "Stock Software",
+    "env": {
+      "JAVA_VERSION_MAJOR": "7",
+      "": "",
+      "JAVA_VERSION_MINOR": "80",
+      "JAVA_VERSION_BUILD": "15",
+      "JAVA_PACKAGE": "jdk",
+      "JAVA_HOME": "/opt/jdk",
+      "PATH": "${PATH}:/opt/jdk/bin",
+      "GLIBC_VERSION": "2.23-r3",
+      "LANG": "C.UTF-8"
+    }
+  },
+  "source_repository_url": "https://github.com/stocksoftware/docker-java.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/stocksoftware/docker-java",
+  "docker_repository": "stocksoftware/java",
+  "docker_image": "stocksoftware/java",
+  "parameters_schema": {
+    "JAVA_VERSION_MAJOR": {
+      "default": "7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_VERSION_MINOR": {
+      "default": "80",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_VERSION_BUILD": {
+      "default": "15",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_PACKAGE": {
+      "default": "jdk",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_HOME": {
+      "default": "/opt/jdk",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "${PATH}:/opt/jdk/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GLIBC_VERSION": {
+      "default": "2.23-r3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "C.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "stocksoftware/java",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/stocksoftware/java",
+    "https://hub.docker.com/v2/repositories/stocksoftware/java",
+    "https://github.com/stocksoftware/docker-java.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Mode/Executable/Image/VM Image/AMI",
+    "Mode/Executable/Image/Container Image/Docker Image"
+  ],
+  "info_url": "https://hub.docker.com/r/stocksoftware/java",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

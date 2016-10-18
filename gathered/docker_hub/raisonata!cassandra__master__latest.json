@@ -1,0 +1,147 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/raisonata/cassandra",
+    "repository_url": "https://hub.docker.com/v2/repositories/raisonata/cassandra",
+    "tags_url": "https://hub.docker.com/v2/repositories/raisonata/cassandra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/raisonata/cassandra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/raisonata/cassandra/autobuild",
+    "user": "raisonata",
+    "name": "cassandra",
+    "namespace": "raisonata",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 68,
+    "last_updated": "2015-10-11T03:07:02.341915Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "master",
+        "full_size": 355612509,
+        "id": 182046,
+        "repository": 160300,
+        "creator": 247560,
+        "last_updater": 247560,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "base",
+        "full_size": 355611560,
+        "id": 182042,
+        "repository": 160300,
+        "creator": 247560,
+        "last_updater": 247560,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "worker",
+        "full_size": 355612508,
+        "id": 182039,
+        "repository": 160300,
+        "creator": 247560,
+        "last_updater": 247560,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "victorock/docker-cassandra"
+  },
+  "name": "raisonata/cassandra Docker container",
+  "description": "Cassandra",
+  "readme": "# Cassandra\r\n## Cassandra-base\r\n- Java: 8\r\n- Cassandra: 2.1.3\r\n\r\n## Cassandra-Master and Cassandra-Worker\r\n- endpoint_snitch: GossipingPropertyFileSnitch\r\n- num_tokens: 256\r\n- Topology: $CASSANDRA_CONFIG/cassandra-rackdc.properties\r\n\r\n### Command-line to create new cluster:\r\n- docker run raisonata/cassandra:cluster\r\n\r\n### Command-line to join a Cluster:\r\n- docker run raisonata/cassandra:cluster <master_ip>\r\n- docker run raisonata/cassandra:cluster <master1_ip>,<master2_ip>,<master3_ip>\r\n\r\n### Command-line to add Worker (mandatory to specify master):\r\n- docker run raisonata/cassandra:worker <master_ip>\r\n- docker run raisonata/cassandra:worker <master1_ip>,<master2_ip>,<master3_ip>\r\n\r\n## Global Variables\r\n- export CASSANDRA_CONFIG=${CASSANDRA_CONFIG:-\"/etc/cassandra\"}\r\n- export CASSANDRA_CLUSTERNAME=${CASSANDRA_CLUSTER:-\"Default Cluster\"}\r\n- export CASSANDRA_TOKENS=${CASSANDRA_TOKENS:-256}\r\n- export CASSANDRA_DC=${CASSANDRA_DC:-\"DC1\"}\r\n- export CASSANDRA_RACK=${CASSANDRA_RAC:-\"RACK1\"}\r\n- export CASSANDRA_STORE_DIR=${CASSANDRA_STORE_DIR:-\"/store\"}\r\n- export CASSANDRA_STORE_COMMITLOG=${CASSANDRA_STORE_COMMITLOG:-\"${CASSANDRA_STORE_DIR}/commitlog\"}\r\n- export CASSANDRA_STORE_DATA=${CASSANDRA_STORE_DATA:-\"${CASSANDRA_STORE_DIR}/data\"}\r\n- export CASSANDRA_STORE_SAVED_CACHES=${CASSANDRA_STORE_SAVED_CACHES:-\"${CASSANDRA_STORE_DIR}/saved_caches\"}\r\n- export CASSANDRA_STORE_LOGS=${CASSANDRA_STORE_LOGS:-\"${CASSANDRA_STORE_DIR}/logs\"}",
+  "dockerfile": "# Raisonata Cassandra 2.0 Base Image\n#\n# VERSION               0.1\n#\n# Installs Cassandra 2.1.3 package.\n# Sseed nodes should be configured by child images.\n\nFROM dockerfile/java:oracle-java8\n\nENV DEBIAN_FRONTEND noninteractive\nENV CASSANDRA_CONFIG /etc/cassandra\n\n# Tools\nADD scripts/cassandra-common.sh /usr/local/sbin/cassandra-common\n\n# Configs\nADD conf/log4j-server.properties ${CASSANDRA_CONFIG}\n\n# Add DataStax sources\nADD conf/datastax_key /tmp/datastax_key\nRUN apt-key add /tmp/datastax_key\nRUN echo \"deb http://debian.datastax.com/community stable main\" > /etc/apt/sources.list.d/datastax.list\n\n# Workaround for https://github.com/docker/docker/issues/6345\nRUN ln -s -f /bin/true /usr/bin/chfn\n\n# Install Cassandra 2.1.3\nRUN apt-get update && \\\n    apt-get install -y cassandra=2.1.3 dsc21=2.1.3-1 && \\\n    rm -rf /var/lib/apt/lists/*\n\n# Necessary since cassandra is trying to override the system limitations\n# See https://groups.google.com/forum/#!msg/docker-dev/8TM_jLGpRKU/dewIQhcs7oAJ\nRUN rm -f /etc/security/limits.d/cassandra.conf\n\nEXPOSE 7199 7000 7001 9160 9042 22 8012 61621\n\nVOLUME [\"/store\"]\nCMD [\"\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "scripts/cassandra-common.sh",
+        "dest": "/usr/local/sbin/cassandra-common"
+      },
+      {
+        "source": "conf/log4j-server.properties",
+        "dest": "${CASSANDRA_CONFIG}"
+      },
+      {
+        "source": "conf/datastax_key",
+        "dest": "/tmp/datastax_key"
+      }
+    ],
+    "expose": [
+      7199
+    ],
+    "volume": [
+      "[\"/store\"]"
+    ],
+    "run": [
+      "apt-key add /tmp/datastax_key",
+      "echo \"deb http://debian.datastax.com/community stable main\" > /etc/apt/sources.list.d/datastax.list",
+      "ln -s -f /bin/true /usr/bin/chfn",
+      "apt-get update &&     apt-get install -y cassandra=2.1.3 dsc21=2.1.3-1 &&     rm -rf /var/lib/apt/lists/*",
+      "rm -f /etc/security/limits.d/cassandra.conf"
+    ],
+    "workdir": [],
+    "from": "dockerfile/java:oracle-java8",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "CASSANDRA_CONFIG": "/etc/cassandra"
+    },
+    "cmd": "[\"\"]"
+  },
+  "source_repository_url": "https://bitbucket.org/victorock/docker-cassandra.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/victorock/docker-cassandra",
+  "docker_repository": "raisonata/cassandra",
+  "docker_image": "raisonata/cassandra",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CASSANDRA_CONFIG": {
+      "default": "/etc/cassandra",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        7199
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "raisonata/cassandra",
+  "revision": "master",
+  "uris": [
+    "https://hub.docker.com/r/raisonata/cassandra",
+    "https://hub.docker.com/v2/repositories/raisonata/cassandra",
+    "https://bitbucket.org/victorock/docker-cassandra.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/raisonata/cassandra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

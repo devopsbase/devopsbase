@@ -1,0 +1,120 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/yaronr/elasticsearch",
+    "repository_url": "https://hub.docker.com/v2/repositories/yaronr/elasticsearch",
+    "tags_url": "https://hub.docker.com/v2/repositories/yaronr/elasticsearch/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/yaronr/elasticsearch/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/yaronr/elasticsearch/autobuild",
+    "user": "yaronr",
+    "name": "elasticsearch",
+    "namespace": "yaronr",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 11366,
+    "last_updated": "2015-07-14T13:00:59.426582Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 146328388,
+        "id": 60083,
+        "repository": 91402,
+        "creator": 69803,
+        "last_updater": 69803,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "yaronr/elasticsearch"
+  },
+  "name": "yaronr/elasticsearch Docker container",
+  "description": "ElasticSearch 1.6 on a LEAN Debian Wheezy OpenJDK-8 image",
+  "readme": "## ElasticSearch Dockerfile\n\n\nThis repository contains **Dockerfile** of [ElasticSearch](http://www.elasticsearch.org/) for [Docker](https://www.docker.com/)'s [automated build](https://registry.hub.docker.com/u/dockerfile/elasticsearch/) published to the public [Docker Hub Registry](https://registry.hub.docker.com/).\n\n\n### Base Docker Image\n\n* [dockerfile/java:oracle-java7](http://dockerfile.github.io/#/java)\n\n\n### Installation\n\n1. Install [Docker](https://www.docker.com/).\n\n2. Download [automated build](https://registry.hub.docker.com/u/dockerfile/elasticsearch/) from public [Docker Hub Registry](https://registry.hub.docker.com/): `docker pull dockerfile/elasticsearch`\n\n   (alternatively, you can build an image from Dockerfile: `docker build -t=\"dockerfile/elasticsearch\" github.com/dockerfile/elasticsearch`)\n\n\n### Usage\n\n    docker run -d -p 9200:9200 -p 9300:9300 dockerfile/elasticsearch\n\n#### Attach persistent/shared directories\n\n  1. Create a mountable data directory `<data-dir>` on the host.\n\n  2. Create ElasticSearch config file at `<data-dir>/elasticsearch.yml`.\n\n    ```yml\n    path:\n      logs: /data/log\n      data: /data/data\n    ```\n\n  3. Start a container by mounting data directory and specifying the custom configuration file:\n\n    ```sh\n    docker run -d -p 9200:9200 -p 9300:9300 -v <data-dir>:/data dockerfile/elasticsearch /elasticsearch/bin/elasticsearch -Des.config=/data/elasticsearch.yml\n    ```\n\nAfter few seconds, open `http://<host>:9200` to see the result.\n",
+  "dockerfile": "#\n# ElasticSearch Dockerfile\n#\n# https://github.com/dockerfile/elasticsearch\n#\n\n# Pull base image.\nFROM multicloud/jre-8-oracle\n\nENV ES_PKG_NAME elasticsearch-1.6.0\n\n# Install ElasticSearch.\nRUN \\\n  cd / && \\\n  wget --progress=bar:force --no-check-certificate --retry-connrefused -t 5 https://download.elasticsearch.org/elasticsearch/elasticsearch/$ES_PKG_NAME.tar.gz && \\\n  tar xvzf $ES_PKG_NAME.tar.gz && \\\n  rm -f $ES_PKG_NAME.tar.gz && \\\n  mv /$ES_PKG_NAME /elasticsearch\n\n# Define mountable directories.\nVOLUME [\"/data\"]\n\n# Mount elasticsearch.yml config\nADD config/elasticsearch.yml /elasticsearch/config/elasticsearch.yml\n\n# Install Plugins.\nRUN \\\n  /elasticsearch/bin/plugin -i mobz/elasticsearch-head && \\\n  /elasticsearch/bin/plugin -i lukas-vlcek/bigdesk && \\\n  /elasticsearch/bin/plugin -i lmenezes/elasticsearch-kopf && \\\n  /elasticsearch/bin/plugin -i elasticsearch/marvel/latest\n\n# Define working directory.\nWORKDIR /data\n\nADD entrypoint.sh /entrypoint.sh\nRUN chmod a+x /entrypoint.sh\n\nENTRYPOINT [\"/entrypoint.sh\"]\n\n# Expose ports.\n#   - 9200: HTTP\n#   - 9300: transport\nEXPOSE 9200\nEXPOSE 9300\n\n#Ignore /etc/hosts\nRUN sed 's/^\\(hosts:[\\ ]*\\)\\(files\\)\\ \\(dns\\)$/\\1\\3 \\2/' -i /etc/nsswitch.conf\n\n#change logging level of discovery to trace\nRUN sed 's/#discovery: TRACE/discovery: TRACE/' -i /elasticsearch/config/logging.yml\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "config/elasticsearch.yml",
+        "dest": "/elasticsearch/config/elasticsearch.yml"
+      },
+      {
+        "source": "entrypoint.sh",
+        "dest": "/entrypoint.sh"
+      }
+    ],
+    "expose": [
+      9200,
+      9300
+    ],
+    "volume": [
+      "[\"/data\"]"
+    ],
+    "run": [
+      "  cd / &&   wget --progress=bar:force --no-check-certificate --retry-connrefused -t 5 https://download.elasticsearch.org/elasticsearch/elasticsearch/$ES_PKG_NAME.tar.gz &&   tar xvzf $ES_PKG_NAME.tar.gz &&   rm -f $ES_PKG_NAME.tar.gz &&   mv /$ES_PKG_NAME /elasticsearch",
+      "  /elasticsearch/bin/plugin -i mobz/elasticsearch-head &&   /elasticsearch/bin/plugin -i lukas-vlcek/bigdesk &&   /elasticsearch/bin/plugin -i lmenezes/elasticsearch-kopf &&   /elasticsearch/bin/plugin -i elasticsearch/marvel/latest",
+      "chmod a+x /entrypoint.sh",
+      "sed 's/^\\(hosts:[\\ ]*\\)\\(files\\)\\ \\(dns\\)$/\\1\\3 \\2/' -i /etc/nsswitch.conf",
+      "sed 's/#discovery: TRACE/discovery: TRACE/' -i /elasticsearch/config/logging.yml"
+    ],
+    "workdir": [
+      "/data"
+    ],
+    "from": "multicloud/jre-8-oracle",
+    "env": {
+      "ES_PKG_NAME": "elasticsearch-1.6.0"
+    },
+    "entrypoint": "[\"/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/yaronr/elasticsearch.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/yaronr/elasticsearch",
+  "docker_repository": "yaronr/elasticsearch",
+  "docker_image": "yaronr/elasticsearch",
+  "parameters_schema": {
+    "ES_PKG_NAME": {
+      "default": "elasticsearch-1.6.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        9200,
+        9300
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "yaronr/elasticsearch",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/yaronr/elasticsearch",
+    "https://hub.docker.com/v2/repositories/yaronr/elasticsearch",
+    "https://github.com/yaronr/elasticsearch.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/yaronr/elasticsearch",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

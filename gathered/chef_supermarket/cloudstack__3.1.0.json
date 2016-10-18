@@ -1,0 +1,94 @@
+{
+  "name": "cloudstack Chef cookbook",
+  "chef_cookbook_name": "cloudstack",
+  "revision": "3.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/cloudstack",
+    "https://supermarket.chef.io/cookbooks/cloudstack/download",
+    "https://supermarket.chef.io/cookbooks/cloudstack/versions/3.1.0",
+    "https://supermarket.chef.io/cookbooks/cloudstack/versions/3.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/cloudstack/versions/3.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/cloudstack",
+    "https://supermarket.chef.io/api/v1/cookbooks/cloudstack/versions/3.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Cloud Platform/CloudStack"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/cloudstack",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/cloudstack/versions/3.1.0/download",
+  "deprecated": false,
+  "created": "2015-02-07T14:38:44.850Z",
+  "updated": "2016-08-14T01:30:39.580Z",
+  "description": "Installs/Configures cloudstack",
+  "maintainer": {
+    "name": "pdion891",
+    "email": "pdion@cloudops.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 3,
+  "downloads_count": 1024095,
+  "downloads_count_revision": 211450,
+  "repository_url": "https://github.com/cloudops/cookbook_cloudstack",
+  "issues_url": "https://github.com/cloudops/cookbook_cloudstack/issues",
+  "chef_source_url": "https://github.com/cloudops/cookbook_cloudstack",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "cloudstack Cookbook\n===================\n\nInstall and configure [Apache Cloudstack](http://cloudstack.apache.org) using [Chef](http://www.chef.io/). A wrapper cookbook is prefered in order to Install Apache CloudStack properly, refer to [cloudstack_wrapper cookbook](https://github.com/cloudops/cookbook_cloudstack_wrapper) for example.\n\n\nTested on CentOS 6.5 and Ubuntu 14.04\n\n\nAbout Apache Cloudstack\n-----------------------\n\nApache CloudStack is open source software designed to deploy and manage large networks of virtual machines, as a highly available, highly scalable Infrastructure as a Service (IaaS) cloud computing platform.\n\nMore info on: http://cloudstack.apache.org/\n\nRequirements\n------------\n\n#### cookbooks\n- `yum` - packages management\n- `apt` - packages management\n- `mysql` - for MySQL database server and client\n- `sudo` - to configure sudoers for user \"cloud\"\n\nThere is a dependency on Ruby gem [cloudstack_ruby_client](https://github.com/chipchilders/cloudstack_ruby_client) for chef which is handle in `recipe[cloudstack::default]`.\n\nResources/Providers\n-------------------\n\n### cloudstack_setup_database\n\nCreate MySQL database and connection configuration used by CloudStack management-server using `/usr/bin/cloudstack-setup-databases` utility.\n\n#### Examples\n\n``` ruby\n# Using attributes\ncloudstack_setup_database node[\"cloudstack\"][\"db\"][\"host\"] do\n  root_user     node[\"cloudstack\"][\"db\"][\"rootusername\"]\n  root_password node[\"cloudstack\"][\"db\"][\"rootpassword\"]\n  user          node[\"cloudstack\"][\"db\"][\"username\"]\n  password      node[\"cloudstack\"][\"db\"][\"password\"]\n  action        :create\nend\n```\n\n```ruby\n# using mysql cookbook and CloudStack default passwords\ncloudstack_setup_database node[\"cloudstack\"][\"db\"][\"host\"] do\n  action        :create\nend\n```\n\n### cloudstack_system_template\n\nDownload initial SystemVM template prior to initialize a CloudStack Region. cloudstack_system_template require access to CloudStack database which must be initated before executing this ressource. If no URL is provided cloudstack_system_template will use the default URL from the database if available to download the template.\n\n#### Examples\n\n``` ruby\n# Using attributes\ncloudstack_system_template 'xenserver' do\n  url         node['cloudstack']['systemvm']['xenserver']\n  nfs_path    node[\"cloudstack\"][\"secondary\"][\"path\"]\n  nfs_server  node[\"cloudstack\"][\"secondary\"][\"host\"]\n  db_user     node[\"cloudstack\"][\"db\"][\"username\"]\n  db_password node[\"cloudstack\"][\"db\"][\"password\"]\n  db_host     node[\"cloudstack\"][\"db\"][\"host\"]\nend\n```\nWhich is equivalent to:\n\n``` bash\n/usr/share/cloudstack-common/scripts/storage/secondary/cloud-install-sys-tmplt \\\n-m /mnt/secondary \\\n-u http://cloudstack.apt-get.eu/systemvm/4.4/systemvm64template-4.4.1-7-xen.vhd.bz2 \\\n-h xenserver \\\n-F\n```\n\nSimpler example: \n\n``` ruby\n# Using URL from CloudStack database\ncloudstack_system_template 'kvm' do\nend\n```\n\n### cloudstack_setup_management\n\nPost package installation and Database Creation for CloudStack, cloudstack-management service must be configure using a script `/usr/bin/cloudstack-setup-management`.\n\n``` ruby\ncloudstack_setup_management node.name\n```\n\n### cloudstack_api_keys\n\nGenerate api keys for account. Currently working only for admin account.\n\nWill update attributes:\n- `node[\"cloudstack\"][\"admin\"][\"api_key\"]`\n- `node[\"cloudstack\"][\"admin\"][\"secret_key\"]`\n\n#### examples\n\n``` ruby\n# Create API key if now exist in Cloudstack and update node attributes\ncloudstack_api_keys \"admin\" do\n  action :create\nend\n```\n\n``` ruby\n# Generate new API Keys\ncloudstack_api_keys \"admin\" do\n  action :reset\nend\n```\n\n### cloudstack_global_setting\n\nUpdate Global Settings values.\n\n#### examples\n\n``` ruby\ncloudstack_global_setting \"expunge.delay\" do\n  value \"80\"\n  notifies :restart, \"service[cloudstack-management]\", :delayed\nend\n```\n\n\nRecipes\n-------\n\n\n### cloudstack::management_server\n\nPrepare the node to be a CloudStack management server. It will not fully\ninstall CloudStack because of dependency such as MySQL server and system VM\ntemplates. Refer to [cloudstack_wrapper cookbook](https://github.com/cloudops/cookbook_cloudstack_wrapper)\nto install a fully working CloudStack management-server.\n\n\n### cloudstack::usage\n\nInstall, enable and start cloudstack-usage. cloudstack-usage is usefull to collect resource usage from account. This recipe make sure cloudstack-usage run on a cloudstack-management server as it is required.\n\n\n### cloudstack::kvm_agent\n\nInstall, enable and start KVM cloudstack-agent. KVM host managed by CloudStack require an agent. This recipe install cloudstack-agent required on a KVM server.\n\nSupport Ubuntu and CentOS/RHEL KVM server.\n\n\n### cloudstack::vhd-util\n\nDownload the tool vhd-util which is not include in CloudStack packages and required to manage XenServer hosts.\n\n\n### cloudstack::mysql_conf\n\nMySQL tunning based on official CloudStack documentation.\n\n\n### cloudstack::eventbus\n\nConfigure CloudStack to send Events into RabbitMQ message bus. Work for CloudStack 4.3 and latest. RabbitMQ must be installed and configured somewhere, default values are for localhost.\n\n\n### cloudstack::default\n\nChef Required dependencies in order to interact with CloudStack.\n\n\nAttributes\n----------\n\nAttributes can be customized. The cookbook does not support encrypted data bag usage for now.\n\n- <tt>node['cloudstack']['yum_repo']</tt> - yum repo url to use, default: http://cloudstack.apt-get.eu/rhel/4.3/\n- <tt>node['cloudstack']['apt_repo']</tt> - apt repo url to use, default: http://cloudstack.apt-get.eu/ubuntu\n- <tt>node['cloudstack']['release_major']</tt> - Major CloudStack release ex: 4.3 or 4.2\n- <tt>node['cloudstack']['version']</tt> - Package version ex: 4.2.1-1.el6\n\n\nContributing\n------------\nTODO: (optional) If this is a public cookbook, detail the process for contributing. If this is a private cookbook, remove this section.\n\ne.g.\n\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n\n\nLicense and Authors\n-------------------\n- Author:: Pierre-Luc Dion (<pdion@cloudops.com>)\n\nSome snippets have been taken from: [schubergphilis/cloudstack-cookbook](https://github.com/schubergphilis/cloudstack-cookbook)\n- Author:: Roeland Kuipers (<rkuipers@schubergphilis.com>)  \n- Author:: Sander Botman (<sbotman@schubergphilis.com>)\n- Author:: Hugo Trippaers (<htrippaers@schubergphilis.com>)\n\n\n```text\nCopyright:: Copyright (c) 2015 Author's\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": "> 3.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": "> 2.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/mysql",
+      "revision": "> 6.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/sudo",
+      "revision": ">= 2.6.0",
+      "self_resolve": true
+    }
+  ]
+}

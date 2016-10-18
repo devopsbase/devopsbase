@@ -1,0 +1,65 @@
+{
+  "name": "glusterfs Chef cookbook",
+  "chef_cookbook_name": "glusterfs",
+  "revision": "1.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/glusterfs",
+    "https://supermarket.chef.io/cookbooks/glusterfs/download",
+    "https://supermarket.chef.io/cookbooks/glusterfs/versions/1.0.0",
+    "https://supermarket.chef.io/cookbooks/glusterfs/versions/1.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/glusterfs/versions/1.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/glusterfs",
+    "https://supermarket.chef.io/api/v1/cookbooks/glusterfs/versions/1.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Networking",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Orchestration/Cluster-based"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/glusterfs",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/glusterfs/versions/1.0.0/download",
+  "deprecated": false,
+  "created": "2016-04-26T14:05:22.785Z",
+  "updated": "2016-06-29T15:30:05.975Z",
+  "description": "Installs/Configures a GlusterFS cluster using systemd",
+  "maintainer": {
+    "name": "samuel_bernard",
+    "email": "dps.team@s4m.io"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 101,
+  "downloads_count_revision": 51,
+  "repository_url": "https://gitlab.com/s4m-chef-repositories/glusterfs",
+  "issues_url": "https://gitlab.com/s4m-chef-repositories/glusterfs/issues",
+  "chef_source_url": "https://gitlab.com/s4m-chef-repositories/glusterfs",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "GlusterFS\n=========\n\nDescription\n-----------\n\nGlusterFS is a scalable network filesystem. Using common off-the-shelf\nhardware, you can create large, distributed storage solutions for media\nstreaming, data analysis, and other data- and bandwidth-intensive tasks.\nGlusterFS is free and open source software.\n\nThis cookbook focuses on deploying a GlusterFS cluster via Chef.\n\nRequirements\n------------\n\n### Cookbooks and gems\n\nDeclared in [metadata.rb](metadata.rb) and in [Gemfile](Gemfile).\n\n### Platforms\n\nA *systemd* managed distribution:\n- RHEL Family 7, tested on Centos 7.2\n\nUsage\n-----\n\n### Easy Setup\n\nSet `node['glusterfs']['hosts']` to an array containing the hostnames of\nthe nodes of the GlusterFS cluster. By default it is set to\n`[localhost]`.\n\n### Search\n\nIt is also possible to let the *config* recipe use a search to find the members\nof a cluster. First you need to set `node['glusterfs']['role']` to `[]`. Then\nThe search is parametrized by a role name, defined in attribute\n`node['glusterfs']['role']` which default to *glusterfs*. Node having this role\nin their expanded runlist will be considered in the same GlusterFS cluster. For\nsafety reason, if search is used, you need to define\n`node['glusterfs']['size']` (1 by default). The cookbook will return (with\nsuccess) until the search return *size* nodes. This ensures the stability of\nthe configuration during the initial startup of a cluster.\n\nBe sure to set `node['glusterfs']['hosts']` to `[]` if you want to use search\nas by default it is set to `[localhost]` which deactivates search and ignore\n*size* attribute.\n\n### Test\n\nThis cookbook is fully tested through the installation of a working 3-nodes\ncluster in docker hosts. This uses kitchen (>= 1.5.0), docker (>= 1.10) and\na small monkey-patch.\n\nAt the moment, the docker images are run in privileged mode which is highly\ninsecure. This is needed by GlusterFS to mount volumes. You are invited to\ncheck the image used (sbernard/centos-systemd-kitchen) for the tests before\nrunning them.\n\nFor more information, see *.kitchen.yml* and *test* directory.\n\nAttributes\n----------\n\nConfiguration is done by overriding default attributes. All configuration keys\nhave a default defined in [attributes/default.rb](attributes/default.rb).\nPlease read it to have a comprehensive view of what and how you can configure\nthis cookbook behavior.\n\nRecipes\n-------\n\n* default\n* repository (setup yum repositories)\n* package (install glusterfs-server)\n* service (make sure glusterd service is enabled and started)\n* configure (probe an host into the cluster and create a volume)\n* client (mount a glusterfs volume)\n\n### Setting Up Clients\n\nPermit access to GlusterFS volumes using Gluster Native Client method\n\n#### Example\n\n```json\n\"glusterfs\": {\n  \"mounts\": {\n    \"myvol\": {\n      \"mount_point\": \"/mnt/data\",\n      \"server\": \"host1.example\"\n    }\n  }\n}\n```\n\nIt creates a mount point on the local filesystem at /mnt/data\nusing GlusterFS fuse client.\n\nResources/Providers\n-------------------\n\n### Probe\n\nProbe an host into the GlusterFS cluster.\n\n#### Example\n\n```ruby\nglusterfs_probe 'my-custom-host.test'\n```\n\n### Volume\n\nCreate a GlusterFS volume\n\n#### Example\n\n##### Creation of a replicated volume with two storage servers\n\n```json\n\"glusterfs\": {\n  \"volumes\": {\n    \"myvol\": {\n      \"type\": \"replica\",\n      \"count\": 2,\n      \"transport_type\": \"tcp\",\n      \"mount_points\": [[\n        \"host1.example:/mnt/brick1\",\n        \"host2.example:/mnt/brick2\",\n      ]],\n      \"action\": [[\"create\", \"start\"]]\n    }\n  }\n}\n\n```\n\nChangelog\n---------\n\nAvailable in [CHANGELOG.md](CHANGELOG).\n\nContributing\n------------\n\nPlease read carefully [CONTRIBUTING.md](CONTRIBUTING.md) before making a merge\nrequest.\n\nLicense and Author\n------------------\n\n- Author:: Samuel Bernard (<samuel.bernard@s4m.io>)\n- Author:: Florian Philippon (<florian.philippon@s4m.io>)\n\n```text\nCopyright (c) 2016 Sam4Mobile\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 7.1",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/cluster-search",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

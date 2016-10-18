@@ -1,0 +1,142 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/openfrontier/jenkins",
+    "repository_url": "https://hub.docker.com/v2/repositories/openfrontier/jenkins",
+    "tags_url": "https://hub.docker.com/v2/repositories/openfrontier/jenkins/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/openfrontier/jenkins/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/openfrontier/jenkins/autobuild",
+    "user": "openfrontier",
+    "name": "jenkins",
+    "namespace": "openfrontier",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 1297,
+    "last_updated": "2016-10-17T10:14:42.131236Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "plugin",
+        "full_size": 181400830,
+        "id": 5494156,
+        "repository": 183110,
+        "creator": 168317,
+        "last_updater": 168317,
+        "last_updated": "2016-10-17T10:14:41.811884Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "network",
+        "full_size": 190995810,
+        "id": 4092415,
+        "repository": 183110,
+        "creator": 168317,
+        "last_updater": 168317,
+        "last_updated": "2016-10-08T14:06:49.276652Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 181736886,
+        "id": 199983,
+        "repository": 183110,
+        "creator": 168317,
+        "last_updater": 168317,
+        "last_updated": "2016-07-13T06:07:26.678573Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "openfrontier/jenkins-docker"
+  },
+  "name": "openfrontier/jenkins Docker container",
+  "description": "The official Jenkins docker plus some plugins and scripts for integrating with the Gerrit.",
+  "readme": "# Jenkins Docker Image\nOfficial Jenkins docker plus some plugins and scripts in order to integrating with the Gerrit.  \nAdditional plugins include:\n* gerrit-trigger:2.22.0\n* git-client:1.19.6\n* git:2.4.4\n* structs:1.2\n* scm-api:1.2\n* junit:1.15\n* maven-plugin:2.13\n* docker-plugin:0.16.2\n* durable-task:1.11\n* token-macro:1.12.1\n* ssh-slaves:1.10\n* ldap:1.13\n* ssh-credentials:1.11\n* credentials:1.27\n* authentication-tokens:1.2\n* icon-shim:2.0.3\n* docker-commons:1.4.0\n* docker-build-publish:1.3.1\n* parameterized-trigger:2.30\n* swarm:2.1\n\n## Features\n* Demonstrate how to integrate Jenkins with Gerrit.\n* Domonstrate how to configure Jenkins [docker-plugin](https://wiki.jenkins-ci.org/display/JENKINS/Docker+Plugin) to utilise other docker images as the slave nodes.\n* There's a [sample image](https://hub.docker.com/r/openfrontier/jenkins-slave/) which demonstrate how to build a jenkins-slave image for Jenkins docker-plugin.\n* There's another [project](https://github.com/openfrontier/ci) which privdes sample scripts about how to combine this image with [Gerrit image](https://hub.docker.com/r/openfrontier/gerrit/) and other images to create a ci system.\n\n## Create Jenkins container\n    createJenkins.sh\n\n## Basic setup for integrating Jenkins with Gerrit.\n\n    #A public ssh key should be imported to Gerrit first as the <Gerrit admin uid>'s public key.\n    setupJenkins.sh \\\n      <Gerrit admin uid> \\\n      <Gerrit admin email> \\\n      <Gerrit ssh ip/name> \\\n      <Gerrit canonicalWebUrl> \\\n      <Jenkins WebUrl> \\\n      <Nexus public repoUrl>\n\n    sample:\n    setupJenkins.sh \\\n      gerrit \\\n      gerrit@demo.org \\\n      172.17.42.1 \\\n      http://ci.demo.org/gerrit \\\n      http://ci.demo.org/jenkins \\\n      http://ci.demo.org/nexus/content/groups/public\n\n## Destroy Jenkins container (Use with caution!)\n    destroyJenkins.sh\n\n## Upgrade Jenkins container (Use with caution!)\n    upgradeJenkins.sh\n\n",
+  "dockerfile": "FROM jenkins:1.651.3-alpine\nMAINTAINER zsx <thinkernel@gmail.com>\n\n# Install docker binary\nUSER root\nRUN apk add --no-cache \\\n\t\tca-certificates \\\n\t\tcurl \\\n\t\topenssl\n\nENV DOCKER_BUCKET get.docker.com\nENV DOCKER_VERSION 1.10.3\nENV DOCKER_SHA256 d0df512afa109006a450f41873634951e19ddabf8c7bd419caeb5a526032d86d\n\nRUN curl -fSL \"https://${DOCKER_BUCKET}/builds/Linux/x86_64/docker-$DOCKER_VERSION\" -o /usr/local/bin/docker \\\n\t&& echo \"${DOCKER_SHA256}  /usr/local/bin/docker\" | sha256sum -c - \\\n\t&& chmod +x /usr/local/bin/docker\n\nUSER jenkins\n\n# Install plugins\nRUN /usr/local/bin/install-plugins.sh \\\n  gerrit-trigger \\\n  git \\\n  docker-build-publish \\\n  swarm \\\n  docker-plugin\n\n# Add gerrit-trigger plugin config file\nCOPY gerrit-trigger.xml /usr/local/etc/gerrit-trigger.xml\n\n# Add credentials plugin config file\nCOPY credentials.xml /usr/local/etc/credentials.xml\n\n# Add maven installation config file\nCOPY hudson.tasks.Maven.xml /usr/local/etc/hudson.tasks.Maven.xml\n\n# Add Jenkins URL and system admin e-mail config file\nCOPY jenkins.model.JenkinsLocationConfiguration.xml /usr/local/etc/jenkins.model.JenkinsLocationConfiguration.xml\n\n# Add setup script.\nCOPY jenkins-setup.sh /usr/local/bin/jenkins-setup.sh\n\n# Add cloud setting in config file.\nCOPY config.xml /usr/local/etc/config.xml\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apk add --no-cache \t\tca-certificates \t\tcurl \t\topenssl",
+      "curl -fSL \"https://${DOCKER_BUCKET}/builds/Linux/x86_64/docker-$DOCKER_VERSION\" -o /usr/local/bin/docker \t&& echo \"${DOCKER_SHA256}  /usr/local/bin/docker\" | sha256sum -c - \t&& chmod +x /usr/local/bin/docker",
+      "/usr/local/bin/install-plugins.sh   gerrit-trigger   git   docker-build-publish   swarm   docker-plugin"
+    ],
+    "workdir": [],
+    "from": "jenkins:1.651.3-alpine",
+    "maintainer": "zsx <thinkernel@gmail.com>",
+    "user": "jenkins",
+    "env": {
+      "DOCKER_BUCKET": "get.docker.com",
+      "DOCKER_VERSION": "1.10.3",
+      "DOCKER_SHA256": "d0df512afa109006a450f41873634951e19ddabf8c7bd419caeb5a526032d86d"
+    },
+    "copy": "config.xml /usr/local/etc/config.xml"
+  },
+  "source_repository_url": "https://github.com/openfrontier/jenkins-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/openfrontier/jenkins-docker",
+  "docker_repository": "openfrontier/jenkins",
+  "docker_image": "openfrontier/jenkins",
+  "parameters_schema": {
+    "DOCKER_BUCKET": {
+      "default": "get.docker.com",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DOCKER_VERSION": {
+      "default": "1.10.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DOCKER_SHA256": {
+      "default": "d0df512afa109006a450f41873634951e19ddabf8c7bd419caeb5a526032d86d",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "openfrontier/jenkins",
+  "revision": "plugin",
+  "uris": [
+    "https://hub.docker.com/r/openfrontier/jenkins",
+    "https://hub.docker.com/v2/repositories/openfrontier/jenkins",
+    "https://github.com/openfrontier/jenkins-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script",
+    "Type/Devopsware/Integration/Jenkins"
+  ],
+  "info_url": "https://hub.docker.com/r/openfrontier/jenkins",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

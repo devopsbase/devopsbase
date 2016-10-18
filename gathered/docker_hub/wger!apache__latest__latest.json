@@ -1,0 +1,108 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/wger/apache",
+    "repository_url": "https://hub.docker.com/v2/repositories/wger/apache",
+    "tags_url": "https://hub.docker.com/v2/repositories/wger/apache/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/wger/apache/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/wger/apache/autobuild",
+    "user": "wger",
+    "name": "apache",
+    "namespace": "wger",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 228,
+    "last_updated": "2016-09-18T14:24:19.640773Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 398510241,
+        "id": 2797461,
+        "repository": 573799,
+        "creator": 421030,
+        "last_updater": 421030,
+        "last_updated": "2016-09-18T14:24:17.549261Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "rolandgeider/wger"
+  },
+  "name": "wger/apache Docker container",
+  "description": "wger running with apache",
+  "readme": "Demo image for wger\n===================\nThank you for downloading wger Workout Manager. wger (ˈvɛɡɐ) is a free, open\nsource web application that manages your exercises and personal workouts, weight\nand diet plans. It can also be used as a simple gym management utility, providing\ndifferent administrative roles (trainer, manager, etc.). It offers a REST API\nas well, for easy integration with other projects and tools.\n\nIt is written with python/django and uses jQuery and some D3js for charts.\n\nInstallation\n------------\n\nThis docker image contains an instance of the application running as a WSGI\nprocess under apache with a sqlite database. It is useful to just try it out and\nplay around. To start it:\n\n\n```docker run -ti --name wger.apache --publish 8000:80 wger/apache```\n\nThen just open http://localhost:8000 and log in as: **admin**, password **admin**\n\nContact\n-------\n\nFeel free to contact us if you found this useful or if there was something that\ndidn't behave as you expected. We can't fix what we don't know about, so please\nreport liberally. If you're not sure if something is a bug or not, feel free to\nfile a bug anyway.\n\n* twitter: https://twitter.com/wger_de\n* mailing list: https://groups.google.com/group/wger / wger@googlegroups.com, no registration needed\n* IRC: channel #wger on freenode.net, webchat: http://webchat.freenode.net/?channels=wger\n* issue tracker: https://github.com/wger-project/wger/issues\n\nSources\n-------\n\nAll the code and the content is freely available:\n\n* Main repository: https://github.com/wger-project/wger\n* Mirror: https://bitbucket.org/rolandgeider/wger\n\n\nLicence\n-------\n\nThe application is licenced under the Affero GNU General Public License 3 or\nlater (AGPL 3+).\n\nThe initial exercise and ingredient data is licensed additionally under one of\nthe Creative Commons licenses, see the individual exercises for more details.\n\nThe documentation is released under a CC-BY-SA either version 4 of the License,\nor (at your option) any later version.\n\nSome images where taken from Wikipedia, see the SOURCES file in their respective\nfolders for more details.\n",
+  "dockerfile": "#\n# A wger installation under apache with WSGI\n#\n# Please consult the documentation for usage\n# docker build --tag wger/apache .\n# docker run -ti --name wger.apache --publish 8000:80 wger/apache\n#\n#\n\nFROM wger/base\n\nMAINTAINER Roland Geider <roland@geider.net>\nEXPOSE 80\n\n# Install dependencies\nRUN apt-get install -y apache2 libapache2-mod-wsgi-py3\n\n# Configure apache\nRUN a2dissite 000-default.conf\nADD wger.conf /etc/apache2/sites-available/\nRUN a2ensite wger\n\n# Set up the application\nUSER wger\nRUN git clone https://github.com/wger-project/wger.git /home/wger/src\n\nWORKDIR /home/wger/src\nRUN virtualenv --python python3 /home/wger/venv\nRUN . /home/wger/venv/bin/activate \\\n    && pip install --upgrade pip \\\n    && pip install -r requirements.txt \\\n    && invoke create_settings \\\n        --settings-path /home/wger/src/settings.py \\\n        --database-path /home/wger/db/database.sqlite \\\n    && invoke bootstrap_wger \\\n        --settings-path /home/wger/src/settings.py \\\n        --no-start-server\n\n\n# Change permissions of some files and folders so the apache process\n# can access them.\nRUN chmod o+w -R ~/db/ \\\n    && . /home/wger/venv/bin/activate \\\n    && mkdir ~/static \\\n    && mkdir ~/media \\\n    && chmod o+w ~/media \\\n    && sed -i \"/^MEDIA_ROOT/c\\MEDIA_ROOT='\\/home\\/wger\\/media'\" settings.py \\\n    && python manage.py download-exercise-images \\\n    && echo STATIC_ROOT=\\'/home/wger/static\\' >> settings.py \\\n    && python manage.py collectstatic --noinput\n\nUSER root\n\nENTRYPOINT [\"/usr/sbin/apache2ctl\"]\nCMD [\"-D\", \"FOREGROUND\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "wger.conf",
+        "dest": "/etc/apache2/sites-available/"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get install -y apache2 libapache2-mod-wsgi-py3",
+      "a2dissite 000-default.conf",
+      "a2ensite wger",
+      "git clone https://github.com/wger-project/wger.git /home/wger/src",
+      "virtualenv --python python3 /home/wger/venv",
+      ". /home/wger/venv/bin/activate     && pip install --upgrade pip     && pip install -r requirements.txt     && invoke create_settings         --settings-path /home/wger/src/settings.py         --database-path /home/wger/db/database.sqlite     && invoke bootstrap_wger         --settings-path /home/wger/src/settings.py         --no-start-server",
+      "chmod o+w -R ~/db/     && . /home/wger/venv/bin/activate     && mkdir ~/static     && mkdir ~/media     && chmod o+w ~/media     && sed -i \"/^MEDIA_ROOT/c\\MEDIA_ROOT='\\/home\\/wger\\/media'\" settings.py     && python manage.py download-exercise-images     && echo STATIC_ROOT=\\'/home/wger/static\\' >> settings.py     && python manage.py collectstatic --noinput"
+    ],
+    "workdir": [
+      "/home/wger/src"
+    ],
+    "from": "wger/base",
+    "maintainer": "Roland Geider <roland@geider.net>",
+    "user": "root",
+    "entrypoint": "[\"/usr/sbin/apache2ctl\"]",
+    "cmd": "[\"-D\", \"FOREGROUND\"]"
+  },
+  "source_repository_url": "https://github.com/rolandgeider/wger.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/rolandgeider/wger",
+  "docker_repository": "wger/apache",
+  "docker_image": "wger/apache",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "wger/apache",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/wger/apache",
+    "https://hub.docker.com/v2/repositories/wger/apache",
+    "https://github.com/rolandgeider/wger.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/wger/apache",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,172 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/codeminer42/heroku-ruby",
+    "repository_url": "https://hub.docker.com/v2/repositories/codeminer42/heroku-ruby",
+    "tags_url": "https://hub.docker.com/v2/repositories/codeminer42/heroku-ruby/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/codeminer42/heroku-ruby/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/codeminer42/heroku-ruby/autobuild",
+    "user": "codeminer42",
+    "name": "heroku-ruby",
+    "namespace": "codeminer42",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 222,
+    "last_updated": "2016-09-28T20:32:56.493507Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2.2.4",
+        "full_size": 552533363,
+        "id": 1830214,
+        "repository": 369139,
+        "creator": 483083,
+        "last_updater": 483083,
+        "last_updated": "2016-09-28T20:32:54.652586Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 552533355,
+        "id": 1166912,
+        "repository": 369139,
+        "creator": 264067,
+        "last_updater": 483083,
+        "last_updated": "2016-09-28T20:25:22.575574Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.2.3",
+        "full_size": 552550894,
+        "id": 1166917,
+        "repository": 369139,
+        "creator": 264067,
+        "last_updater": 483083,
+        "last_updated": "2016-09-28T20:18:08.607645Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.2.2",
+        "full_size": 552511133,
+        "id": 3462218,
+        "repository": 369139,
+        "creator": 483083,
+        "last_updater": 483083,
+        "last_updated": "2016-09-28T20:10:24.474579Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "paulodiovani/docker-heroku-ruby"
+  },
+  "name": "codeminer42/heroku-ruby Docker container",
+  "description": "Heroku Ruby Docker image build from Cedas 14 but without assets:precompile onbuild trigger.",
+  "readme": ":warning: This image is based on `heroku/ruby` but **will not**\nprecompile Rails Assets to prevent the _Connection refused_\nproblem when using database.\n\nSee https://devcenter.heroku.com/articles/rails-asset-pipeline#troubleshooting.\n\n# Heroku Ruby Docker Image\n\nThis image is for use with Heroku Docker CLI.\n\n## Usage\n\nYour project must contain the following files:\n\n* `Gemfile` and `Gemfile.lock`\n* Ruby 2.2.3\n* ~~`assets:precompile` rake task~~\n* `Procfile` (see [the Heroku Dev Center for details](https://devcenter.heroku.com/articles/procfile))\n\nThen create an `app.json` file in the root directory of your application with\nat least these contents:\n\n```json\n{\n  \"name\": \"Your App's Name\",\n  \"description\": \"An example app.json for heroku-docker\",\n  \"image\": \"heroku/ruby\"\n}\n```\n\nInstall the heroku-docker toolbelt plugin:\n\n```sh-session\n$ heroku plugins:install heroku-docker\n```\n\nInitialize your app:\n\n```sh-session\n$ heroku docker:init\nWrote Dockerfile\nWrote docker-compose.yml\n```\n\nAnd run it with Docker Compose:\n\n```sh-session\n$ docker-compose up web\n```\n\nThe first time you run this command, Bundler will download all dependencies into\nthe container, ~~precompile your assets (using the `assets:precompile rake task)~~,\nbuild your application, and then run it. Subsequent runs will use cached\ndependencies (unless your `Gemfile` or `Gemfile.lock` has changed).\n\nYou'll be able to access your application at `http://<docker-ip>:8080`, where\n`<docker-ip>` is either the value of running `boot2docker ip` if you are on Mac\nor Windows. If you're running it natively, you'll need to use `docker inspect`\nto find the `IPAddress` key.\n",
+  "dockerfile": "FROM heroku/cedar:14\nMAINTAINER Paulo Diovani <paulo.diovani@codeminer42.com>\n\nRUN mkdir -p /app/user\nWORKDIR /app/user\n\nENV GEM_PATH /app/heroku/ruby/bundle/ruby/2.2.0\nENV GEM_HOME /app/heroku/ruby/bundle/ruby/2.2.0\nRUN mkdir -p /app/heroku/ruby/bundle/ruby/2.2.0\n\n# Install Ruby\nRUN mkdir -p /app/heroku/ruby/ruby-2.2.4\nRUN curl -s --retry 3 -L https://heroku-buildpack-ruby.s3.amazonaws.com/cedar-14/ruby-2.2.4.tgz | tar xz -C /app/heroku/ruby/ruby-2.2.4\nENV PATH /app/heroku/ruby/ruby-2.2.4/bin:$PATH\n\n# Install Node\nRUN curl -s --retry 3 -L http://s3pository.heroku.com/node/v0.12.7/node-v0.12.7-linux-x64.tar.gz | tar xz -C /app/heroku/ruby/\nRUN mv /app/heroku/ruby/node-v0.12.7-linux-x64 /app/heroku/ruby/node-0.12.7\nENV PATH /app/heroku/ruby/node-0.12.7/bin:$PATH\n\n# Install Bundler\nRUN gem install bundler -v 1.9.10 --no-ri --no-rdoc\nENV PATH /app/user/bin:/app/heroku/ruby/bundle/ruby/2.2.0/bin:$PATH\nENV BUNDLE_APP_CONFIG /app/heroku/ruby/.bundle/config\n\n# Run bundler to cache dependencies\nONBUILD COPY [\"Gemfile\", \"Gemfile.lock\", \"/app/user/\"]\nONBUILD RUN bundle install --path /app/heroku/ruby/bundle --jobs 4\nONBUILD ADD . /app/user\n\n# How to conditionally `rake assets:precompile`?\nONBUILD ENV RAILS_ENV production\nONBUILD ENV SECRET_KEY_BASE $(openssl rand -base64 32)\n\n# export env vars during run time\nRUN mkdir -p /app/.profile.d/\nRUN echo \"cd /app/user/\" > /app/.profile.d/home.sh\nONBUILD RUN echo \"export PATH=\\\"$PATH\\\" GEM_PATH=\\\"$GEM_PATH\\\" GEM_HOME=\\\"$GEM_HOME\\\" RAILS_ENV=\\\"\\${RAILS_ENV:-$RAILS_ENV}\\\" SECRET_KEY_BASE=\\\"\\${SECRET_KEY_BASE:-$SECRET_KEY_BASE}\\\" BUNDLE_APP_CONFIG=\\\"$BUNDLE_APP_CONFIG\\\"\" > /app/.profile.d/ruby.sh\n\nCOPY ./init.sh /usr/bin/init.sh\nRUN chmod +x /usr/bin/init.sh\n\nENTRYPOINT [\"/usr/bin/init.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "mkdir -p /app/user",
+      "mkdir -p /app/heroku/ruby/bundle/ruby/2.2.0",
+      "mkdir -p /app/heroku/ruby/ruby-2.2.4",
+      "curl -s --retry 3 -L https://heroku-buildpack-ruby.s3.amazonaws.com/cedar-14/ruby-2.2.4.tgz | tar xz -C /app/heroku/ruby/ruby-2.2.4",
+      "curl -s --retry 3 -L http://s3pository.heroku.com/node/v0.12.7/node-v0.12.7-linux-x64.tar.gz | tar xz -C /app/heroku/ruby/",
+      "mv /app/heroku/ruby/node-v0.12.7-linux-x64 /app/heroku/ruby/node-0.12.7",
+      "gem install bundler -v 1.9.10 --no-ri --no-rdoc",
+      "mkdir -p /app/.profile.d/",
+      "echo \"cd /app/user/\" > /app/.profile.d/home.sh",
+      "chmod +x /usr/bin/init.sh"
+    ],
+    "workdir": [
+      "/app/user"
+    ],
+    "from": "heroku/cedar:14",
+    "maintainer": "Paulo Diovani <paulo.diovani@codeminer42.com>",
+    "env": {
+      "GEM_PATH": "/app/heroku/ruby/bundle/ruby/2.2.0",
+      "GEM_HOME": "/app/heroku/ruby/bundle/ruby/2.2.0",
+      "PATH": "/app/user/bin:/app/heroku/ruby/bundle/ruby/2.2.0/bin:$PATH",
+      "BUNDLE_APP_CONFIG": "/app/heroku/ruby/.bundle/config"
+    },
+    "onbuild": "RUN echo \"export PATH=\\\"$PATH\\\" GEM_PATH=\\\"$GEM_PATH\\\" GEM_HOME=\\\"$GEM_HOME\\\" RAILS_ENV=\\\"\\${RAILS_ENV:-$RAILS_ENV}\\\" SECRET_KEY_BASE=\\\"\\${SECRET_KEY_BASE:-$SECRET_KEY_BASE}\\\" BUNDLE_APP_CONFIG=\\\"$BUNDLE_APP_CONFIG\\\"\" > /app/.profile.d/ruby.sh",
+    "copy": "./init.sh /usr/bin/init.sh",
+    "entrypoint": "[\"/usr/bin/init.sh\"]"
+  },
+  "source_repository_url": "https://github.com/paulodiovani/docker-heroku-ruby.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/paulodiovani/docker-heroku-ruby",
+  "docker_repository": "codeminer42/heroku-ruby",
+  "docker_image": "codeminer42/heroku-ruby",
+  "parameters_schema": {
+    "GEM_PATH": {
+      "default": "/app/heroku/ruby/bundle/ruby/2.2.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GEM_HOME": {
+      "default": "/app/heroku/ruby/bundle/ruby/2.2.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/app/user/bin:/app/heroku/ruby/bundle/ruby/2.2.0/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_APP_CONFIG": {
+      "default": "/app/heroku/ruby/.bundle/config",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "codeminer42/heroku-ruby",
+  "revision": "2.2.4",
+  "uris": [
+    "https://hub.docker.com/r/codeminer42/heroku-ruby",
+    "https://hub.docker.com/v2/repositories/codeminer42/heroku-ruby",
+    "https://github.com/paulodiovani/docker-heroku-ruby.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Build"
+  ],
+  "info_url": "https://hub.docker.com/r/codeminer42/heroku-ruby",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

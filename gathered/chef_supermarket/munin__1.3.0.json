@@ -1,0 +1,110 @@
+{
+  "name": "munin Chef cookbook",
+  "chef_cookbook_name": "munin",
+  "revision": "1.3.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/munin",
+    "https://supermarket.chef.io/cookbooks/munin/download",
+    "https://supermarket.chef.io/cookbooks/munin/versions/1.3.0",
+    "https://supermarket.chef.io/cookbooks/munin/versions/1.3.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/munin/versions/1.3.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/munin",
+    "https://supermarket.chef.io/api/v1/cookbooks/munin/versions/1.3.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Monitoring & Trending",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/munin",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/munin/versions/1.3.0/download",
+  "deprecated": false,
+  "created": "2009-10-28T19:16:28.000Z",
+  "updated": "2014-03-24T22:00:23.000Z",
+  "description": "Installs and configures munin",
+  "maintainer": {
+    "name": "sge-jesse-adams",
+    "email": "cookbooks@opscode.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 44,
+  "downloads_count": 21325326,
+  "downloads_count_revision": 1254056,
+  "repository_url": "http://github.com/opscode-cookbooks/munin",
+  "issues_url": "http://github.com/opscode-cookbooks/munin",
+  "chef_source_url": "http://github.com/opscode-cookbooks/munin",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nInstalls and configures Munin for a server and for clients using Chef\nServer search capabilities.\n\nRequirements\n============\n\nRequires Chef 0.10.0+ for Chef environments. Requires a Chef Server\nfor performing node searches.\n\nThe monitoring server that uses this recipe should have a role named\n'`monitoring`'. This is configurable with an attribute (see below). The\nrecipes use search, and narrow the results to nodes in the same\n`chef_environment`.\n\n## Platform\n\n* Debian/Ubuntu\n* Red Hat 5.7, 6.1\n* ArchLinux\n\n## Cookbooks\n\n* apache2\n\nNot required (users can simply be in a data bag and the recipe will\nsearch), but useful for setting the openid list (see __OpenID\nAuthentication__, below).\n\n* users (see __Data Bags__)\n\nNot required, but recommended to install perl cpan modules for munin plugins\n\n* perl\n* nginx\n\nAttributes\n==========\n\n* `node['munin']['web_server_port']` - port that the munin vhost runs\n  on, default 80\n* `node['munin']['sysadmin_email']` - default email address for\n  serveradmin in vhost.\n* `node['munin']['server_auth_method']` - the authentication method to\n  use, default is openid. Any other value will use htauth basic with\n  an htpasswd file.\n* `node['munin']['multi_environment_monitoring']` - allow \n   multi-environment monitoring.  Default is false.\n* `node['munin']['server_role']` - role of the munin server. Default\n  is monitoring.\n* `node['munin']['docroot']` - document root for the server apache\n  vhost. on archlinux, the default is `/srv/http/munin`, or\n  `/var/www/munin` on other platforms.\n* `node['munin']['web_server']` - supports apache or nginx, default is\n  \"apache\"\n* `node['munin']['public_domain']` - override munin domain.\n* `node['munin']['max_processes']` - Maximum number of simultaneous\n  Munin-update processes. When not set, munin will use as many as\n  necessary. Default is to use as many as necessary.\n* `node['munin']['max_graph_jobs']` - Maximum number of parallel\n  processes used by munin-graph when calling rrdgraph, default is \"6\"\n* `node['munin']['max_cgi_graph_jobs']` - Maximum number of parallel\n  munin-cgi-graph or munin-fastcgi-graph jobs, default is \"6\"\n\nRecipes\n=======\n\n## client\n\nThe client recipe installs munin-node package and starts the service.\nIt also searches for a node with the role for the munin server, by\ndefault `node['munin']['server_role']`. On Archlinux, it builds the\nlist of plugins to enable.\n\n## server\n\nThe server recipe will set up the munin server with Apache. It will\ncreate a cron job for generating the munin graphs, search for any\nnodes that have munin attributes (`node['munin']`), and use those\nnodes to connect for the graphs.\n\nOptionally the server can be setup with NGINX.\n\nData Bags\n=========\n\nCreate a `users` data bag that will contain the users that will be\nable to log into the Munin webui. Each user can use htauth with a\nspecified password, or an openid. Users that should be able to log in\nshould be in the sysadmin group. Example user data bag item:\n\n    {\n      \"id\": \"munin\",\n      \"groups\": \"sysadmin\",\n      \"htpasswd\": \"hashed_htpassword\",\n      \"openid\": \"http://munin.myopenid.com/\"\n    }\n\nWhen using `server_auth_method` 'openid', use the openid in the data bag\nitem. Any other value for this attribute (e.g., \"htauth\", \"htpasswd\",\netc) will use the htpasswd value as the password in\n`/etc/munin/htpasswd.users`.\n\n*The openid must have the http:// and trailing /*. See __OpenID\n Authentication__ below for more information.\n\nThe htpasswd must be the hashed value. Get this value with htpasswd:\n\n    % htpasswd -n -s munin\n    New password:\n    Re-type new password:\n    nagiosadmin:{SHA}oCagzV4lMZyS7jl2Z0WlmLxEkt4=\n\nFor example use the `{SHA}oCagzV4lMZyS7jl2Z0WlmLxEkt4=` value in the data bag.\n\nUsage\n=====\n\nCreate a role named `monitoring` that includes the munin::server\nrecipe in the run list. Adjust the docroot to suit your environment.\n\n    % cat roles/monitoring.rb\n    name \"monitoring\"\n    description \"The monitoring server\"\n    run_list(\n      \"recipe[munin::server]\"\n    )\n\nApply this role to a node and it will be the munin server. Optionally\ncreate a DNS entry for it as munin, that will be used in the Apache\nvhost.\n\nUse Chef 0.10's environments. For example, create a \"production\"\nenvironment Ruby DSL file and upload it to the Chef Server\n\n    % cat environments/production.rb\n    name \"production\"\n    description \"Nodes in production\"\n    % knife environment from file production.rb\n\nClients will automatically search for the server based on the value of\nthe `node['munin']['server_role']` attribute in the same environment.\nIf you don't use `monitoring` as the role name, change it in a role\nthat is applied to any nodes that get the `munin::client` recipe.\n\n## OpenID Authentication\n\nThe recipe `apache2::mod_auth_openid` is updated to a version of the\nmodule that apparently does not support the `AuthOpenIDUserProgram`\ndirective anymore. The virtual host file has been updated to use the\nApache HTTPD `require user` directive, with a concatenated list from\n`node['apache']['allowed_openids']`. This value must be an array of\nOpenIDs. Use of the `users::sysadmins` recipe will set this up based\non data bag search results.\n\n## Custom Plugins\n\nThis section describes how to add custom munin plugins.\n\nThe munin cookbook now has a definition that can be used to enable a\nnew plugin for data gathering on a client. If an existing munin plugin\nis desired, call the definition\n\n    munin_plugin \"nfs_client\"\n\nBy default the plugin file name is the name parameter here. Specify\nthe plugin parameter to use something else.\n\n    munin_plugin \"nfs_client\"\n      plugin \"nfs_client_\"\n    end\n\nThis creates a symlink from the plugins distribution directory,\n `/usr/share/munin/plugins` to the enabled plugins directory,\n `/etc/munin/plugins`, and once the server poller picks it up will\n have new graph data for that plugin. See the plugins distribution\n directory for available plugins or add your own.\n\nIf a custom plugin is required, add the plugin file to the munin\ncookbook in `site-cookbooks/munin/files/default/plugins`. Call the\ndefinition specifying that the plugin file should be downloaded from\nthe cookbook.\n\n    munin_plugin \"nfs_client_custom\"\n      create_file true\n    end\n\nBy default in both cases, the plugin is enabled. If a plugin should be\ndisabled, use the `enable` parameter\n\n    munin_plugin \"nfs_client_custom\"\n      enable false\n    end\n\nSome plugins may require other configuration. For example, to use the\nmemcache plugins, you'll need the `Cache::Memcache` cpan module\ninstalled, and use the `munin_plugin` definition. The perl cookbook\nfrom opscode includes a definition to handle this easily.\n\n    cpan_module \"Cache::Memcached\"\n\nThen for example in your memcache recipe\n\n    %w(\n      memcached_bytes_\n      memcached_connections_\n      memcached_hits_\n      memcached_items_\n      memcached_requests_\n      memcached_responsetime_\n      memcached_traffic_\n    ).each do |plugin_name|\n      munin_plugin plugin_name do\n        plugin \"#{plugin_name}#{node[:ipaddress].gsub('.','_')}_#{node[:memcached][:port]}\"\n        create_file true\n      end\n    end\n\nLicense and Author\n==================\n\n- Author:: Nathan Haneysmith <nathan@opscode.com>\n- Author:: Joshua Timberman <joshua@opscode.com>\n\n- Copyright 2009-2013, Opscode, Inc\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "arch",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "freebsd",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apache2",
+      "revision": ">= 1.0.6",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/nginx",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "munin": "Empty, use one of the other recipes",
+    "munin::client": "Instlls munin and configures a client by searching for the server, which should have a role named monitoring",
+    "munin::server": "Installs munin and configures a server, node should have the role 'monitoring' so clients can find it"
+  }
+}

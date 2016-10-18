@@ -1,0 +1,122 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kobretti/couchdb-cors",
+    "repository_url": "https://hub.docker.com/v2/repositories/kobretti/couchdb-cors",
+    "tags_url": "https://hub.docker.com/v2/repositories/kobretti/couchdb-cors/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kobretti/couchdb-cors/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kobretti/couchdb-cors/autobuild",
+    "user": "kobretti",
+    "name": "couchdb-cors",
+    "namespace": "kobretti",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 2427,
+    "last_updated": "2015-06-12T22:09:54.555816Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 0,
+        "id": 164322,
+        "repository": 210824,
+        "creator": 312779,
+        "last_updater": 312779,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.6.1",
+        "full_size": 0,
+        "id": 164308,
+        "repository": 210824,
+        "creator": 312779,
+        "last_updater": 312779,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "chris-kobrzak/docker-couchdb"
+  },
+  "name": "kobretti/couchdb-cors Docker container",
+  "description": "CouchDB with CORS support, Debian-based",
+  "readme": "# CouchDB Dockerfile\n\nA Dockerfile that produces a Docker image for [Apache CouchDB](http://couchdb.apache.org/).\n\nIt is based on the [Ferran Rodenas's version](https://github.com/frodenas/docker-couchdb)\nbut includes the following changes and improvements:\n\n  - adds sample CORS configuration to CouchDB,\n  - runs everything as user `couchdb`,\n  - uses CouchDB 1.6.1,\n  - is based on Debian Wheezy,\n  - its Docker image is smaller,\n  - includes an ARMv7 port that can be used on RaspberryPi 2 (`armhf` branch).\n\n## CouchDB version\n\nThe `master` branch currently hosts CouchDB 1.6.1.\n\n## Usage\n\n### Build the image\n\nTo create the image, execute the following command on the `docker-couchdb` directory:\n\n```\n$ docker build -t kobretti/couchdb-cors .\n```\n\n### Create Docker container from image\n\nTo run the image and bind to host port 5984:\n\n```\n$ docker run -d --name couchdb -p 5984:5984 kobretti/couchdb-cors\n```\n\n#### Admin user with random password\n\nIf you set the `COUCHDB_USERNAME` environment variable via the `-e` flag to the command above,\na new user with all privileges will be created.  The password will be randomly generated.\nTo get the password, check the logs of the container by running:\n\n```\ndocker logs <CONTAINER_ID>\n```\n\nYou should see an output like the following:\n\n```\n========================================================\nCouchDB User: \"couchdb\"\nCouchDB Password: \"jPp5fBJySeuJPTN8\"\n========================================================\n```\n\n#### Credentials\n\nIf you want to preset credentials, you can also specify the `COUCHDB_PASSWORD` environment\nvariable.  Please note, the `COUCHDB_USERNAME` variable is required in this scenario, e.g.:\n\n```\n$ docker run -d \\\n    --name couchdb \\\n    -p 5984:5984 \\\n    -e COUCHDB_USERNAME=myusername \\\n    -e COUCHDB_PASSWORD=mypassword \\\n    kobretti/couchdb-cors\n```\n\n#### No admin user\n\nIf neither `COUCHDB_USERNAME` nor `COUCHDB_PASSWORD` are set when you create a container,\nthe administrator account will not be created.\n\n#### Databases\n\nIf you want to create a database at container's boot time, you can set the `COUCHDB_DBNAME`\nenvironment variable.  The database is going to be created even if the credentials have not been set.\n\nIn this example we will preset our custom username and password and we will create a database:\n\n```\n$ docker run -d \\\n    --name couchdb \\\n    -P \\\n    -e COUCHDB_USERNAME=myusername \\\n    -e COUCHDB_PASSWORD=mypassword \\\n    -e COUCHDB_DBNAME=mydb \\\n    kobretti/couchdb-cors\n```\n\n#### Persistent data\n\nThe CouchDB server is configured to store data in the `/usr/local/var/lib/couchdb/` directory\n inside the container. You can map this path to a volume on the host so the data becomes\n independent of the running container:\n\n```\n$ mkdir -p /tmp/couchdb\n$ docker run -d \\\n    --name couchdb \\\n    -p 5984:5984 \\\n    -v /tmp/couchdb:/usr/local/var/lib/couchdb \\\n    kobretti/couchdb-cors\n```\n\n## Copyright\n\nCopyright (c) 2014 Ferran Rodenas, 2015 Krzysztof Kobrzak.  See [LICENCE](https://github.com/chris-kobrzak/docker-couchdb/blob/master/LICENCE) for details.\n",
+  "dockerfile": "FROM debian:wheezy\n\nMAINTAINER Krzysztof Kobrzak <chris.kobrzak@gmail.com>\n\nENV COUCHDB_VERSION 1.6.1\n\nCOPY scripts /usr/local/bin\n\nRUN \\\n  groupadd -r couchdb && \\\n  useradd -m -d /var/lib/couchdb -g couchdb couchdb && \\\n  chown -R couchdb:couchdb /usr/local/bin/* && \\\n  chmod -R +x /usr/local/bin/*\n\n# CouchDB dependencies, installation from source, required utilities etc.\nRUN \\\n  apt-get update && \\\n  DEBIAN_FRONTEND=noninteractive && \\\n  apt-get install -y --no-install-recommends \\\n    build-essential \\\n    ca-certificates \\\n    curl \\\n    libcurl4-openssl-dev \\\n    libicu-dev \\\n    libmozjs185-1.0 \\\n    libmozjs185-dev \\\n    netcat \\\n    pwgen && \\\n  curl -o esl.deb -sSL https://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb && \\\n  dpkg -i esl.deb && \\\n  apt-get update && \\\n  apt-get install -y --no-install-recommends \\\n    erlang-nox=1:17.5.3 \\\n    erlang-dev=1:17.5.3 && \\\n  cd /usr/src && \\\n  curl -s -o apache-couchdb.tar.gz http://mirror.ox.ac.uk/sites/rsync.apache.org/couchdb/source/$COUCHDB_VERSION/apache-couchdb-$COUCHDB_VERSION.tar.gz && \\\n  tar -xzf apache-couchdb.tar.gz && \\\n  cd /usr/src/apache-couchdb-$COUCHDB_VERSION && \\\n  ./configure --with-js-lib=/usr/lib --with-js-include=/usr/include/mozjs && \\\n  make --quiet && \\\n  make install && \\\n  apt-get purge -y \\\n    binutils \\\n    build-essential \\\n    cpp \\\n    libcurl4-openssl-dev \\\n    libnspr4-dev \\\n    make \\\n    perl && \\\n  apt-get autoremove -y && \\\n  apt-get clean && \\\n  rm -rf /esl.deb \\\n    /usr/src/apache* \\\n    /var/lib/apt/lists/* \\\n    /var/tmp/*\n\nRUN \\\n  sed -e 's/^bind_address = .*$/bind_address = 0.0.0.0/' -i /usr/local/etc/couchdb/default.ini && \\\n  # CORS support in CouchDB\n  sed -i '/\\[httpd\\]/a enable_cors = true' /usr/local/etc/couchdb/local.ini && \\\n  echo '[cors] \\\n   \\norigins = * \\\n   \\ncredentials = true \\\n   \\nheaders = accept, authorization, content-type, origin, referer \\\n   \\nmethods = GET, PUT, POST, HEAD, DELETE' >> /usr/local/etc/couchdb/local.ini\n\nRUN \\\n  touch /var/lib/couchdb/couchdb-not-inited && \\\n  chown -R couchdb:couchdb \\\n    /usr/local/etc/couchdb \\\n    /usr/local/lib/couchdb \\\n    /usr/local/var/lib/couchdb \\\n    /usr/local/var/log/couchdb \\\n    /usr/local/var/run/couchdb && \\\n  chmod -R 0770 \\\n    /usr/local/etc/couchdb \\\n    /usr/local/var/lib/couchdb \\\n    /usr/local/var/log/couchdb \\\n    /usr/local/var/run/couchdb\n\nUSER couchdb\n\nEXPOSE 5984\n\nWORKDIR /var/lib/couchdb\n\n# Expose our data, logs and configuration volumes\nVOLUME [\"/var/lib/couchdb\", \"/usr/local/var/log/couchdb\", \"/usr/local/etc/couchdb\"]\n\nENTRYPOINT [\"start_couchdb\"]\nCMD [\"\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5984
+    ],
+    "volume": [
+      "[\"/var/lib/couchdb\", \"/usr/local/var/log/couchdb\", \"/usr/local/etc/couchdb\"]"
+    ],
+    "run": [
+      "  groupadd -r couchdb &&   useradd -m -d /var/lib/couchdb -g couchdb couchdb &&   chown -R couchdb:couchdb /usr/local/bin/* &&   chmod -R +x /usr/local/bin/*",
+      "  apt-get update &&   DEBIAN_FRONTEND=noninteractive &&   apt-get install -y --no-install-recommends     build-essential     ca-certificates     curl     libcurl4-openssl-dev     libicu-dev     libmozjs185-1.0     libmozjs185-dev     netcat     pwgen &&   curl -o esl.deb -sSL https://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb &&   dpkg -i esl.deb &&   apt-get update &&   apt-get install -y --no-install-recommends     erlang-nox=1:17.5.3     erlang-dev=1:17.5.3 &&   cd /usr/src &&   curl -s -o apache-couchdb.tar.gz http://mirror.ox.ac.uk/sites/rsync.apache.org/couchdb/source/$COUCHDB_VERSION/apache-couchdb-$COUCHDB_VERSION.tar.gz &&   tar -xzf apache-couchdb.tar.gz &&   cd /usr/src/apache-couchdb-$COUCHDB_VERSION &&   ./configure --with-js-lib=/usr/lib --with-js-include=/usr/include/mozjs &&   make --quiet &&   make install &&   apt-get purge -y     binutils     build-essential     cpp     libcurl4-openssl-dev     libnspr4-dev     make     perl &&   apt-get autoremove -y &&   apt-get clean &&   rm -rf /esl.deb     /usr/src/apache*     /var/lib/apt/lists/*     /var/tmp/*",
+      "  sed -e 's/^bind_address = .*$/bind_address = 0.0.0.0/' -i /usr/local/etc/couchdb/default.ini &&   # CORS support in CouchDB",
+      "  touch /var/lib/couchdb/couchdb-not-inited &&   chown -R couchdb:couchdb     /usr/local/etc/couchdb     /usr/local/lib/couchdb     /usr/local/var/lib/couchdb     /usr/local/var/log/couchdb     /usr/local/var/run/couchdb &&   chmod -R 0770     /usr/local/etc/couchdb     /usr/local/var/lib/couchdb     /usr/local/var/log/couchdb     /usr/local/var/run/couchdb"
+    ],
+    "workdir": [
+      "/var/lib/couchdb"
+    ],
+    "from": "debian:wheezy",
+    "maintainer": "Krzysztof Kobrzak <chris.kobrzak@gmail.com>",
+    "env": {
+      "COUCHDB_VERSION": "1.6.1"
+    },
+    "copy": "scripts /usr/local/bin",
+    "user": "couchdb",
+    "entrypoint": "[\"start_couchdb\"]",
+    "cmd": "[\"\"]"
+  },
+  "source_repository_url": "https://github.com/chris-kobrzak/docker-couchdb.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/chris-kobrzak/docker-couchdb",
+  "docker_repository": "kobretti/couchdb-cors",
+  "docker_image": "kobretti/couchdb-cors",
+  "parameters_schema": {
+    "COUCHDB_VERSION": {
+      "default": "1.6.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5984
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kobretti/couchdb-cors",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/kobretti/couchdb-cors",
+    "https://hub.docker.com/v2/repositories/kobretti/couchdb-cors",
+    "https://github.com/chris-kobrzak/docker-couchdb.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Data Store/Document-oriented/CouchDB"
+  ],
+  "info_url": "https://hub.docker.com/r/kobretti/couchdb-cors",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

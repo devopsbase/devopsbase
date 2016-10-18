@@ -1,0 +1,160 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mattsch/fedora-plex",
+    "repository_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-plex",
+    "tags_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-plex/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-plex/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-plex/autobuild",
+    "user": "mattsch",
+    "name": "fedora-plex",
+    "namespace": "mattsch",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 205,
+    "last_updated": "2016-09-13T12:32:13.029076Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "23",
+        "full_size": 279172962,
+        "id": 1386562,
+        "repository": 404088,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-09-13T12:32:12.574992Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "24",
+        "full_size": 279207277,
+        "id": 3750448,
+        "repository": 404088,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-09-13T12:26:48.490856Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 279172988,
+        "id": 1348770,
+        "repository": 404088,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-09-13T12:20:19.255594Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "22",
+        "full_size": 268582603,
+        "id": 1348785,
+        "repository": 404088,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-08-15T22:40:14.644397Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "mattsch/fedora-plex"
+  },
+  "name": "mattsch/fedora-plex Docker container",
+  "description": "Fedora Plex",
+  "readme": "# Fedora Plex Media Server Docker Container\n\nDocker container for [Plex Media Server](https://plex.tv) using\nFedora, requires docker >= 1.6 for ulimit support.\n\n## Usage\n\nCreate with defaults (stable PMS version):\n\n```bash\ndocker create -v /path/to/config/dir:/config \\\n    -v /path/to/storage/dir:/storage \\\n    -v /etc/localtime:/etc/localtime:ro \\\n    -p 32400:32400 --ulimit memlock=3100000 \\\n    --ulimit stack=11000000 --ulimit nofile=4096 \\\n    --name plex mattsch/fedora-plex\n```\n\nCreate with a custom uid/gid for PMS:\n\n```bash\ndocker create -v /path/to/config/dir:/config \\\n    -v /path/to/storage/dir:/storage \\\n    -v /etc/localtime:/etc/localtime:ro \\\n    -p 32400:32400 --ulimit memlock=3100000 \\\n    --ulimit stack=11000000 --ulimit nofile=4096 \\\n    --name plex -e LUID=1005 -e LGID=1005 mattsch/fedora-plex\n```\n\nCreate with a custom uid/gid and latest PMS version:\n\n```bash\ndocker create -v /path/to/config/dir:/config \\\n    -v /path/to/storage/dir:/storage \\\n    -v /etc/localtime:/etc/localtime:ro \\\n    -p 32400:32400 --ulimit memlock=3100000 \\\n    --ulimit stack=11000000 --ulimit nofile=4096 \\\n    --name plex -e LUID=1005 -e LGID=1005 \\\n    -e PLEX_VERSION=\"0.9.14.1.1544-651f92a\" mattsch/fedora-plex\n```\n\nUsing host networking rather than the port forwards above will give the best\nperformance and allow for proper local network discovery.  However, this allows\nthe container to have full access to the host's networking stack.  Be sure you\nunderstand the implications before using it.\n\n",
+  "dockerfile": "FROM mattsch/fedora-rpmfusion:latest\nMAINTAINER Matthew Schick <matthew.schick@gmail.com>\n\n# Install required packages\nRUN dnf install -yq procps-ng \\\n                    python-pip \\\n                    python-setuptools && \\\n    dnf clean all\n\n# Set uid/gid (override with the '-e' flag), 1000/1000 used since it's the\n# default first uid/gid on a fresh Fedora install\nENV LUID=1000 LGID=1000 PLEX_VERSION=\"1.1.4.2757-24ffd60\"\n\n# Create the plex user/group\nRUN groupadd -g $LGID plex && \\\n    useradd -c 'Plex User' -s /bin/bash -m -d /usr/lib/plexmediaserver -g $LGID -u $LUID plex\n    \n# Need a config and storage volume, expose proper port\nVOLUME /config /storage\nEXPOSE 32400\n\n# Add scripts to install and run plex\nCOPY start_pms.sh install-plex.sh run-plex.sh /bin/\n\nRUN /bin/install-plex.sh\n \n# Run our script\nCMD [\"/bin/run-plex.sh\"]\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      32400
+    ],
+    "volume": [
+      "/config /storage"
+    ],
+    "run": [
+      "dnf install -yq procps-ng                     python-pip                     python-setuptools &&     dnf clean all",
+      "groupadd -g $LGID plex &&     useradd -c 'Plex User' -s /bin/bash -m -d /usr/lib/plexmediaserver -g $LGID -u $LUID plex",
+      "/bin/install-plex.sh"
+    ],
+    "workdir": [],
+    "from": "mattsch/fedora-rpmfusion:latest",
+    "maintainer": "Matthew Schick <matthew.schick@gmail.com>",
+    "env": {
+      "LUID": "1000",
+      "LGID": "1000",
+      "PLEX_VERSION": "\"1.1.4.2757-24ffd60\""
+    },
+    "copy": "start_pms.sh install-plex.sh run-plex.sh /bin/",
+    "cmd": "[\"/bin/run-plex.sh\"]"
+  },
+  "source_repository_url": "https://github.com/mattsch/fedora-plex.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mattsch/fedora-plex",
+  "docker_repository": "mattsch/fedora-plex",
+  "docker_image": "mattsch/fedora-plex",
+  "parameters_schema": {
+    "LUID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LGID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PLEX_VERSION": {
+      "default": "\"1.1.4.2757-24ffd60\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        32400
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mattsch/fedora-plex",
+  "revision": "23",
+  "uris": [
+    "https://hub.docker.com/r/mattsch/fedora-plex",
+    "https://hub.docker.com/v2/repositories/mattsch/fedora-plex",
+    "https://github.com/mattsch/fedora-plex.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/mattsch/fedora-plex",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

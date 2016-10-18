@@ -1,0 +1,125 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/eeacms/haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/eeacms/haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/eeacms/haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/eeacms/haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/eeacms/haproxy/autobuild",
+    "user": "eeacms",
+    "name": "haproxy",
+    "namespace": "eeacms",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 15,
+    "pull_count": 2238,
+    "last_updated": "2016-06-23T07:27:15.037252Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1.6",
+        "full_size": 74726060,
+        "id": 1821031,
+        "repository": 261653,
+        "creator": 305026,
+        "last_updater": 170105,
+        "last_updated": "2016-06-23T07:27:14.581648Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 74726211,
+        "id": 597981,
+        "repository": 261653,
+        "creator": 242262,
+        "last_updater": 170105,
+        "last_updated": "2016-06-23T07:25:44.798018Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.5",
+        "full_size": 90450343,
+        "id": 597982,
+        "repository": 261653,
+        "creator": 242262,
+        "last_updater": 170105,
+        "last_updated": "2016-02-23T19:36:47.375934Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "eea/eea.docker.haproxy"
+  },
+  "name": "eeacms/haproxy Docker container",
+  "description": "HAProxy Docker image with docker links and reload support",
+  "readme": "## HAProxy Docker image\n\n - HAProxy 1.6.3\n\nThis image is generic, thus you can obviously re-use it within\nyour non-related EEA projects.\n\n### Warning\n\nFor security reasons, latest builds of this image run HAProxy on default port **5000**\ninstead of **80**. Please update your deployment accordingly.\n\n### Supported tags and respective Dockerfile links\n\n  - `:latest` [*Dockerfile*](https://github.com/eea/eea.docker.haproxy/blob/master/haproxy/Dockerfile) (default)\n  - `:1.6` [*Dockerfile*](https://github.com/eea/eea.docker.haproxy/blob/1.6/haproxy/Dockerfile)\n  - `:1.5` [*Dockerfile*](https://github.com/eea/eea.docker.haproxy/blob/1.5/haproxy/Dockerfile)\n\n### Changes\n\n - [CHANGELOG.md](https://github.com/eea/eea.docker.haproxy/blob/master/CHANGELOG.md)\n\n### Base docker image\n\n - [hub.docker.com](https://registry.hub.docker.com/u/eeacms/haproxy)\n\n\n### Source code\n\n  - [github.com](http://github.com/eea/eea.docker.haproxy)\n\n\n### Installation\n\n1. Install [Docker](https://www.docker.com/) **Please note**: version must not be 1.8.x due to docker issue [#16619](https://github.com/docker/docker/issues/16619)\n2. Install [Docker Compose](https://docs.docker.com/compose/install/).\n\n## Usage\n\n\n### Run with Docker Compose\n\nHere is a basic example of a `docker-compose.yml` file using the `eeacms/haproxy` docker image:\n\n    haproxy:\n      image: eeacms/haproxy\n      links:\n      - webapp\n      ports:\n      - \"80:80\"\n      - \"1936:1936\"\n\n    webapp:\n      image: eeacms/hello\n\n\nThe application can be scaled to use more server instances, with `docker-compose scale`:\n\n    $ docker-compose scale webapp=4\n    $ docker-compose up -d\n\nThe results can be checked in a browser, navigating to http://localhost.\nBy refresing the page multiple times it is noticeable that the IP of the server\nthat served the page changes, as HAProxy switches between them.\nThe stats page can be accessed at http://localhost:1936 where you have to log in\nusing the `STATS_AUTH` authentication details (default `admin:admin`).\n\n\n### Run with backends specified as environment variable\n\n    $ docker run --env BACKENDS=\"192.168.1.5:80 192.168.1.6:80\" eeacms/haproxy\n\nUsing the `BACKENDS` variable is a way to quick-start the container.\nThe servers are written as `server_ip:server_listening_port`,\nseparated by spaces (and enclosed in quotes, to avoid issues).\nThe contents of the variable are evaluated in a python script that writes\nthe HAProxy configuration file automatically.\nBy default, the `BACKENDS` variable is not set.\n\nIf there are multiple DNS records for one or more of your `BACKENDS` (e.g. when deployed using rancher-compose),\nyou can use `DNS_ENABLED` environment variable. This way, haproxy will load-balance\nall of your backends instead of only the first entry found:\n\n  $ docker run --link=webapp -e BACKENDS=\"webapp\" -e DNS_ENABLED=true eeacms/haproxy\n\nIt will also automatically add/remove backends when you scale them.\n\n### Link this container to one or more application containers\n\n    $ docker run --link app_instance_1 --link app_instance_2 eeacms/haproxy:latest\n\nWhen linking containers with the `--link` flag, entries in `/etc/hosts`\nare automatically added by `docker`. This image is configured so in absence\nof a `haproxy.cfg` file and when the `BACKENDS` variable is not set it will\nautomatically parse `/etc/hosts` and create and load the configuration for `haproxy`.\nIn this scenario, the file `/etc/hosts` will be monitored and every time it is\nmodified (for example when restarting a linked container) configuration for\n`haproxy` will be automatically recreated and reloaded.\n\n\n### Use a custom configuration file mounted as a volume\n\n    $ docker run -v conf.d/haproxy.cfg:/etc/haproxy/haproxy.cfg eeacms/haproxy:latest\n\nThis is the preferred way to start a container because the configuration\nfile can be modified locally at any time. In order for the modifications to be\napplied, the configuration has to be reloaded, which can be done by running:\n\n    $ docker exec <name-of-your-container> reload\n\n\n### Extend the image with a custom haproxy.cfg file\n\nAdditionally, you can supply your own static `haproxy.cfg` file by extending the image\n\n    FROM eeacms/haproxy:latest\n    COPY conf.d/haproxy.cfg /etc/haproxy/haproxy.cfg\n\n    USER root\n    RUN apt-get install...\n    USER haproxy\n\nand then run\n\n    $ docker build -t your-image-name:your-image-tag path/to/Dockerfile\n\n### Run with Docker Compose and multiple web apps\n\nIf you have multiple apps running on port 80 HAProxy will by default proxy them all. If you want\nto restrict it to just one app then specify the `SERVICE_NAMES` environment variable.\n\n    haproxy:\n      image: eeacms/haproxy\n      links:\n      - webapp\n      ports:\n      - \"80:80\"\n      - \"1936:1936\"\n      environment:\n      - SERVICE_NAMES=webapp\n\n    first_webapp:\n      image: eeacms/hello\n\n    second_webapp:\n      image: eeacms/hello\n\n    third_app:\n      image: eeacms/hello\n\nNote that haproxy will not serve requests from `third_app` because of the `SERVICE_NAMES` variable.\nYou could also say: `SERVICE_NAMES=first_webapp second_webapp`\n\n### Upgrade\n\n    $ docker pull eeacms/haproxy:latest\n\n\n## Supported environment variables ##\n\nAs HAProxy has close to no purpose by itself, this image should be used in\ncombination with others (for example with [Docker Compose](https://docs.docker.com/compose/)).\nHAProxy can be configured by modifying the following env variables,\neither when running the container or in a `docker-compose.yml` file.\n\n  * `STATS_PORT` The port to bind statistics to - default `1936`\n  * `STATS_AUTH` The authentication details (written as `user:password` for the statistics page - default `admin:admin`\n  * `FRONTEND_NAME` The label of the frontend - default `http-frontend`\n  * `FRONTEND_PORT` The port to bind the frontend to - default `5000`\n  * `PROXY_PROTOCOL_ENABLED` The option to enable or disable accepting proxy protocol (`true` stands for enabled, `false` or anything else for disabled) - default `false`\n  * `COOKIES_ENABLED` The option to enable or disable cookie-based sessions (`true` stands for enabled, `false` or anything else for disabled) - default `false`\n  * `BACKEND_NAME` The label of the backend - default `http-backend`\n  * `BACKENDS` The list of `server_ip:server_listening_port` to be load-balanced by HAProxy, separated by space - by default it is not set\n  * `BACKENDS_PORT` Port to use when auto-discovering backends, or when `BACKENDS` are specified without port - by default `80`\n  * `BALANCE` The algorithm used for load-balancing - default `roundrobin`\n  * `SERVICE_NAMES` An optional prefix for services to be included when discovering services separated by space. - by default it is not set\n  * `LOGGING` Override logging ip address:port - default is udp `127.0.0.1:514` inside container\n  * `DNS_ENABLED` DNS lookup provided `BACKENDS`. Use this option when your backends are resolved by an internal/external DNS service (e.g. Rancher)\n  * `DNS_TTL` DNS lookup backends every $DNS_TTL minutes. Default 1 minute.\n  * `TIMEOUT_CONNECT` the maximum time to wait for a connection attempt to a VPS to succeed. Default `5000` ms\n  * `TIMEOUT_CLIENT` timeouts apply when the client is expected to acknowledge or send data during the TCP process. Default `50000` ms\n  * `TIMEOUT_SERVER` timeouts apply when the server is expected to acknowledge or send data during the TCP process. Default `50000` ms\n\n\n## Logging\n\nBy default there are no logs from haproxy because they are sent on UDP port 514 inside container.\nYou can override this behaviour by providing the `LOGGING` environment variable:\n\n    docker run -e LOGGING=logs.example.com:5005 -e BACKENDS=www1 www2 www3 eeacms/haproxy\n\nNow make sure that `logs.example.com` listen on UDP port `5005`\n\n## Copyright and license\n\nThe Initial Owner of the Original Code is European Environment Agency (EEA).\nAll Rights Reserved.\n\nThe Original Code is free software;\nyou can redistribute it and/or modify it under the terms of the GNU\nGeneral Public License as published by the Free Software Foundation;\neither version 2 of the License, or (at your option) any later\nversion.\n\n\n## Funding\n\n[European Environment Agency (EU)](http://eea.europa.eu)\n",
+  "dockerfile": "FROM haproxy:1.6\nMAINTAINER \"Alin Voinea\" <alin.voinea@eaudeweb.ro>\n\nRUN apt-get update && \\\n    apt-get install -y --no-install-recommends \\\n      ca-certificates \\\n      python3-pip \\\n      dnsutils \\\n      inotify-tools && \\\n    apt-get clean && \\\n    rm -rf /var/lib/apt/lists/*\n\nRUN pip3 install chaperone dnspython3\n\nRUN groupadd -r haproxy && useradd -r -g haproxy haproxy\n\nRUN mkdir -p /var/log/haproxy\nRUN ln -s /usr/local/etc/haproxy /etc/haproxy\nRUN chown -R haproxy:haproxy /usr/local/etc/haproxy /var/log/haproxy\n\nCOPY src/chaperone.conf         /etc/chaperone.d/chaperone.conf\nCOPY src/haproxy.cfg            /tmp/haproxy.cfg\nCOPY src/docker-setup.sh        /docker-setup.sh\nCOPY src/configure.py           /configure.py\nCOPY src/reload.sh              /usr/bin/reload\nCOPY src/track_hosts.sh         /track_hosts\nCOPY src/track_dns.sh           /track_dns\n\nUSER haproxy\n\nENTRYPOINT [\"/usr/local/bin/chaperone\"]\nCMD [\"--user\", \"haproxy\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update &&     apt-get install -y --no-install-recommends       ca-certificates       python3-pip       dnsutils       inotify-tools &&     apt-get clean &&     rm -rf /var/lib/apt/lists/*",
+      "pip3 install chaperone dnspython3",
+      "groupadd -r haproxy && useradd -r -g haproxy haproxy",
+      "mkdir -p /var/log/haproxy",
+      "ln -s /usr/local/etc/haproxy /etc/haproxy",
+      "chown -R haproxy:haproxy /usr/local/etc/haproxy /var/log/haproxy"
+    ],
+    "workdir": [],
+    "from": "haproxy:1.6",
+    "maintainer": "\"Alin Voinea\" <alin.voinea@eaudeweb.ro>",
+    "copy": "src/track_dns.sh           /track_dns",
+    "user": "haproxy",
+    "entrypoint": "[\"/usr/local/bin/chaperone\"]",
+    "cmd": "[\"--user\", \"haproxy\"]"
+  },
+  "source_repository_url": "https://github.com/eea/eea.docker.haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/eea/eea.docker.haproxy",
+  "docker_repository": "eeacms/haproxy",
+  "docker_image": "eeacms/haproxy",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "eeacms/haproxy",
+  "revision": "1.6",
+  "uris": [
+    "https://hub.docker.com/r/eeacms/haproxy",
+    "https://hub.docker.com/v2/repositories/eeacms/haproxy",
+    "https://github.com/eea/eea.docker.haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Proxy/HAProxy",
+    "Type/Middleware/Content Management"
+  ],
+  "info_url": "https://hub.docker.com/r/eeacms/haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

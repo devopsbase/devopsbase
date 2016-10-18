@@ -1,0 +1,65 @@
+{
+  "name": "elk_forwarder Chef cookbook",
+  "chef_cookbook_name": "elk_forwarder",
+  "revision": "3.0.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/elk_forwarder",
+    "https://supermarket.chef.io/cookbooks/elk_forwarder/download",
+    "https://supermarket.chef.io/cookbooks/elk_forwarder/versions/3.0.2",
+    "https://supermarket.chef.io/cookbooks/elk_forwarder/versions/3.0.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/elk_forwarder/versions/3.0.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/elk_forwarder",
+    "https://supermarket.chef.io/api/v1/cookbooks/elk_forwarder/versions/3.0.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Devopsware/Logging/Logstash"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/elk_forwarder",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/elk_forwarder/versions/3.0.2/download",
+  "deprecated": false,
+  "created": "2015-08-10T17:07:12.653Z",
+  "updated": "2016-01-19T21:18:18.404Z",
+  "description": "Installs logstash-forwarder for use in an ELK Cluster",
+  "maintainer": {
+    "name": "evertrue",
+    "email": "devops@evertrue.com"
+  },
+  "license": "apache2",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 5925,
+  "downloads_count_revision": 260,
+  "repository_url": "https://github.com/evertrue/elk_forwarder-cookbook",
+  "issues_url": "https://github.com/evertrue/elk_forwarder-cookbook/issues",
+  "chef_source_url": "https://github.com/evertrue/elk_forwarder-cookbook",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# elk_forwarder [![Build Status](https://travis-ci.org/evertrue/elk_forwarder-cookbook.svg)](https://travis-ci.org/evertrue/elk_forwarder-cookbook) [![Dependency Status](https://gemnasium.com/evertrue/elk_forwarder-cookbook.svg)](https://gemnasium.com/evertrue/elk_forwarder-cookbook)\n\nInstalls and configures the [logstash-forwarder](https://github.com/elastic/logstash-forwarder) to forward specified logs to specified servers\n\n# Requirements\n\n* `golang` cookbook\n\n# Attributes\n\nYou can also find comments in [attributes/default.rb](https://github.com/evertrue/elk_forwarder-cookbook/blob/master/attributes/default.rb)\n\n## General Attributes\n\n| Key                                       | Type   | Description                  | Default                     |\n|-------------------------------------------|--------|------------------------------|-----------------------------|\n| `['elk_forwarder']['install_type']`       | String | source or package            | package                     |\n| `['elk_forwarder']['config_dir']`         | String | Where to put config          | /etc/logstash-forwarder     |\n| `['elk_forwarder']['service_name']`       | String | The Service Name             | logstash-forwarder          |\n| `['elk_forwarder']['log_dir']`            | String | Directory to log to          | /var/log/logstash-forwarder |\n| `['elk_forwarder']['install_dir']`        | String | Directory to install to      | /opt/logstash-forwarder     |\n| `['elk_forwarder']['daemon_args']`        | String | Extra args for the forwarder | -spool-size 5               |\n| `['elk_forwarder']['syslog']['facility']` | String | The Syslog facility.         | local0                      |\n\n\n## Config File Attributes\n\nThe `node['elk_forwarder']['config']` hash closely mimics the logstash forwarder config file format, with the only difference of the `files` key contains a hash instead of an array\n\nThe following table is namespaced under `node['elk_forwarder']['config']` so prepend `node['elk_forwarder']['config']` to the key column\n\n| Key                                | Type   | Description                                             | Default                                        |\n|------------------------------------|--------|---------------------------------------------------------|------------------------------------------------|\n| ['network']['servers']             | Array  | An array of logstash agent address:port values          | []                                             |\n| ['network']['ssl certificate']     | String | The path to find the SSL Certificate                    | /etc/pki/tls/certs/logstash-forwarder/cert.pem |\n| ['network']['ssl key']             | String | The path to find the SSL Private Key                    | /etc/pki/tls/certs/logstash-forwarder/key.pem  |\n| ['network']['ssl ca']              | String | The path to find the SSL CA Certificate                 | /etc/pki/tls/certs/logstash-forwarder/ca.pem   |\n| ['network']['timeout']             | String | Seconds to wait before connecting to next server        | 15                                             |\n| ['files']                          | Hash   | The List of files to track and associated fields to add | {}                                             |\n\nThe `node['elk_forwarder']['config']['files']` hash is probably the most useful,\ncheck out the Usage section for instructions on how to configure files to forward\n\n# Usage\n\nThats great but how do I use it.\n\n## Point to your servers\n\nPut this in a recipe, probably in your base cookbook\n\n```ruby\nservers = search(\n  :node,\n  \"role:elk_server AND chef_environment:#{node.chef_environment}\"\n).map do |node|\n  \"#{node['fqdn']}:5043\"\nend\n\nnode.set['elk_forwarder']['config']['network']['servers'] = servers\n```\n\n## Grab your Lumberjack Certificate\n\nThis one is pretty much up to you, but there is a built in recipe for this\nthat pulls a certificate from a data bag item.  I will use that as an example\nassuming that you stored your CA certificate in the `ca certificate` key in the\n`logstash` data bag item in the `certificates` data bag\n\nIn your Attributes file\n\n```ruby\nset['elk_forwarder']['certs']['ca_data_bag'] = 'certificates'\nset['elk_forwarder']['certs']['ca_data_bag_item'] = 'logstash'\nset['elk_forwarder']['certs']['ca_data_bag_item_key'] = 'ca certificate'\n```\n\nIn your Recipe\n\n```ruby\ninclude_recipe 'elk_forwarder::certs'\n```\n\n## Configure files to forward\n\nFrom your Attributes\n\n```ruby\nset['elk_forwarder']['config']['files']['myapp']['paths'] = ['/var/log/myapp.log']\nset['elk_forwarder']['config']['files']['myapp']['fields']['type'] = 'myapp'\nset['elk_forwarder']['config']['files']['myapp']['fields']['foo'] = 'bar'\n```\n\nOr from your recipe. This one loops through a list of apps\n\n```ruby\napps.each do |app|\n  node.set['elk_forwarder']['config']['files']['myapp']['paths'] = [\"/var/log/#{app}.log\"]\n  node.set['elk_forwarder']['config']['files']['myapp']['fields']['type'] = 'rails_app'\n  node.set['elk_forwarder']['config']['files']['myapp']['fields']['app'] = app\nend\n```\n\n*As a side note all attribute modifications need to happen at compile time*\n\n# Recipes\n\n## default\n\nInstalls and configures the logstash-forwarder\n\n1. Install logstash-forwarder using the `_source` or `_package` recipes\n2. Include various recipes for this cookbook:\n    * `elk_forwarder::configure`\n\n## configure\n\nConfigures the forwarder with the `['elk_forwarder']['config']` hash\n\n1. Creates the config file: `#{node['elk_forwarder']['config_dir']}/logstash-forwarder.conf`\n\n## certs\n\nInstalls SSL Certs and Keys from data bags to the paths specified in these atts:\n\n* `node['elk_forwarder']['network']['ssl ca']`\n* `node['elk_forwarder']['network']['ssl certificate']`\n* `node['elk_forwarder']['network']['ssl key']`\n\nThe following attributes are used to determine the location of the certs/keys\n\n```ruby\ndefault['elk_forwarder']['cert_data_bag']      = 'certificates'\ndefault['elk_forwarder']['cert_data_bag_item'] = 'logstash'\n```\n\nThe data bag you specify is expected to be in the following format:\n\n```json\n{\n  \"id\": \"elk_forwarder\",\n  \"data\": {\n    \"ca\": \"-----BEGIN CERTIFICATE-----\\n...\\n-----END CERTIFICATE-----\",\n    \"certificate\": \"-----BEGIN CERTIFICATE-----\\n...\\n-----END CERTIFICATE-----\\n\",\n    \"key\": \"-----BEGIN RSA PRIVATE KEY-----\\n...\\n-----END RSA PRIVATE KEY-----\\n\"\n  }\n}\n```\n\n# Usage\n\nInclude this recipe in a wrapper cookbook:\n\nmetadata.rb\n\n```ruby\ndepends 'elk_forwarder', '~> 1.0'\n```\n\nrecipes/your_recipe.rb\n\n```ruby\ninclude_recipe 'elk_forwarder::default'\n```\n\n### Certificates\n\nGenerating and distributing SSL Certificates is out of scope for this cookbook\nunless you want to try out the certs recipe which just distributes certs from a\ndata bag. If you want to take care of certs yourself then your wrapper cookbook\nwill need to configure the SSL Certificates and Keys.  See the\n[Certificate Notes](https://github.com/elastic/logstash-forwarder#important-tlsssl-certificate-notes)\non the logstash forwarder repo for help.\n\nRemember to set these attributes to the filenames where you store the certs:\n\n* `node['elk_forwarder']['network']['ssl ca']`\n* `node['elk_forwarder']['network']['ssl certificate']` (optional)\n* `node['elk_forwarder']['network']['ssl key']` (optional)\n\n## Contributing\n\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests with `kitchen test`, ensuring they all pass\n6. Submit a Pull Request using Github\n\n## License and Authors\n\nAuthor:: EverTrue, inc. (devops@evertrue.com)\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 14.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/golang",
+      "revision": "~> 1.5",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/logrotate",
+      "revision": "~> 1.9",
+      "self_resolve": true
+    }
+  ]
+}

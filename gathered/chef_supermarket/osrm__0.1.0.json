@@ -1,0 +1,44 @@
+{
+  "name": "osrm Chef cookbook",
+  "chef_cookbook_name": "osrm",
+  "revision": "0.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/osrm",
+    "https://supermarket.chef.io/cookbooks/osrm/download",
+    "https://supermarket.chef.io/cookbooks/osrm/versions/0.1.0",
+    "https://supermarket.chef.io/cookbooks/osrm/versions/0.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/osrm/versions/0.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/osrm",
+    "https://supermarket.chef.io/api/v1/cookbooks/osrm/versions/0.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/osrm",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/osrm/versions/0.1.0/download",
+  "deprecated": false,
+  "created": "2013-08-23T14:23:13.000Z",
+  "updated": "2016-09-09T06:38:31.996Z",
+  "description": "Installs/Configures osrm",
+  "maintainer": {
+    "name": "chr4",
+    "email": "me@chr4.org"
+  },
+  "license": "GNU Public License 3.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 11635481,
+  "downloads_count_revision": 1252635,
+  "repository_url": "https://github.com/chr4-cookbooks/osrm",
+  "issues_url": "https://github.com/chr4-cookbooks/osrm/issues",
+  "chef_source_url": "https://github.com/chr4-cookbooks/osrm",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# OSRM cookbook\n\nThis cookbook can do the following things for you\n\n* Install and configure the OSRM route daemon\n* Download, extract, prepare map data and keep them up to date\n  * (Uses the map data from [Geofabrik](http://download.geofabrik.de/))\n\nTo use the following recipes and providers, add the following to your metadata.rb\n\n    depends 'osrm'\n\n\n# Recipes\n\n## default\n\nRuns install_git\n\n## install_git\n\nInstalls the latest [Project-OSRM](https://github.com/DennisOSRM/Project-OSRM) to ```node['osrm']['target']``` (default ```/opt/osrm```).\n\n\n# Providers\n\n## osrm_map\n\nosrm_map is a shortcut that calls the other map providers in the following order\n\n* osrm_map_download\n* osrm_map_extract\n* osrm_prepare\n\nExample\n\n    osrm_map 'europe'\n      path\n      user\n      profile\n      profile_dir\n      command\n      user\n      cwd\n      threads\n      memory\n      cleanup\n\n      action :create\n      action :create_if_missing\n    end\n\n    osrm_map_download 'europe' do\n      action :download_if_missing\n    end\n\n    osrm_map_extract 'europe' do\n      action :extract_if_missing\n    end\n\n    osrm_map_prepare 'europe' do\n      action :prepare_if_missing\n    end\n\n\n## osrm_map_download\n\nDownloads map data for the specified region.\n\n    osrm_map_download 'planet'\n    osrm_map_download 'europe'\n    osrm_map_download 'north-america'\n    osrm_map_download 'germany'\n    osrm_map_download 'us-west'\n\nFor a full list of supported regions, take a look at [attributes/regions.rb](https://github.com/flinc-chef/osrm/blob/master/attributes/regions.rb). If necessary, it can be easily extended to support even more, feel free to file a pull request!\n\nBy default, the provider automatically re-downloads the file if it was changed on the server. You can prevent this behaviour when using the :download_if_missing action:\n\n    osrm_map_download 'europe' do\n      action :download_is_missing\n    end\n\nFurthermore, you can specify the following attributes:\n\n    osrm_map_download 'us-west' do\n      user 'my_osrm_user'\n      path '/srv/my_map_data'\n    end\n\n\n## osrm_map_extract\n\nExtracts downloaded map data, using osrm-extract.\n\nExample:\n\n    osrm_map_extract 'europe'\n\nThe following attributes are supported\n\n    osrm_map_extract 'europe' do\n      path        '/srv/my_map_data'  # use the same directory you used in osrm_map_download)\n      profile     'car'               # profile to use (defaults to 'car')\n      profile_dir '/srv/my_profiles'  # where to look for profiles (.lua files)\n      command     'osrm-extract'      # binary to use\n      user        'my_osrm_user'\n      cwd         '/srv/my_osrm'      # set working directory for osrm-extract\n      threads     5                   # how many threads to use (defaults to number of cpu cores)\n      memory      4                   # how many GB of memory to use (defaults to system memory - 1GB)\n    end\n\n\n## osrm_map_prepare\n\nPrepares extracted map data, using osrm-prepare.\n\nExample:\n\n    osrm_map_prepare 'europe'\n\nThe following attribtues are supported:\n\n    osrm_map_prepare 'europe' do\n      path        '/srv/my_map_data'  # use the same directory you used in osrm_map_download)\n      profile     'car'               # profile to use (defaults to 'car')\n      profile_dir '/srv/my_profiles'  # where to look for profiles (.lua files)\n      command     'osrm-prepare'      # binary to use\n      user        'my_osrm_user'\n      cwd         '/srv/my_osrm'      # set working directory for osrm-prepare\n      threads     5                   # how many threads to use (defaults to number of cpu cores)\n      cleanup     false               # Do not cleanup .osrm and .osrm.restrictions after preparing\n    end\n\n\n## osrm_routed\n\nSets up and starts osrm-routed (using upstart) for the specified region\n\nExample:\n\n    osrm_routed 'europe'\n\nThe following attributes are supported:\n\n    osrm_routed 'europe' do\n      config_dir   '/etc/osrm-routed'\n      service_name 'osrm-routed-%s'    # %s will be replaced with the selected region and profile\n\n      profile      'car'               # profile for which to start the daemon\n\n      user         'osrm-routed'       # user to run the daemon as (will be created if not existent)\n      home         '/my/osrm-install'  # home directory of the osrm-routed user\n\n      daemon       '/path/to/osrm-routed'\n\n      threads      16                  # how many threads to use (defaults to number of cpu cores)\n\n      port         5000                # TCP port to bind to\n      listen       '127.0.0.1'         # TCP address to listen on\n    end\n\n\n# Attributes\n\nYou can set the following attributes if you need settings that differ form the defaults\n\n## default\n\n```ruby\nnode['osrm']['repository'] = 'git://github.com/DennisOSRM/Project-OSRM.git'\nnode['osrm']['branch'] = 'master' # use e.g. 'v0.3.5' for a stable version\n\nnode['osrm']['target'] = '/opt/osrm'\nnode['osrm']['map_path'] = '/opt/osrm-data'\n```\n\n## routed\n\n```ruby\nnode['osrm']['routed']['user'] = 'osrm-routed'\nnode['osrm']['routed']['service_name'] = 'osrm-routed-%s'\nnode['osrm']['routed']['config_dir'] = '/etc/osrm-routed'\n```\n\n## regions\n\nYou can add custom regions like this\n\n```ruby\nnode['osrm']['map_data']['your-region']['profiles'] = %w{car}\nnode['osrm']['map_data']['your-region']['url'] = \"http://download.geofabrik.de/your-region-latest.osm.pbf\"\nnode['osrm']['map_data']['your-region']['checksum'] = \"#{node['osrm']['map_data']['your-region']['url']}.md5\"\n```\n\n# Contributing\n\nPull requests are very welcome!\n\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write you change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n"
+}

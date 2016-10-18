@@ -1,0 +1,148 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/neroinc/fedora-android",
+    "repository_url": "https://hub.docker.com/v2/repositories/neroinc/fedora-android",
+    "tags_url": "https://hub.docker.com/v2/repositories/neroinc/fedora-android/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/neroinc/fedora-android/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/neroinc/fedora-android/autobuild",
+    "user": "neroinc",
+    "name": "fedora-android",
+    "namespace": "neroinc",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 238,
+    "last_updated": "2015-10-04T23:44:44.211970Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 945755863,
+        "id": 136636,
+        "repository": 110046,
+        "creator": 61099,
+        "last_updater": 61094,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "NeroINC/docker"
+  },
+  "name": "neroinc/fedora-android Docker container",
+  "description": "",
+  "readme": "fedora-android\n==============\nAndroid build and test environment based on fedora:20.\n\nThis image contains:\n\n* OpenJDK 7\n* Android SDK r24\n* Android Build Tools 21.1.0 and 21.1.1\n* Android Emulator (sys-img-armeabi-v7a-android-21)\n* Apache Ant 1.9.4\n* Maven 3.2.5\n* Gradle 2.2.1\n\nYour application source code is expected in `/src`.\n\nHow-To\n------\nBuild the image:\n`docker build --rm -t neroinc/fedora-android .`\n\nStart a container with an interactive shell:\n`docker run -it neroinc/fedora-android /bin/bash`\n\nTo mount your local work directory (e.g. using [Boot2docker](http://boot2docker.io/))\ninto a new docker container, run:\n`docker run -it -v /Users/<workspace path>:/src neroinc/fedora-android /bin/bash`\n\nOr you can directly execute a build, e.g. using gradle:\n`docker run -it -v /Users/<workspace path>:/src neroinc/fedora-android /bin/bash -c \"cd /src && gradle [<additional command line params>]\"`\n\nAnd then copy the APK out of the container back into your host file system:\n`docker cp <name of your container>:/src/<path to APK> .`\n\nRunning the Emulator\n--------------------\nThe image ships with the Android Base Image (ABI) `sys-img-armeabi-v7a-android-21`. You can add more\nbase images by adding them to your `Dockerfile`.\n\nShell into your container and create a new emulator device with an 8 GBytes SD card:\n`android create avd --name Default --target android-21 --sdcard 8000M --abi default/armeabi-v7a --force`\n\nThen launch it:\n`emulator64-arm -avd Default -no-boot-anim -noaudio -no-window -gpu off`\n\nExecuting Unit Tests\n--------------------\nHere's a simple batch file you can use to run unit tests. This will create and run an emulator, installs your APK,\nexecuted the tests and copies the JUnit test report back into your docker file system.\n\n    #!/bin/bash\n    \n    # Create AVD\n    echo n | android create avd --name test-device --target android-21 --sdcard 8000M --abi default/armeabi-v7a --force\n    \n    # Start emulator\n    emulator64-arm -avd test-device -no-boot-anim -noaudio -no-window -gpu off &\n    adb wait-for-device\n    \n    # Waiting for emulator to fully boot\n    echo 'Waiting for emulator to fully boot... (This might take several minutes)'\n    adb shell 'while [ \"\"`getprop dev.bootcomplete` != \"1\" ] ; do sleep 1; done'\n    \n    # Run the tests\n    adb shell pm list instrumentation\n    adb install -rt <path to debug APK>\n    adb shell mkdir /storage/sdcard/report_dir\n    adb shell am instrument -w -e reportDir /storage/sdcard/report_dir <your package name>/com.zutubi.android.junitreport.JUnitReportTestRunner\n    adb pull /storage/sdcard/report_dir/junit-report.xml ./test-reports/junit-report.xml\n    \n    # Stop the emulator\n    adb -s emulator-5554 emu kill\n\nThe test results are located within your docker file system at `/src/test-reports`. \nCopy it back to your host file system via docker:\n`docker cp <name of your container>:/src/test-reports .`\n",
+  "dockerfile": "# Loosely based on https://github.com/wasabeef/dockerfiles/\n\nFROM fedora:20\n\n# Epel\n# RUN rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm\n\n# Update distribution\nRUN yum -y update; yum clean all\n\n# Install Development Tools\nRUN yum -y groupinstall \"Development Tools\"; yum clean all\n\n# Install java (OpenJDK)\nRUN yum -y install java-1.7.0-openjdk-devel; yum clean all\n\n# Install 32bit Libraries\nRUN yum -y upgrade libstdc++; yum clean all\nRUN yum -y install glibc.i686 libstdc++.i686 glibc-devel.i686 zlib-devel.i686 ncurses-devel.i686 libX11-devel.i686 libXrender.i686; yum clean all\n\n# Install Android SDK\nRUN cd /usr/local/ && \\\n\tcurl -L -O http://dl.google.com/android/android-sdk_r24.0.2-linux.tgz && \\\n\ttar xf android-sdk_r24.0.2-linux.tgz && \\\n\trm -rf android-sdk_r24.0.2-linux.tgz\n\n# Install Android tools and libraries\nRUN echo y | /usr/local/android-sdk-linux/tools/android update sdk --filter tools --no-ui --force -a\nRUN echo y | /usr/local/android-sdk-linux/tools/android update sdk --filter platform-tools --no-ui --force -a\nRUN echo y | /usr/local/android-sdk-linux/tools/android update sdk --filter build-tools-21.1.1,build-tools-21.1.0 --no-ui --force -a\nRUN echo y | /usr/local/android-sdk-linux/tools/android update sdk --filter extra-android-m2repository,extra-android-support --no-ui --force -a\nRUN echo y | /usr/local/android-sdk-linux/tools/android update sdk --filter android-21 --no-ui --force -a\nRUN echo y | /usr/local/android-sdk-linux/tools/android update sdk --filter sys-img-armeabi-v7a-android-21 --no-ui --force -a\n#RUN echo y | /usr/local/android-sdk-linux/tools/android update sdk --filter android-20,android-19,android-18 --no-ui --force -a\n#RUN echo y | /usr/local/android-sdk-linux/tools/android update sdk --filter addon-google_apis-google-19 --no-ui --force -a\n\n# Install Android NDK\n#RUN cd /usr/local && \\\n#\tcurl -L -O http://dl.google.com/android/ndk/android-ndk-r9b-linux-x86_64.tar.bz2 && \\\n#\ttar xf android-ndk-r9b-linux-x86_64.tar.bz2 && \\\n#\trm -rf android-ndk-r9b-linux-x86_64.tar.bz2\n\n# Install Apache-Ant\nRUN cd /usr/local/ && \\\n\tcurl -L -O http://ftp.meisei-u.ac.jp/mirror/apache/dist/ant/binaries/apache-ant-1.9.5-bin.tar.gz && \\\n\ttar xf apache-ant-1.9.5-bin.tar.gz && \\\n\trm -rf apache-ant-1.9.5-bin.tar.gz\n\n# Install Maven\nRUN cd /usr/local/ && \\\n\tcurl -L -O http://ftp.tsukuba.wide.ad.jp/software/apache/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.tar.gz && \\\n\ttar xf apache-maven-3.2.5-bin.tar.gz && \\\n\trm -rf apache-maven-3.2.5-bin.tar.gz\n\n# Install Gradle\nRUN cd /usr/local/ && \\\n\tcurl -L -O http://services.gradle.org/distributions/gradle-2.2.1-bin.zip && \\\n\tunzip -qo gradle-2.2.1-bin.zip && \\\n\trm -rf gradle-2.2.1-bin.zip\n\n# Environment variables\nENV JAVA_HOME /usr/lib/jvm/jre-1.7.0-openjdk\nENV ANDROID_HOME /usr/local/android-sdk-linux\nENV ANDROID_AVD_HOME /root/.android/avd\n#ENV ANDROID_NDK_HOME /usr/local/android-ndk-r9b\nENV ANT_HOME /usr/local/apache-ant-1.9.4\nENV MAVEN_HOME /usr/local/apache-maven-3.2.5\nENV GRADLE_HOME /usr/local/gradle-2.2.1\nENV PATH $PATH:$ANDROID_HOME/tools\nENV PATH $PATH:$ANDROID_HOME/platform-tools\n#ENV PATH $PATH:$ANDROID_NDK_HOME\nENV PATH $PATH:$ANT_HOME/bin\nENV PATH $PATH:$MAVEN_HOME/bin\nENV PATH $PATH:$GRADLE_HOME/bin\n\n# Make sure AVD path exists as otherwise we'll fail to create an SD card\nRUN mkdir -p $ANDROID_AVD_HOME\n\n# Done\nRUN mkdir -p /src\nWORKDIR /src\nCMD [\"/bin/bash\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "yum -y update; yum clean all",
+      "yum -y groupinstall \"Development Tools\"; yum clean all",
+      "yum -y install java-1.7.0-openjdk-devel; yum clean all",
+      "yum -y upgrade libstdc++; yum clean all",
+      "yum -y install glibc.i686 libstdc++.i686 glibc-devel.i686 zlib-devel.i686 ncurses-devel.i686 libX11-devel.i686 libXrender.i686; yum clean all",
+      "cd /usr/local/ && \tcurl -L -O http://dl.google.com/android/android-sdk_r24.0.2-linux.tgz && \ttar xf android-sdk_r24.0.2-linux.tgz && \trm -rf android-sdk_r24.0.2-linux.tgz",
+      "echo y | /usr/local/android-sdk-linux/tools/android update sdk --filter tools --no-ui --force -a",
+      "echo y | /usr/local/android-sdk-linux/tools/android update sdk --filter platform-tools --no-ui --force -a",
+      "echo y | /usr/local/android-sdk-linux/tools/android update sdk --filter build-tools-21.1.1,build-tools-21.1.0 --no-ui --force -a",
+      "echo y | /usr/local/android-sdk-linux/tools/android update sdk --filter extra-android-m2repository,extra-android-support --no-ui --force -a",
+      "echo y | /usr/local/android-sdk-linux/tools/android update sdk --filter android-21 --no-ui --force -a",
+      "echo y | /usr/local/android-sdk-linux/tools/android update sdk --filter sys-img-armeabi-v7a-android-21 --no-ui --force -a",
+      "cd /usr/local/ && \tcurl -L -O http://ftp.meisei-u.ac.jp/mirror/apache/dist/ant/binaries/apache-ant-1.9.5-bin.tar.gz && \ttar xf apache-ant-1.9.5-bin.tar.gz && \trm -rf apache-ant-1.9.5-bin.tar.gz",
+      "cd /usr/local/ && \tcurl -L -O http://ftp.tsukuba.wide.ad.jp/software/apache/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.tar.gz && \ttar xf apache-maven-3.2.5-bin.tar.gz && \trm -rf apache-maven-3.2.5-bin.tar.gz",
+      "cd /usr/local/ && \tcurl -L -O http://services.gradle.org/distributions/gradle-2.2.1-bin.zip && \tunzip -qo gradle-2.2.1-bin.zip && \trm -rf gradle-2.2.1-bin.zip",
+      "mkdir -p $ANDROID_AVD_HOME",
+      "mkdir -p /src"
+    ],
+    "workdir": [
+      "/src"
+    ],
+    "from": "fedora:20",
+    "env": {
+      "JAVA_HOME": "/usr/lib/jvm/jre-1.7.0-openjdk",
+      "ANDROID_HOME": "/usr/local/android-sdk-linux",
+      "ANDROID_AVD_HOME": "/root/.android/avd",
+      "ANT_HOME": "/usr/local/apache-ant-1.9.4",
+      "MAVEN_HOME": "/usr/local/apache-maven-3.2.5",
+      "GRADLE_HOME": "/usr/local/gradle-2.2.1",
+      "PATH": "$PATH:$GRADLE_HOME/bin"
+    },
+    "cmd": "[\"/bin/bash\"]"
+  },
+  "source_repository_url": "https://github.com/NeroINC/docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/NeroINC/docker",
+  "docker_repository": "neroinc/fedora-android",
+  "docker_image": "neroinc/fedora-android",
+  "parameters_schema": {
+    "JAVA_HOME": {
+      "default": "/usr/lib/jvm/jre-1.7.0-openjdk",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ANDROID_HOME": {
+      "default": "/usr/local/android-sdk-linux",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ANDROID_AVD_HOME": {
+      "default": "/root/.android/avd",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ANT_HOME": {
+      "default": "/usr/local/apache-ant-1.9.4",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_HOME": {
+      "default": "/usr/local/apache-maven-3.2.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GRADLE_HOME": {
+      "default": "/usr/local/gradle-2.2.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:$GRADLE_HOME/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "neroinc/fedora-android",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/neroinc/fedora-android",
+    "https://hub.docker.com/v2/repositories/neroinc/fedora-android",
+    "https://github.com/NeroINC/docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/neroinc/fedora-android",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,146 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dockingbay/fedora-rust",
+    "repository_url": "https://hub.docker.com/v2/repositories/dockingbay/fedora-rust",
+    "tags_url": "https://hub.docker.com/v2/repositories/dockingbay/fedora-rust/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dockingbay/fedora-rust/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dockingbay/fedora-rust/autobuild",
+    "user": "dockingbay",
+    "name": "fedora-rust",
+    "namespace": "dockingbay",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 1943,
+    "last_updated": "2016-06-06T22:04:33.431574Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "nightly",
+        "full_size": 388726556,
+        "id": 14036,
+        "repository": 11769,
+        "creator": 14407,
+        "last_updater": 14407,
+        "last_updated": "2016-06-06T22:04:32.058183Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "0.9.fc20",
+        "full_size": 340762667,
+        "id": 14037,
+        "repository": 11769,
+        "creator": 14407,
+        "last_updater": 16934,
+        "last_updated": "2015-11-14T16:42:57.202679Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "0.10.fc20",
+        "full_size": 358564493,
+        "id": 14038,
+        "repository": 11769,
+        "creator": 14407,
+        "last_updater": 16934,
+        "last_updated": "2015-11-14T16:39:40.808706Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "0.11.0.fc20",
+        "full_size": 411890560,
+        "id": 14034,
+        "repository": 11769,
+        "creator": 14407,
+        "last_updater": 16934,
+        "last_updated": "2015-11-14T16:36:50.607400Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "dockingbay/fedora-rust"
+  },
+  "name": "dockingbay/fedora-rust Docker container",
+  "description": "Trusted build of Rust programming language based on Fedora.",
+  "readme": "fedora-rust\n===========\n\nDocker image with Rust programming language and Cargo package manager.\n\nWhy\n---\n\nRust changes a lot, many devs want to develop using the Rust nightly\nbuilds. It's customary to download precompiled binaries directly from\nRust's site, but it's a bit cleaner to install such directly\ndownloaded binaries into a somewhat isolated environment, like a\ndocker container.\n\nIt's also easy to temporarily revert to a previous Rust nightly in\ncase a new Rust nightly breaks your dependencies way too much, just\nname your containers by date when you create them, and then keep them\naround for a while.\n\n\nUsage\n-----\n\n```\ndocker pull dockingbay/fedora-rust:nightly\n```\n\nThe intended use case is to base your own per-project images on the\nfedora-rust image nightly build. An example Dockerfile:\n\n```\nFROM dockingbay/fedora-rust:nightly\n\n# create a user\nRUN useradd project -u 1000 -d /home/project -G wheel; passwd --stdin project <<< 'weakpw'\n\n# install dependencies needed for building your project\nRUN yum -y install freetype-devel portaudio-devel SDL2-devel tmux zlib-devel; yum clean all\n\n# don't forget LD_LIBRARY_PATH for rustc\nRUN echo -e '\\nexport LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib' >> /home/project/.bashrc\n\n# a nicer command prompt\nRUN echo \"export PS1='[\\u@\\h \\W]\\$ '\" >> /home/project/.bashrc\n\nVOLUME [\"/home/project/my_project_directory\"]\nUSER project\nENV HOME /home/project\nCMD [\"/usr/bin/tmux\"]\n```\n\nBuild your customized project image:\n\n```\ndocker build -t myname/my_project_image .\n```\n\nCreate a container, you'll get a shell where you can run rustc and cargo:\n\n```\ndocker run --name my_project_2015_01_05 -i -t -v /home/myname/projects/my_project:/home/project/my_project_directory\n```\n\nRe-use a previously created container in case the newest nightly makes\nyou feel dizzy:\n\n```\ndocker start -a -i my_project_2015_01_02\n```\n",
+  "dockerfile": "#    Licensed under the Apache License, Version 2.0 (the \"License\"); you may\n#    not use this file except in compliance with the License. You may obtain\n#    a copy of the License at\n#\n#         http://www.apache.org/licenses/LICENSE-2.0\n#\n#    Unless required by applicable law or agreed to in writing, software\n#    distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT\n#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the\n#    License for the specific language governing permissions and limitations\n#    under the License.\n\nFROM fedora:20\nMAINTAINER Jiri Stransky <jistr@jistr.com>\n\nADD rust-install/rebuild-counter /usr/local/share/rust-install/rebuild-counter\n\nRUN yum -y update; yum clean all\n\n# only needed when building from source\n# RUN yum -y install ccache diffutils file gcc gcc-c++ make pandoc perl python valgrind which; yum clean all\n\n# fundamental packages\nRUN yum -y install gcc make; yum clean all\n\nENV LD_LIBRARY_PATH /usr/local/lib\nADD rust-install /usr/local/share/rust-install\n\n# from source:\n# RUN /usr/local/share//build-and-install.sh\n\n# pre-built:\nRUN /usr/local/share/rust-install/download-and-install.sh\n\nCMD [\"/bin/bash\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "rust-install/rebuild-counter",
+        "dest": "/usr/local/share/rust-install/rebuild-counter"
+      },
+      {
+        "source": "rust-install",
+        "dest": "/usr/local/share/rust-install"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "yum -y update; yum clean all",
+      "yum -y install gcc make; yum clean all",
+      "/usr/local/share/rust-install/download-and-install.sh"
+    ],
+    "workdir": [],
+    "from": "fedora:20",
+    "maintainer": "Jiri Stransky <jistr@jistr.com>",
+    "env": {
+      "LD_LIBRARY_PATH": "/usr/local/lib"
+    },
+    "cmd": "[\"/bin/bash\"]"
+  },
+  "source_repository_url": "git://github.com/dockingbay/fedora-rust.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/dockingbay/fedora-rust",
+  "docker_repository": "dockingbay/fedora-rust",
+  "docker_image": "dockingbay/fedora-rust",
+  "parameters_schema": {
+    "LD_LIBRARY_PATH": {
+      "default": "/usr/local/lib",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dockingbay/fedora-rust",
+  "revision": "nightly",
+  "uris": [
+    "https://hub.docker.com/r/dockingbay/fedora-rust",
+    "https://hub.docker.com/v2/repositories/dockingbay/fedora-rust",
+    "git://github.com/dockingbay/fedora-rust.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Build",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/dockingbay/fedora-rust",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

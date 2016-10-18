@@ -1,0 +1,99 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/efrecon/httpd",
+    "repository_url": "https://hub.docker.com/v2/repositories/efrecon/httpd",
+    "tags_url": "https://hub.docker.com/v2/repositories/efrecon/httpd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/efrecon/httpd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/efrecon/httpd/autobuild",
+    "user": "efrecon",
+    "name": "httpd",
+    "namespace": "efrecon",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 707,
+    "last_updated": "2016-10-10T19:10:51.380980Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 6217879,
+        "id": 300149,
+        "repository": 209520,
+        "creator": 116497,
+        "last_updater": 116497,
+        "last_updated": "2016-10-10T19:10:50.712242Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "efrecon/docker-httpd"
+  },
+  "name": "efrecon/httpd Docker container",
+  "description": "A micro-sized httpd. Start serving files in seconds!",
+  "readme": "# docker-httpd\n\nThis is a docker component that leverages a minimalistic, but working HTTPd in\nTcl. The HTTPd implementation comes from the [til](https://github.com/efrecon/til).\nBeing based on a [micro-sized Tcl core image](https://github.com/efrecon/mini-tcl),\nthis results in an image just above 20MB.\n\nThe component has the following features:\n\n* It serves on the HTTP alternative port, i.e. `8080`. Run the component with\n  `-p 8080:8080` or the host port of your choice.\n\n* It exports a volume at `/opt/www` which is the root of the directories that it\n  serves. Arrange to mount to that directory a local directory using an option\n  like `-v /var/mywww:/opt/www:ro`. Using the `ro` is probably a good idea to\n  increase security if you just want to serve files.\n\n* You can access logging through mounting the volume `/opt/log` if\n  necessary.\n  \n* You can provide it with a pair of public and private key with the -pki option\n  to make it serve requests on HTTPS instead of plain HTTP. The current\n  implementation serves as many protocols as possible.\n  \n* You can make it protect some or all directories that it serves using the\n  -authorization option. This is a list which is a multiple of three, its\n  elements being, respectively: a glob-style pattern matching the paths to\n  protect, a Realm, a list of user:password specification (with the separating\n  colon). The list can be sourced from a file instead, specify a `@` followed by\n  the path to the file as the value for the option. You can use the `/opt/data`\n  exported volume to mount that file from your local host.\n\nThis component is only meant to server files on HTTP. It allows directory\nlisting. The underlying web server module is actually much more capable than\nthat: websockets, REST, etc. But none of these features surfaces here to keep\nthe component to a bare minimum when it comes to features and functionality.\n",
+  "dockerfile": "FROM efrecon/mini-tcl\nMAINTAINER Emmanuel Frecon <emmanuel@sics.se>\n\n# Install git so we can install the til and fix some\n# pseudo-directories to make the HTTPd happy at start.\nRUN apk add --update-cache git && \\\n    git clone https://github.com/efrecon/til /opt/til && \\\n    rm -rf /opt/til/.git && \\\n    apk del git && \\\n    rm -rf /var/cache/apk/* && \\\n    mkdir /opt/til/bin/lib && \\\n    ln -s /opt/til /opt/til/bin/lib/ && \\\n    ln -s /usr/lib/tcllib* /opt/til/bin/lib/\n\n# Expose alternative port and volumes for root and log\nEXPOSE 8080\nRUN mkdir /opt/www && mkdir /opt/log\nVOLUME /opt/www\nVOLUME /opt/log\nVOLUME /opt/data\n\n# New entrypoint! the server itself, nothing else so we can give it\n# options through CMD (or from compose or similar tool)\nENTRYPOINT [\"tclsh8.6\", \"/opt/til/bin/httpd.tcl\", \"-root\", \"/opt/www\", \"-log\", \"/opt/log/access.log\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [
+      "/opt/www",
+      "/opt/log",
+      "/opt/data"
+    ],
+    "run": [
+      "apk add --update-cache git &&     git clone https://github.com/efrecon/til /opt/til &&     rm -rf /opt/til/.git &&     apk del git &&     rm -rf /var/cache/apk/* &&     mkdir /opt/til/bin/lib &&     ln -s /opt/til /opt/til/bin/lib/ &&     ln -s /usr/lib/tcllib* /opt/til/bin/lib/",
+      "mkdir /opt/www && mkdir /opt/log"
+    ],
+    "workdir": [],
+    "from": "efrecon/mini-tcl",
+    "maintainer": "Emmanuel Frecon <emmanuel@sics.se>",
+    "entrypoint": "[\"tclsh8.6\", \"/opt/til/bin/httpd.tcl\", \"-root\", \"/opt/www\", \"-log\", \"/opt/log/access.log\"]"
+  },
+  "source_repository_url": "https://github.com/efrecon/docker-httpd.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/efrecon/docker-httpd",
+  "docker_repository": "efrecon/httpd",
+  "docker_image": "efrecon/httpd",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "efrecon/httpd",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/efrecon/httpd",
+    "https://hub.docker.com/v2/repositories/efrecon/httpd",
+    "https://github.com/efrecon/docker-httpd.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/VM Image/AMI",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/efrecon/httpd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

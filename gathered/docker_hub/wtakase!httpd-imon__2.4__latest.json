@@ -1,0 +1,109 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/wtakase/httpd-imon",
+    "repository_url": "https://hub.docker.com/v2/repositories/wtakase/httpd-imon",
+    "tags_url": "https://hub.docker.com/v2/repositories/wtakase/httpd-imon/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/wtakase/httpd-imon/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/wtakase/httpd-imon/autobuild",
+    "user": "wtakase",
+    "name": "httpd-imon",
+    "namespace": "wtakase",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 49,
+    "last_updated": "2016-02-16T07:46:23.008633Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2.4",
+        "full_size": 84791194,
+        "id": 1938592,
+        "repository": 517046,
+        "creator": 378113,
+        "last_updater": 378113,
+        "last_updated": "2016-02-16T07:46:22.405603Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "wtakase/imon"
+  },
+  "name": "wtakase/httpd-imon Docker container",
+  "description": "Httpd for iMon (iRODS monitoring framework)",
+  "readme": "iMon (iRODS Monitoring framework)\n====\n\niRODS monitor framework running based on EFK (ElasticSearch, Flume, and Kibana).\n\nOverview\n----\n\n![iMon overview](https://github.com/wtakase/imon/raw/master/images/imon_overview.png \"iMon Overview\")\n\n* Flume agent on each iRODS server sends rodsLog to port 10000 on Flume container.\n\n* istats collects statistical information from each iRODS server by using python-irodsclient and sends it to port 9000 on Flume container every 10 minutes.\n\n* You can check these information on Kibana dashboards:\n\n    * rodsLog dashboard on the Discovery tab.\n\n    * Statistical usage dashbard on the Dashboard tab:\n\n        * Number of Objects: per resource, per user\n\n        * Object size: per resource, per user\n\n        * Number of Accesses: per user, per access-from\n\n        * Number of Errors: per error status\n\n        * Number of Users\n\n![iMon rodslog](https://github.com/wtakase/imon/raw/master/images/imon_rodslog.png \"iMon rodslog\")\n\n![iMon rodsstats](https://github.com/wtakase/imon/raw/master/images/imon_rodsstats.png \"iMon rodsstats\")\n\nDemo\n----\n\n* Execute following commands on your Docker host and you will have iMon environment:\n\n```bash\nexport DOCKER_SERVER=\"xxx.xxx.xxx.xxx\"\n./demo.sh\n```\n\n* Above shell script boots all necessary services including iRODS as Docker containers.\n\n* And then iRODS users and objects are created automatically every miniute for the demo.\n\n* You can browse Kibana monitoring page on https://DOCKER_SERVER .\n\n    * Go to Discover page and open `rodslog` search.\n\n    * Go to Dashboard page and open `tempZone` dashboard.\n\nMonitoring against existing iRODS\n----\n\n* Boot containers on your Docker host:\n\n```bash\nexport DOCKER_SERVER=\"xxx.xxx.xxx.xxx\"\ndocker run -d --name elasticsearch -v \"$PWD\"/es_data:/usr/share/elasticsearch/data wtakase/elasticsearch-imon:1.7\ndocker run -d --name flume -p 9000:9000 -p 10000:10000 --link elasticsearch:elasticsearch wtakase/flume-imon:1.6\ndocker run -d --name kibana -e ELASTICSEARCH_URL=https://${DOCKER_SERVER}/es wtakase/kibana-imon:4.1\ndocker run -d --name httpd -p 443:443 -e DOCKER_HOST=${DOCKER_SERVER} --link elasticsearch:elasticsearch --link kibana:kibana wtakase/httpd-imon:2.4\n```\n\n* Exec following shell script and set cron job for iRODS log rotation\n\n```bash\n/path/to/imon/docker/icat/rotate_rodslog.sh\necho \"*/10 * * * * root /path/to/imon/docker/icat/rotate_rodslog.sh\" >> /etc/crontab\n```\n\n* Install Flume (flume-ng and flume-ng-agent) to your iRODS server.\n\n* Put /path/to/imon/docker/icat/flume.conf to /path/to/flume/conf on your iRODS server and replace FLUME_HOST with your Docker hostname.\n\n    * Any requests to port 10000 on your Docker host will be redirected to Flume container's port.\n\n* Start Flume service with the flume.conf.\n\n* Boot istats container with your iRODS server IP (replace xxx.xxx.xxx.xxx below) and password (replace xxxxx below):\n\n```bash\ndocker run -d --name istats --link flume:flume -e IRODS_PORT_1247_TCP_ADDR=xxx.xxx.xxx.xxx -e IRODS_PASSWORD=xxxxx wtakase/istats\n```\n\n* You can browse Kibana monitoring page on https://DOCKER_SERVER .\n\nDockerfile\n----\n\n* All Docker images are built by using docker/xxx/Dockerfile.\n",
+  "dockerfile": "FROM httpd:2.4\nMAINTAINER wtakase <wataru.takase@kek.jp>\n\nRUN apt-get -y update && apt-get install -y openssl curl\n\nADD run.sh run.sh\nRUN chmod 755 run.sh\n\nADD elasticsearch.conf conf/extra/elasticsearch.conf\nADD kibana.conf conf/extra/kibana.conf\n\nRUN sed -i -e \"s/^#Include conf\\/extra\\/httpd-ssl.conf$/Include conf\\/extra\\/httpd-ssl.conf/\" \\\n           -e \"s/^#LoadModule ssl_module modules\\/mod_ssl.so/LoadModule ssl_module modules\\/mod_ssl.so/\" \\\n           -e \"s/^#LoadModule socache_shmcb_module modules\\/mod_socache_shmcb.so/LoadModule socache_shmcb_module modules\\/mod_socache_shmcb.so/\" \\\n           -e \"s/^#LoadModule rewrite_module modules\\/mod_rewrite.so/LoadModule rewrite_module modules\\/mod_rewrite.so/\" \\\n           -e \"s/^#LoadModule proxy_module modules\\/mod_proxy.so/LoadModule proxy_module modules\\/mod_proxy.so/\" \\\n           -e \"s/^#LoadModule proxy_http_module modules\\/mod_proxy_http.so/LoadModule proxy_http_module modules\\/mod_proxy_http.so/\" \\\n           conf/httpd.conf\nRUN sed -i -e \"s/^ErrorLog.*/ErrorLog \\/proc\\/self\\/fd\\/1/\" \\\n           -e \"s/^CustomLog.*/CustomLog \\/proc\\/self\\/fd\\/1 \\\\\\/\" \\\n           -e \"/^<\\/VirtualHost>/i Include conf/extra/elasticsearch.conf\" \\\n           -e \"/^<\\/VirtualHost>/i Include conf/extra/kibana.conf\" \\\n           conf/extra/httpd-ssl.conf\n\nCOPY json /tmp/\n\nEXPOSE 443\nCMD [\"./run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "run.sh",
+        "dest": "run.sh"
+      },
+      {
+        "source": "elasticsearch.conf",
+        "dest": "conf/extra/elasticsearch.conf"
+      },
+      {
+        "source": "kibana.conf",
+        "dest": "conf/extra/kibana.conf"
+      }
+    ],
+    "expose": [
+      443
+    ],
+    "volume": [],
+    "run": [
+      "apt-get -y update && apt-get install -y openssl curl",
+      "chmod 755 run.sh",
+      "sed -i -e \"s/^#Include conf\\/extra\\/httpd-ssl.conf$/Include conf\\/extra\\/httpd-ssl.conf/\"            -e \"s/^#LoadModule ssl_module modules\\/mod_ssl.so/LoadModule ssl_module modules\\/mod_ssl.so/\"            -e \"s/^#LoadModule socache_shmcb_module modules\\/mod_socache_shmcb.so/LoadModule socache_shmcb_module modules\\/mod_socache_shmcb.so/\"            -e \"s/^#LoadModule rewrite_module modules\\/mod_rewrite.so/LoadModule rewrite_module modules\\/mod_rewrite.so/\"            -e \"s/^#LoadModule proxy_module modules\\/mod_proxy.so/LoadModule proxy_module modules\\/mod_proxy.so/\"            -e \"s/^#LoadModule proxy_http_module modules\\/mod_proxy_http.so/LoadModule proxy_http_module modules\\/mod_proxy_http.so/\"            conf/httpd.conf",
+      "sed -i -e \"s/^ErrorLog.*/ErrorLog \\/proc\\/self\\/fd\\/1/\"            -e \"s/^CustomLog.*/CustomLog \\/proc\\/self\\/fd\\/1 \\\\\\/\"            -e \"/^<\\/VirtualHost>/i Include conf/extra/elasticsearch.conf\"            -e \"/^<\\/VirtualHost>/i Include conf/extra/kibana.conf\"            conf/extra/httpd-ssl.conf"
+    ],
+    "workdir": [],
+    "from": "httpd:2.4",
+    "maintainer": "wtakase <wataru.takase@kek.jp>",
+    "copy": "json /tmp/",
+    "cmd": "[\"./run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/wtakase/imon.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/wtakase/imon",
+  "docker_repository": "wtakase/httpd-imon",
+  "docker_image": "wtakase/httpd-imon",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "wtakase/httpd-imon",
+  "revision": "2.4",
+  "uris": [
+    "https://hub.docker.com/r/wtakase/httpd-imon",
+    "https://hub.docker.com/v2/repositories/wtakase/httpd-imon",
+    "https://github.com/wtakase/imon.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/API/Toolkit",
+    "Type/Devopsware/Monitoring"
+  ],
+  "info_url": "https://hub.docker.com/r/wtakase/httpd-imon",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

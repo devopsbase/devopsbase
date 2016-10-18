@@ -1,0 +1,120 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/zfil/jenkins-slave",
+    "repository_url": "https://hub.docker.com/v2/repositories/zfil/jenkins-slave",
+    "tags_url": "https://hub.docker.com/v2/repositories/zfil/jenkins-slave/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/zfil/jenkins-slave/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/zfil/jenkins-slave/autobuild",
+    "user": "zfil",
+    "name": "jenkins-slave",
+    "namespace": "zfil",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 264,
+    "last_updated": "2016-10-11T00:06:25.121789Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 265570715,
+        "id": 3959317,
+        "repository": 813497,
+        "creator": 353003,
+        "last_updater": 353003,
+        "last_updated": "2016-10-11T00:06:24.828300Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "zfil/dockerfiles"
+  },
+  "name": "zfil/jenkins-slave Docker container",
+  "description": "Jenkins SSH slave + docker",
+  "readme": "# Jenkins SSH slave + docker\n\n[`zfil/ssh-slave`](https://hub.docker.com/r/zfil/jenkins-slave/)\n\nA [Jenkins](https://jenkins-ci.org) slave using SSH to establish connection.\n\nSee [Jenkins Distributed builds](https://wiki.jenkins-ci.org/display/JENKINS/Distributed+builds) for more info.\n\n## Note\n\nThis image is inspired from [`jenkinsci/ssh-slave`](https://hub.docker.com/r/jenkinsci/ssh-slave/)\n\n## Running\n\nTo run a Docker container\n\n    docker run -v /var/run/docker.sock:/var/run/docker.sock zfil/ssh-slave \"<public key>\"\n\nYou'll then be able to connect this slave using ssh-slaves-plugin as \"jenkins\" with the matching private key.\n",
+  "dockerfile": "FROM openjdk:8\nMAINTAINER Philippe Jandot\n\n# Docker install (borrowed from https://github.com/docker-library/docker)\nENV DOCKER_BUCKET get.docker.com\nENV DOCKER_VERSION 1.11.2\nENV DOCKER_SHA256 8c2e0c35e3cda11706f54b2d46c2521a6e9026a7b13c7d4b8ae1f3a706fc55e1\n\nRUN set -x \\\n    && curl -fSL \"https://${DOCKER_BUCKET}/builds/Linux/x86_64/docker-$DOCKER_VERSION.tgz\" -o docker.tgz \\\n    && echo \"${DOCKER_SHA256} *docker.tgz\" | sha256sum -c - \\\n    && tar -xzvf docker.tgz \\\n    && mv docker/* /usr/local/bin/ \\\n    && rmdir docker \\\n    && rm docker.tgz \\\n    && chmod +s /usr/local/bin/docker \\\n    && docker -v\n\n# ----\n\n# Setup jenkins user\nRUN useradd -d /home/jenkins -m -s /bin/bash jenkins\nVOLUME /home/jenkins\n\n# Setup openssh-server\nRUN apt-get update && apt-get install -y openssh-server && rm -rf /var/lib/apt/lists/*\nRUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config\nRUN mkdir /var/run/sshd\nEXPOSE 22\n\nCOPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh\n\nENTRYPOINT [\"docker-entrypoint.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      22
+    ],
+    "volume": [
+      "/home/jenkins"
+    ],
+    "run": [
+      "set -x     && curl -fSL \"https://${DOCKER_BUCKET}/builds/Linux/x86_64/docker-$DOCKER_VERSION.tgz\" -o docker.tgz     && echo \"${DOCKER_SHA256} *docker.tgz\" | sha256sum -c -     && tar -xzvf docker.tgz     && mv docker/* /usr/local/bin/     && rmdir docker     && rm docker.tgz     && chmod +s /usr/local/bin/docker     && docker -v",
+      "useradd -d /home/jenkins -m -s /bin/bash jenkins",
+      "apt-get update && apt-get install -y openssh-server && rm -rf /var/lib/apt/lists/*",
+      "sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config",
+      "mkdir /var/run/sshd"
+    ],
+    "workdir": [],
+    "from": "openjdk:8",
+    "maintainer": "Philippe Jandot",
+    "env": {
+      "DOCKER_BUCKET": "get.docker.com",
+      "DOCKER_VERSION": "1.11.2",
+      "DOCKER_SHA256": "8c2e0c35e3cda11706f54b2d46c2521a6e9026a7b13c7d4b8ae1f3a706fc55e1"
+    },
+    "copy": "docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh",
+    "entrypoint": "[\"docker-entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/zfil/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/zfil/dockerfiles",
+  "docker_repository": "zfil/jenkins-slave",
+  "docker_image": "zfil/jenkins-slave",
+  "parameters_schema": {
+    "DOCKER_BUCKET": {
+      "default": "get.docker.com",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DOCKER_VERSION": {
+      "default": "1.11.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DOCKER_SHA256": {
+      "default": "8c2e0c35e3cda11706f54b2d46c2521a6e9026a7b13c7d4b8ae1f3a706fc55e1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        22
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "zfil/jenkins-slave",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/zfil/jenkins-slave",
+    "https://hub.docker.com/v2/repositories/zfil/jenkins-slave",
+    "https://github.com/zfil/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Integration/Jenkins"
+  ],
+  "info_url": "https://hub.docker.com/r/zfil/jenkins-slave",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,194 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/d4v1d31/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/d4v1d31/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/d4v1d31/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/d4v1d31/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/d4v1d31/owncloud/autobuild",
+    "user": "d4v1d31",
+    "name": "owncloud",
+    "namespace": "d4v1d31",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 195,
+    "last_updated": "2016-06-02T01:06:29.738129Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "9.0.0",
+        "full_size": 140122040,
+        "id": 2435523,
+        "repository": 601716,
+        "creator": 177559,
+        "last_updater": 177559,
+        "last_updated": "2016-06-02T01:06:28.497880Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 140122351,
+        "id": 2435477,
+        "repository": 601716,
+        "creator": 177559,
+        "last_updater": 177559,
+        "last_updated": "2016-06-02T01:03:37.357486Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "8.2.3",
+        "full_size": 148205381,
+        "id": 2436184,
+        "repository": 601716,
+        "creator": 177559,
+        "last_updater": 177559,
+        "last_updated": "2016-06-02T01:00:27.275433Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "8.1.6",
+        "full_size": 148022771,
+        "id": 2436087,
+        "repository": 601716,
+        "creator": 177559,
+        "last_updater": 177559,
+        "last_updated": "2016-06-02T00:57:20.485359Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "d4v1d31/owncloud_docker"
+  },
+  "name": "d4v1d31/owncloud Docker container",
+  "description": "Simple OwnCloud container based on alpine and nginx.",
+  "readme": "# Owncloud Docker Container\nAll you need to build a docker container of OwnCloud.\nThis container is based on aphine and contains the OwnCloud apps contacts, documents and calendar.\nAlso there is no tls/ssl support. For transport encryption you should use a separate\nnginx reverse proxy.\n\n## Run with existing config\nTo run this container you need an existing owncloud config and data directory\n\n    docker run --name owncloud -v $PWD/config:/owncloud/config -v $PWD/data:/owncloud/data d4v1d31/owncloud\n\nDepending on your database you should link this container to a database container.\n\n## Run OwnCloud for the first time\nFor the first run without existing configuration or database you could set this\nEnvirenment variables:\n\n|Variable| Default | Description |\n|--------|---------|-------------|\n|DBTYPE  | mysql       | Type of database (only mysql supportet yet)|\n|DBNAME  | owncloud    | Database name                              |\n|DBHOST  | mysqldb     | Hostname or address to database           |\n|DBUSER  | root        | Database Username for OwnCloud             |\n|DBPASS  | password    | Password for database username             |\n|ADMIN   | admin       | Username for OwnCloud administrator        |\n|ADMINPASS| password   | Password for OwnCloud administrator        |\n\nOr run with the default settings like this:\n\n    docker run --name db -e MYSQL_ROOT_PASSWORD=password -d mariadb\n    docker run --name owncloud -v $PWD/config:/owncloud/config \\\n                               -v $PWD/data:/owncloud/data \\\n                               --link db:mysqldb d4v1d31/owncloud\n\n\n## Add more OwnCloud apps\nTo add more apps copy the download link of the app and add two lines like this to\nthe Dockerfile:\n\n    ADD\thttps://github.com/owncloud/calendar/releases/download/v1.0/calendar.tar.gz /tmp/\n    RUN\ttar -xzf /tmp/calendar.tar.gz -C /owncloud/apps/\n\nAdditional the app must be enable add container start, so you should add a line\nlike the following to the start.sh:\n\n    $ocdir/occ app:enable calendar\n\nNow rebuild the image.\n",
+  "dockerfile": "FROM\t\talpine\nMAINTAINER\tDavid Elvers \"david@d4v1d.eu\"\n\n# set default variables for owncloud install\nENV DBTYPE mysql\nENV DBNAME owncloud\nENV DBHOST mysqldb\nENV DBUSER root\nENV DBPASS password\nENV ADMIN  admin\nENV ADMINPASS password\n\n# update alpine linux\nRUN\t\tapk update && apk upgrade\nRUN\t\tapk add bash unzip\n\n# add owncloud dependencies\nRUN             apk add nginx php-fpm \\\n\tphp-ctype php-dom php-gd \\\n\tphp-iconv php-json php-xml \\\n\tphp-posix php-xmlreader \\\n\tphp-zip php-zlib \\\n\tphp-pdo php-pdo_mysql php-pdo_sqlite php-mysql\\\n\tphp-curl php-bz2 php-intl php-mcrypt php-openssl\\\n\tphp-ldap php-imap php-ftp\\\n\tphp-pcntl\n\n# clean apk cache\nRUN\t\trm -rf /var/cache/apk/*\n\n# add owncloud\nADD \thttps://download.owncloud.org/community/owncloud-8.2.3.zip /tmp/\nRUN\tunzip -qq /tmp/owncloud-8.2.3.zip -d /\n\n# add contacts, calander and documents app\nADD\thttps://github.com/owncloudarchive/contacts/releases/download/v0.5.0.0/contacts.tar.gz /tmp/\nRUN\ttar -xzf /tmp/contacts.tar.gz -C /owncloud/apps/\nADD\thttps://github.com/owncloud/documents/releases/download/0.11.1/documents.zip /tmp/\nRUN\tunzip -qq /tmp/documents.zip -d /owncloud/apps/\nADD\thttps://github.com/owncloudarchive/calendar/releases/download/v0.8.2/calendar.zip /tmp/\nRUN\tunzip -qq /tmp/calendar.zip -d /owncloud/apps/\n\n# clean\nRUN\trm /tmp/*\n\n# fix rights\nWORKDIR /owncloud/\nRUN \tchown -R root:nginx ./\n#RUN \tchown -R nginx:nginx ./tmp\nRUN \tchown -R nginx:nginx ./config\n\n# add nginx config\nADD\tnginx.conf /etc/nginx/\nADD\tphp-fpm.conf /etc/php/\nADD\tphp.ini\t/etc/php/\n\n# add some script\nADD start.sh /usr/bin/\nRUN chmod +x /usr/bin/start.sh\nADD set_rights.sh /usr/bin/\nRUN chmod +x /usr/bin/set_rights.sh\nRUN ln /owncloud/occ /usr/bin/\n\nVOLUME [\"/owncloud/config/\",\"/owncloud/data/\"]\n\nEXPOSE\t\t80\n\nENTRYPOINT\t[\"start.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "\thttps://download.owncloud.org/community/owncloud-8.2.3.zip",
+        "dest": "/tmp/"
+      },
+      {
+        "source": "start.sh",
+        "dest": "/usr/bin/"
+      },
+      {
+        "source": "set_rights.sh",
+        "dest": "/usr/bin/"
+      }
+    ],
+    "expose": [],
+    "volume": [
+      "[\"/owncloud/config/\",\"/owncloud/data/\"]"
+    ],
+    "run": [
+      "            apk add nginx php-fpm \tphp-ctype php-dom php-gd \tphp-iconv php-json php-xml \tphp-posix php-xmlreader \tphp-zip php-zlib \tphp-pdo php-pdo_mysql php-pdo_sqlite php-mysql\tphp-curl php-bz2 php-intl php-mcrypt php-openssl\tphp-ldap php-imap php-ftp\tphp-pcntl",
+      "\tchown -R root:nginx ./",
+      "\tchown -R nginx:nginx ./config",
+      "chmod +x /usr/bin/start.sh",
+      "chmod +x /usr/bin/set_rights.sh",
+      "ln /owncloud/occ /usr/bin/"
+    ],
+    "workdir": [
+      "/owncloud/"
+    ],
+    "env": {
+      "DBTYPE": "mysql",
+      "DBNAME": "owncloud",
+      "DBHOST": "mysqldb",
+      "DBUSER": "root",
+      "DBPASS": "password",
+      "ADMIN": "",
+      "ADMINPASS": "password"
+    }
+  },
+  "source_repository_url": "https://github.com/d4v1d31/owncloud_docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/d4v1d31/owncloud_docker",
+  "docker_repository": "d4v1d31/owncloud",
+  "docker_image": "d4v1d31/owncloud",
+  "parameters_schema": {
+    "DBTYPE": {
+      "default": "mysql",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DBNAME": {
+      "default": "owncloud",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DBHOST": {
+      "default": "mysqldb",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DBUSER": {
+      "default": "root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DBPASS": {
+      "default": "password",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ADMIN": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ADMINPASS": {
+      "default": "password",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "d4v1d31/owncloud",
+  "revision": "9.0.0",
+  "uris": [
+    "https://hub.docker.com/r/d4v1d31/owncloud",
+    "https://hub.docker.com/v2/repositories/d4v1d31/owncloud",
+    "https://github.com/d4v1d31/owncloud_docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/d4v1d31/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

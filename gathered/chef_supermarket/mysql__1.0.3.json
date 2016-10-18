@@ -1,0 +1,241 @@
+{
+  "name": "mysql Chef cookbook",
+  "chef_cookbook_name": "mysql",
+  "revision": "1.0.3",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/mysql",
+    "https://supermarket.chef.io/cookbooks/mysql/download",
+    "https://supermarket.chef.io/cookbooks/mysql/versions/1.0.3",
+    "https://supermarket.chef.io/cookbooks/mysql/versions/1.0.3/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/mysql/versions/1.0.3",
+    "https://supermarket.chef.io/api/v1/cookbooks/mysql",
+    "https://supermarket.chef.io/api/v1/cookbooks/mysql/versions/1.0.3/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Mode/CLI",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/mysql",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/mysql/versions/1.0.3/download",
+  "deprecated": false,
+  "created": "2009-10-28T19:16:54.000Z",
+  "updated": "2016-09-26T18:15:17.646Z",
+  "description": "Provides mysql_service, mysql_config, and mysql_client resources",
+  "maintainer": {
+    "name": "chef",
+    "email": "cookbooks@opscode.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 671,
+  "downloads_count": 122023742,
+  "downloads_count_revision": 1254397,
+  "repository_url": "https://github.com/chef-cookbooks/mysql",
+  "issues_url": "https://github.com/chef-cookbooks/mysql/issues",
+  "chef_source_url": "https://github.com/chef-cookbooks/mysql",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nInstalls and configures MySQL client or server.\n\nRequirements\n============\n\nPlatform\n--------\n\n* Debian, Ubuntu\n* CentOS, Red Hat, Fedora\n\nCookbooks\n---------\n\nRequires Opscode's openssl cookbook for secure password generation.\n\nRequires a C compiler and Ruby development package in order to build mysql gem with native extensions. On Debian and Ubuntu systems this is satisfied by installing the \"build-essential\" and \"ruby-dev\" packages before running Chef. See USAGE below for information on how to handle this during a Chef run.\n\nResources and Providers\n=======================\n\nThe cookbook contains a LWRP, `mysql_database` which can be used to manage databases through calls to the MySQL API. The mysql gem is installed to make this usable. The provider currently supports three actions:\n\n* `flush_tables_with_read_lock` - sends the sql command \"flush tables with read lock\", used for setting up mysql master/slave replication.\n* `unflush_tables` - sends the sql command \"unflush tables\", used for setting up master/slave replication.\n* `create_db` - specify a database to be created.\n* `query` - send an arbitrary query to the database, this should be used with care. Pass the SQL statement to use with the `sql` resource attribute.\n\nFor example see the USAGE section below.\n\nAttributes\n==========\n\n* `mysql[:server_root_password]` - Set the server's root password with this, default is a randomly generated password with `OpenSSL::Random.random_bytes`.\n* `mysql[:server_repl_password]` - Set the replication user 'repl' password with this, default is a randomly generated password with `OpenSSL::Random.random_bytes`.\n* `mysql[:server_debian_password]` - Set the debian-sys-maint user password with this, default is a randomly generated password with `OpenSSL::Random.random_bytes`.\n* `mysql[:bind_address]` - Listen address for MySQLd, default is node's ipaddress.\n* `mysql[:datadir]` - Location for mysql data directory, default is \"/var/lib/mysql\"\n* `mysql[:ec2_path]` - location of mysql datadir on EC2 nodes, default \"/mnt/mysql\"\n\nPerformance tuning attributes, each corresponds to the same-named parameter in my.cnf; default values listed\n\n* `mysql[:tunable][:key_buffer]`          = \"250M\"\n* `mysql[:tunable][:max_connections]`     = \"800\"\n* `mysql[:tunable][:wait_timeout]`        = \"180\"\n* `mysql[:tunable][:net_write_timeout]`   = \"30\"\n* `mysql[:tunable][:net_write_timeout]`   = \"30\"\n* `mysql[:tunable][:back_log]`            = \"128\"\n* `mysql[:tunable][:table_cache]`         = \"128\"\n* `mysql[:tunable][:max_heap_table_size]` = \"32M\"\n\nUsage\n=====\n\nOn client nodes,\n\n    include_recipe \"mysql::client\"\n\nThis will install the MySQL client libraries and development headers on the system. It will also install the Ruby Gem `mysql`, so that the cookbook's LWRP (above) can be used. This is done during the compile-phase of the Chef run. On platforms that are known to have a native package (currently Debian, Ubuntu, Red hat, Centos, Fedora and SUSE), the package will be installed. Other platforms will use the RubyGem.\n\nThis creates a resource object for the package and does the installation before other recipes are parsed. You'll need to have the C compiler and such (ie, build-essential on Ubuntu) before running the recipes, but we already do that when installing Chef :-). If you want to be able to access a MySQL database via Ruby within another recipe, you could do so, like so:\n\n    mysql_database \"create application_production database\" do\n      host \"localhost\"\n      username \"root\"\n      password node[:mysql][:server_root_password]\n      database \"application_production\"\n      action :create_db\n    end\n\nThis will connect to the MySQL server running on localhost as \"root\" and password as `mysql[:server_root_password]` attribute (see below) and create the database specified with the `database` parameter. The provider will attempt to determine whether the database exists first.\n\nOn server nodes,\n\n    include_recipe \"mysql::server\"\n\nOn Debian and Ubuntu, this will preseed the mysql-server package with the randomly generated root password from the attributes file. On other platforms, it simply installs the required packages. It will also create an SQL file, /etc/mysql/grants.sql, that will be used to set up grants for the root, repl and debian-sys-maint users.\n\nOn EC2 nodes,\n\n    include_recipe \"mysql::server_ec2\"\n\nWhen the `ec2_path` doesn't exist we look for a mounted filesystem (eg, EBS) and move the datadir there.\n\nThe client recipe is already included by server and 'default' recipes.\n\nFor more infromation on the compile vs execution phase of a Chef run:\n\n* http://wiki.opscode.com/display/chef/Anatomy+of+a+Chef+Run\n\nLicense and Author\n==================\n\nAuthor:: Joshua Timberman (<joshua@opscode.com>)\nAuthor:: AJ Christensen (<aj@opscode.com>)\nAuthor:: Seth Chisamore (<schisamo@opscode.com>)\n\nCopyright:: 2009-2011 Opscode, Inc\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "suse",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/openssl",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "mysql": "Includes the client recipe to configure a client",
+    "mysql::client": "Installs packages required for mysql clients using run_action magic",
+    "mysql::server": "Installs packages required for mysql servers w/o manual intervention",
+    "mysql::server_ec2": "Performs EC2-specific mountpoint manipulation"
+  },
+  "parameters": {
+    "mysql/server_root_password": {
+      "display_name": "MySQL Server Root Password",
+      "description": "Randomly generated password for the mysqld root user",
+      "default": "randomly generated",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "mysql/bind_address": {
+      "display_name": "MySQL Bind Address",
+      "description": "Address that mysqld should listen on",
+      "default": "ipaddress",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "mysql/datadir": {
+      "display_name": "MySQL Data Directory",
+      "description": "Location of mysql databases",
+      "default": "/var/lib/mysql",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "mysql/ec2_path": {
+      "display_name": "MySQL EC2 Path",
+      "description": "Location of mysql directory on EC2 instance EBS volumes",
+      "default": "/mnt/mysql",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "mysql/tunable": {
+      "display_name": "MySQL Tunables",
+      "description": "Hash of MySQL tunable attributes",
+      "type": "hash",
+      "choice": [],
+      "calculated": false,
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "mysql/tunable/key_buffer": {
+      "display_name": "MySQL Tuntable Key Buffer",
+      "default": "250M",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "mysql/tunable/max_connections": {
+      "display_name": "MySQL Tunable Max Connections",
+      "default": "800",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "mysql/tunable/wait_timeout": {
+      "display_name": "MySQL Tunable Wait Timeout",
+      "default": "180",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "mysql/tunable/net_read_timeout": {
+      "display_name": "MySQL Tunable Net Read Timeout",
+      "default": "30",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "mysql/tunable/net_write_timeout": {
+      "display_name": "MySQL Tunable Net Write Timeout",
+      "default": "30",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "mysql/tunable/back_log": {
+      "display_name": "MySQL Tunable Back Log",
+      "default": "128",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "mysql/tunable/table_cache": {
+      "display_name": "MySQL Tunable Table Cache for MySQL < 5.1.3",
+      "default": "128",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "mysql/tunable/table_open_cache": {
+      "display_name": "MySQL Tunable Table Cache for MySQL >= 5.1.3",
+      "default": "128",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "mysql/tunable/max_heap_table_size": {
+      "display_name": "MySQL Tunable Max Heap Table Size",
+      "default": "32M",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    }
+  }
+}

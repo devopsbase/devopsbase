@@ -1,0 +1,177 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/stachdude/docker-rabbitmq-cluster",
+    "repository_url": "https://hub.docker.com/v2/repositories/stachdude/docker-rabbitmq-cluster",
+    "tags_url": "https://hub.docker.com/v2/repositories/stachdude/docker-rabbitmq-cluster/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/stachdude/docker-rabbitmq-cluster/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/stachdude/docker-rabbitmq-cluster/autobuild",
+    "user": "stachdude",
+    "name": "docker-rabbitmq-cluster",
+    "namespace": "stachdude",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 103,
+    "last_updated": "2016-09-12T12:14:28.319673Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "plugins",
+        "full_size": 86585169,
+        "id": 4690781,
+        "repository": 886314,
+        "creator": 240939,
+        "last_updater": 240939,
+        "last_updated": "2016-09-12T12:14:27.738478Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 86583605,
+        "id": 4690923,
+        "repository": 886314,
+        "creator": 240939,
+        "last_updater": 240939,
+        "last_updated": "2016-09-12T12:10:46.037843Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "stachdude/docker-rabbitmq-cluster"
+  },
+  "name": "stachdude/docker-rabbitmq-cluster Docker container",
+  "description": "Docker image for rabbitmq 3.6.5 with cluster enabled changes",
+  "readme": "# docker-rabbitmq-cluster\n\nAdded new option -e RABBITMQ_SSL_DEPTH which will allow using a client certificate signed by an intermediate CA, and it may be necessary to configure RabbitMQ server to use a higher verification depth.\n\n## Container #1\n```\ndocker run --log-driver=json-file --log-opt max-size=1g --log-opt max-file=3 -v /etc/localtime:/etc/localtime -d -e RABBITMQ_HIPE_COMPILE=1 -e RABBITMQ_VERIFY=1 -e RABBITMQ_FAIL_IF_NO_PEER_CERT=1 -e RABBITMQ_ERLANG_COOKIE='SomeSecretString' -e RABBITMQ_USE_LONGNAME=true -e RABBITMQ_CLUSTER_NODES=\"{['rabbit@<hostname1.some.domain>', 'rabbit@<hostname2.some.domain>', 'rabbit@<hostnameN.some.domain>', disc}\" --hostname hostname1.some.domain --name hostname1 -p 15672 stachdude/docker-rabbitmq-cluster\n```\n\n## Container #2\n\n```\ndocker run --log-driver=json-file --log-opt max-size=1g --log-opt max-file=3 -v /etc/localtime:/etc/localtime -d -e RABBITMQ_HIPE_COMPILE=1 -e RABBITMQ_VERIFY=1 -e RABBITMQ_FAIL_IF_NO_PEER_CERT=1 -e RABBITMQ_ERLANG_COOKIE='SomeSecretString' -e RABBITMQ_USE_LONGNAME=true -e RABBITMQ_CLUSTER_NODES=\"{['rabbit@<hostname1.some.domain>', 'rabbit@<hostname2.some.domain>', 'rabbit@<hostnameN.some.domain>', disc}\" --hostname hostname2.some.domain --name hostname2 --link hostname1 stachdude/docker-rabbitmq-cluster\n```\n\n##Container #N\n\n```\ndocker run --log-driver=json-file --log-opt max-size=1g --log-opt max-file=3 -v /etc/localtime:/etc/localtime -d -e RABBITMQ_HIPE_COMPILE=1 -e RABBITMQ_VERIFY=1 -e RABBITMQ_FAIL_IF_NO_PEER_CERT=1 -e RABBITMQ_ERLANG_COOKIE='SomeSecretString' -e RABBITMQ_USE_LONGNAME=true -e RABBITMQ_CLUSTER_NODES=\"{['rabbit@<hostname1.some.domain>', 'rabbit@<hostname2.some.domain>', 'rabbit@<hostnameN.some.domain>', ram}\" --hostname hostnameN.some.domain --name hostnameN --link hostname1 ---link hostname2 stachdude/docker-rabbitmq-cluster\n```\n",
+  "dockerfile": "FROM debian:jessie\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\nRUN groupadd -r rabbitmq && useradd -r -d /var/lib/rabbitmq -m -g rabbitmq rabbitmq\n\n# grab gosu for easy step-down from root\nENV GOSU_VERSION 1.7\nRUN set -x \\\n\t&& apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/* \\\n\t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \\\n\t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \\\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n\t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\n\t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu \\\n\t&& gosu nobody true \\\n\t&& apt-get purge -y --auto-remove ca-certificates wget\n\n# Add the officially endorsed Erlang debian repository:\n# See:\n#  - http://www.erlang.org/download.html\n#  - https://www.erlang-solutions.com/resources/download.html\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 434975BD900CCBE4F7EE1B1ED208507CA14F4FCA\nRUN echo 'deb http://packages.erlang-solutions.com/debian jessie contrib' > /etc/apt/sources.list.d/erlang.list\n\n# install Erlang\nRUN apt-get update \\\n\t&& apt-get install -y --no-install-recommends \\\n\t\terlang-asn1 \\\n\t\terlang-base-hipe \\\n\t\terlang-crypto \\\n\t\terlang-eldap \\\n\t\terlang-inets \\\n\t\terlang-mnesia \\\n\t\terlang-nox \\\n\t\terlang-os-mon \\\n\t\terlang-public-key \\\n\t\terlang-ssl \\\n\t\terlang-xmerl \\\n\t&& rm -rf /var/lib/apt/lists/*\n\n# get logs to stdout (thanks @dumbbell for pushing this upstream! :D)\nENV RABBITMQ_LOGS=- RABBITMQ_SASL_LOGS=-\n# https://github.com/rabbitmq/rabbitmq-server/commit/53af45bf9a162dec849407d114041aad3d84feaf\n\n# http://www.rabbitmq.com/install-debian.html\n# \"Please note that the word testing in this line refers to the state of our release of RabbitMQ, not any particular Debian distribution.\"\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 0A9AF2115F4687BD29803A206B73A36E6026DFCA\nRUN echo 'deb http://www.rabbitmq.com/debian testing main' > /etc/apt/sources.list.d/rabbitmq.list\n\nENV RABBITMQ_VERSION 3.6.5\nENV RABBITMQ_DEBIAN_VERSION 3.6.5-1\n\nRUN apt-get update && apt-get install -y --no-install-recommends \\\n\t\trabbitmq-server=$RABBITMQ_DEBIAN_VERSION \\\n\t&& rm -rf /var/lib/apt/lists/*\n\n# /usr/sbin/rabbitmq-server has some irritating behavior, and only exists to \"su - rabbitmq /usr/lib/rabbitmq/bin/rabbitmq-server ...\"\nENV PATH /usr/lib/rabbitmq/bin:$PATH\n\nRUN echo '[ { rabbit, [ { loopback_users, [ ] } ] } ].' > /etc/rabbitmq/rabbitmq.config\n\n# set home so that any `--user` knows where to put the erlang cookie\nENV HOME /var/lib/rabbitmq\n\nRUN mkdir -p /var/lib/rabbitmq /etc/rabbitmq \\\n\t&& chown -R rabbitmq:rabbitmq /var/lib/rabbitmq /etc/rabbitmq \\\n\t&& chmod 777 /var/lib/rabbitmq /etc/rabbitmq\nVOLUME /var/lib/rabbitmq\n\n# add a symlink to the .erlang.cookie in /root so we can \"docker exec rabbitmqctl ...\" without gosu\nRUN ln -sf /var/lib/rabbitmq/.erlang.cookie /root/\n\nRUN ln -sf /usr/lib/rabbitmq/lib/rabbitmq_server-$RABBITMQ_VERSION/plugins /plugins\n\nCOPY docker-entrypoint.sh /usr/local/bin/\nRUN ln -s usr/local/bin/docker-entrypoint.sh / # backwards compat\n\nRUN rabbitmq-plugins enable --offline rabbitmq_management\n\nRUN rabbitmq-plugins enable --offline rabbitmq_federation_management\nRUN rabbitmq-plugins enable --offline rabbitmq_federation\nRUN rabbitmq-plugins enable --offline rabbitmq_shovel_management\nRUN rabbitmq-plugins enable --offline rabbitmq_shovel\nRUN rabbitmq-plugins enable --offline rabbitmq_auth_mechanism_ssl\nRUN rabbitmq-plugins enable --offline rabbitmq_auth_backend_ldap\nRUN rabbitmq-plugins enable --offline rabbitmq_sharding\n\nENTRYPOINT [\"docker-entrypoint.sh\"]\n\nEXPOSE 4369 5671 5672 15671 15672 25672\nCMD [\"rabbitmq-server\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      4369
+    ],
+    "volume": [
+      "/var/lib/rabbitmq"
+    ],
+    "run": [
+      "groupadd -r rabbitmq && useradd -r -d /var/lib/rabbitmq -m -g rabbitmq rabbitmq",
+      "set -x \t&& apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/* \t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \t&& export GNUPGHOME=\"$(mktemp -d)\" \t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu \t&& gosu nobody true \t&& apt-get purge -y --auto-remove ca-certificates wget",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 434975BD900CCBE4F7EE1B1ED208507CA14F4FCA",
+      "echo 'deb http://packages.erlang-solutions.com/debian jessie contrib' > /etc/apt/sources.list.d/erlang.list",
+      "apt-get update \t&& apt-get install -y --no-install-recommends \t\terlang-asn1 \t\terlang-base-hipe \t\terlang-crypto \t\terlang-eldap \t\terlang-inets \t\terlang-mnesia \t\terlang-nox \t\terlang-os-mon \t\terlang-public-key \t\terlang-ssl \t\terlang-xmerl \t&& rm -rf /var/lib/apt/lists/*",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 0A9AF2115F4687BD29803A206B73A36E6026DFCA",
+      "echo 'deb http://www.rabbitmq.com/debian testing main' > /etc/apt/sources.list.d/rabbitmq.list",
+      "apt-get update && apt-get install -y --no-install-recommends \t\trabbitmq-server=$RABBITMQ_DEBIAN_VERSION \t&& rm -rf /var/lib/apt/lists/*",
+      "echo '[ { rabbit, [ { loopback_users, [ ] } ] } ].' > /etc/rabbitmq/rabbitmq.config",
+      "mkdir -p /var/lib/rabbitmq /etc/rabbitmq \t&& chown -R rabbitmq:rabbitmq /var/lib/rabbitmq /etc/rabbitmq \t&& chmod 777 /var/lib/rabbitmq /etc/rabbitmq",
+      "ln -sf /var/lib/rabbitmq/.erlang.cookie /root/",
+      "ln -sf /usr/lib/rabbitmq/lib/rabbitmq_server-$RABBITMQ_VERSION/plugins /plugins",
+      "ln -s usr/local/bin/docker-entrypoint.sh / # backwards compat",
+      "rabbitmq-plugins enable --offline rabbitmq_management",
+      "rabbitmq-plugins enable --offline rabbitmq_federation_management",
+      "rabbitmq-plugins enable --offline rabbitmq_federation",
+      "rabbitmq-plugins enable --offline rabbitmq_shovel_management",
+      "rabbitmq-plugins enable --offline rabbitmq_shovel",
+      "rabbitmq-plugins enable --offline rabbitmq_auth_mechanism_ssl",
+      "rabbitmq-plugins enable --offline rabbitmq_auth_backend_ldap",
+      "rabbitmq-plugins enable --offline rabbitmq_sharding"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "env": {
+      "GOSU_VERSION": "1.7",
+      "RABBITMQ_LOGS": "-",
+      "RABBITMQ_SASL_LOGS": "-",
+      "RABBITMQ_VERSION": "3.6.5",
+      "RABBITMQ_DEBIAN_VERSION": "3.6.5-1",
+      "PATH": "/usr/lib/rabbitmq/bin:$PATH",
+      "HOME": "/var/lib/rabbitmq"
+    },
+    "copy": "docker-entrypoint.sh /usr/local/bin/",
+    "entrypoint": "[\"docker-entrypoint.sh\"]",
+    "cmd": "[\"rabbitmq-server\"]"
+  },
+  "source_repository_url": "https://github.com/stachdude/docker-rabbitmq-cluster.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/stachdude/docker-rabbitmq-cluster",
+  "docker_repository": "stachdude/docker-rabbitmq-cluster",
+  "docker_image": "stachdude/docker-rabbitmq-cluster",
+  "parameters_schema": {
+    "GOSU_VERSION": {
+      "default": "1.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_LOGS": {
+      "default": "-",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_SASL_LOGS": {
+      "default": "-",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_VERSION": {
+      "default": "3.6.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_DEBIAN_VERSION": {
+      "default": "3.6.5-1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/usr/lib/rabbitmq/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/var/lib/rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        4369
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "stachdude/docker-rabbitmq-cluster",
+  "revision": "plugins",
+  "uris": [
+    "https://hub.docker.com/r/stachdude/docker-rabbitmq-cluster",
+    "https://hub.docker.com/v2/repositories/stachdude/docker-rabbitmq-cluster",
+    "https://github.com/stachdude/docker-rabbitmq-cluster.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/stachdude/docker-rabbitmq-cluster",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

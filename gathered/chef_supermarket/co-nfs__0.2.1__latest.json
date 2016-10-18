@@ -1,0 +1,92 @@
+{
+  "name": "co-nfs Chef cookbook",
+  "chef_cookbook_name": "co-nfs",
+  "revision": "0.2.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/co-nfs",
+    "https://supermarket.chef.io/cookbooks/co-nfs/download",
+    "https://supermarket.chef.io/cookbooks/co-nfs/versions/0.2.1",
+    "https://supermarket.chef.io/cookbooks/co-nfs/versions/0.2.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/co-nfs/versions/0.2.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/co-nfs",
+    "https://supermarket.chef.io/api/v1/cookbooks/co-nfs/versions/0.2.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/co-nfs",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/co-nfs/versions/0.2.1/download",
+  "deprecated": true,
+  "created": "2013-11-29T19:00:04.000Z",
+  "updated": "2015-02-07T14:41:31.689Z",
+  "description": "Installs/Configures nfs",
+  "maintainer": {
+    "name": "pdion891",
+    "email": "pdion@cloudops.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 1805613,
+  "downloads_count_revision": 538371,
+  "chef_replacement": {
+    "url": "https://supermarket.chef.io/api/v1/cookbooks/nfs"
+  },
+  "repository_url": "https://github.com/cloudops/cookbook_co-nfs",
+  "issues_url": "https://github.com/cloudops/cookbook_co-nfs",
+  "chef_source_url": "https://github.com/cloudops/cookbook_co-nfs",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "co-nfs Cookbook\n===============\n\nInstalls and configures NFS client, or server components.\nBased on original [Chef community cookbooks](https://github.com/atomic-penguin/cookbook-nfs \"Eric G. Wolfe Github\") .\n\n\nRequirements\n------------\n\nShould work on any Red Hat-family or Debian-family Linux distribution.\n\n\nBasic Usage\n-----------\n\nDefine shares on the node as follow for NFSserver:\n\n```json\n{\n  \"nfs\":{\n    \"exports\":[\n      \"/data/nfs/primary *(rw,async,no_root_squash)\",\n      \"/data/nfs/secondary 172.16.21.0/24(rw,async,no_root_squash)\",\n      \"/data/iso *(rw,async,no_root_squash)\"\n      ]\n    }\n}\n```\n\n\nAttributes\n----------\n\n* nfs['packages']\n\n  - Makes a best effort to choose NFS client packages dependent on platform\n  - NFS server package needs to be hardcoded for Debian/Ubuntu in the server\n    recipe, or overridden in a role.\n\n* nfs['service']\n  - portmap - the portmap or rpcbind service depending on platform\n  - lock - the statd or nfslock service depending on platform\n  - server - the server component, nfs or nfs-kernel-server depending on platform\n\n* nfs['config']\n  - client\\_templates - templates to iterate through on client systems, chosen by platform\n  - server\\_template - server specific template, chosen by platform\n\n* nfs['port']\n\n  - ['statd'] = Listen port for statd, default 32765\n  - ['statd\\_out'] = Outgoing port for statd, default 32766\n  - ['mountd'] = Listen port for mountd, default 32767\n  - ['lockd'] = Listen port for lockd, default 32768\n\n* nfs['exports']\n\n  - This may be replaced in the future by an LWRP to load export definitions from\n    a data bag.  For now, its a simple array of strings to populate in an export file.\n    Note: The \"nfs::exports\" recipe is separate from the \"nfs::server\" recipe.\n\n* nfs['config']['nfs_network'] \n\n  - If the value is a broadcast IP (like 10.60.250.255), it checks that an NIC is configured inside that network before mounting any NFS mount point\n  - If value is false, it does not check an y IP, it will mount your NFS share\n  - default is false\n\n\nUsage\n-----\n\n#### CLIENT :\nTo install the NFS components for a client system, simply add co-nfs::client to the run_list.\n\n<tt>run_list => [ \"co_nfs::client\" ]</tt>\n\nTo define a share, you need to apply the following attributes :\n\n```json\n\t\"nfs\": {\n\t\t\"shares\": {\n\t\t\t\"/local/mount/point\": {\n\t\t\t\t\"server\": \t\t\"nfs_server_ip_or_hostname\",\n\t\t\t\t\"remote_folder\": \t\"export_name\",\n\t\t\t\t\"nfs_options':\t\t\"nfs_mount_options\"\n\t\t\t}\n\t\t}\n\t}\n```\n\ndefault nfs_options if not specified :\n\t<tt>rw,noatime,hard,timeo=10,retrans=2\"</tt>\n\nYou can define an attribute :\n\t<tt>node[\"nfs\"][\"config\"][\"nfs_network\"]</tt>\n\nIf it contains a network address, before creating the mount point, it will first check if an ip address inside that IP scope is available or not.\nIf not available, it will skip the mount point configuration.\n\n\n#### SERVER :\nThen in an <tt>nfs\\_server.rb</tt> role that is applied to NFS servers:\n\n```ruby\n    name \"nfs_server\"\n    description \"Role applied to the system that should be an NFS server.\"\n    override_attributes(\n      \"nfs\" => {\n        \"packages\" => [ \"portmap\", \"nfs-common\", \"nfs-kernel-server\" ],\n        \"ports\" => {\n          \"statd\" => 32765,\n          \"statd_out\" => 32766,\n          \"mountd\" => 32767,\n          \"lockd\" => 32768\n        },\n        \"exports\" => [\n          \"/exports 10.0.0.0/8(ro,sync,no_root_squash)\"\n        ]\n      }\n    )\n    run_list => [ \"nfs::server\", \"nfs::exports\" ]\n```\n\nLICENSE AND AUTHOR\n==================\n\n- Authors:: Eric G. Wolfe (<wolfe21@marshall.edu>)\n- Authors:: Pierre-Luc Dion (<pdion@cloudops.com>)\n- Authors:: Matthieu Serrepuy (mserrepuy@cloudops.com)\n\n```text\nCopyright:: Copyright (c) 2013 CloudOps.com\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ],
+  "chef_recipes": {
+    "co-nfs": "Installs nfs packages and libs",
+    "co-nfs::client": "Install and configure NFS client",
+    "co-nfs::server": "Install and configure NFS server daemon",
+    "co-nfs::exports": "Configure shares on NFS server",
+    "co-nfs::server_ha": ""
+  }
+}

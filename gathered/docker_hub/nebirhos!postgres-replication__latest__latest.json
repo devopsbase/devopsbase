@@ -1,0 +1,183 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/nebirhos/postgres-replication",
+    "repository_url": "https://hub.docker.com/v2/repositories/nebirhos/postgres-replication",
+    "tags_url": "https://hub.docker.com/v2/repositories/nebirhos/postgres-replication/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/nebirhos/postgres-replication/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/nebirhos/postgres-replication/autobuild",
+    "user": "nebirhos",
+    "name": "postgres-replication",
+    "namespace": "nebirhos",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 11864,
+    "last_updated": "2016-09-29T18:07:44.990499Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 101298019,
+        "id": 3057121,
+        "repository": 693028,
+        "creator": 836863,
+        "last_updater": 836863,
+        "last_updated": "2016-09-29T18:07:44.499596Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9.6",
+        "full_size": 101524955,
+        "id": 4073520,
+        "repository": 693028,
+        "creator": 836863,
+        "last_updater": 836863,
+        "last_updated": "2016-07-31T03:33:48.806004Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9.5",
+        "full_size": 101334706,
+        "id": 4073404,
+        "repository": 693028,
+        "creator": 836863,
+        "last_updater": 836863,
+        "last_updated": "2016-07-31T03:33:48.496599Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9",
+        "full_size": 101334706,
+        "id": 4073546,
+        "repository": 693028,
+        "creator": 836863,
+        "last_updater": 836863,
+        "last_updated": "2016-07-31T03:33:45.091585Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "nebirhos/docker-postgres-replication"
+  },
+  "name": "nebirhos/postgres-replication Docker container",
+  "description": "Postgres streaming replication",
+  "readme": "Postgres Streaming Replication\n==============================\n\n[![Build Status](https://travis-ci.org/nebirhos/docker-postgres-replication.svg?branch=9.5)](https://travis-ci.org/nebirhos/docker-postgres-replication)\n[![](https://imagelayers.io/badge/nebirhos/postgres-replication:9.5.svg)](https://imagelayers.io/?images=nebirhos/postgres-replication:9.5 'Get your own badge on imagelayers.io')\n\n\nEnhanced version of the official Postgres image to support streaming replication\nout of the box.\n\nPostgres-replication is meant to be used with orchestration systems such as Kubernetes.\n\n\nTags\n----\n\nImages are automatically updated when the [official postgres image](https://hub.docker.com/_/postgres/)\nis updated.\n\nSupported tags:\n\n* 9.6 ([9.6](https://github.com/nebirhos/docker-postgres-replication/tree/9.6))\n* 9.5, 9, latest ([9.5](https://github.com/nebirhos/docker-postgres-replication/tree/9.5))\n\n\nRun with Docker Compose\n-----------------------\n\n```\ndocker-compose up\n```\n\n\nRun with Docker\n---------------\n\nTo run with Docker, first run the Postgres master:\n\n```\ndocker run -p 127.0.0.1:5432:5432 --name postgres-master nebirhos/postgres-replication\n```\n\n\nThen Postgres slave(s):\n\n```\ndocker run -p 127.0.0.1:5433:5432 --link postgres-master \\\n           -e POSTGRES_MASTER_SERVICE_HOST=postgres-master \\\n           -e REPLICATION_ROLE=slave \\\n           -t nebirhos/postgres-replication\n```\n\n\nNotes\n-----\n\nReplication is set up at container start by putting scripts in the `/docker-entrypoint-initdb.d` folder.\nThis way the original Postgres image scripts are left untouched.\n\nSee [Dockerfile](Dockerfile) and [official Postgres image](https://hub.docker.com/_/postgres/)\nfor custom environment variables.\n",
+  "dockerfile": "# -*- mode: conf -*-\nFROM postgres:9.5\n\nMAINTAINER me@nebirhos.com\n\n# common settings\nENV MAX_CONNECTIONS 500\nENV WAL_KEEP_SEGMENTS 256\nENV MAX_WAL_SENDERS 100\n\n# master/slave settings\nENV REPLICATION_ROLE master\nENV REPLICATION_USER replication\nENV REPLICATION_PASSWORD \"\"\n\n# slave settings\nENV POSTGRES_MASTER_SERVICE_HOST localhost\nENV POSTGRES_MASTER_SERVICE_PORT 5432\n\nCOPY 10-config.sh /docker-entrypoint-initdb.d/\nCOPY 20-replication.sh /docker-entrypoint-initdb.d/\n# Evaluate vars inside PGDATA at runtime.\n# For example HOSTNAME in 'ENV PGDATA=/mnt/$HOSTNAME'\n# is resolved runtime rather then during build\nRUN sed -i 's/set -e/set -e -x\\nPGDATA=$(eval echo \"$PGDATA\")/' /docker-entrypoint.sh\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "sed -i 's/set -e/set -e -x\\nPGDATA=$(eval echo \"$PGDATA\")/' /docker-entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "postgres:9.5",
+    "maintainer": "me@nebirhos.com",
+    "env": {
+      "MAX_CONNECTIONS": "500",
+      "WAL_KEEP_SEGMENTS": "256",
+      "MAX_WAL_SENDERS": "100",
+      "REPLICATION_ROLE": "master",
+      "REPLICATION_USER": "replication",
+      "REPLICATION_PASSWORD": "\"\"",
+      "POSTGRES_MASTER_SERVICE_HOST": "localhost",
+      "POSTGRES_MASTER_SERVICE_PORT": "5432"
+    },
+    "copy": "20-replication.sh /docker-entrypoint-initdb.d/"
+  },
+  "source_repository_url": "https://github.com/nebirhos/docker-postgres-replication.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/nebirhos/docker-postgres-replication",
+  "docker_repository": "nebirhos/postgres-replication",
+  "docker_image": "nebirhos/postgres-replication",
+  "parameters_schema": {
+    "MAX_CONNECTIONS": {
+      "default": "500",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WAL_KEEP_SEGMENTS": {
+      "default": "256",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAX_WAL_SENDERS": {
+      "default": "100",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REPLICATION_ROLE": {
+      "default": "master",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REPLICATION_USER": {
+      "default": "replication",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REPLICATION_PASSWORD": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "POSTGRES_MASTER_SERVICE_HOST": {
+      "default": "localhost",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "POSTGRES_MASTER_SERVICE_PORT": {
+      "default": "5432",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "nebirhos/postgres-replication",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/nebirhos/postgres-replication",
+    "https://hub.docker.com/v2/repositories/nebirhos/postgres-replication",
+    "https://github.com/nebirhos/docker-postgres-replication.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/VM Image/AMI",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/nebirhos/postgres-replication",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

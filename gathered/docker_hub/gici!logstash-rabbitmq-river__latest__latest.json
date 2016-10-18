@@ -1,0 +1,121 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/gici/logstash-rabbitmq-river",
+    "repository_url": "https://hub.docker.com/v2/repositories/gici/logstash-rabbitmq-river",
+    "tags_url": "https://hub.docker.com/v2/repositories/gici/logstash-rabbitmq-river/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/gici/logstash-rabbitmq-river/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/gici/logstash-rabbitmq-river/autobuild",
+    "user": "gici",
+    "name": "logstash-rabbitmq-river",
+    "namespace": "gici",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 191,
+    "last_updated": "2016-10-14T17:43:14.460151Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 295889148,
+        "id": 3502060,
+        "repository": 755199,
+        "creator": 587797,
+        "last_updater": 587797,
+        "last_updated": "2016-10-14T17:43:13.905847Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "devsenexx/logstash-rabbitmq-river"
+  },
+  "name": "gici/logstash-rabbitmq-river Docker container",
+  "description": "Almost drop-in replacement for elasticsearch rabbitmq river, using logstash",
+  "readme": "# logstash-rabbitmq-river\nAlmost drop-in replacement for elasticsearch rabbitmq river, using logstash\n\n### Reason\nWe was using elasticsearch rabbitmq river (https://github.com/elastic/elasticsearch-river-rabbitmq, https://www.elastic.co/blog/the-river-rabbitmq) in some of our projects. \nElasticsearch rivers was depricated in ES 2.x, but there was no real alternative to replace the rabbitmq river.\nSo this docker image was created, which works in the very familar fassion to river: when started it reads the *river* index which is fully backward compatible with original river structure, generates rabbitmq input configuration based on it, and starts the logstash. Once in a while (10 sec) it checks configuration for changes.\n\n### Usage\n```sh\ndocker run -d -e ES_URL=http://10.0.1.4:9200 -e ES_EXTRA_HOSTS=http://10.0.1.5:9200 gici/logstash-rabbitmq-river \n```\n\n",
+  "dockerfile": "FROM logstash:2\nMAINTAINER Michael Gelfand <michael@senexx.com>\n\n# Install supervisor, curl, jq, supervisor_stdout\nRUN apt-get update && \\\n    apt-get install -y supervisor curl jq python-pip && \\\n    pip install supervisor-stdout && \\\n    rm -rf /var/lib/apt/lists/*\n\n# Instal custom elasticsearch output - till pull request is merged: https://github.com/logstash-plugins/logstash-output-elasticsearch/pull/463\nRUN PLUGIN=logstash-output-elasticsearch && \\\n    BRANCH=2.7.1-update_action-new && \\\n    cd /tmp && \\\n    wget https://github.com/sxmichael/$PLUGIN/archive/$BRANCH.zip && \\\n    unzip $BRANCH.zip && \\\n    cd $PLUGIN-$BRANCH && \\\n    /opt/logstash/vendor/jruby/bin/jruby -S gem build $PLUGIN.gemspec && \\\n    /opt/logstash/bin/plugin install /tmp/$PLUGIN-$BRANCH/$PLUGIN-*.gem && \\\n    cd / && \\\n    rm -rf /tmp/$BRANCH.zip /tmp/$PLUGIN-$BRANCH\n\nENV RIVER_INDEX river\nENV LOGSTASH_CONF /etc/logstash/conf.d/13-rabbitmq-input.conf\nENV LOGSTASH_ES_OUTPUT_CONF /etc/logstash/conf.d/30-elasticsearch_bulk-output.conf\nENV ES_EXTRA_HOSTS \"\"\n\nCOPY logstash-conf.d/30-elasticsearch_bulk-output.conf /etc/logstash/conf.d/30-elasticsearch_bulk-output.conf\nCOPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf\nCOPY bin/* /usr/local/bin/\n\nCMD [\"/usr/local/bin/bootstrap.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update &&     apt-get install -y supervisor curl jq python-pip &&     pip install supervisor-stdout &&     rm -rf /var/lib/apt/lists/*",
+      "PLUGIN=logstash-output-elasticsearch &&     BRANCH=2.7.1-update_action-new &&     cd /tmp &&     wget https://github.com/sxmichael/$PLUGIN/archive/$BRANCH.zip &&     unzip $BRANCH.zip &&     cd $PLUGIN-$BRANCH &&     /opt/logstash/vendor/jruby/bin/jruby -S gem build $PLUGIN.gemspec &&     /opt/logstash/bin/plugin install /tmp/$PLUGIN-$BRANCH/$PLUGIN-*.gem &&     cd / &&     rm -rf /tmp/$BRANCH.zip /tmp/$PLUGIN-$BRANCH"
+    ],
+    "workdir": [],
+    "from": "logstash:2",
+    "maintainer": "Michael Gelfand <michael@senexx.com>",
+    "env": {
+      "RIVER_INDEX": "river",
+      "LOGSTASH_CONF": "/etc/logstash/conf.d/13-rabbitmq-input.conf",
+      "LOGSTASH_ES_OUTPUT_CONF": "/etc/logstash/conf.d/30-elasticsearch_bulk-output.conf",
+      "ES_EXTRA_HOSTS": "\"\""
+    },
+    "copy": "bin/* /usr/local/bin/",
+    "cmd": "[\"/usr/local/bin/bootstrap.sh\"]"
+  },
+  "source_repository_url": "https://github.com/devsenexx/logstash-rabbitmq-river.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/devsenexx/logstash-rabbitmq-river",
+  "docker_repository": "gici/logstash-rabbitmq-river",
+  "docker_image": "gici/logstash-rabbitmq-river",
+  "parameters_schema": {
+    "RIVER_INDEX": {
+      "default": "river",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LOGSTASH_CONF": {
+      "default": "/etc/logstash/conf.d/13-rabbitmq-input.conf",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LOGSTASH_ES_OUTPUT_CONF": {
+      "default": "/etc/logstash/conf.d/30-elasticsearch_bulk-output.conf",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ES_EXTRA_HOSTS": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "gici/logstash-rabbitmq-river",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/gici/logstash-rabbitmq-river",
+    "https://hub.docker.com/v2/repositories/gici/logstash-rabbitmq-river",
+    "https://github.com/devsenexx/logstash-rabbitmq-river.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Logging/Logstash",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Messaging/RabbitMQ",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/gici/logstash-rabbitmq-river",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

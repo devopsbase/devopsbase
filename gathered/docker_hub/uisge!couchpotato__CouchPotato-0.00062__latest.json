@@ -1,0 +1,194 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/uisge/couchpotato",
+    "repository_url": "https://hub.docker.com/v2/repositories/uisge/couchpotato",
+    "tags_url": "https://hub.docker.com/v2/repositories/uisge/couchpotato/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/uisge/couchpotato/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/uisge/couchpotato/autobuild",
+    "user": "uisge",
+    "name": "couchpotato",
+    "namespace": "uisge",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 37,
+    "last_updated": "2016-10-13T23:17:04.227011Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "CouchPotato-0.00062",
+        "full_size": 321714150,
+        "id": 5444977,
+        "repository": 755550,
+        "creator": 918837,
+        "last_updater": 918837,
+        "last_updated": "2016-10-13T23:17:02.339229Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "CouchPotato-0.0006",
+        "full_size": 321127959,
+        "id": 4550487,
+        "repository": 755550,
+        "creator": 918837,
+        "last_updater": 918837,
+        "last_updated": "2016-08-29T01:34:23.666284Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "CouchPotato-0.00051",
+        "full_size": 290346903,
+        "id": 4497540,
+        "repository": 755550,
+        "creator": 918837,
+        "last_updater": 918837,
+        "last_updated": "2016-08-25T00:47:29.701893Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "uisge-beatha/synoPVR"
+  },
+  "name": "uisge/couchpotato Docker container",
+  "description": "CouchPotato for Docker on Synology DSM",
+  "readme": "#Testing CouchPotato\n\nThese instructions are intended to build the container for testing on an OS X machine.\n\n## \ncd /path/to/synoPVR/couchpotato/\n\n##Clean & Build\ndocker kill CouchPotato ; docker rm CouchPotato ; CouchPotatoBuildID=$(docker build . | grep Successfully | awk '{split($0,a,\" \"); print a[3]}') ; echo $CouchPotatoBuildID\n\n##Test with\n\ndocker run -d --name=\"CouchPotato\" \\\n\t-p 5050:5050 \\\n\t--env \"USERMAP_UID=$(id -u `whoami`)\" \\\n\t--env \"USERMAP_GID=$(id -g `whoami`)\" \\\n\t$CouchPotatoBuildID\n\n\n\n##Attach\ndocker exec -i -t CouchPotato bash\n\n\n\n#-v \"`pwd`/test/conf\":/couchpotato-config:rw \\\n#\t-v \"`pwd`/test/dl\":/downloads:rw \\\n#\t-v \"`pwd`/test/media\":/media:rw \\",
+  "dockerfile": "FROM phusion/baseimage:0.9.19\nMAINTAINER https://github.com/uisge-beatha\nENV DEBIAN_FRONTEND noninteractive\n\n######################################\n## Environment\n######################################\nENV DEBIAN_FRONTEND noninteractive\nENV LC_ALL          C.UTF-8\nENV LANG            en_US.UTF-8\nENV LANGUAGE        en_US.UTF-8\n\nENV HOME /root\n\n# set python to use utf-8 rather than ascii, hopefully resolve special characters in movie names\nENV PYTHONIOENCODING=\"UTF-8\"\n\n######################################\n# Use baseimage-docker's init system\n######################################\nCMD [\"/sbin/my_init\"]\n\n######################################\n## Configure Directories\n######################################\n\n## CouchPotato Configuration\nVOLUME /couchpotato-config\n\n## Downloads\nVOLUME /downloads\n\n## media\nVOLUME /media\n\n######################################\n## Upgrade OS\n######################################\nRUN apt-get update -q && apt-get upgrade -y -o Dpkg::Options::=\"--force-confold\"\n\n\n######################################\n## Misc setup \n######################################\n\nRUN add-apt-repository -y \"deb http://us.archive.ubuntu.com/ubuntu/ xenial multiverse\"\nRUN add-apt-repository -y \"deb http://us.archive.ubuntu.com/ubuntu/ xenial-updates multiverse\"\nRUN apt-get update -qq\n\n\n######################################\n## couchpotato setup\n######################################\n\nRUN apt-get install -qy python python-cheetah python-lxml ca-certificates wget unzip unrar git-core python-pip python-dev libxslt1-dev libxslt1.1 libxml2-dev libxml2 libssl-dev libffi-dev python-pip python-dev libssl-dev python-openssl avahi-daemon avahi-utils\n\n## Install CouchPotato\nRUN cd /opt && git clone https://github.com/CouchPotato/CouchPotatoServer.git\n\n#DBUS requires this directory\nRUN mkdir -p /var/run/dbus\nVOLUME /var/run/dbus\n#Configure Avahi\nADD avahi-daemon.conf /etc/avahi/avahi-daemon.conf\n\n######################################\n## Expose Ports\n######################################\n\n## CouchPotato\nEXPOSE 5050\n\n######################################\n## Add Services to runit\n######################################\n\n## Add CouchPotato \nRUN mkdir /etc/service/couchpotato\nADD couchpotato-run.sh /etc/service/couchpotato/run\nRUN chmod +x /etc/service/couchpotato/run\n\n# Add initd.sh to execute during container startup\nADD initd.sh /etc/my_init.d/initd.sh\nRUN chmod +x /etc/my_init.d/initd.sh\n\n\n#ADD Readme.md /Readme.md\n\n\n######################################\n## Clean up APT when done.\n######################################\nRUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "avahi-daemon.conf",
+        "dest": "/etc/avahi/avahi-daemon.conf"
+      },
+      {
+        "source": "couchpotato-run.sh",
+        "dest": "/etc/service/couchpotato/run"
+      },
+      {
+        "source": "initd.sh",
+        "dest": "/etc/my_init.d/initd.sh"
+      }
+    ],
+    "expose": [
+      5050
+    ],
+    "volume": [
+      "/couchpotato-config",
+      "/downloads",
+      "/media",
+      "/var/run/dbus"
+    ],
+    "run": [
+      "apt-get update -q && apt-get upgrade -y -o Dpkg::Options::=\"--force-confold\"",
+      "add-apt-repository -y \"deb http://us.archive.ubuntu.com/ubuntu/ xenial multiverse\"",
+      "add-apt-repository -y \"deb http://us.archive.ubuntu.com/ubuntu/ xenial-updates multiverse\"",
+      "apt-get update -qq",
+      "apt-get install -qy python python-cheetah python-lxml ca-certificates wget unzip unrar git-core python-pip python-dev libxslt1-dev libxslt1.1 libxml2-dev libxml2 libssl-dev libffi-dev python-pip python-dev libssl-dev python-openssl avahi-daemon avahi-utils",
+      "cd /opt && git clone https://github.com/CouchPotato/CouchPotatoServer.git",
+      "mkdir -p /var/run/dbus",
+      "mkdir /etc/service/couchpotato",
+      "chmod +x /etc/service/couchpotato/run",
+      "chmod +x /etc/my_init.d/initd.sh",
+      "apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+    ],
+    "workdir": [],
+    "from": "phusion/baseimage:0.9.19",
+    "maintainer": "https://github.com/uisge-beatha",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "LC_ALL": "",
+      "": "",
+      "LANG": "",
+      "LANGUAGE": "",
+      "HOME": "/root",
+      "PYTHONIOENCODING": "\"UTF-8\""
+    },
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/uisge-beatha/synoPVR.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/uisge-beatha/synoPVR",
+  "docker_repository": "uisge/couchpotato",
+  "docker_image": "uisge/couchpotato",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LC_ALL": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANGUAGE": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PYTHONIOENCODING": {
+      "default": "\"UTF-8\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5050
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "uisge/couchpotato",
+  "revision": "CouchPotato-0.00062",
+  "uris": [
+    "https://hub.docker.com/r/uisge/couchpotato",
+    "https://hub.docker.com/v2/repositories/uisge/couchpotato",
+    "https://github.com/uisge-beatha/synoPVR.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Devopsware/Logging"
+  ],
+  "info_url": "https://hub.docker.com/r/uisge/couchpotato",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

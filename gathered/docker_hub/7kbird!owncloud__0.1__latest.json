@@ -1,0 +1,140 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/7kbird/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/7kbird/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/7kbird/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/7kbird/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/7kbird/owncloud/autobuild",
+    "user": "7kbird",
+    "name": "owncloud",
+    "namespace": "7kbird",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 51,
+    "last_updated": "2016-01-29T07:34:23.553070Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "0.1",
+        "full_size": 250012099,
+        "id": 1860307,
+        "repository": 497772,
+        "creator": 279538,
+        "last_updater": 279538,
+        "last_updated": "2016-01-29T07:34:22.714455Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 250011906,
+        "id": 1851132,
+        "repository": 497772,
+        "creator": 279538,
+        "last_updater": 279538,
+        "last_updated": "2016-01-29T07:25:34.896975Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "7kbird/docker-owncloud"
+  },
+  "name": "7kbird/owncloud Docker container",
+  "description": "https://owncloud.org",
+  "readme": "# docker-owncloud\n\n### Available Configuration Parameters\n\n- **DB_TYPE**: The database type. Possible values: `mysql`,`pgsql`,`sqlite`. (default:`sqlite`)\n- **DB_HOST**: Hostname of the database(default: `localhost`)\n- **DB_NAME**: Name of the database\n- **DB_USER**: User name to connect to the database(default: `owncloud`)\n- **DB_PASS**: Password of the database user\n- **ADMIN_USER**: User name of the admin account (default: \"admin\")\n- **ADMIN_PASS**: Password of the admin account. Password is only set on the first run (default: \"pass4owncloud\")\n- **OC_DEFAULT_LANGUAGE**: Default language for users.Using ISO_639-1 language codes\n- **OC_DEFAULT_APP**: Default app to open on login\n- **OC_TRUSTED_DOMAINS**: List of trusted domains that users can log into(default: \"localhost\"). Array not supported in 8.2.2 yet.\n- **OC_HAS_INTERNET**: Is ownCloud connected to the Internet?(default: \"true\")\n- **OC_SMTP_HOST**: Specify the IP address or host name of your mail server host\n- **OC_SMTP_PORT**: Port of your smtp mail server(default: 25 for no encryption, 587 for ssl or tls)\n- **OC_SMTP_SECURE**: Using ``ssl`` or ``tls``, or leave empty for no encryption\n- **OC_SMTP_USER**: The username for authenticating to the SMTP server\n- **OC_SMTP_PASS**: The user password\n- **OC_SMTP_EMAIL**: Email address for the user, like this: ``demo@example.com``(default: ``OC_SMTP_USER`` is used)\n- **OC_SMTP_AUTH_TYPE**: Specify the SMTP authentication method. Defaults to ``LOGIN`` if ``OC_SMTP_USER`` is set.\n- **OC_UPLOAD_MAX_FILESIZE**: Maximum file size for upload. (default: ``513M``)\n\n## Quick Start\n\n```sh\ndocker pull 7kbird/owncloud\ndocker run -d --name=owncloud -v /srv/docker/owncloud:/owncloud_data -p 80:80 7kbird/owncloud\n```",
+  "dockerfile": "FROM php:5.6-apache\n\nRUN apt-get update && apt-get install -y \\\n\tbzip2 \\\n\tlibcurl4-openssl-dev \\\n\tlibfreetype6-dev \\\n\tlibicu-dev \\\n\tlibjpeg-dev \\\n\tlibmcrypt-dev \\\n\tlibmemcached-dev \\\n\tlibpng12-dev \\\n\tlibpq-dev \\\n\tlibxml2-dev \\\n\tsudo \\\n\tunzip\n\n#gpg key from https://owncloud.org/owncloud.asc\nRUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys E3036906AD9F30807351FAC32D5D5E97F6978A26\n\n# https://doc.owncloud.org/server/8.1/admin_manual/installation/source_installation.html#prerequisites\nRUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \\\n\t&& docker-php-ext-install gd intl mbstring mcrypt mysql opcache pdo_mysql pdo_pgsql pgsql zip\n\n# set recommended PHP.ini settings\n# see https://secure.php.net/manual/en/opcache.installation.php\nRUN { \\\n\t\techo 'opcache.memory_consumption=128'; \\\n\t\techo 'opcache.interned_strings_buffer=8'; \\\n\t\techo 'opcache.max_accelerated_files=4000'; \\\n\t\techo 'opcache.revalidate_freq=60'; \\\n\t\techo 'opcache.fast_shutdown=1'; \\\n\t\techo 'opcache.enable_cli=1'; \\\n\t} > /usr/local/etc/php/conf.d/opcache-recommended.ini\n\n# PECL extensions\nRUN pecl install APCu-4.0.10 redis memcached \\\n\t&& docker-php-ext-enable apcu redis memcached\n\nRUN a2enmod rewrite\n\nENV OWNCLOUD_VERSION 8.2.2\nENV OWNCLOUD_ROOT_DIR /var/www/html\nENV OWNCLOUD_STORE_DIR /owncloud_data\n\nRUN filename=\"owncloud-${OWNCLOUD_VERSION}.tar.bz2\" && curl -fsSL -o \"${filename}\" \\\n\t\"https://download.owncloud.org/community/${filename}\" \\\n\t&& curl -fsSL -o ${filename}.asc \\\n\t\t\"https://download.owncloud.org/community/${filename}.asc\" \\\n\t&& curl https://download.owncloud.org/community/${filename}.md5 | md5sum -c - \\\n\t&& gpg --verify ${filename}.asc \\\n\t&& tar -xjf ${filename} --strip-components=1 -C ${OWNCLOUD_ROOT_DIR} \\\n\t&& rm ${filename} ${filename}.asc \\\n\t&& mv ${OWNCLOUD_ROOT_DIR}/config ${OWNCLOUD_ROOT_DIR}/config_back \\\n\t&& mkdir -p ${OWNCLOUD_ROOT_DIR}/data ${OWNCLOUD_STORE_DIR}/data \\\n\t&& ln -s ${OWNCLOUD_STORE_DIR}/config ${OWNCLOUD_ROOT_DIR}/config \\\n\t&& chown -R www-data /var/www/html ${OWNCLOUD_STORE_DIR}\n\nENV OWNCLOUD_DATA_DIR ${OWNCLOUD_STORE_DIR}/data\nENV OWNCLOUD_BUILD_DIR /usr/owncloud_build\nCOPY build ${OWNCLOUD_BUILD_DIR}\nCOPY docker-entrypoint.sh /entrypoint.sh\n\n# Clean up\nRUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nVOLUME ${OWNCLOUD_STORE_DIR}\n\nENTRYPOINT [\"/entrypoint.sh\"]\nCMD [\"apache2-foreground\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "${OWNCLOUD_STORE_DIR}"
+    ],
+    "run": [
+      "apt-get update && apt-get install -y \tbzip2 \tlibcurl4-openssl-dev \tlibfreetype6-dev \tlibicu-dev \tlibjpeg-dev \tlibmcrypt-dev \tlibmemcached-dev \tlibpng12-dev \tlibpq-dev \tlibxml2-dev \tsudo \tunzip",
+      "gpg --keyserver ha.pool.sks-keyservers.net --recv-keys E3036906AD9F30807351FAC32D5D5E97F6978A26",
+      "docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \t&& docker-php-ext-install gd intl mbstring mcrypt mysql opcache pdo_mysql pdo_pgsql pgsql zip",
+      "{ \t\techo 'opcache.memory_consumption=128'; \t\techo 'opcache.interned_strings_buffer=8'; \t\techo 'opcache.max_accelerated_files=4000'; \t\techo 'opcache.revalidate_freq=60'; \t\techo 'opcache.fast_shutdown=1'; \t\techo 'opcache.enable_cli=1'; \t} > /usr/local/etc/php/conf.d/opcache-recommended.ini",
+      "pecl install APCu-4.0.10 redis memcached \t&& docker-php-ext-enable apcu redis memcached",
+      "a2enmod rewrite",
+      "filename=\"owncloud-${OWNCLOUD_VERSION}.tar.bz2\" && curl -fsSL -o \"${filename}\" \t\"https://download.owncloud.org/community/${filename}\" \t&& curl -fsSL -o ${filename}.asc \t\t\"https://download.owncloud.org/community/${filename}.asc\" \t&& curl https://download.owncloud.org/community/${filename}.md5 | md5sum -c - \t&& gpg --verify ${filename}.asc \t&& tar -xjf ${filename} --strip-components=1 -C ${OWNCLOUD_ROOT_DIR} \t&& rm ${filename} ${filename}.asc \t&& mv ${OWNCLOUD_ROOT_DIR}/config ${OWNCLOUD_ROOT_DIR}/config_back \t&& mkdir -p ${OWNCLOUD_ROOT_DIR}/data ${OWNCLOUD_STORE_DIR}/data \t&& ln -s ${OWNCLOUD_STORE_DIR}/config ${OWNCLOUD_ROOT_DIR}/config \t&& chown -R www-data /var/www/html ${OWNCLOUD_STORE_DIR}",
+      "apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+    ],
+    "workdir": [],
+    "from": "php:5.6-apache",
+    "env": {
+      "OWNCLOUD_VERSION": "8.2.2",
+      "OWNCLOUD_ROOT_DIR": "/var/www/html",
+      "OWNCLOUD_STORE_DIR": "/owncloud_data",
+      "OWNCLOUD_DATA_DIR": "${OWNCLOUD_STORE_DIR}/data",
+      "OWNCLOUD_BUILD_DIR": "/usr/owncloud_build"
+    },
+    "copy": "docker-entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"apache2-foreground\"]"
+  },
+  "source_repository_url": "https://github.com/7kbird/docker-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/7kbird/docker-owncloud",
+  "docker_repository": "7kbird/owncloud",
+  "docker_image": "7kbird/owncloud",
+  "parameters_schema": {
+    "OWNCLOUD_VERSION": {
+      "default": "8.2.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OWNCLOUD_ROOT_DIR": {
+      "default": "/var/www/html",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OWNCLOUD_STORE_DIR": {
+      "default": "/owncloud_data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OWNCLOUD_DATA_DIR": {
+      "default": "${OWNCLOUD_STORE_DIR}/data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OWNCLOUD_BUILD_DIR": {
+      "default": "/usr/owncloud_build",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "7kbird/owncloud",
+  "revision": "0.1",
+  "uris": [
+    "https://hub.docker.com/r/7kbird/owncloud",
+    "https://hub.docker.com/v2/repositories/7kbird/owncloud",
+    "https://github.com/7kbird/docker-owncloud.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/7kbird/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,180 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/danielguerra/bro-debian-elasticsearch",
+    "repository_url": "https://hub.docker.com/v2/repositories/danielguerra/bro-debian-elasticsearch",
+    "tags_url": "https://hub.docker.com/v2/repositories/danielguerra/bro-debian-elasticsearch/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/danielguerra/bro-debian-elasticsearch/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/danielguerra/bro-debian-elasticsearch/autobuild",
+    "user": "danielguerra",
+    "name": "bro-debian-elasticsearch",
+    "namespace": "danielguerra",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 8,
+    "pull_count": 1350,
+    "last_updated": "2016-10-11T07:24:27.895831Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 495713902,
+        "id": 1271989,
+        "repository": 388009,
+        "creator": 292050,
+        "last_updater": 292050,
+        "last_updated": "2016-10-11T07:24:27.500076Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "test",
+        "full_size": 495721356,
+        "id": 1403352,
+        "repository": 388009,
+        "creator": 292050,
+        "last_updater": 292050,
+        "last_updated": "2016-10-10T18:51:03.364080Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "develop",
+        "full_size": 834286554,
+        "id": 1563482,
+        "repository": 388009,
+        "creator": 292050,
+        "last_updater": 292050,
+        "last_updated": "2016-09-27T15:09:00.733372Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "danielguerra69/bro-debian-elasticsearch"
+  },
+  "name": "danielguerra/bro-debian-elasticsearch Docker container",
+  "description": "Bro on debian with full elasticsearch-2 kibana integration.",
+  "readme": "##### BRO ELK AMQP docker integration\n\n|  Bro IDS   |  Elasticsearch + Kibana | RabbitMQ   |\n| :--- | :--- | :--- |\n| ![Bro IDS](https://www.bro.org/images/bro-eyes.png) | ![Elasticsearch](https://www.runabove.com/images/apps/elasticsearch-and-kibana.png) | ![RabbitMQ](https://www.rabbitmq.com/img/rabbitmq_logo_strap.png) |\n|  2.5-beta   |  2.4 + 4.6 | 3.5.7  |\n\n### About\n\nIntegrates Bro IDS git 2.5-beta with Elasticsearch 2.4 & Kibana 4.6.\nThe native bro broker is enabled.\nBro can write directly into Elasticsearch without logstash.\nThe bro scripts have been modified in order to satisfy elasticsearch.\nThe example below uses 3 elasticsearch nodes. The container bro-xinetd\nwrites to the master. Kibana reads from node02. The commandline bro uses\nnode01.\nAdded amqp (rabbitmq) consume/publish roles with the debian amqp-tools.\n\n### Docker-compose\n\nThe simplest way to start all nodes is using docker-compose\nThe DOCKERHOST is the ip and port the user sees in kibana !\nThe port from the compose file is 8080.\n```bash\nexport DOCKERHOST=\"<ip>:8080\"\nwget https://raw.githubusercontent.com/danielguerra69/bro-debian-elasticsearch/master/docker-compose.yml\ndocker-compose pull\ndocker-compose up\n```\nThis compose file starts a role/xinetd-forensic which currently supports pcap and extracted file access from kibana.\nIt listens to port 1969 for pcap files.\n```bash\nnc <dockerhost-ip> 1969 < my.pcap\ntcpdump -i eth0 -s 0 -w - not host <dockerhost-ip> | nc <dockerhost-ip> 1969\n```\nKibana is viewed in your browser.\nhttp://<dockerhost-ip>:5601/\n\nThe pcap and extracted data can be reached over tcp port 80\n\n[Screenshot !](https://raw.githubusercontent.com/danielguerra69/bro-debian-elasticsearch/master/bro-kibana.gif)\n\n### Developers\n\nFull version with all tools and sources to build this project.\nSources are in /tmp.\n```bash\ndocker pull danielguerra/bro-debian-elasticsearch:develop\n```\n\n#### Installation\n\nBefore you begin I recommend to start with pulling fresh images.\n```bash\ndocker pull danielguerra/bro-debian-elasticsearch\ndocker pull elasticsearch (or latest)\ndocker pull kibana (or latest)\ndocker pull rabbitmq:3.5.6-management\n```\n### elastic data\n\nCreate empty elasticsearch data volumes\noptional,if not remove --volumes-from ...\n```bash\ndocker create -v /usr/share/elasticsearch/data --name elastic-data-master danielguerra/empty-elastic-data /bin/true\ndocker create -v /usr/share/elasticsearch/data --name elastic-data-node01 danielguerra/empty-elastic-data /bin/true\ndocker create -v /usr/share/elasticsearch/data --name elastic-data-node02 danielguerra/empty-elastic-data /bin/true\n```\n\n### elasticsearch\n\nRun three elasticsearch nodes (minimal)\n```bash\ndocker run -d --volumes-from elastic-data-master --hostname=elasticsearch-master  --name elasticsearch-master  elasticsearch -Des.network.bind_host=elasticsearch-master --cluster.name=bro --node.name=elasticsearch-master --discovery.zen.ping.multicast.enabled=false --network.host=elasticsearch-master\ndocker run -d --volumes-from elastic-data-node01 --hostname=elasticsearch-node01  --name elasticsearch-node01  --link=elasticsearch-master:master elasticsearch -Des.network.bind_host=elasticsearch-node01 --cluster.name=bro --node.name=elasticsearch-node01 --discovery.zen.ping.unicast.hosts=master:9300  --network.host=elasticsearch-node01\ndocker run -d --volumes-from elastic-data-node02 --hostname=elasticsearch-node02  --name elasticsearch-node02  --link=elasticsearch-master:master elasticsearch -Des.network.bind_host=elasticsearch-node02 --cluster.name=bro --node.name=elasticsearch-node02 --discovery.zen.ping.unicast.hosts=master:9300  --network.host=elasticsearch-node02\n```\n\n### elasticsearch mapping (important)\n\nAfter you have a running elasticsearch-cluster you should start a commandline bro and do\n```bash\ndocker run --link elasticsearch-master:elasticsearch --rm danielguerra/bro-debian-elasticsearch /scripts/bro-mapping.sh\n```\n\n### kibana\n\nConfigure kibana\n```bash\ndocker run --rm --link elasticsearch-master:elasticsearch danielguerra/bro-kibana-config\n```\n\nStart kibana\n```bash\ndocker run -d -p 5601:5601 --link=elasticsearch-node02:elasticsearch --hostname=kibana --name kibana kibana\n```\nPoint your browser http://<dockerhost>:5601\n\n### bro on the commandline\n\ncommandline and local file log\n```bash\ndocker run -ti -v /Users/PCAP:/pcap --name bro-log danielguerra/bro-debian-elasticsearch\n```\n\ncommandline and log to elasticsearch\n```bash\ndocker run -ti --link elasticsearch-node01:elasticsearch -v /Users/PCAP:/pcap --name bro danielguerra/bro-debian-elasticsearch /role/cmd-elasticsearch\n```\nreadfiles from bro commandline\n\n```bash\nbro -r /pcap/mydump.pcap\n```\n\nbro develop version (all sources are in /tmp)\n```\ndocker run -ti --link elasticsearch-node01:elasticsearch -v /Users/PCAP:/pcap --name bro danielguerra/bro-debian-elasticsearch:develop /role/cmd-elasticsearch\n```\n\n### bro xinetd service\nwhen role/xinetd is used no local logs are written, all logs go to elasticsearch\n```bash\ndocker run -d -p 1969:1969 --link elasticsearch-master:elasticsearch --name bro-xinetd --hostname bro-xinetd danielguerra/bro-debian-elasticsearch /role/xinetd-elasticsearch\n```\ntcpdump to your container from a remote host, replace dockerhost with your ip\n```bash\ntcpdump -i eth0 -s 0 -w /dev/stdout | nc dockerhost 1969\n```\nor read a file file to your container\n```bash\nnc dockerhost 1969 < mydump.pcap\n```\n\n### bro xinetd forensic\nwhen role/xinetd-forensic is used, pcap and extracted files are available from kibana.\n```bash\ndocker run -d -p 1969:1969 -p 8080:80 --link elasticsearch-master:elasticsearch --name bro-xinetd-forensic --hostname bro-xinetd-forensic danielguerra/bro-debian-elasticsearch /role/xinetd-forensic\n```\n\n### bro ssh server\n\nfor bro nodes or just remote key based authentication\ncreate an empty ssh volume\n```bash\ndocker create -v /root/.ssh --name ssh-container danielguerra/ssh-container /bin/true\n```\ncreate your own keys on your own machine\n```bash\ndocker run --volumes-from ssh-container debian:jessie ssh-keygen -q\n```\nadd your pub key to authorized_keys file\n```bash\ndocker run --volumes-from ssh-container debian:jessie cp /root/.ssh/id_rsa.pub /root/.ssh/authorized_keys\n```\ncreate a copy in your directory (pwd)\n```bash\ndocker run --volumes-from ssh-container -v $(pwd):/backup debian:jessie cp -R /root/.ssh/* /backup\n```\nstart bro as ssh daemon\n```bash\ndocker run -d -p 1922:22 --link elasticsearch:elasticsearch --name bro-dev danielguerra/bro-debian-elasticsearch /role/sshd\nssh -p 1922 -i id_rsa root@dockerhost\n```\n\n### bro amqp\n\nBro can be used with amqp in elasticsearch out or amqp output\n\nFirst we need an amqp, this case a rabbitmq\n```bash\ndocker run -d -p 8080:15672 --name=rabbitmq --hostname=rabbitmq rabbitmq:3.5.6-management\ndocker inspect rabbitmq (to get the ip)\n```\n\nNow we can start a bro xinetd service which outputs to rabbitmq\n```bash\ndocker run -d -p 1970:1969 --name bro-xinetd-amqp --hostname bro-xinetd-amqp danielguerra/bro-debian-elasticsearch /role/xinetd-amqp\n\n```\n\nOr a bro that reads pcap files from amqp and outputs to amqp\n```bash\ndocker run -d  --name=bro-amqp-amqp --hostname=bro-amqp-amqp danielguerra/bro-debian-elasticsearch /role/amqp-amqp <user> <pass> <ip> <queue> <user> <pass> <ip> <exchange>\n```\nAnd publish a pcap file from bro-dev commandline\n```bash\ncat <pcap-file> | amqp-publish   --url=amqp://<user>:<pass>@<amqp-ip> --exchange=<exchange>\n```\n\n### tcpdump containers\n\nStart a bro-xinetd, do a (replace <container-to-dump> with your container name and <bro-xinetd-ip> with the bro xinetd ip)\n```bash\ndocker run --rm  --net=container:<container-to-dump> crccheck/tcpdump -i eth0 -w - | nc <bro-xinetd-ip> 1969 &\ndocker run --rm  --net=container:<container-to-dump> danielguerra/bro-debian-elasticsearch:develop /role/dump-elasticsearch\n\n```\n\n### useful scripts\n\nelastic-indices.sh shows elasticsearch indices\nbro-mapping.sh bro mapping for kibana including geo_point mapping\nremove-mapping.sh remove the mapping\nclean-elastic.sh clean elasticsearch from bro data\nupdate-intel.sh update intel for bro\n",
+  "dockerfile": "FROM danielguerra/debian-bro-develop\n\nMAINTAINER danielguerra, https://github.com/danielguerra\n\n# add patches for bro to work with elasticsearch 2.0 (remove . set correct time)\nADD /bro-patch /bro-patch\n\n# build bro + tools\nRUN buildDeps='build-essential \\\nautoconf \\\ninstall-info \\\nlibgoogle-perftools-dev \\\nlibcurl3-dev \\\nlibgeoip-dev \\\nlibpcap-dev \\\nlibssl-dev \\\npython-dev \\\nzlib1g-dev \\\nlibedit-dev \\\ndoxygen \\\ngit-core \\\ncmake \\\nmake \\\ng++ \\\ngcc \\\nlibpcre3-dev \\\npython-setuptools \\\nlibsnappy-dev \\\nlibbz2-dev \\\ndevscripts \\\nlibjemalloc-dev \\\nlibjemalloc1-dbg ' \\\n&& set -x \\\n&& cd /tmp \\\n&& git clone --recursive git://git.bro.org/bro \\\n&& patch /tmp/bro/aux/plugins/elasticsearch/src/ElasticSearch.cc  /bro-patch/ElasticSearch.cc.patch \\\n&& cd /tmp/bro \\\n&& ./configure --enable-broker\\\n&& make \\\n&& make install \\\n&& sed -i \"s/127.0.0.1/elasticsearch/g\" /tmp/bro/aux/plugins/elasticsearch/scripts/init.bro \\\n&& sed -i \"s/2secs/60secs/g\" /tmp/bro/aux/plugins/elasticsearch/scripts/init.bro \\\n&& sed -i \"s/const max_batch_size = 1000/const max_batch_size = 500/g\" /tmp/bro/aux/plugins/elasticsearch/scripts/init.bro \\\n&& cd /tmp/bro/aux/plugins/elasticsearch \\\n&& ./configure \\\n&& make \\\n&& make install \\\n&& cd /tmp/bro/aux/plugins/tcprs \\\n&& ./configure \\\n&& make \\\n&& make install \\\n&& cd /tmp \\\n&& git clone --recursive https://github.com/jonschipp/mal-dnssearch.git \\\n&& cd /tmp/mal-dnssearch \\\n&& make \\\n&& apt-get remove -y $buildDeps \\\n&& apt-get clean \\\n&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n# add maintance shell scripts\nADD /scripts /scripts\n\n#add extra bro files\nADD /bro-extra /usr/local/bro/share/bro/bro-extra\nRUN echo \"@load bro-extra\" >> /usr/local/bro/share/bro/base/init-default.bro\n\n# add botflex\nRUN cd /usr/local/bro/share/bro/  \\\n&& git clone --recursive https://github.com/sheharbano/botflex.git botflex\n# && echo \"@load botflex/detection/correlation/correlation.bro\" >> base/init-default.bro\n\n# add dr watson\nRUN cd /usr/local/bro/share/bro/  \\\n&& git clone --recursive https://github.com/broala/bro-drwatson.git drwatson\n#&& echo \"@load drwatson\" >> base/init-default.bro\n\n# add shellshock\nRUN cd /usr/local/bro/share/bro/  \\\n&& git clone --recursive https://github.com/broala/bro-shellshock.git shellshock \\\n&& echo \"@load shellshock\" >> base/init-default.bro\n\n# add bro-scripts\nRUN cd /usr/local/bro/share/bro/  \\\n&& git clone --recursive https://github.com/reservoirlabs/bro-scripts.git bro-scripts\n# && echo \"@load bro-scripts/clickbot\" >> local.bro \\\n#&& echo \"@load bro-scripts/supercomputing/producer-consumer-ratio\" >> local.bro \\\n#&& echo \"@load bro-scripts/supercomputing/protocol-stats\" >> local.bro \\\n#&& echo \"@load bro-scripts/supercomputing/http-exe-bad-attributes\" >> local.bro \\\n#&& echo \"@load bro-scripts/supercomputing/smtp-url\" >> local.bro \\\n#&& echo \"@load bro-scripts/supercomputing/top-metrics\" >> base/init-default.bro \\\n#&& echo \"@load bro-scripts/supercomputing/unique-hosts\" >> base/init-default.bro \\\n#&& echo \"@load bro-scripts/supercomputing/unique-macs\" >> base/init-default.bro\\\n#&& echo \"@load bro-scripts/track-dhcp/track-dhcp\" >> base/init-default.bro\n\n# add bro service\nRUN echo \"bro             1969/tcp                        # bro pcap feed\" >> /etc/services\n\n#fresh intel\nRUN /scripts/update-intel.sh\n#set the expose ports\nEXPOSE 22\nEXPOSE 1969\nEXPOSE 47761\nEXPOSE 47762\n\n#set default dir\nWORKDIR /tmp\n\n#Add geolitecityv6\nRUN wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCityv6-beta/GeoLiteCityv6.dat.gz\nRUN gunzip GeoLiteCityv6.dat.gz\nRUN mv GeoLiteCityv6.dat /usr/share/GeoIP/GeoLiteCityv6.dat\nRUN ln -s /usr/share/GeoIP/GeoLiteCityv6.dat /usr/share/GeoIP/GeoIPCityv6.dat\n\n# Do some elasticsearch tweaks (couldnt solve it with mapping :`( )\n# elastic is not happy about version, type change count/string\nRUN sed -i \"s/version:     count           \\&log/socks_version:     count           \\&log/g\" /usr/local/bro/share/bro/base/protocols/socks/main.bro\nRUN sed -i \"s/\\$version=/\\$socks_version=/g\" /usr/local/bro/share/bro/base/protocols/socks/main.bro\nRUN sed -i \"s/version:          string \\&log/ssl_version:     string \\&log/g\" /usr/local/bro/share/bro/base/protocols/ssl/main.bro\nRUN sed -i \"s/\\$version=/\\$ssl_version=/g\" /usr/local/bro/share/bro/base/protocols/ssl/main.bro\nRUN sed -i \"s/version:         count        \\&log/ssh_version:         count        \\&log/g\" /usr/local/bro/share/bro/base/protocols/ssh/main.bro\nRUN sed -i \"s/\\$version =/\\$ssh_version =/g\" /usr/local/bro/share/bro/base/protocols/ssh/main.bro\nRUN sed -i \"s/version: string \\&log/snmp_version: string \\&log/g\" /usr/local/bro/share/bro/base/protocols/snmp/main.bro\nRUN sed -i \"s/\\$version=/\\$snmp_version=/g\" /usr/local/bro/share/bro/base/protocols/snmp/main.bro\n\n\n# bro pcap-in tcp services\nADD /xinetd /xinetd\n\n# add role scripts\nADD /role /role\n\n# add php scripts\nADD /php/index.php /var/www/html/index.php\n\n# add supervisor config\nADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf\n\n#create output dirs\nRUN mkdir /bro /bro/pcap /var/www/html/extract_files\n\nCMD [\"/role/cmd-bare\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "/bro-patch",
+        "dest": "/bro-patch"
+      },
+      {
+        "source": "/scripts",
+        "dest": "/scripts"
+      },
+      {
+        "source": "/bro-extra",
+        "dest": "/usr/local/bro/share/bro/bro-extra"
+      },
+      {
+        "source": "/xinetd",
+        "dest": "/xinetd"
+      },
+      {
+        "source": "/role",
+        "dest": "/role"
+      },
+      {
+        "source": "/php/index.php",
+        "dest": "/var/www/html/index.php"
+      },
+      {
+        "source": "supervisord.conf",
+        "dest": "/etc/supervisor/conf.d/supervisord.conf"
+      }
+    ],
+    "expose": [
+      22,
+      1969,
+      47761,
+      47762
+    ],
+    "volume": [],
+    "run": [
+      "buildDeps='build-essential autoconf install-info libgoogle-perftools-dev libcurl3-dev libgeoip-dev libpcap-dev libssl-dev python-dev zlib1g-dev libedit-dev doxygen git-core cmake make g++ gcc libpcre3-dev python-setuptools libsnappy-dev libbz2-dev devscripts libjemalloc-dev libjemalloc1-dbg ' && set -x && cd /tmp && git clone --recursive git://git.bro.org/bro && patch /tmp/bro/aux/plugins/elasticsearch/src/ElasticSearch.cc  /bro-patch/ElasticSearch.cc.patch && cd /tmp/bro && ./configure --enable-broker&& make && make install && sed -i \"s/127.0.0.1/elasticsearch/g\" /tmp/bro/aux/plugins/elasticsearch/scripts/init.bro && sed -i \"s/2secs/60secs/g\" /tmp/bro/aux/plugins/elasticsearch/scripts/init.bro && sed -i \"s/const max_batch_size = 1000/const max_batch_size = 500/g\" /tmp/bro/aux/plugins/elasticsearch/scripts/init.bro && cd /tmp/bro/aux/plugins/elasticsearch && ./configure && make && make install && cd /tmp/bro/aux/plugins/tcprs && ./configure && make && make install && cd /tmp && git clone --recursive https://github.com/jonschipp/mal-dnssearch.git && cd /tmp/mal-dnssearch && make && apt-get remove -y $buildDeps && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "echo \"@load bro-extra\" >> /usr/local/bro/share/bro/base/init-default.bro",
+      "cd /usr/local/bro/share/bro/  && git clone --recursive https://github.com/sheharbano/botflex.git botflex",
+      "cd /usr/local/bro/share/bro/  && git clone --recursive https://github.com/broala/bro-drwatson.git drwatson",
+      "cd /usr/local/bro/share/bro/  && git clone --recursive https://github.com/broala/bro-shellshock.git shellshock && echo \"@load shellshock\" >> base/init-default.bro",
+      "cd /usr/local/bro/share/bro/  && git clone --recursive https://github.com/reservoirlabs/bro-scripts.git bro-scripts",
+      "echo \"bro             1969/tcp                        # bro pcap feed\" >> /etc/services",
+      "/scripts/update-intel.sh",
+      "wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCityv6-beta/GeoLiteCityv6.dat.gz",
+      "gunzip GeoLiteCityv6.dat.gz",
+      "mv GeoLiteCityv6.dat /usr/share/GeoIP/GeoLiteCityv6.dat",
+      "ln -s /usr/share/GeoIP/GeoLiteCityv6.dat /usr/share/GeoIP/GeoIPCityv6.dat",
+      "sed -i \"s/version:     count           \\&log/socks_version:     count           \\&log/g\" /usr/local/bro/share/bro/base/protocols/socks/main.bro",
+      "sed -i \"s/\\$version=/\\$socks_version=/g\" /usr/local/bro/share/bro/base/protocols/socks/main.bro",
+      "sed -i \"s/version:          string \\&log/ssl_version:     string \\&log/g\" /usr/local/bro/share/bro/base/protocols/ssl/main.bro",
+      "sed -i \"s/\\$version=/\\$ssl_version=/g\" /usr/local/bro/share/bro/base/protocols/ssl/main.bro",
+      "sed -i \"s/version:         count        \\&log/ssh_version:         count        \\&log/g\" /usr/local/bro/share/bro/base/protocols/ssh/main.bro",
+      "sed -i \"s/\\$version =/\\$ssh_version =/g\" /usr/local/bro/share/bro/base/protocols/ssh/main.bro",
+      "sed -i \"s/version: string \\&log/snmp_version: string \\&log/g\" /usr/local/bro/share/bro/base/protocols/snmp/main.bro",
+      "sed -i \"s/\\$version=/\\$snmp_version=/g\" /usr/local/bro/share/bro/base/protocols/snmp/main.bro",
+      "mkdir /bro /bro/pcap /var/www/html/extract_files"
+    ],
+    "workdir": [
+      "/tmp"
+    ],
+    "from": "danielguerra/debian-bro-develop",
+    "maintainer": "danielguerra, https://github.com/danielguerra",
+    "cmd": "[\"/role/cmd-bare\"]"
+  },
+  "source_repository_url": "https://github.com/danielguerra69/bro-debian-elasticsearch.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/danielguerra69/bro-debian-elasticsearch",
+  "docker_repository": "danielguerra/bro-debian-elasticsearch",
+  "docker_image": "danielguerra/bro-debian-elasticsearch",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        22,
+        1969,
+        47761,
+        47762
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "danielguerra/bro-debian-elasticsearch",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/danielguerra/bro-debian-elasticsearch",
+    "https://hub.docker.com/v2/repositories/danielguerra/bro-debian-elasticsearch",
+    "https://github.com/danielguerra69/bro-debian-elasticsearch.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Integration",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/danielguerra/bro-debian-elasticsearch",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

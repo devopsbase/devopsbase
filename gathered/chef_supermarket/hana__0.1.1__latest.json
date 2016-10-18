@@ -1,0 +1,62 @@
+{
+  "name": "hana Chef cookbook",
+  "chef_cookbook_name": "hana",
+  "revision": "0.1.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/hana",
+    "https://supermarket.chef.io/cookbooks/hana/download",
+    "https://supermarket.chef.io/cookbooks/hana/versions/0.1.1",
+    "https://supermarket.chef.io/cookbooks/hana/versions/0.1.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/hana/versions/0.1.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/hana",
+    "https://supermarket.chef.io/api/v1/cookbooks/hana/versions/0.1.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Databases",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Mode/CLI"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/hana",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/hana/versions/0.1.1/download",
+  "deprecated": false,
+  "created": "2015-11-22T16:09:20.024Z",
+  "updated": "2015-11-23T14:12:26.440Z",
+  "description": "Install/upgrade SAP Hana and SAP Hana client",
+  "maintainer": {
+    "name": "hagzag",
+    "email": "haggai.zagury@sap.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 540,
+  "downloads_count_revision": 304,
+  "repository_url": "https://github.com/sapcc/sap-hana-cookbook",
+  "issues_url": "https://github.com/sapcc/sap-hana-cookbook/issues",
+  "chef_source_url": "https://github.com/sapcc/sap-hana-cookbook",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description \n===========\nThis cookbook provides recipes for installing SAP Hana Server & Client / Sap Hana Client\nTested with Vagrant & AWS Provider\n \nFor more information, other SAP Cookbooks, questions and feedback please go to: [http://sapcc.github.io/sap-cookbook-docs/](http://sapcc.github.io/sap-cookbook-docs/)\n\nRequirements\n===========\n### Platform\n\n* AWS Image - Suse SLES 11 SP3 (checked on this AMI: ami-f1f5acc1 from region: us-west-2)\n* approx. 25GB in the rootfs directory and 5GB for the specified directory in attribute `['install'].['tempdir']`\n* AWS EC2 Instance Type: c4.4xlarge (Minimum requirements - tested on this type)\n* \n\n### Attributes\n\nAll attributes have sane default values (See `attributes/default.rb`). You can install any supported component in this cookbook, without overriding any attributes. In case you need to override an attribute(s), use either a role or a wrapper cookbook. See examples in the examples section.\n\n#### Attributes related to SAP Hana instance configuration.\n\n* `['hana'].['installpath']` - the directory into which SAP Hana will be installed.\n* `['hana'].['datapath']` - custom path for the data files, empty by default\n* `['hana'].['logpath']` - custom path for the log files, empty by default\n* `['hana'].['sid']` - the SID of the installation (HNA by default)\n* `['hana'].['instance']` - the instance number of the installation (00 by default, it will be used with the xs port later)\n* `['hana'].['userid']` - UID of the user SIDadm, which will be created during installation (1099 by default)\n* `['hana'].['password']` - SIDadm's password (Password must be > 8, and latters in upper and lower case)\n* `['hana'].['syspassword']` - password for database user SYSTEM (Password must be > 8, and latters in upper and lower case)\n* `['hana'].['checkhardware']` - flag to circumvent SAP's check, whether the used hardware is certified and meets certain requirements. Bear in mind that this is **not** meant for production systems, and don't expect any support.\n* `['hana'].['checkstoignore']` - installer checks to be ignored if the checkhardware flag is disabled\n* `['hana'].['clientsid']` - flag to specify a stand-alone Hana client installation (see below)\n* `['hana'].['import_content']` - flag to specify if HanaXS (default development) content will be imported while installation and/or upgrade\n\n#### Attributes related to the installation process.\n* `['install'].['tempdir']` - temporary directory needed during installation\n* `['install'].['files'].['sapcar']` - URL to the SAPCAR tool (for extracting SAR files)\n* `['install'].['files'].['hanadb']` - URL to the SAR file for the Hana installer\n* `['install'].['files'].['hanaclient']` - URL to the SAR file for the Hana client installer\n\n\nAll attributes under ['install'].['files'] hierarchy, must be accessible by http get method from the node on which the installation is executed.\nThe structure of ['install'].['files'].['hanadb'] archive must be a sole folder named SAP_HANA_DATABASE and all installation files in it.\nThe structure of ['install'].['files'].['hanadb'] archive must be a sole folder named SAP_HANA_CLIENT and all installation files in it.\n\n#### Attributes related to the distributed installation process.\n\n* `['hana'].['dist'].['sharedvolume']` - the nfs path (i.e server:/path) to the shared disk where the HANA will be installed including the data files and the log files. Only NFS shares are supported now. This attribute should be either an empty string or not set at all in case of a single node installation.\n* `['hana'].['dist'].['sharedmountoptions']` - The NFS share options.\n* `['hana'].['dist'].['master-mode-required']` - Only required for distributed installs with newer HANA versions - see the comments in the enable-master-mode.rb recipe.\n* `['hana'].['dist'].['waitcount']` - The number of wait loops for the NFS share to be available. Needed in case of distributed installation where the NFS share is being created in parallel to the SAP Hana node installations. Usually keep the defaults.\n* `['hana'].['dist'].['waittime']` - How much time each loop will wait. Usually keep the defaults.\n\nAll attributes under ['hana'].['dist'] hierarchy are related to distributed SAP Hana system installation process. Override only if you are installing a distributed system.\n\n---\nRecipes\n===========\n### hana::install\nInstalls single SAP Hana database on the node. \n\n### hana::install-client\nInstalls SAP Hana client on the node. The client will be installed into `['hana']['installpath']`/hdbclient.  \nThe SAP Hana client installer accepts a parameter \"*-s SID*\", thereby \"coupling\" the client to a SAP Hana installation with the given SID on the same node.  \nIf a stand-alone installation of the SAP Hana client is desired (i.e. there is **no** SAP Hana installation on the node), set the node attribute `['hana']['clientsid']` to \"false\".\n\n---\nUsage\n===========\n### Single SAP Hana node\nAdd the **[hana::install]** recipe to a new node in your landscape if you're planning a vanilla installation of SAP Hana. Change/override any attributes as required.\n\n#### Example\nTo install SAP Hana on a node, and override the installation path and the SYSTEM user password use the following role:\n\n\t\n\tname \"hana-install-single\"\n\tdescription \"Role for installing SAP Hana server\"\n\n\toverride_attributes(\n\t  \"hana\" => {\n\t    \"installpath\" => \"/your/path/hana\",\n\t    \"syspassword\" => \"YOUR-SECRET\"\n\t  }\n\t)\n\n\trun_list \"recipe[hana::install]\"\n\n### SAP Hana client on a node\nFor installing SAP Hana client on a node in your landscape, add the **[hana::install-client]** recipe to the node's run list. If it should be a stand-alone installation of SAP Hana client, set a node attribute `['hana']['clientsid']` to \"false\".\n\n#### Example\nTo install SAP Hana client on a node, use the following role:\n\n\tname \"hana-install-client\"\n\tdescription \"Role for installing SAP Hana client\"\n\n\toverride_attributes(\n\t  \"hana\" => {\n\t    \"installpath\" => \"/your/path/hana\"\n\t  }\n\t)\n\n\trun_list \"recipe[hana::install-client]\"\n\nUsage\n===========\n### Deploying SAP Hana cookbook with Vagrant & AWS Provider (kitchen will be added in updated version)\n- Install Vagrant and VirtualBox using standard Vagrant 1.1+ plugin installation methods. After\ninstalling, `vagrant up` and specify the `aws` provider. An example is\nshown below.\n\n```\n$ vagrant plugin install vagrant-aws\n...\n$ vagrant up --provider=aws\n...\n```\n\nOf course prior to doing this, you'll need to obtain an AWS-compatible\nbox file for Vagrant.\n\n## Quick Start\n\nAfter installing the plugin (instructions above), the quickest way to get\nstarted is to actually use a dummy AWS box and specify all the details\nmanually within a `config.vm.provider` block. So first, add the dummy\nbox using any name you want:\n\n```\n$ vagrant box add dummy https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box\n...\n```\n\nPlease execute the following in order to complete installation.\n\n\nFirstly please make sure you have a cloned repository of the cookbook.\n\n\tgit clone https://github.com/sapcc/sap-hana-cookbook.git\n\n\n\nVagrant Prerequisites (Please execute these commands in you're shell environment where you will run the vagrant)\n\n\t\n\ta.  Fill in the AWS values of the following attributes:\n\n     \t\texport AWS_ACCESS_KEY='';\n     \t\texport AWS_SECRET_KEY='';\n    \t\t\texport AWS_REGION='';\n    \t\t\texport AWS_KEYPAIR_NAME='';\n    \t\t\texport AWS_AMI='ami-f1f5acc1';\n    \t\t\texport AWS_INSTANCE_TYPE='';\n\t\n\tb. Fill in the HANA-Cookbook Path value (without the cookbook dir itself)\n\n \t\texport COOKBOOK_PATH='';     \n\tExample: COOKBOOK_PATH='/home/user/cookbooks/';\n\n\nCookbook Prerequisites: (Please fill in the following parameters in the HANA cookbook attributes/default.rb)\n\n\t\t# Source of binary files (please fill in the values with full address that holds the binary files)\n\n\t\tdefault['install']['files']['sapcar']                = \"\"\n\n\t\tdefault['install']['files']['hanadb']               = \"\"\n\n\t\tdefault['install']['files']['hanaclient']           = \"\"\n\n\tExample: default['install']['files']['sapcar']                = \"https://someserver.com/SAPCAR\"\n\n\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "suse",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ],
+  "chef_recipes": {
+    "hana::install": "Installs a vanilla SAP Hana on the node",
+    "hana::install-worker": "Installs a vanilla SAP Hana worker on the node",
+    "hana::install-client": "Installs SAP Hana client on the node",
+    "hana::install-lifecyclemngr": "Installs SAP Hana lifecycle manager on the node",
+    "hana::upgrade": "Upgrades an existing SAP Hana installation",
+    "hana::upgrade-client": "Upgrades an existing SAP Hana client installation",
+    "hana::install-s4h-db-cal": "installs a S4H HANA DB from a CAL image"
+  }
+}

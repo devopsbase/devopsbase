@@ -1,0 +1,260 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/qnib/alpn-elasticsearch",
+    "repository_url": "https://hub.docker.com/v2/repositories/qnib/alpn-elasticsearch",
+    "tags_url": "https://hub.docker.com/v2/repositories/qnib/alpn-elasticsearch/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/qnib/alpn-elasticsearch/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/qnib/alpn-elasticsearch/autobuild",
+    "user": "qnib",
+    "name": "alpn-elasticsearch",
+    "namespace": "qnib",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1844,
+    "last_updated": "2016-10-11T18:54:47.152473Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 191977882,
+        "id": 2639722,
+        "repository": 633356,
+        "creator": 14576,
+        "last_updater": 14576,
+        "last_updated": "2016-10-11T18:54:46.841479Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.4.0",
+        "full_size": 191239015,
+        "id": 4872868,
+        "repository": 633356,
+        "creator": 14576,
+        "last_updater": 14576,
+        "last_updated": "2016-09-15T17:42:27.483115Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.3.5",
+        "full_size": 191608801,
+        "id": 4364367,
+        "repository": 633356,
+        "creator": 14576,
+        "last_updater": 14576,
+        "last_updated": "2016-09-15T17:40:27.060399Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.3.4",
+        "full_size": 191607529,
+        "id": 4872642,
+        "repository": 633356,
+        "creator": 14576,
+        "last_updater": 14576,
+        "last_updated": "2016-09-15T17:37:57.750211Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.7.5",
+        "full_size": 189206165,
+        "id": 3702324,
+        "repository": 633356,
+        "creator": 14576,
+        "last_updater": 14576,
+        "last_updated": "2016-09-15T17:10:47.178948Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.7.4",
+        "full_size": 185521772,
+        "id": 3702226,
+        "repository": 633356,
+        "creator": 14576,
+        "last_updater": 14576,
+        "last_updated": "2016-08-11T13:29:40.540847Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "v2.3.3",
+        "full_size": 183590060,
+        "id": 4275395,
+        "repository": 633356,
+        "creator": 14576,
+        "last_updater": 14576,
+        "last_updated": "2016-08-11T13:12:06.742969Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "qnib/alpn-elasticsearch"
+  },
+  "name": "qnib/alpn-elasticsearch Docker container",
+  "description": "Alpine image holding elasticsearch",
+  "readme": "# alpn-elasticsearch\nAlpine image holding elasticsearch\n",
+  "dockerfile": "FROM qnib/alpn-jre8\n\nENV ES_VER=2.3.5 \\\n    ES_URL=https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch \\\n    ES_DATA_NODE=true \\\n    ES_MASTER_NODE=true \\\n    ES_HEAP_SIZE=512m \\\n    ES_NET_HOST=0.0.0.0 \\\n    ES_PATH_DATA=/opt/elasticsearch/data/ \\\n    ES_PATH_LOGS=/opt/elasticsearch/logs \\\n    ES_MLOCKALL=true\nRUN apk add --update curl nmap jq vim \\\n && curl -sL ${ES_URL}/${ES_VER}/elasticsearch-${ES_VER}.tar.gz |tar xfz - -C /opt/ \\\n && mv /opt/elasticsearch-${ES_VER} /opt/elasticsearch \\\n && rm -rf /var/cache/apk/* /tmp/* \\\n && /opt/elasticsearch/bin/plugin install lmenezes/elasticsearch-kopf\nVOLUME [\"/opt/elasticsearch/logs\", \"/opt/elasticsearch/data/\"]\nRUN adduser -s /bin/bash -u 2000 -h /opt/elasticsearch -H -D elasticsearch \\\n && echo \"export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/jdk/bin\" >> /opt/elasticsearch/.bash_profile \\\n && chown -R elasticsearch: /opt/elasticsearch \nADD etc/consul-templates/elasticsearch/elasticsearch.yml.ctmpl \\\n    etc/consul-templates/elasticsearch/logging.yml.ctmpl \\\n    etc/consul-templates/elasticsearch/elasticsearch.json.ctmpl \\\n    /etc/consul-templates/elasticsearch/\nADD opt/qnib/elasticsearch/bin/start.sh \\\n    opt/qnib/elasticsearch/bin/stop.sh \\\n    opt/qnib/elasticsearch/bin/register.sh \\\n    opt/qnib/elasticsearch/bin/healthcheck.sh \\\n    /opt/qnib/elasticsearch/bin/\nADD opt/qnib/elasticsearch/index-registration/settings/*.json /opt/qnib/elasticsearch/index-registration/settings/\nADD etc/supervisord.d/elasticsearch.ini \\\n    etc/supervisord.d/es-register.ini \\\n    /etc/supervisord.d/\nADD /etc/consul.d/elasticsearch.json /etc/consul.d/\nRUN apk add --update python git bc \\\n && curl -sLo /opt/es-backup-scripts.zip https://github.com/import-io/es-backup-scripts/archive/master.zip \\\n && unzip -q -d /opt/ /opt/es-backup-scripts.zip \\\n && rm -f /opt/es-backup-scripts.zip \\\n && mv /opt/es-backup-scripts-master/ /opt/es-backup-scripts \\\n && apk del git \\\n && rm -rf /var/cache/apk/* /tmp/* \\\n && mkdir -p /opt/qnib/elasticsearch/index-registration/mappings\nHEALTHCHECK --interval=2s --retries=300 --timeout=1s \\\n CMD /opt/qnib/elasticsearch/bin/healthcheck.sh\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "etc/consul-templates/elasticsearch/elasticsearch.yml.ctmpl",
+        "dest": ""
+      },
+      {
+        "source": "opt/qnib/elasticsearch/bin/start.sh",
+        "dest": ""
+      },
+      {
+        "source": "opt/qnib/elasticsearch/index-registration/settings/*.json",
+        "dest": "/opt/qnib/elasticsearch/index-registration/settings/"
+      },
+      {
+        "source": "etc/supervisord.d/elasticsearch.ini",
+        "dest": ""
+      },
+      {
+        "source": "/etc/consul.d/elasticsearch.json",
+        "dest": "/etc/consul.d/"
+      }
+    ],
+    "expose": [],
+    "volume": [
+      "[\"/opt/elasticsearch/logs\", \"/opt/elasticsearch/data/\"]"
+    ],
+    "run": [
+      "apk add --update curl nmap jq vim  && curl -sL ${ES_URL}/${ES_VER}/elasticsearch-${ES_VER}.tar.gz |tar xfz - -C /opt/  && mv /opt/elasticsearch-${ES_VER} /opt/elasticsearch  && rm -rf /var/cache/apk/* /tmp/*  && /opt/elasticsearch/bin/plugin install lmenezes/elasticsearch-kopf",
+      "adduser -s /bin/bash -u 2000 -h /opt/elasticsearch -H -D elasticsearch  && echo \"export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/jdk/bin\" >> /opt/elasticsearch/.bash_profile  && chown -R elasticsearch: /opt/elasticsearch ",
+      "apk add --update python git bc  && curl -sLo /opt/es-backup-scripts.zip https://github.com/import-io/es-backup-scripts/archive/master.zip  && unzip -q -d /opt/ /opt/es-backup-scripts.zip  && rm -f /opt/es-backup-scripts.zip  && mv /opt/es-backup-scripts-master/ /opt/es-backup-scripts  && apk del git  && rm -rf /var/cache/apk/* /tmp/*  && mkdir -p /opt/qnib/elasticsearch/index-registration/mappings"
+    ],
+    "workdir": [],
+    "from": "qnib/alpn-jre8",
+    "env": {
+      "ES_VER": "2.3.5",
+      "": "",
+      "ES_URL": "https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch",
+      "ES_DATA_NODE": "true",
+      "ES_MASTER_NODE": "true",
+      "ES_HEAP_SIZE": "512m",
+      "ES_NET_HOST": "0.0.0.0",
+      "ES_PATH_DATA": "/opt/elasticsearch/data/",
+      "ES_PATH_LOGS": "/opt/elasticsearch/logs",
+      "ES_MLOCKALL": "true"
+    },
+    "healthcheck": "--interval=2s --retries=300 --timeout=1s  CMD /opt/qnib/elasticsearch/bin/healthcheck.sh"
+  },
+  "source_repository_url": "https://github.com/qnib/alpn-elasticsearch.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/qnib/alpn-elasticsearch",
+  "docker_repository": "qnib/alpn-elasticsearch",
+  "docker_image": "qnib/alpn-elasticsearch",
+  "parameters_schema": {
+    "ES_VER": {
+      "default": "2.3.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ES_URL": {
+      "default": "https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ES_DATA_NODE": {
+      "default": "true",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ES_MASTER_NODE": {
+      "default": "true",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ES_HEAP_SIZE": {
+      "default": "512m",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ES_NET_HOST": {
+      "default": "0.0.0.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ES_PATH_DATA": {
+      "default": "/opt/elasticsearch/data/",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ES_PATH_LOGS": {
+      "default": "/opt/elasticsearch/logs",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ES_MLOCKALL": {
+      "default": "true",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "qnib/alpn-elasticsearch",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/qnib/alpn-elasticsearch",
+    "https://hub.docker.com/v2/repositories/qnib/alpn-elasticsearch",
+    "https://github.com/qnib/alpn-elasticsearch.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/qnib/alpn-elasticsearch",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,145 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/scandio/apache-httpd-crowd",
+    "repository_url": "https://hub.docker.com/v2/repositories/scandio/apache-httpd-crowd",
+    "tags_url": "https://hub.docker.com/v2/repositories/scandio/apache-httpd-crowd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/scandio/apache-httpd-crowd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/scandio/apache-httpd-crowd/autobuild",
+    "user": "scandio",
+    "name": "apache-httpd-crowd",
+    "namespace": "scandio",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 152,
+    "last_updated": "2016-07-05T10:04:04.609926Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2.3",
+        "full_size": 109792568,
+        "id": 1850478,
+        "repository": 500295,
+        "creator": 276520,
+        "last_updater": 276520,
+        "last_updated": "2016-07-05T10:04:04.260046Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 113788994,
+        "id": 1840783,
+        "repository": 500295,
+        "creator": 276520,
+        "last_updater": 276520,
+        "last_updated": "2016-02-08T12:51:25.167282Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "scandio/apache-crowd-docker"
+  },
+  "name": "scandio/apache-httpd-crowd Docker container",
+  "description": "Apache httpd with Atlassian Crowd authentication using https://github.com/fgimian/cwdapache",
+  "readme": null,
+  "dockerfile": "FROM ubuntu:14.04\nMAINTAINER Scandio GmbH\n\n# Environment variables for Atlassian Crowd\nENV CROWD_CONNECTOR_DOWNLOAD_URL    https://github.com/fgimian/cwdapache.git\nENV CROWD_CONNECTOR_VERSION         2.3\nENV IMPORTCERT                      false\nENV IMPORTCERTPATH                  /root/docker/certs\n\n# Install Apache2\nRUN apt-get update \\\n    && apt-get dist-upgrade -y \\\n    && apt-get install -y --no-install-recommends \\\n        apache2 \\\n        apache2-mpm-worker \\\n        gettext-base \\\n        libcurl4-openssl-dev \\\n        lynx \\\n        curl \\\n        ca-certificates \\\n    && apt-get autoremove -y \\\n    && rm -r /var/lib/apt/lists/*\n\n# Build Atlassian Crowd Apache Connector\nRUN buildDeps=' \\\n        autoconf \\\n        automake \\\n        apache2-threaded-dev \\\n        git \\\n        libtool \\\n        libsvn-dev \\\n        libxml2-dev \\\n        libapache2-svn \\\n        make \\\n    ' \\\n\n    # Install build dependencies\n    && apt-get update \\\n    && apt-get install -y --no-install-recommends $buildDeps \\\n\n    # Download Atlassian Crowd Connector\n    && mkdir -p /usr/local/src/crowd \\\n    && cd /usr/local/src/crowd \\\n    && git clone ${CROWD_CONNECTOR_DOWNLOAD_URL} . \\\n    && git checkout tags/${CROWD_CONNECTOR_VERSION} \\\n\n    # Build and install Atlassian Crowd Connector\n    && aclocal \\\n    && libtoolize \\\n    && autoheader \\\n    && automake --force-missing --add-missing \\\n    && autoreconf \\\n    && ./configure \\\n    && make \\\n    && make install \\\n    && libtool --finish /usr/local/lib \\\n\n    # Remove build files/folders and build dependencies\n    && rm -r /usr/local/src/crowd \\\n    && apt-get purge -y --auto-remove $buildDeps \\\n    && rm -r /var/lib/apt/lists/*\n\nRUN mkdir -p /root/docker/apache2\nCOPY conf/security.conf /root/docker/apache2/conf/\nCOPY conf/ssl.conf /root/docker/apache2/conf/\nCOPY init/configure-and-start.sh /root/docker/apache2/\nCOPY init/reverse-proxy.conf.template /root/docker/apache2/\n\nEXPOSE 80 443\nVOLUME [\"/var/log/apache2\", \"/etc/apache2\"]\n\nCMD [\"/root/docker/apache2/configure-and-start.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/var/log/apache2\", \"/etc/apache2\"]"
+    ],
+    "run": [
+      "apt-get update     && apt-get dist-upgrade -y     && apt-get install -y --no-install-recommends         apache2         apache2-mpm-worker         gettext-base         libcurl4-openssl-dev         lynx         curl         ca-certificates     && apt-get autoremove -y     && rm -r /var/lib/apt/lists/*",
+      "buildDeps='         autoconf         automake         apache2-threaded-dev         git         libtool         libsvn-dev         libxml2-dev         libapache2-svn         make     ' ",
+      "mkdir -p /root/docker/apache2"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "Scandio GmbH",
+    "env": {
+      "CROWD_CONNECTOR_DOWNLOAD_URL": "",
+      "": "",
+      "CROWD_CONNECTOR_VERSION": "",
+      "IMPORTCERT": "",
+      "IMPORTCERTPATH": ""
+    },
+    "copy": "init/reverse-proxy.conf.template /root/docker/apache2/",
+    "cmd": "[\"/root/docker/apache2/configure-and-start.sh\"]"
+  },
+  "source_repository_url": "https://bitbucket.org/scandio/apache-crowd-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/scandio/apache-crowd-docker",
+  "docker_repository": "scandio/apache-httpd-crowd",
+  "docker_image": "scandio/apache-httpd-crowd",
+  "parameters_schema": {
+    "CROWD_CONNECTOR_DOWNLOAD_URL": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CROWD_CONNECTOR_VERSION": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "IMPORTCERT": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "IMPORTCERTPATH": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "scandio/apache-httpd-crowd",
+  "revision": "2.3",
+  "uris": [
+    "https://hub.docker.com/r/scandio/apache-httpd-crowd",
+    "https://hub.docker.com/v2/repositories/scandio/apache-httpd-crowd",
+    "https://bitbucket.org/scandio/apache-crowd-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Version Control/Git",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/User Management"
+  ],
+  "info_url": "https://hub.docker.com/r/scandio/apache-httpd-crowd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,154 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/gencatcloud/postgres",
+    "repository_url": "https://hub.docker.com/v2/repositories/gencatcloud/postgres",
+    "tags_url": "https://hub.docker.com/v2/repositories/gencatcloud/postgres/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/gencatcloud/postgres/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/gencatcloud/postgres/autobuild",
+    "user": "gencatcloud",
+    "name": "postgres",
+    "namespace": "gencatcloud",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 78,
+    "last_updated": "2016-10-06T14:16:19.010799Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "9.5",
+        "full_size": 101301827,
+        "id": 5278539,
+        "repository": 761751,
+        "creator": 926040,
+        "last_updater": 926040,
+        "last_updated": "2016-10-06T14:16:18.532229Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "suportcloud/Postgres"
+  },
+  "name": "gencatcloud/postgres Docker container",
+  "description": "image postgres",
+  "readme": null,
+  "dockerfile": "FROM debian:jessie\r\n\r\n# Aquesta imatge es basa en la imatge oficial de postgres -> https://hub.docker.com/_/postgres/\r\n# El docker-entrypoint s'ha de modificar pel tema de permisos de bluemix\r\n\r\n# explicitly set user/group IDs\r\nRUN groupadd -r postgres --gid=999 && useradd -r -g postgres --uid=999 postgres\r\n\r\n# grab gosu for easy step-down from root\r\nENV GOSU_VERSION 1.7\r\nRUN set -x \\\r\n\t&& apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/* \\\r\n\t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \\\r\n\t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \\\r\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\r\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\r\n\t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\r\n\t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\r\n\t&& chmod +x /usr/local/bin/gosu \\\r\n\t&& gosu nobody true \\\r\n\t&& apt-get purge -y --auto-remove ca-certificates wget\r\n\r\n# make the \"es_ES.UTF-8\" locale so postgres will be utf-8 enabled by default\r\nRUN apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/* \\\r\n\t&& localedef -i es_ES -c -f UTF-8 -A /usr/share/locale/locale.alias es_ES.UTF-8\r\nENV LANG es_ES.utf8\r\n\r\nRUN mkdir /docker-entrypoint-initdb.d\r\nRUN mkdir /userscripts\r\n\r\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8\r\n\r\nENV PG_MAJOR 9.5\r\nENV PG_VERSION 9.5.3-1.pgdg80+1\r\n\r\nRUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main' $PG_MAJOR > /etc/apt/sources.list.d/pgdg.list\r\n\r\nRUN apt-get update \\\r\n\t&& apt-get install -y postgresql-common \\\r\n\t&& sed -ri 's/#(create_main_cluster) .*$/\\1 = false/' /etc/postgresql-common/createcluster.conf \\\r\n\t&& apt-get install -y \\\r\n\t\tpostgresql-$PG_MAJOR=$PG_VERSION \\\r\n\t\tpostgresql-contrib-$PG_MAJOR=$PG_VERSION \\\r\n\t&& rm -rf /var/lib/apt/lists/*\r\n\r\n# make the sample config easier to munge (and \"correct by default\")\r\nRUN mv -v /usr/share/postgresql/$PG_MAJOR/postgresql.conf.sample /usr/share/postgresql/ \\\r\n\t&& ln -sv ../postgresql.conf.sample /usr/share/postgresql/$PG_MAJOR/ \\\r\n\t&& sed -ri \"s!^#?(listen_addresses)\\s*=\\s*\\S+.*!\\1 = '*'!\" /usr/share/postgresql/postgresql.conf.sample\r\n\r\nRUN mkdir -p /var/run/postgresql && chown -R postgres /var/run/postgresql\r\n\r\nENV PATH /usr/lib/postgresql/$PG_MAJOR/bin:$PATH\r\nENV PGBASE /var/lib/postgresql/data\r\nENV PGDATA /var/lib/postgresql/data/pgdata\r\nVOLUME /var/lib/postgresql/data\r\n\r\nCOPY docker-entrypoint.sh /\r\nRUN chmod 0755 /docker-entrypoint.sh\r\n\r\nENTRYPOINT [\"/docker-entrypoint.sh\"]\r\n\r\nEXPOSE 5432\r\n\r\n#Fitxer d'entrada\r\nCOPY run.sh /entrypoint.sh\r\nRUN chmod 0755 /entrypoint.sh\r\n\r\n#Copiem el fitxer wait-for-it\r\nCOPY wait-for-it.sh /\r\nRUN chmod 0755 /wait-for-it.sh\r\n\r\nCMD [\"/entrypoint.sh\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5432
+    ],
+    "volume": [
+      "/var/lib/postgresql/data"
+    ],
+    "run": [
+      "groupadd -r postgres --gid=999 && useradd -r -g postgres --uid=999 postgres",
+      "set -x \\",
+      "apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/* \\",
+      "mkdir /docker-entrypoint-initdb.d",
+      "mkdir /userscripts",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8",
+      "echo 'deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main' $PG_MAJOR > /etc/apt/sources.list.d/pgdg.list",
+      "apt-get update \\",
+      "mv -v /usr/share/postgresql/$PG_MAJOR/postgresql.conf.sample /usr/share/postgresql/ \\",
+      "mkdir -p /var/run/postgresql && chown -R postgres /var/run/postgresql",
+      "chmod 0755 /docker-entrypoint.sh",
+      "chmod 0755 /entrypoint.sh",
+      "chmod 0755 /wait-for-it.sh"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "env": {
+      "GOSU_VERSION": "1.7",
+      "LANG": "es_ES.utf8",
+      "PG_MAJOR": "9.5",
+      "PG_VERSION": "9.5.3-1.pgdg80+1",
+      "PATH": "/usr/lib/postgresql/$PG_MAJOR/bin:$PATH",
+      "PGBASE": "/var/lib/postgresql/data",
+      "PGDATA": "/var/lib/postgresql/data/pgdata"
+    },
+    "copy": "wait-for-it.sh /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/suportcloud/Postgres.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/suportcloud/Postgres",
+  "docker_repository": "gencatcloud/postgres",
+  "docker_image": "gencatcloud/postgres",
+  "parameters_schema": {
+    "GOSU_VERSION": {
+      "default": "1.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "es_ES.utf8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PG_MAJOR": {
+      "default": "9.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PG_VERSION": {
+      "default": "9.5.3-1.pgdg80+1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/usr/lib/postgresql/$PG_MAJOR/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGBASE": {
+      "default": "/var/lib/postgresql/data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGDATA": {
+      "default": "/var/lib/postgresql/data/pgdata",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5432
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "gencatcloud/postgres",
+  "revision": "9.5",
+  "uris": [
+    "https://hub.docker.com/r/gencatcloud/postgres",
+    "https://hub.docker.com/v2/repositories/gencatcloud/postgres",
+    "https://github.com/suportcloud/Postgres.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/gencatcloud/postgres",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

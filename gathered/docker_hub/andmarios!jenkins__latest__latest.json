@@ -1,0 +1,138 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/andmarios/jenkins",
+    "repository_url": "https://hub.docker.com/v2/repositories/andmarios/jenkins",
+    "tags_url": "https://hub.docker.com/v2/repositories/andmarios/jenkins/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/andmarios/jenkins/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/andmarios/jenkins/autobuild",
+    "user": "andmarios",
+    "name": "jenkins",
+    "namespace": "andmarios",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 321,
+    "last_updated": "2016-09-06T17:53:41.411853Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 568439899,
+        "id": 190663,
+        "repository": 196050,
+        "creator": 62439,
+        "last_updater": 62439,
+        "last_updated": "2016-09-06T17:53:36.255091Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "andmarios/docker"
+  },
+  "name": "andmarios/jenkins Docker container",
+  "description": "Jenkins image with some extra sauce.",
+  "readme": "# Jenkins image with some extra sauce.\n\nYou should use a custom folder for jenkins home.\n\nUsually* it is enough to:\n\n    $ mkdir /path/to/jenkins/home\n    $ chown -R 61001:61001 /path/to/jenkins-home\n\nTo run:\n\n    $ docker run --name jenkins -p 8080:8080 -v /path/to/jenkins-home:/mnt/jenkins andmarios/jenkins\n\n*If you are on a SELinux enabled host, you also need:\n\n    # chcon -Rt svirt_sandbox_file_t /path/to/jenkins-home\n",
+  "dockerfile": "FROM centos:latest\nMAINTAINER Marios Andreopoulos <opensource@andmarios.com>\n\nRUN yum install -y epel-release && \\\n    yum groupinstall -y 'Development Tools' && \\\n    yum install -y \\\n        git \\\n        mercurial \\\n        java-1.8.0-openjdk-headless \\\n        java-1.8.0-openjdk-devel \\\n        nano \\\n        wget \\\n        net-tools \\\n        jq \\\n        ncftp \\\n        tar \\\n        bzip2 \\\n        sudo \\\n        golang \\\n        python-pip python-pillow && \\\n    pip install Sphinx mkdocs && \\\n    pip install sphinxcontrib-blockdiag && \\\n    echo \"progress = dot:mega\" | tee /etc/wgetrc\n\nRUN curl -sL https://rpm.nodesource.com/setup | bash - && \\\n    yum install -y nodejs\n\nRUN wget https://services.gradle.org/distributions/gradle-2.13-bin.zip -O /tmp/gradle-2.13.zip && \\\n    unzip /tmp/gradle-2.13.zip -d /opt/ && \\\n    rm -f /tmp/gradle-2.13.zip\n\nRUN curl http://pkg.jenkins-ci.org/redhat/jenkins.repo | tee /etc/yum.repos.d/jenkins.repo && \\\n    rpm --import http://pkg.jenkins-ci.org/redhat/jenkins-ci.org.key && \\\n    yum install -y jenkins\n\n# Prepare for Jenkins. Jenkins user is already set by `yum install jenkins`\nENV JENKINS_HOME /mnt/jenkins\nENV HOME /mnt/jenkins\nRUN mkdir /mnt/jenkins && \\\n    chown -R jenkins:jenkins /mnt/jenkins && \\\n    usermod -a -G root jenkins\n\n# Since we use shared volumes and bind mounts, we want a standardized UID/GID. We use a number above `login.defs` max\n# Jenkins UID/GID: 61001\nRUN find / -path /proc -prune -o -user  jenkins -exec chown -h 61001 {} \\; && \\\n    find / -path /proc -prune -o -group jenkins -exec chgrp -h 61001 {} \\; && \\\n    usermod  --uid 61001 jenkins && \\\n    groupmod --gid 61001 jenkins && \\\n    usermod  --gid 61001 jenkins\n\n# Interestingly on CentOS 7 you can't bind mount a socket inside /run, this way it will be mounted a /\nRUN ln -s /docker.sock /run/docker.sock\n\nUSER jenkins\nENV GRADLE_HOME=/opt/gradle-2.13\nENV JAVA_HOME=/usr/lib/jvm/java\nENV PATH=\"$PATH:$GRADLE_HOME/bin\"\nWORKDIR /mnt/jenkins\nVOLUME [\"/mnt/jenkins\"]\nEXPOSE 8080\nCMD [\"java\", \"-jar\", \"/usr/lib/jenkins/jenkins.war\", \"-Dhudson.diyChunking=true\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [
+      "[\"/mnt/jenkins\"]"
+    ],
+    "run": [
+      "yum install -y epel-release &&     yum groupinstall -y 'Development Tools' &&     yum install -y         git         mercurial         java-1.8.0-openjdk-headless         java-1.8.0-openjdk-devel         nano         wget         net-tools         jq         ncftp         tar         bzip2         sudo         golang         python-pip python-pillow &&     pip install Sphinx mkdocs &&     pip install sphinxcontrib-blockdiag &&     echo \"progress = dot:mega\" | tee /etc/wgetrc",
+      "curl -sL https://rpm.nodesource.com/setup | bash - &&     yum install -y nodejs",
+      "wget https://services.gradle.org/distributions/gradle-2.13-bin.zip -O /tmp/gradle-2.13.zip &&     unzip /tmp/gradle-2.13.zip -d /opt/ &&     rm -f /tmp/gradle-2.13.zip",
+      "curl http://pkg.jenkins-ci.org/redhat/jenkins.repo | tee /etc/yum.repos.d/jenkins.repo &&     rpm --import http://pkg.jenkins-ci.org/redhat/jenkins-ci.org.key &&     yum install -y jenkins",
+      "mkdir /mnt/jenkins &&     chown -R jenkins:jenkins /mnt/jenkins &&     usermod -a -G root jenkins",
+      "find / -path /proc -prune -o -user  jenkins -exec chown -h 61001 {} \\; &&     find / -path /proc -prune -o -group jenkins -exec chgrp -h 61001 {} \\; &&     usermod  --uid 61001 jenkins &&     groupmod --gid 61001 jenkins &&     usermod  --gid 61001 jenkins",
+      "ln -s /docker.sock /run/docker.sock"
+    ],
+    "workdir": [
+      "/mnt/jenkins"
+    ],
+    "from": "centos:latest",
+    "maintainer": "Marios Andreopoulos <opensource@andmarios.com>",
+    "env": {
+      "JENKINS_HOME": "/mnt/jenkins",
+      "HOME": "/mnt/jenkins",
+      "GRADLE_HOME": "/opt/gradle-2.13",
+      "JAVA_HOME": "/usr/lib/jvm/java",
+      "PATH": "\"$PATH:$GRADLE_HOME/bin\""
+    },
+    "user": "jenkins",
+    "cmd": "[\"java\", \"-jar\", \"/usr/lib/jenkins/jenkins.war\", \"-Dhudson.diyChunking=true\"]"
+  },
+  "source_repository_url": "https://github.com/andmarios/docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/andmarios/docker",
+  "docker_repository": "andmarios/jenkins",
+  "docker_image": "andmarios/jenkins",
+  "parameters_schema": {
+    "JENKINS_HOME": {
+      "default": "/mnt/jenkins",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/mnt/jenkins",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GRADLE_HOME": {
+      "default": "/opt/gradle-2.13",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_HOME": {
+      "default": "/usr/lib/jvm/java",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "\"$PATH:$GRADLE_HOME/bin\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "andmarios/jenkins",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/andmarios/jenkins",
+    "https://hub.docker.com/v2/repositories/andmarios/jenkins",
+    "https://github.com/andmarios/docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Integration/Jenkins",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/andmarios/jenkins",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

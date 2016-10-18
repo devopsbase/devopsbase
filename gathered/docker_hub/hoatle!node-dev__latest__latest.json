@@ -1,0 +1,214 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/hoatle/node-dev",
+    "repository_url": "https://hub.docker.com/v2/repositories/hoatle/node-dev",
+    "tags_url": "https://hub.docker.com/v2/repositories/hoatle/node-dev/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/hoatle/node-dev/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/hoatle/node-dev/autobuild",
+    "user": "hoatle",
+    "name": "node-dev",
+    "namespace": "hoatle",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 187,
+    "last_updated": "2016-10-13T00:50:21.763457Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 324958475,
+        "id": 3082861,
+        "repository": 696483,
+        "creator": 51055,
+        "last_updater": 51055,
+        "last_updated": "2016-10-13T00:50:20.688824Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "4.4",
+        "full_size": 324958740,
+        "id": 3756253,
+        "repository": 696483,
+        "creator": 51055,
+        "last_updater": 51055,
+        "last_updated": "2016-10-13T00:24:21.515774Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "hoatle/docker-node-dev"
+  },
+  "name": "hoatle/node-dev Docker container",
+  "description": "docker image for developing with node.js with building tools",
+  "readme": "docker-node-dev\n==============\n\ndocker image for developing with node.js with building tools included:\n\n- ruby and compass\n- grunt\n- gulp\n- yeoman\n- bower\n- etc.\n",
+  "dockerfile": "FROM node:4.4\n\nMAINTAINER Hoat Le <hoatle@teracy.com>\n\n# from https://github.com/docker-library/ruby/blob/72ff2d4380a136197e3f9e0c719933d7cf3161d0/2.3/Dockerfile\n# skip installing gem documentation\nRUN mkdir -p /usr/local/etc \\\n    && { \\\n        echo 'install: --no-document'; \\\n        echo 'update: --no-document'; \\\n    } >> /usr/local/etc/gemrc\n\nENV RUBY_MAJOR 2.3\nENV RUBY_VERSION 2.3.1\nENV RUBY_DOWNLOAD_SHA256 b87c738cb2032bf4920fef8e3864dc5cf8eae9d89d8d523ce0236945c5797dcd\nENV RUBYGEMS_VERSION 2.6.4\n\n# some of ruby's build scripts are written in ruby\n# we purge this later to make sure our final image uses what we just built\nRUN set -ex \\\n    && buildDeps=' \\\n        bison \\\n        libgdbm-dev \\\n        ruby \\\n    ' \\\n    && apt-get update \\\n    && apt-get install -y --no-install-recommends $buildDeps \\\n    && rm -rf /var/lib/apt/lists/* \\\n    && curl -fSL -o ruby.tar.gz \"http://cache.ruby-lang.org/pub/ruby/$RUBY_MAJOR/ruby-$RUBY_VERSION.tar.gz\" \\\n    && echo \"$RUBY_DOWNLOAD_SHA256 *ruby.tar.gz\" | sha256sum -c - \\\n    && mkdir -p /usr/src/ruby \\\n    && tar -xzf ruby.tar.gz -C /usr/src/ruby --strip-components=1 \\\n    && rm ruby.tar.gz \\\n    && cd /usr/src/ruby \\\n    && { echo '#define ENABLE_PATH_CHECK 0'; echo; cat file.c; } > file.c.new && mv file.c.new file.c \\\n    && autoconf \\\n    && ./configure --disable-install-doc \\\n    && make -j\"$(nproc)\" \\\n    && make install \\\n    && apt-get purge -y --auto-remove $buildDeps \\\n    && gem update --system $RUBYGEMS_VERSION \\\n    && rm -r /usr/src/ruby\n\nENV BUNDLER_VERSION 1.12.3\n\nRUN gem install bundler --version \"$BUNDLER_VERSION\"\n\n# install things globally, for great justice\n# and don't create \".bundle\" in all our apps\nENV GEM_HOME /usr/local/bundle\nENV BUNDLE_PATH=\"$GEM_HOME\" \\\n    BUNDLE_BIN=\"$GEM_HOME/bin\" \\\n    BUNDLE_SILENCE_ROOT_WARNING=1 \\\n    BUNDLE_APP_CONFIG=\"$GEM_HOME\"\nENV PATH $BUNDLE_BIN:$PATH\nRUN mkdir -p \"$GEM_HOME\" \"$BUNDLE_BIN\" \\\n    && chmod 777 \"$GEM_HOME\" \"$BUNDLE_BIN\"\n\nRUN gem install compass\n\nENV NPM_VERSION=3.9.0 GRUNT_VERSION=1.2.0 YEOMAN_VERSION=1.8.1 BOWER_VERSION=1.7.9 GULP_VERSION=1.2.1\n\nRUN npm cache clean && npm install -g npm@$NPM_VERSION\nRUN npm install -g grunt-cli@$GRUNT_VERSION yo@$YEOMAN_VERSION bower@$BOWER_VERSION gulp-cli@$GULP_VERSION\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "mkdir -p /usr/local/etc     && {         echo 'install: --no-document';         echo 'update: --no-document';     } >> /usr/local/etc/gemrc",
+      "set -ex     && buildDeps='         bison         libgdbm-dev         ruby     '     && apt-get update     && apt-get install -y --no-install-recommends $buildDeps     && rm -rf /var/lib/apt/lists/*     && curl -fSL -o ruby.tar.gz \"http://cache.ruby-lang.org/pub/ruby/$RUBY_MAJOR/ruby-$RUBY_VERSION.tar.gz\"     && echo \"$RUBY_DOWNLOAD_SHA256 *ruby.tar.gz\" | sha256sum -c -     && mkdir -p /usr/src/ruby     && tar -xzf ruby.tar.gz -C /usr/src/ruby --strip-components=1     && rm ruby.tar.gz     && cd /usr/src/ruby     && { echo '#define ENABLE_PATH_CHECK 0'; echo; cat file.c; } > file.c.new && mv file.c.new file.c     && autoconf     && ./configure --disable-install-doc     && make -j\"$(nproc)\"     && make install     && apt-get purge -y --auto-remove $buildDeps     && gem update --system $RUBYGEMS_VERSION     && rm -r /usr/src/ruby",
+      "gem install bundler --version \"$BUNDLER_VERSION\"",
+      "mkdir -p \"$GEM_HOME\" \"$BUNDLE_BIN\"     && chmod 777 \"$GEM_HOME\" \"$BUNDLE_BIN\"",
+      "gem install compass",
+      "npm cache clean && npm install -g npm@$NPM_VERSION",
+      "npm install -g grunt-cli@$GRUNT_VERSION yo@$YEOMAN_VERSION bower@$BOWER_VERSION gulp-cli@$GULP_VERSION"
+    ],
+    "workdir": [],
+    "from": "node:4.4",
+    "maintainer": "Hoat Le <hoatle@teracy.com>",
+    "env": {
+      "RUBY_MAJOR": "2.3",
+      "RUBY_VERSION": "2.3.1",
+      "RUBY_DOWNLOAD_SHA256": "b87c738cb2032bf4920fef8e3864dc5cf8eae9d89d8d523ce0236945c5797dcd",
+      "RUBYGEMS_VERSION": "2.6.4",
+      "BUNDLER_VERSION": "1.12.3",
+      "GEM_HOME": "/usr/local/bundle",
+      "BUNDLE_PATH": "\"$GEM_HOME\"",
+      "": "",
+      "BUNDLE_BIN": "\"$GEM_HOME/bin\"",
+      "BUNDLE_SILENCE_ROOT_WARNING": "1",
+      "BUNDLE_APP_CONFIG": "\"$GEM_HOME\"",
+      "PATH": "$BUNDLE_BIN:$PATH",
+      "NPM_VERSION": "3.9.0",
+      "GRUNT_VERSION": "1.2.0",
+      "YEOMAN_VERSION": "1.8.1",
+      "BOWER_VERSION": "1.7.9",
+      "GULP_VERSION": "1.2.1"
+    }
+  },
+  "source_repository_url": "https://github.com/hoatle/docker-node-dev.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/hoatle/docker-node-dev",
+  "docker_repository": "hoatle/node-dev",
+  "docker_image": "hoatle/node-dev",
+  "parameters_schema": {
+    "RUBY_MAJOR": {
+      "default": "2.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RUBY_VERSION": {
+      "default": "2.3.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RUBY_DOWNLOAD_SHA256": {
+      "default": "b87c738cb2032bf4920fef8e3864dc5cf8eae9d89d8d523ce0236945c5797dcd",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RUBYGEMS_VERSION": {
+      "default": "2.6.4",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLER_VERSION": {
+      "default": "1.12.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GEM_HOME": {
+      "default": "/usr/local/bundle",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_PATH": {
+      "default": "\"$GEM_HOME\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_BIN": {
+      "default": "\"$GEM_HOME/bin\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_SILENCE_ROOT_WARNING": {
+      "default": "1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_APP_CONFIG": {
+      "default": "\"$GEM_HOME\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$BUNDLE_BIN:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NPM_VERSION": {
+      "default": "3.9.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GRUNT_VERSION": {
+      "default": "1.2.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "YEOMAN_VERSION": {
+      "default": "1.8.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BOWER_VERSION": {
+      "default": "1.7.9",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GULP_VERSION": {
+      "default": "1.2.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "hoatle/node-dev",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/hoatle/node-dev",
+    "https://hub.docker.com/v2/repositories/hoatle/node-dev",
+    "https://github.com/hoatle/docker-node-dev.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/JavaScript/Node.js",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Build"
+  ],
+  "info_url": "https://hub.docker.com/r/hoatle/node-dev",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

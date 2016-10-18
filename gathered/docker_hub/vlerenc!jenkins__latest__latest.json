@@ -1,0 +1,100 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/vlerenc/jenkins",
+    "repository_url": "https://hub.docker.com/v2/repositories/vlerenc/jenkins",
+    "tags_url": "https://hub.docker.com/v2/repositories/vlerenc/jenkins/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/vlerenc/jenkins/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/vlerenc/jenkins/autobuild",
+    "user": "vlerenc",
+    "name": "jenkins",
+    "namespace": "vlerenc",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 161,
+    "last_updated": "2016-10-11T20:00:54.676729Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 313223450,
+        "id": 1568072,
+        "repository": 447989,
+        "creator": 340530,
+        "last_updater": 340530,
+        "last_updated": "2016-10-11T20:00:54.229452Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "vlerenc/docker-jenkins"
+  },
+  "name": "vlerenc/jenkins Docker container",
+  "description": "Docker image for Jenkins to be deployed with Cloud Foundry community containers-broker.",
+  "readme": "# Jenkins Dockerfile\n\nA Dockerfile that produces a Docker Image for [Jenkins](https://jenkins-ci.org/).\n\n## Jenkins version\n\nThe `master` branch currently hosts Jenkins latest (no specific version).\n\nDifferent versions of Jenkins are located at the github repo [branches](https://github.com/vlerenc/docker-jenkins/branches).\n\n## Usage\n\n### Build the image\n\nTo create the image `vlerenc/jenkins`, execute the following command on the `docker-jenkins` folder:\n\n```\n$ docker build -t vlerenc/jenkins .\n```\n\n### Run the image\n\nTo run the image and bind to host port 8080:\n\n```\n$ docker run -d --name jenkins -p 8080:8080\n```\n\nThe first time you run your container, a new user `admin` with all privileges will be created with a random password.\nTo get the password, check the logs of the container by running:\n\n```\ndocker logs <CONTAINER_ID>\n```\n\nYou will see an output like the following:\n\n```\n========================================================================\nJenkins User: \"admin\"\nJenkins Password: \"mKHBsVb2i7OrY26K\"\n========================================================================\n```\n\n#### Credentials\n\nIf you want to preset credentials instead of a random generated ones, you can set the following environment\nvariables:\n\n* `JENKINS_USERNAME` to set a specific username\n* `JENKINS_PASSWORD` to set a specific password\n\nOn this example we will preset our custom username and password:\n\n```\n$ docker run -d --name jenkins -p 8080:8080 -e JENKINS_USERNAME=myusername -e JENKINS_PASSWORD=mypassword vlerenc/jenkins\n```\n\n#### Persist Jenkins data\n\nJenkins is configured to store data in the `/var/jenkins_home` directory inside the container. You can map the\ncontainer's `/var/jenkins_home` volume to a volume on the host so the data becomes independent of the running container:\n\n```\n$ mkdir -p /tmp/jenkins\n$ docker run -d --name jenkins -p 8080:8080 -v /tmp/jenkins:/var/jenkins_home vlerenc/jenkins\n```\n",
+  "dockerfile": "FROM jenkins:latest\nMAINTAINER Vedran Lerenc <vlerenc@gmail.com>\n\n# Add entrypoint/command scripts\nADD scripts /scripts\n# ..ugly workaround as Jenkins is not the owner (see https://github.com/docker/docker/issues/6119)\nUSER root\nRUN chown -R jenkins:jenkins /scripts\nUSER jenkins\n# ..ugly workaround end (see above)\nRUN chmod +x /scripts/*.sh\n\n# Force initialization on first container run\nRUN touch /scripts/.first_run\n\n# Entrypoint/command to run (overwriting parent)\nENTRYPOINT [\"/scripts/run.sh\"]\nCMD [\"\"]\n\n# Listening ports defined in parent\n# 8080 for web interface and 50000 for slaves\n\n# Data volumes defined in parent\n# /var/jenkins_home for all data, jobs, plugins, etc.\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "scripts",
+        "dest": "/scripts"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "chown -R jenkins:jenkins /scripts",
+      "chmod +x /scripts/*.sh",
+      "touch /scripts/.first_run"
+    ],
+    "workdir": [],
+    "from": "jenkins:latest",
+    "maintainer": "Vedran Lerenc <vlerenc@gmail.com>",
+    "user": "jenkins",
+    "entrypoint": "[\"/scripts/run.sh\"]",
+    "cmd": "[\"\"]"
+  },
+  "source_repository_url": "https://github.com/vlerenc/docker-jenkins.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/vlerenc/docker-jenkins",
+  "docker_repository": "vlerenc/jenkins",
+  "docker_image": "vlerenc/jenkins",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "vlerenc/jenkins",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/vlerenc/jenkins",
+    "https://hub.docker.com/v2/repositories/vlerenc/jenkins",
+    "https://github.com/vlerenc/docker-jenkins.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Integration/Jenkins",
+    "Type/Devopsware/Cloud Platform/Cloud Foundry"
+  ],
+  "info_url": "https://hub.docker.com/r/vlerenc/jenkins",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

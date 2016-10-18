@@ -1,0 +1,262 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/nebo15/alpine-rabbitmq-node",
+    "repository_url": "https://hub.docker.com/v2/repositories/nebo15/alpine-rabbitmq-node",
+    "tags_url": "https://hub.docker.com/v2/repositories/nebo15/alpine-rabbitmq-node/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/nebo15/alpine-rabbitmq-node/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/nebo15/alpine-rabbitmq-node/autobuild",
+    "user": "nebo15",
+    "name": "alpine-rabbitmq-node",
+    "namespace": "nebo15",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 31,
+    "last_updated": "2016-10-14T12:44:28.296300Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 33968583,
+        "id": 4777313,
+        "repository": 908387,
+        "creator": 1008642,
+        "last_updater": 1008642,
+        "last_updated": "2016-10-14T12:44:27.593433Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.6.5",
+        "full_size": 34907664,
+        "id": 4777330,
+        "repository": 908387,
+        "creator": 1008642,
+        "last_updater": 1008642,
+        "last_updated": "2016-09-10T12:01:15.266098Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Nebo15/alpine-rabbitmq-node"
+  },
+  "name": "nebo15/alpine-rabbitmq-node Docker container",
+  "description": "RabbitMQ container on top of Alpine Linux that have same API as official one.",
+  "readme": "# alpine-rabbitmq\nRabbitMQ container on top of Alpine Linux that have same API as official one.\n",
+  "dockerfile": "FROM nebo15/alpine-erlang:latest\nMAINTAINER Nebo#15 <support@nebo15.com>\n\n# Install various tools\nRUN apk --no-cache add xz curl jq su-exec bash && \\\n    rm -rf /var/cache/apk/*\n\n# Install GOSU\nENV GOSU_VERSION 1.10\nRUN set -x \\\n    && apk add --no-cache --virtual .gosu-deps \\\n        dpkg \\\n        gnupg \\\n        openssl \\\n    && dpkgArch=\"$(dpkg --print-architecture | awk -F- '{ print $NF }')\" \\\n    && wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch\" \\\n    && wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch.asc\" \\\n    && export GNUPGHOME=\"$(mktemp -d)\" \\\n    && gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n    && gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\n    && rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\n    && chmod +x /usr/local/bin/gosu \\\n    && gosu nobody true \\\n    && apk del .gosu-deps\n\n# Install additional Erlang modules\nRUN apk --no-cache add erlang-hipe erlang-os-mon erlang-xmerl erlang-eldap\n\n# Configure RabbitMQ\nENV RABBITMQ_VERSION=3.6.5 \\\n    RABBITMQ_USER=rabbitmq \\\n    RABBITMQ_HOME=/var/lib/rabbitmq \\\n    RABBITMQ_CONFIG_BASE=/etc/rabbitmq \\\n    RABBITMQ_LOG_BASE=/var/log/rabbitmq \\\n    RABBITMQ_INSTALL=/usr/lib/rabbitmq \\\n    RABBITMQ_SERVER_ERL_ARGS=\"+K true +A128 +P 1048576 -kernel inet_default_connect_options [{nodelay,true}]\" \\\n    AUTOCLUSTER_VERSION=0.6.1 \\\n    ERL_EPMD_PORT=4369 \\\n    RABBITMQ_DIST_PORT=25672 \\\n    RABBITMQ_LOGS=- \\\n    RABBITMQ_SASL_LOGS=-\n\n# Install RabbitMQ\nRUN curl -sL \"https://www.rabbitmq.com/releases/rabbitmq-server/v${RABBITMQ_VERSION}/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.xz\" \\\n    | tar -xJ -C /tmp/ && \\\n    mv /tmp/rabbitmq_server-${RABBITMQ_VERSION} ${RABBITMQ_INSTALL}\n\n# Install autocluster plugin\nRUN curl -sL \"https://github.com/aweber/rabbitmq-autocluster/releases/download/${AUTOCLUSTER_VERSION}/autocluster-${AUTOCLUSTER_VERSION}.tgz\" \\\n    | tar -xz -C ${RABBITMQ_INSTALL}\n\n# Set home so that any `--user` knows where to put the erlang cookie\nENV HOME $RABBITMQ_HOME\n\n# /usr/sbin/rabbitmq-server has some irritating behavior, and only exists to \"su - rabbitmq /usr/lib/rabbitmq/bin/rabbitmq-server ...\"\nENV PATH ${RABBITMQ_INSTALL}/sbin:$PATH\n\n# Set RabbitMQ paths\nENV RABBITMQ_CONFIG_FILE=${RABBITMQ_CONFIG_BASE}/rabbitmq \\\n    RABBITMQ_MNESIA_BASE=${RABBITMQ_HOME}/mnesia \\\n    RABBITMQ_ENABLED_PLUGINS_FILE=${RABBITMQ_CONFIG_BASE}/enabled_plugins \\\n    RABBITMQ_PLUGINS_DIR=${RABBITMQ_INSTALL}/plugins\n\n# Create user and allow access to all necessary paths\nRUN adduser -D -s /bin/sh ${RABBITMQ_USER} && \\\n    mkdir -p ${RABBITMQ_HOME} ${RABBITMQ_CONFIG_BASE} ${RABBITMQ_LOG_BASE} && \\\n    chown -R ${RABBITMQ_USER}: ${RABBITMQ_INSTALL} ${RABBITMQ_HOME} ${RABBITMQ_CONFIG_BASE} ${RABBITMQ_LOG_BASE} && \\\n    chmod -R 777 ${RABBITMQ_HOME} ${RABBITMQ_CONFIG_BASE} ${RABBITMQ_LOG_BASE}\n\n# Performance tuning\nRUN echo \"net.core.somaxconn = 3072\" >> /etc/sysctl.conf && \\\n    echo \"net.ipv4.tcp_max_syn_backlog = 4096\" >> /etc/sysctl.conf && \\\n    echo \"net.ipv4.conf.default.rp_filter = 0\" >> /etc/sysctl.conf && \\\n    echo \"fs.file-max = 2097152\" >> /etc/sysctl.conf\n\n# Allow all connections\nRUN echo \"${RABBITMQ_USER} ALL=(ALL) NOPASSWD: ALL\" >> /etc/sudoers\n\nWORKDIR ${RABBITMQ_HOME}\n\n# Enable sentitel plugins\nRUN rabbitmq-plugins enable --offline \\\n        rabbitmq_management_agent \\\n        rabbitmq_consistent_hash_exchange \\\n        rabbitmq_shovel && \\\n  rabbitmq-plugins list\n\n        # autocluster \\\n        # rabbitmq_sharding \\\n        # rabbitmq_federation \\\n\n# Expose ports\nEXPOSE 5671 5672 $RABBITMQ_DIST_PORT $ERL_EPMD_PORT\n\n# Entrypoint from official Docker repo\nCOPY docker-entrypoint.sh /bin/docker-entrypoint.sh\nENTRYPOINT [\"/bin/bash\", \"docker-entrypoint.sh\"]\n\n# Define default command\nCMD [\"rabbitmq-server\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5671
+    ],
+    "volume": [],
+    "run": [
+      "apk --no-cache add xz curl jq su-exec bash &&     rm -rf /var/cache/apk/*",
+      "set -x     && apk add --no-cache --virtual .gosu-deps         dpkg         gnupg         openssl     && dpkgArch=\"$(dpkg --print-architecture | awk -F- '{ print $NF }')\"     && wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch\"     && wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch.asc\"     && export GNUPGHOME=\"$(mktemp -d)\"     && gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4     && gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu     && rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc     && chmod +x /usr/local/bin/gosu     && gosu nobody true     && apk del .gosu-deps",
+      "apk --no-cache add erlang-hipe erlang-os-mon erlang-xmerl erlang-eldap",
+      "curl -sL \"https://www.rabbitmq.com/releases/rabbitmq-server/v${RABBITMQ_VERSION}/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.xz\"     | tar -xJ -C /tmp/ &&     mv /tmp/rabbitmq_server-${RABBITMQ_VERSION} ${RABBITMQ_INSTALL}",
+      "curl -sL \"https://github.com/aweber/rabbitmq-autocluster/releases/download/${AUTOCLUSTER_VERSION}/autocluster-${AUTOCLUSTER_VERSION}.tgz\"     | tar -xz -C ${RABBITMQ_INSTALL}",
+      "adduser -D -s /bin/sh ${RABBITMQ_USER} &&     mkdir -p ${RABBITMQ_HOME} ${RABBITMQ_CONFIG_BASE} ${RABBITMQ_LOG_BASE} &&     chown -R ${RABBITMQ_USER}: ${RABBITMQ_INSTALL} ${RABBITMQ_HOME} ${RABBITMQ_CONFIG_BASE} ${RABBITMQ_LOG_BASE} &&     chmod -R 777 ${RABBITMQ_HOME} ${RABBITMQ_CONFIG_BASE} ${RABBITMQ_LOG_BASE}",
+      "echo \"net.core.somaxconn = 3072\" >> /etc/sysctl.conf &&     echo \"net.ipv4.tcp_max_syn_backlog = 4096\" >> /etc/sysctl.conf &&     echo \"net.ipv4.conf.default.rp_filter = 0\" >> /etc/sysctl.conf &&     echo \"fs.file-max = 2097152\" >> /etc/sysctl.conf",
+      "echo \"${RABBITMQ_USER} ALL=(ALL) NOPASSWD: ALL\" >> /etc/sudoers",
+      "rabbitmq-plugins enable --offline         rabbitmq_management_agent         rabbitmq_consistent_hash_exchange         rabbitmq_shovel &&   rabbitmq-plugins list"
+    ],
+    "workdir": [
+      "${RABBITMQ_HOME}"
+    ],
+    "from": "nebo15/alpine-erlang:latest",
+    "maintainer": "Nebo#15 <support@nebo15.com>",
+    "env": {
+      "4369": "",
+      "25672": "",
+      "GOSU_VERSION": "1.10",
+      "RABBITMQ_VERSION": "3.6.5",
+      "": "",
+      "RABBITMQ_USER": "rabbitmq",
+      "RABBITMQ_HOME": "/var/lib/rabbitmq",
+      "RABBITMQ_CONFIG_BASE": "/etc/rabbitmq",
+      "RABBITMQ_LOG_BASE": "/var/log/rabbitmq",
+      "RABBITMQ_INSTALL": "/usr/lib/rabbitmq",
+      "RABBITMQ_SERVER_ERL_ARGS": "\"+K",
+      "true": "+A128",
+      "+P": "1048576",
+      "-kernel": "inet_default_connect_options",
+      "[{nodelay,true}]\"": "",
+      "0.6.1": "",
+      "-": "",
+      "HOME": "$RABBITMQ_HOME",
+      "PATH": "${RABBITMQ_INSTALL}/sbin:$PATH",
+      "RABBITMQ_CONFIG_FILE": "${RABBITMQ_CONFIG_BASE}/rabbitmq",
+      "RABBITMQ_MNESIA_BASE": "${RABBITMQ_HOME}/mnesia",
+      "RABBITMQ_ENABLED_PLUGINS_FILE": "${RABBITMQ_CONFIG_BASE}/enabled_plugins",
+      "RABBITMQ_PLUGINS_DIR": "${RABBITMQ_INSTALL}/plugins"
+    },
+    "copy": "docker-entrypoint.sh /bin/docker-entrypoint.sh",
+    "entrypoint": "[\"/bin/bash\", \"docker-entrypoint.sh\"]",
+    "cmd": "[\"rabbitmq-server\"]"
+  },
+  "source_repository_url": "https://github.com/Nebo15/alpine-rabbitmq-node.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Nebo15/alpine-rabbitmq-node",
+  "docker_repository": "nebo15/alpine-rabbitmq-node",
+  "docker_image": "nebo15/alpine-rabbitmq-node",
+  "parameters_schema": {
+    "4369": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "25672": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOSU_VERSION": {
+      "default": "1.10",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_VERSION": {
+      "default": "3.6.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_USER": {
+      "default": "rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_HOME": {
+      "default": "/var/lib/rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_CONFIG_BASE": {
+      "default": "/etc/rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_LOG_BASE": {
+      "default": "/var/log/rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_INSTALL": {
+      "default": "/usr/lib/rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_SERVER_ERL_ARGS": {
+      "default": "\"+K",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "true": {
+      "default": "+A128",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "+P": {
+      "default": "1048576",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "-kernel": {
+      "default": "inet_default_connect_options",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "[{nodelay,true}]\"": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "0.6.1": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "-": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "$RABBITMQ_HOME",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "${RABBITMQ_INSTALL}/sbin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_CONFIG_FILE": {
+      "default": "${RABBITMQ_CONFIG_BASE}/rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_MNESIA_BASE": {
+      "default": "${RABBITMQ_HOME}/mnesia",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_ENABLED_PLUGINS_FILE": {
+      "default": "${RABBITMQ_CONFIG_BASE}/enabled_plugins",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_PLUGINS_DIR": {
+      "default": "${RABBITMQ_INSTALL}/plugins",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5671
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "nebo15/alpine-rabbitmq-node",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/nebo15/alpine-rabbitmq-node",
+    "https://hub.docker.com/v2/repositories/nebo15/alpine-rabbitmq-node",
+    "https://github.com/Nebo15/alpine-rabbitmq-node.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/API",
+    "Type/Infrastructure/Operating System/Linux",
+    "Type/Middleware/Runtime/JavaScript/Node.js",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/nebo15/alpine-rabbitmq-node",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

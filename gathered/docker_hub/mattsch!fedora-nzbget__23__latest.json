@@ -1,0 +1,160 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mattsch/fedora-nzbget",
+    "repository_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-nzbget",
+    "tags_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-nzbget/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-nzbget/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-nzbget/autobuild",
+    "user": "mattsch",
+    "name": "fedora-nzbget",
+    "namespace": "mattsch",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 328,
+    "last_updated": "2016-09-07T12:28:42.654588Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "23",
+        "full_size": 127101603,
+        "id": 1386488,
+        "repository": 305441,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-09-07T12:28:42.347168Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "24",
+        "full_size": 151598442,
+        "id": 3750349,
+        "repository": 305441,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-09-07T12:27:07.397563Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 178564994,
+        "id": 817858,
+        "repository": 305441,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-09-07T12:25:50.226811Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "22",
+        "full_size": 141443693,
+        "id": 819727,
+        "repository": 305441,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-08-15T22:18:37.634421Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "mattsch/fedora-nzbget"
+  },
+  "name": "mattsch/fedora-nzbget Docker container",
+  "description": "Fedora NZBGet",
+  "readme": "# Fedora NZBGet Docker Container\n\nDocker container for [NZBGet](http://nzbget.net/) using Fedora 22.\n\n## Usage\n\nCreate with defaults:\n\n```bash\ndocker create -v /path/to/config/dir:/config \\\n    -v /path/to/storage/dir:/storage \\\n    -v /etc/localtime:/etc/localtime:ro \\\n    -p 6789:6789 --name=nzbget mattsch/fedora-nzbget\n```\n\nCreate with a custom uid/gid for the nzbget daemon:\n\n```bash\ndocker create -v /path/to/config/dir:/config \\\n    -v /path/to/storage/dir:/storage \\\n    -v /etc/localtime:/etc/localtime:ro \\\n    -e LUID=1234 -e LGID=1234 \\\n    -p 6789:6789 --name=nzbget mattsch/fedora-nzbget\n```\n\nUsing host networking rather than the port forwards above will give the best\nperformance.  However, this allows the container to have full access to the\nhost's networking stack.  Be sure you understand the implications before using\nit.\n\n",
+  "dockerfile": "FROM mattsch/fedora-rpmfusion:23\nMAINTAINER Matthew Schick <matthew.schick@gmail.com>\n\n# Install required packages\nRUN dnf install -yq procps-ng \\\n                    python \\\n                    tar \\\n                    unrar && \\\n    dnf clean all\n\n# Set uid/gid (override with the '-e' flag), 1000/1000 used since it's the\n# default first uid/gid on a fresh Fedora install\nENV LUID=1000 LGID=1000 NZBGET_VER=17.1\n\n# Create the nzbget user/group\nRUN groupadd -g $LGID nzbget && \\\n    useradd -c 'NZBGet User' -s /bin/bash -m -d /opt/nzbget -g $LGID -u $LUID nzbget\n    \n# Grab the installer, do the thing\nRUN cd /tmp && \\\n    curl -qOL http://github.com/nzbget/nzbget/releases/download/v$NZBGET_VER/nzbget-$NZBGET_VER-bin-linux.run && \\\n    sh ./nzbget-$NZBGET_VER-bin-linux.run --destdir /opt/nzbget && \\\n    rm ./nzbget-$NZBGET_VER-bin-linux.run && \\\n    chown -R nzbget:nzbget /opt/nzbget\n\n# Need a config and storage volume, expose proper port\nVOLUME /config /storage\nEXPOSE 6789\n\n# Add script to copy default config if one isn't there and start nzbget\nCOPY run-nzbget.sh /bin/run-nzbget.sh\n \n# Run our script\nCMD [\"/bin/run-nzbget.sh\"]\n\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      6789
+    ],
+    "volume": [
+      "/config /storage"
+    ],
+    "run": [
+      "dnf install -yq procps-ng                     python                     tar                     unrar &&     dnf clean all",
+      "groupadd -g $LGID nzbget &&     useradd -c 'NZBGet User' -s /bin/bash -m -d /opt/nzbget -g $LGID -u $LUID nzbget",
+      "cd /tmp &&     curl -qOL http://github.com/nzbget/nzbget/releases/download/v$NZBGET_VER/nzbget-$NZBGET_VER-bin-linux.run &&     sh ./nzbget-$NZBGET_VER-bin-linux.run --destdir /opt/nzbget &&     rm ./nzbget-$NZBGET_VER-bin-linux.run &&     chown -R nzbget:nzbget /opt/nzbget"
+    ],
+    "workdir": [],
+    "from": "mattsch/fedora-rpmfusion:23",
+    "maintainer": "Matthew Schick <matthew.schick@gmail.com>",
+    "env": {
+      "LUID": "1000",
+      "LGID": "1000",
+      "NZBGET_VER": "17.1"
+    },
+    "copy": "run-nzbget.sh /bin/run-nzbget.sh",
+    "cmd": "[\"/bin/run-nzbget.sh\"]"
+  },
+  "source_repository_url": "https://github.com/mattsch/fedora-nzbget.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mattsch/fedora-nzbget",
+  "docker_repository": "mattsch/fedora-nzbget",
+  "docker_image": "mattsch/fedora-nzbget",
+  "parameters_schema": {
+    "LUID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LGID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NZBGET_VER": {
+      "default": "17.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        6789
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mattsch/fedora-nzbget",
+  "revision": "23",
+  "uris": [
+    "https://hub.docker.com/r/mattsch/fedora-nzbget",
+    "https://hub.docker.com/v2/repositories/mattsch/fedora-nzbget",
+    "https://github.com/mattsch/fedora-nzbget.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/mattsch/fedora-nzbget",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

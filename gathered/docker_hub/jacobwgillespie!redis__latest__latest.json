@@ -1,0 +1,103 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jacobwgillespie/redis",
+    "repository_url": "https://hub.docker.com/v2/repositories/jacobwgillespie/redis",
+    "tags_url": "https://hub.docker.com/v2/repositories/jacobwgillespie/redis/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jacobwgillespie/redis/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jacobwgillespie/redis/autobuild",
+    "user": "jacobwgillespie",
+    "name": "redis",
+    "namespace": "jacobwgillespie",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 62,
+    "last_updated": "2016-09-28T21:05:24.935038Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 273172020,
+        "id": 3679440,
+        "repository": 778503,
+        "creator": 41492,
+        "last_updater": 41492,
+        "last_updated": "2016-09-28T21:04:12.105954Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "jacobwgillespie/docker-redis"
+  },
+  "name": "jacobwgillespie/redis Docker container",
+  "description": "Redis in a docker image",
+  "readme": "# jacobwgillespie/redis - redis container\n\n[![image](https://d207aa93qlcgug.cloudfront.net/img/icons/framed-icon-checked-repository.svg)](https://registry.hub.docker.com/u/jacobwgillespie/redis/)\n\n[**Trusted Build**](https://registry.hub.docker.com/u/jacobwgillespie/redis/)\n\nThis Docker image is based on the official [golang:1.6](https://registry.hub.docker.com/_/golang/) base image.\n\n## Building\n\n```shell\n$ make build\n```\n\n## Running\n\n### Standalone\n\n```shell\n$ docker run -d -p 6379:6379 jacobwgillespie/redis\n```\n\n### Cluster\nIt is required that you set the publish host IP in `HOST`, and if the etcd host is different than `HOST`, set it in `ETCD_HOST`.\n\n```shell\n$ docker run --name database --rm -p 6379:6379 -e PUBLISH=6379 -e HOST=$COREOS_PRIVATE_IPV4 -e CLUSTER=redis -v /path/to/local:/data jacobwgillespie/redis:latest\"\n```\n",
+  "dockerfile": "FROM golang:1.6\nMAINTAINER Jacob Gillespie <jacobwgillespie@gmail.com>\n\nRUN \\\n  apt-get update -y && \\\n  apt-get install --no-install-recommends -y curl build-essential git bzr \\\n    ca-certificates mercurial && \\\n  apt-get clean && \\\n  rm -rf /var/lib/apt/lists/*\n\n# Install\nRUN \\\n  cd /tmp && \\\n  wget http://download.redis.io/redis-stable.tar.gz && \\\n  tar zxfv redis-stable.tar.gz && \\\n  cd redis-stable && \\\n  make && \\\n  make install && \\\n  cp -f src/redis-sentinel /usr/local/bin && \\\n  mkdir -p /etc/redis && \\\n  cp -f *.conf /etc/redis && \\\n  rm -rf /tmp/redis-stable* && \\\n  sed -i 's/^\\(bind .*\\)$/# \\1/' /etc/redis/redis.conf && \\\n  sed -i 's/^\\(daemonize .*\\)$/# \\1/' /etc/redis/redis.conf && \\\n  sed -i 's/^\\(dir .*\\)$/# \\1\\ndir \\/data/' /etc/redis/redis.conf && \\\n  sed -i 's/^\\(logfile .*\\)$/# \\1/' /etc/redis/redis.conf\n\nRUN mkdir -p /go/src/app\nWORKDIR /go/src/app\nCOPY . /go/src/app\nRUN go-wrapper download\nRUN go-wrapper install\n\nVOLUME [\"/data\"]\nENTRYPOINT [\"go-wrapper\", \"run\"]\nEXPOSE 6379 26379\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      6379
+    ],
+    "volume": [
+      "[\"/data\"]"
+    ],
+    "run": [
+      "  apt-get update -y &&   apt-get install --no-install-recommends -y curl build-essential git bzr     ca-certificates mercurial &&   apt-get clean &&   rm -rf /var/lib/apt/lists/*",
+      "  cd /tmp &&   wget http://download.redis.io/redis-stable.tar.gz &&   tar zxfv redis-stable.tar.gz &&   cd redis-stable &&   make &&   make install &&   cp -f src/redis-sentinel /usr/local/bin &&   mkdir -p /etc/redis &&   cp -f *.conf /etc/redis &&   rm -rf /tmp/redis-stable* &&   sed -i 's/^\\(bind .*\\)$/# \\1/' /etc/redis/redis.conf &&   sed -i 's/^\\(daemonize .*\\)$/# \\1/' /etc/redis/redis.conf &&   sed -i 's/^\\(dir .*\\)$/# \\1\\ndir \\/data/' /etc/redis/redis.conf &&   sed -i 's/^\\(logfile .*\\)$/# \\1/' /etc/redis/redis.conf",
+      "mkdir -p /go/src/app",
+      "go-wrapper download",
+      "go-wrapper install"
+    ],
+    "workdir": [
+      "/go/src/app"
+    ],
+    "from": "golang:1.6",
+    "maintainer": "Jacob Gillespie <jacobwgillespie@gmail.com>",
+    "copy": ". /go/src/app",
+    "entrypoint": "[\"go-wrapper\", \"run\"]"
+  },
+  "source_repository_url": "https://github.com/jacobwgillespie/docker-redis.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/jacobwgillespie/docker-redis",
+  "docker_repository": "jacobwgillespie/redis",
+  "docker_image": "jacobwgillespie/redis",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        6379
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jacobwgillespie/redis",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jacobwgillespie/redis",
+    "https://hub.docker.com/v2/repositories/jacobwgillespie/redis",
+    "https://github.com/jacobwgillespie/docker-redis.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Data Store/Key-Value/Redis"
+  ],
+  "info_url": "https://hub.docker.com/r/jacobwgillespie/redis",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

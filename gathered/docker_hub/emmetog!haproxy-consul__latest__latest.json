@@ -1,0 +1,115 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/emmetog/haproxy-consul",
+    "repository_url": "https://hub.docker.com/v2/repositories/emmetog/haproxy-consul",
+    "tags_url": "https://hub.docker.com/v2/repositories/emmetog/haproxy-consul/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/emmetog/haproxy-consul/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/emmetog/haproxy-consul/autobuild",
+    "user": "emmetog",
+    "name": "haproxy-consul",
+    "namespace": "emmetog",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1352,
+    "last_updated": "2016-09-23T19:19:47.863783Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 85146000,
+        "id": 2440740,
+        "repository": 603761,
+        "creator": 93341,
+        "last_updater": 93341,
+        "last_updated": "2016-09-23T19:19:09.355594Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "emmetog/haproxy-consul"
+  },
+  "name": "emmetog/haproxy-consul Docker container",
+  "description": "A dockerized haproxy server whose configuration is generated from the services registered in consul",
+  "readme": "# HAProxy with Consul Template\n\n[![](https://badge.imagelayers.io/emmetog/haproxy-consul:latest.svg)](https://imagelayers.io/?images=emmetog/haproxy-consul:latest 'Image size')\n\nThis image contains a haproxy server whose configuration is generated from\nthe services registered in consul.\n\nThere are two things running in this container: haproxy and consul-template.\nConsul-template watches the consul server and regenerates the haproxy\nconfiguration file when anything changes in consul. After regenerating\nthe configuration file consul-template restarts haproxy so that the\nnew configuration is used.\n\n## Usage\n\nRun this container like this:\n```\n$ docker run -d \\\n    -p 80:80 \\\n    -p 443:443 \\\n    -v /path/to/haproxy/template:/etc/haproxy/haproxy.template:ro \\\n    --link consul:consul \\\n    emmetog/haproxy-consul\n```\n\n***Note***: there is no haproxy config template file in this container, you **must** map your own\ntemplate into `/etc/haproxy/haproxy.template`.\n\nYou can either create your own new docker image which is based on this one and hardcode\nyour template inside, or you can run this container directly and map your template into\nthe container as a volume, as in the example above.\n\n## Consul server\n\nBy default the container assumes that the consul server is reachable through the hostname\n\"consul\". This makes it easy to get started, all you need to do is link this container\nto the consul container using the alias \"consul\". However if you\nwant to change the hostname that consul-template uses to connect to the consul server, set\nthe `CONSUL_SERVER` environmental variable. Similarly, you can change the port using the\n`CONSUL_PORT` environmental variable (default is 8500). If you do specify the `CONSUL_SERVER`\nthen you don't need to link to the consul container.\n\nIn the following example we are using the internal DNS of docker to resolve the hostname\n\"consul.service.consul\" but you could also specify an IP.\n\n```\n$ docker run -d \\\n    -p 80:80 \\\n    -p 443:443 \\\n    -v /path/to/haproxy/template:/etc/haproxy/haproxy.template:ro \\\n    -e CONSUL_SERVER consul.service.consul \\\n    -e CONSUL_PORT 8500 \\\n    emmetog/haproxy-consul\n```\n\n## Template examples\n\nHere are a few example HAProxy templates to get you started.\n\n### Example template with multiple HTTPS domains\n\nThis template uses SNI to allow this load balancer to terminate multiple SSL\ndomains. This is very useful when you have multiple domains all pointing to the\nsame IP and you want your load balancer to send the traffic for each domain\nto separate services. In this template there an example of a normal HTTP\nendpoint which doesn't use SSL (site3). For this template to work you will\nhave to add the tags \"site1\", \"site2\" and \"site3\" to the corresponding services\nwhen registering the services in consul. You will also need to add the certs\ninto `/etc/haproxy/certs`.\n\nNormally [registrator](https://github.com/gliderlabs/registrator) is used to\nautomatically register the services in consul.\n\n```\nglobal\n    tune.ssl.default-dh-param 2048\n\nfrontend www-in\n    bind *:80\n    bind *:443 ssl crt /etc/haproxy/certs/\n\n    # Site1 (uses SSL only, non-HTTPS is redirected to HTTPS)\n    acl is_site1 req_ssl_sni -i site1.com\n    redirect scheme https code 301 if is_site1 !{ ssl_fc }\n    use_backend site1_cluster if is_site1\n\n    # Site2 (uses SSL only, non-HTTPS is redirected to HTTPS)\n    acl is_site2 req_ssl_sni -i site2.com\n    redirect scheme https code 301 if is_site2 !{ ssl_fc }\n    use_backend site2_cluster if is_site2\n\n    # Site3 (No SSL, only available through HTTP)\n    acl is_site3 hdr(host) -i site3.com\n    use_backend site3_cluster if is_site3\n\nbackend site1_cluster\n    {{range services}}{{$service:=.Name}}{{range .Tags}}{{if eq . \"site1\" }}{{range service $service \"passing\" }}\n    {{range service .Name}}server {{.Node}} {{.Address}}:{{.Port}} check{{end}}\n    {{end}}{{end}}{{end}}{{end}}\n\nbackend site2_cluster\n    {{range services}}{{$service:=.Name}}{{range .Tags}}{{if eq . \"site2\" }}{{range service $service \"passing\" }}\n    {{range service .Name}}server {{.Node}} {{.Address}}:{{.Port}} check{{end}}\n    {{end}}{{end}}{{end}}{{end}}\n\nbackend site3_cluster\n    {{range services}}{{$service:=.Name}}{{range .Tags}}{{if eq . \"site3\" }}{{range service $service \"passing\" }}\n    {{range service .Name}}server {{.Node}} {{.Address}}:{{.Port}} check{{end}}\n    {{end}}{{end}}{{end}}{{end}}\n```\n\n### Example template\n\nThis template will (todo: explain this)\n```\nglobal\n  log 127.0.0.1 local0\n  log 127.0.0.1 local1 notice\n  user haproxy\n  group haproxy\n\ndefaults\n  log global\n  mode http\n  option httplog\n  option dontlognull\n\nfrontend web-app\n  bind *:80\n  default_backend default\n\nbackend default\n  balance roundrobin\n{{range $tag, $services := service \"webapp\" | byTag}}\n {{with $d := key \"backend/current\"}}\n  {{if $d}}\n   {{if eq $tag $d}}\n    {{range $services}} server {{.ID}} {{.Address}}:{{.Port}}\n   {{end}}\n  {{end}}\n {{end}}\n{{end}}{{end}}\n```\n\n## Contributions\n\nContributions are more than welcome, just fork this project and create a pull request.",
+  "dockerfile": "FROM ubuntu:xenial\n\nMAINTAINER Emmet O'Grady <emmet789@gmail.com>\n\nENV CONSUL_TEMPLATE_VERSION 0.14.0\n\nRUN apt-get update \\\n    && apt-get install -y \\\n        haproxy \\\n        curl \\\n        unzip \\\n    && curl -L -o /tmp/consul-template.zip https://releases.hashicorp.com/consul-template/0.14.0/consul-template_0.14.0_linux_amd64.zip \\\n    && cd /tmp \\\n    && unzip consul-template.zip \\\n    && cp /tmp/consul-template /usr/local/bin/consul-template \\\n    && rm -rf /tmp/consul* \\\n    && chmod a+x /usr/local/bin/consul-template \\\n    && apt-get remove -y curl unzip \\\n    && apt-get autoremove -y \\\n    && apt-get autoclean\n\nENTRYPOINT [\"/bin/sh\"]\nCMD [\"/start.sh\"]\n\nADD haproxy.conf /etc/haproxy/haproxy.cfg\n\nADD start.sh /start.sh\nRUN chmod u+x /start.sh\nADD reload_haproxy.sh /reload_haproxy.sh\nRUN chmod u+x /reload_haproxy.sh",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "haproxy.conf",
+        "dest": "/etc/haproxy/haproxy.cfg"
+      },
+      {
+        "source": "start.sh",
+        "dest": "/start.sh"
+      },
+      {
+        "source": "reload_haproxy.sh",
+        "dest": "/reload_haproxy.sh"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update     && apt-get install -y         haproxy         curl         unzip     && curl -L -o /tmp/consul-template.zip https://releases.hashicorp.com/consul-template/0.14.0/consul-template_0.14.0_linux_amd64.zip     && cd /tmp     && unzip consul-template.zip     && cp /tmp/consul-template /usr/local/bin/consul-template     && rm -rf /tmp/consul*     && chmod a+x /usr/local/bin/consul-template     && apt-get remove -y curl unzip     && apt-get autoremove -y     && apt-get autoclean",
+      "chmod u+x /start.sh",
+      "chmod u+x /reload_haproxy.sh"
+    ],
+    "workdir": [],
+    "from": "ubuntu:xenial",
+    "maintainer": "Emmet O'Grady <emmet789@gmail.com>",
+    "env": {
+      "CONSUL_TEMPLATE_VERSION": "0.14.0"
+    },
+    "entrypoint": "[\"/bin/sh\"]",
+    "cmd": "[\"/start.sh\"]"
+  },
+  "source_repository_url": "https://github.com/emmetog/haproxy-consul.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/emmetog/haproxy-consul",
+  "docker_repository": "emmetog/haproxy-consul",
+  "docker_image": "emmetog/haproxy-consul",
+  "parameters_schema": {
+    "CONSUL_TEMPLATE_VERSION": {
+      "default": "0.14.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "emmetog/haproxy-consul",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/emmetog/haproxy-consul",
+    "https://hub.docker.com/v2/repositories/emmetog/haproxy-consul",
+    "https://github.com/emmetog/haproxy-consul.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Orchestration/Consul",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/emmetog/haproxy-consul",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

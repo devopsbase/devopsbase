@@ -1,0 +1,144 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/pixelfordinner/php",
+    "repository_url": "https://hub.docker.com/v2/repositories/pixelfordinner/php",
+    "tags_url": "https://hub.docker.com/v2/repositories/pixelfordinner/php/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/pixelfordinner/php/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/pixelfordinner/php/autobuild",
+    "user": "pixelfordinner",
+    "name": "php",
+    "namespace": "pixelfordinner",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 426,
+    "last_updated": "2016-10-15T03:21:02.628631Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 85471828,
+        "id": 2049991,
+        "repository": 535485,
+        "creator": 472133,
+        "last_updater": 472133,
+        "last_updated": "2016-10-15T03:21:02.252468Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "pixelfordinner/pixelcloud-docker-images"
+  },
+  "name": "pixelfordinner/php Docker container",
+  "description": "php7-fpm on alpine with APCu, OPCache, Imagick and wp-cli, composer. Supports su-exec through env.",
+  "readme": null,
+  "dockerfile": "FROM php:7-fpm-alpine\nMAINTAINER Karl Fathi <karl@pixelfordinner.com>\n\nENV LANG C.UTF-8\n\nENV IMAGICK_VERSION 3.4.1\n\nRUN apk add --no-cache \\\n    zip \\\n    unzip \\\n    less \\\n    mysql-client \\\n    git \\\n    su-exec\n\n# Install PHP extensions.\n\n# pdo_mysql\nRUN docker-php-ext-install pdo_mysql\n\n# mysqli\nRUN docker-php-ext-install mysqli\n\n# opcache\nRUN docker-php-ext-install opcache\n\n# zip\nRUN docker-php-ext-install zip\n\n# intl\nRUN apk add --no-cache icu-dev \\\n    && docker-php-ext-install intl\n\n# bz2\nRUN apk add --no-cache bzip2-dev \\\n    && docker-php-ext-install bz2\n# exif\nRUN docker-php-ext-install exif\n\n# apcu\nRUN apk add --no-cache autoconf gcc g++ make \\\n    && pecl install apcu \\\n    && echo \"extension=apcu.so\" > /usr/local/etc/php/conf.d/ext-apcu.ini \\\n    && apk del autoconf gcc g++ make\n\n\n# Imagick\nRUN apk add --no-cache imagemagick-dev libtool autoconf gcc g++ make \\\n    && pecl install imagick-$IMAGICK_VERSION \\\n    && echo \"extension=imagick.so\" > /usr/local/etc/php/conf.d/ext-imagick.ini \\\n    && apk del libtool autoconf gcc g++ make\n\n# Utilities\n\n# wp-cli\nADD https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar /usr/local/bin/wp-cli.phar\nADD data/wp.sh /usr/local/bin/wp\nRUN chmod +rx /usr/local/bin/wp-cli.phar\nRUN chmod +x /usr/local/bin/wp\n\n# composer\nRUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer.phar\nRUN chmod +rx /usr/local/bin/composer.phar\nADD data/composer.sh /usr/local/bin/composer\nRUN chmod +x /usr/local/bin/composer\n\nRUN sed -i -e \"s/pm.max_children = 5/pm.max_children = 3/g\" /usr/local/etc/php-fpm.d/www.conf\n\n# local php.ini\nCOPY data/conf.d/* /usr/local/etc/php/conf.d/\n\n# Entrypoint\nCOPY data/entrypoint.sh /usr/local/bin/\nRUN chmod +x /usr/local/bin/entrypoint.sh\n\nRUN mkdir -p /opt/www\n\nVOLUME [\"/opt/www\"]\n\nEXPOSE 9000\n\nCMD [\"entrypoint.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar",
+        "dest": "/usr/local/bin/wp-cli.phar"
+      },
+      {
+        "source": "data/wp.sh",
+        "dest": "/usr/local/bin/wp"
+      },
+      {
+        "source": "data/composer.sh",
+        "dest": "/usr/local/bin/composer"
+      }
+    ],
+    "expose": [
+      9000
+    ],
+    "volume": [
+      "[\"/opt/www\"]"
+    ],
+    "run": [
+      "apk add --no-cache     zip     unzip     less     mysql-client     git     su-exec",
+      "docker-php-ext-install pdo_mysql",
+      "docker-php-ext-install mysqli",
+      "docker-php-ext-install opcache",
+      "docker-php-ext-install zip",
+      "apk add --no-cache icu-dev     && docker-php-ext-install intl",
+      "apk add --no-cache bzip2-dev     && docker-php-ext-install bz2",
+      "docker-php-ext-install exif",
+      "apk add --no-cache autoconf gcc g++ make     && pecl install apcu     && echo \"extension=apcu.so\" > /usr/local/etc/php/conf.d/ext-apcu.ini     && apk del autoconf gcc g++ make",
+      "apk add --no-cache imagemagick-dev libtool autoconf gcc g++ make     && pecl install imagick-$IMAGICK_VERSION     && echo \"extension=imagick.so\" > /usr/local/etc/php/conf.d/ext-imagick.ini     && apk del libtool autoconf gcc g++ make",
+      "chmod +rx /usr/local/bin/wp-cli.phar",
+      "chmod +x /usr/local/bin/wp",
+      "curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer.phar",
+      "chmod +rx /usr/local/bin/composer.phar",
+      "chmod +x /usr/local/bin/composer",
+      "sed -i -e \"s/pm.max_children = 5/pm.max_children = 3/g\" /usr/local/etc/php-fpm.d/www.conf",
+      "chmod +x /usr/local/bin/entrypoint.sh",
+      "mkdir -p /opt/www"
+    ],
+    "workdir": [],
+    "from": "php:7-fpm-alpine",
+    "maintainer": "Karl Fathi <karl@pixelfordinner.com>",
+    "env": {
+      "LANG": "C.UTF-8",
+      "IMAGICK_VERSION": "3.4.1"
+    },
+    "copy": "data/entrypoint.sh /usr/local/bin/",
+    "cmd": "[\"entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/pixelfordinner/pixelcloud-docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/pixelfordinner/pixelcloud-docker-images",
+  "docker_repository": "pixelfordinner/php",
+  "docker_image": "pixelfordinner/php",
+  "parameters_schema": {
+    "LANG": {
+      "default": "C.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "IMAGICK_VERSION": {
+      "default": "3.4.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        9000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "pixelfordinner/php",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/pixelfordinner/php",
+    "https://hub.docker.com/v2/repositories/pixelfordinner/php",
+    "https://github.com/pixelfordinner/pixelcloud-docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/CLI",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Cache"
+  ],
+  "info_url": "https://hub.docker.com/r/pixelfordinner/php",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

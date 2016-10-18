@@ -1,0 +1,123 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/pushtospace/nginx",
+    "repository_url": "https://hub.docker.com/v2/repositories/pushtospace/nginx",
+    "tags_url": "https://hub.docker.com/v2/repositories/pushtospace/nginx/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/pushtospace/nginx/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/pushtospace/nginx/autobuild",
+    "user": "pushtospace",
+    "name": "nginx",
+    "namespace": "pushtospace",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 835,
+    "last_updated": "2016-09-15T15:10:31.013992Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 243556698,
+        "id": 3882434,
+        "repository": 804677,
+        "creator": 545895,
+        "last_updater": 545895,
+        "last_updated": "2016-09-15T15:10:30.553383Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "v2",
+        "full_size": 201645084,
+        "id": 3930864,
+        "repository": 804677,
+        "creator": 545895,
+        "last_updater": 545895,
+        "last_updated": "2016-09-15T14:37:38.116189Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "pushtospace/nginx"
+  },
+  "name": "pushtospace/nginx Docker container",
+  "description": "nginx with auto ssl",
+  "readme": "# Pushtospace/nginx\n\nThis docker image is build with [openresty](https://openresty.org/en/) to provide [auto-ssl](https://github.com/GUI/lua-resty-auto-ssl/) certificates.\n\n\n### Mounts\n/web/content:/var/www/html\n\n/conf/nginx.conf:/etc/nginx/nginx.conf\n\n### Links \nredis - storage for ssl-certificates (optional)\n\nphp - compute engine (optional)\n\n### Example config\n\n    error_log /dev/stdout debug;\n    daemon off;\n\n    events {    \n        worker_connections      1024;\n    }\n\n    http {\n    \n        access_log /dev/stdout;\n        \n        lua_shared_dict auto_ssl 1m;\n        resolver 8.8.8.8;\n    \n        init_by_lua_block {\n          auto_ssl = (require \"resty.auto-ssl\").new()\n          auto_ssl:set(\"allow_domain\", function(domain)\n            return true\n          end)\n          auto_ssl:set(\"storage_adapter\", \"resty.auto-ssl.storage_adapters.redis\")\n          auto_ssl:set(\"redis\", {\n            host = \"redis\",\n            port = 6379\n          })\n          auto_ssl:init()\n        }\n    \n        init_worker_by_lua_block {\n          auto_ssl:init_worker()\n        }\n    \n        sendfile                on;\n        tcp_nopush              on;\n        tcp_nodelay             on;\n        keepalive_timeout       65;\n        types_hash_max_size     2048;\n    \n        include                 /etc/nginx/mime.types;\n        default_type            application/octet-stream;\n    \n        server {\n          listen 127.0.0.1:8999;\n          location / {\n            content_by_lua_block {\n              auto_ssl:hook_server()\n            }\n          }\n        }\n    \n        server {\n            listen              80;\n            server_name         servername.com www.servername.com;\n    \n            location /.well-known/acme-challenge/ {\n              content_by_lua_block {\n                auto_ssl:challenge_server()\n              }\n            }\n    \n            return 301 https://$server_name$request_uri;\n        }\n    \n        server {\n            listen              443 ssl;\n    \n\t        ssl_certificate_by_lua_block {\n                auto_ssl:ssl_certificate()\n            }\n    \n            server_name         servername.com www.servername.com;\n            root                /var/www/html/;\n            ssl_certificate     /etc/ssl/resty-auto-ssl-fallback.crt;\n            ssl_certificate_key /etc/ssl/resty-auto-ssl-fallback.key;\n    \n            location / {\n                try_files       $uri /index.html =404;\n            }\n    \n        }\n    }\n",
+  "dockerfile": "FROM ubuntu:16.04\n\nMAINTAINER Gino Jongenelen <g.jongenelen@pushto.space>\n\nRUN apt-get update && apt-get upgrade -y && apt-get install wget zlib1g-dev build-essential libpcre3 libpcre3-dev libreadline-dev -y\n\n# Update OpenSSL to 1.0.2h\nRUN wget https://openssl.org/source/openssl-1.0.2h.tar.gz && tar xvf openssl-1.0.2h.tar.gz && cd openssl-1.0.2h && ./config \\\n--prefix=/usr --openssldir=/etc/ssl --libdir=lib shared zlib-dynamic && make && make install\n\n# Install OpenResty 1.11.2.1\nRUN wget https://openresty.org/download/openresty-1.11.2.1.tar.gz -O openresty-1.11.2.1.tar.gz && tar xzvf openresty-1.11.2.1.tar.gz && cd openresty-1.11.2.1 && ./configure --with-http_v2_module --with-http_realip_module && make && make install\n\n# Install LuaRockes\nRUN apt-get install unzip curl  -y && wget https://codeload.github.com/keplerproject/luarocks/tar.gz/v2.3.0 \\\n-O luarocks-2.3.0.tar.gz && tar -xzvf luarocks-2.3.0.tar.gz && cd luarocks-2.3.0/ && ./configure --prefix=/usr/local/openresty/luajit \\\n--with-lua=/usr/local/openresty/luajit/  --lua-suffix=jit-2.1.0-beta2 --with-lua-include=/usr/local/openresty/luajit/include/luajit-2.1 && \\\nmake build && make install && /usr/local/openresty/luajit/bin/luarocks install lua-resty-http && /usr/local/openresty/luajit/bin/luarocks install lua-resty-auto-ssl\n\nRUN openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 -subj '/CN=sni-support-required-for-valid-ssl' -keyout /etc/ssl/resty-auto-ssl-fallback.key \\\n-out /etc/ssl/resty-auto-ssl-fallback.crt\n\nADD mime.types /etc/nginx/\nADD fastcgi_params /etc/nginx/\n\nADD ./start.sh /root/\nRUN chmod +x /root/start.sh\n\nCMD [\"/root/start.sh\"]",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "mime.types",
+        "dest": "/etc/nginx/"
+      },
+      {
+        "source": "fastcgi_params",
+        "dest": "/etc/nginx/"
+      },
+      {
+        "source": "./start.sh",
+        "dest": "/root/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get upgrade -y && apt-get install wget zlib1g-dev build-essential libpcre3 libpcre3-dev libreadline-dev -y",
+      "wget https://openssl.org/source/openssl-1.0.2h.tar.gz && tar xvf openssl-1.0.2h.tar.gz && cd openssl-1.0.2h && ./config --prefix=/usr --openssldir=/etc/ssl --libdir=lib shared zlib-dynamic && make && make install",
+      "wget https://openresty.org/download/openresty-1.11.2.1.tar.gz -O openresty-1.11.2.1.tar.gz && tar xzvf openresty-1.11.2.1.tar.gz && cd openresty-1.11.2.1 && ./configure --with-http_v2_module --with-http_realip_module && make && make install",
+      "apt-get install unzip curl  -y && wget https://codeload.github.com/keplerproject/luarocks/tar.gz/v2.3.0 -O luarocks-2.3.0.tar.gz && tar -xzvf luarocks-2.3.0.tar.gz && cd luarocks-2.3.0/ && ./configure --prefix=/usr/local/openresty/luajit --with-lua=/usr/local/openresty/luajit/  --lua-suffix=jit-2.1.0-beta2 --with-lua-include=/usr/local/openresty/luajit/include/luajit-2.1 && make build && make install && /usr/local/openresty/luajit/bin/luarocks install lua-resty-http && /usr/local/openresty/luajit/bin/luarocks install lua-resty-auto-ssl",
+      "openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 -subj '/CN=sni-support-required-for-valid-ssl' -keyout /etc/ssl/resty-auto-ssl-fallback.key -out /etc/ssl/resty-auto-ssl-fallback.crt",
+      "chmod +x /root/start.sh"
+    ],
+    "workdir": [],
+    "from": "ubuntu:16.04",
+    "maintainer": "Gino Jongenelen <g.jongenelen@pushto.space>",
+    "cmd": "[\"/root/start.sh\"]"
+  },
+  "source_repository_url": "git@bitbucket.org:pushtospace/nginx.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/pushtospace/nginx",
+  "docker_repository": "pushtospace/nginx",
+  "docker_image": "pushtospace/nginx",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "pushtospace/nginx",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/pushtospace/nginx",
+    "https://hub.docker.com/v2/repositories/pushtospace/nginx",
+    "git@bitbucket.org:pushtospace/nginx.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/pushtospace/nginx",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

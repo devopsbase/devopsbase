@@ -1,0 +1,106 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/enieuw/jenkins",
+    "repository_url": "https://hub.docker.com/v2/repositories/enieuw/jenkins",
+    "tags_url": "https://hub.docker.com/v2/repositories/enieuw/jenkins/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/enieuw/jenkins/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/enieuw/jenkins/autobuild",
+    "user": "enieuw",
+    "name": "jenkins",
+    "namespace": "enieuw",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 8264,
+    "last_updated": "2016-10-17T08:14:32.783287Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 391445288,
+        "id": 2245947,
+        "repository": 568983,
+        "creator": 561633,
+        "last_updater": 561633,
+        "last_updated": "2016-10-17T08:14:32.384428Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "nautsio/appfactory-poc"
+  },
+  "name": "enieuw/jenkins Docker container",
+  "description": "Jenkins",
+  "readme": "# KPN Appfactory POC\n\n## Abbreviated git conventions\n\n* All branches are created from the master branch.\n* All tickets are merged back to master using pull requests rather than manual merges.\n* A pull request must always be reviewed by a different person than the person creating the PR.\n* Master is always stable so any code which isn’t ready yet should be disabled using a feature toggle or shouldn’t be merged yet.\n* Every ticket is created in a feature branch according  the naming convention (see below)\n* Generated files which need to be tracked, such as terraform.tfstate are allowed to be committed to master directly\n\n## Directory structure\n\n    .\n    ├── docker                   # resources for DSL scripts\n    ├── fleet                    # Sample fleet files\n    ├── kubernetes               # Kubernetes resource yaml files\n    ├── kubernetes-customer      # Kubernetes resource yaml files for demo customer environment\n    ├── pipeline                 # Jenkins Pipeline DSL files\n    │   ├── jobs                 # Groovy files for all Jenkins jobs\n    │   └── resources            # Resources needed by Groovy jobs\n    └── terraform                # TF files to bootstrap environments\n\n## Git branch naming convention\n\nThe branch name should follow the following pattern: \n\n\\<category\\>/\\<ticket#\\>-\\<description\\> \n* ticket# := projectplace or jira ticket number \n* category := [feature|fix] \n\ne.g. feature/123-make_stuff\n",
+  "dockerfile": "FROM jenkins:1.651.3\nCOPY install-plugins.sh /tmp/install-plugins.sh\nUSER root\nRUN chmod +x /tmp/install-plugins.sh\nRUN /tmp/install-plugins.sh deployit-plugin xlrelease-plugin maven-plugin git job-dsl chucknorris greenballs envinject gradle slack github view-job-filters copyartifact cloudbees-folder\nCOPY plugins.txt /tmp/plugins.txt\nRUN /usr/local/bin/plugins.sh /tmp/plugins.txt\n#233 is the docker gid under CoreOS, has to be added in the container so Jenkins can control the docker socket\nRUN groupadd -g 233 docker && adduser jenkins docker\n#Used for access on docker-machine\nRUN adduser jenkins users\n\n#To generate:\n#1) ssh-keyscan -t dsa github.com > githubKey\n#2) ssh-keygen -lf githubKey\n#3) Compare fingerprints against https://help.github.com/articles/what-are-github-s-ssh-key-fingerprints/\n#4) If they match the content of the githubKey file is what you should echo into known_hosts\nRUN echo 'github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=='  >> /etc/ssh/ssh_known_hosts\n\nADD jenkins_start.sh /usr/local/bin/jenkins_start.sh\nRUN chmod +x /usr/local/bin/jenkins_start.sh\n\nADD *.xml /tmp/\nUSER jenkins\n\nENTRYPOINT [\"/usr/local/bin/jenkins_start.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "jenkins_start.sh",
+        "dest": "/usr/local/bin/jenkins_start.sh"
+      },
+      {
+        "source": "*.xml",
+        "dest": "/tmp/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "chmod +x /tmp/install-plugins.sh",
+      "/tmp/install-plugins.sh deployit-plugin xlrelease-plugin maven-plugin git job-dsl chucknorris greenballs envinject gradle slack github view-job-filters copyartifact cloudbees-folder",
+      "/usr/local/bin/plugins.sh /tmp/plugins.txt",
+      "groupadd -g 233 docker && adduser jenkins docker",
+      "adduser jenkins users",
+      "echo 'github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=='  >> /etc/ssh/ssh_known_hosts",
+      "chmod +x /usr/local/bin/jenkins_start.sh"
+    ],
+    "workdir": [],
+    "from": "jenkins:1.651.3",
+    "copy": "plugins.txt /tmp/plugins.txt",
+    "user": "jenkins",
+    "entrypoint": "[\"/usr/local/bin/jenkins_start.sh\"]"
+  },
+  "source_repository_url": "git@github.com:nautsio/appfactory-poc.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/nautsio/appfactory-poc",
+  "docker_repository": "enieuw/jenkins",
+  "docker_image": "enieuw/jenkins",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "enieuw/jenkins",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/enieuw/jenkins",
+    "https://hub.docker.com/v2/repositories/enieuw/jenkins",
+    "git@github.com:nautsio/appfactory-poc.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/Europe/EU",
+    "Type/Devopsware/Integration/Jenkins"
+  ],
+  "info_url": "https://hub.docker.com/r/enieuw/jenkins",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

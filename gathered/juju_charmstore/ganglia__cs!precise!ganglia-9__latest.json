@@ -1,0 +1,120 @@
+{
+  "name": "ganglia Juju charm",
+  "juju_charm_name": "ganglia",
+  "revision": "cs:precise/ganglia-9",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/ganglia",
+    "https://jujucharms.com/ganglia/precise",
+    "https://jujucharms.com/ganglia/precise/9",
+    "https://api.jujucharms.com/v5/ganglia",
+    "https://api.jujucharms.com/v5/precise/ganglia",
+    "https://api.jujucharms.com/v5/precise/ganglia-9"
+  ],
+  "labels": [
+    "Juju charm",
+    "misc",
+    "Type/Middleware/Runtime/Java",
+    "Binding/Provider/HP",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Devopsware/Monitoring",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://jujucharms.com/ganglia",
+  "package_url": "https://api.jujucharms.com/v5/precise/ganglia-9/archive",
+  "created": "2015-06-17T09:32:29.994Z",
+  "updated": "2015-06-17T09:32:29.994Z",
+  "description": "Ganglia monitoring server\n\nGanglia is a scalable distributed monitoring system for high-performance\ncomputing systems such as clusters and Grids.\n.\nThis charm should be used with the ganglia-node charm to deploy Ganglia\nfor monitoring of other services.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "precise",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= precise"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/monitor",
+      "self_resolve": true,
+      "juju_interface": "monitor",
+      "juju_name": "ganglia-node",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/monitor",
+      "self_resolve": true,
+      "juju_interface": "monitor",
+      "juju_name": "master",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/monitor",
+      "self_resolve": true,
+      "juju_interface": "monitor",
+      "juju_name": "node",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "dead_host_timeout": {
+      "type": "int",
+      "description": "Number of seconds after which a host is considered\nremoved from the configuration and will be dropped\nby ganglia.\n",
+      "default": 3600,
+      "mapping": "charm_option"
+    },
+    "gridname": {
+      "type": "string",
+      "description": "Name of the default grid into which all services\nbeing monitored get automatically placed.\n",
+      "default": "everything",
+      "mapping": "charm_option"
+    },
+    "key": {
+      "type": "string",
+      "description": "Key to import to the apt keyring to support use\nwith arbitary source configuration from outside\nof launchpad archives or PPA's\n",
+      "default": null,
+      "mapping": "charm_option"
+    },
+    "source": {
+      "type": "string",
+      "description": "Optional configuration to support use of additional\nsources such as:\n.\n    - ppa:myteam/myppa\n    - cloud:folsom-proposed\n    - http://my.archive.com/ubuntu main\n.\nThe last option should be used in conjunction with\nthe key configuration option.\n",
+      "default": null,
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/monitor",
+      "juju_interface": "monitor",
+      "juju_name": "head",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/http",
+      "juju_interface": "http",
+      "juju_name": "website",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "# Overview\n\n> Ganglia is a scalable distributed monitoring system for high-performance computing\n systems such as clusters and Grids. It is based on a hierarchical design targeted\n at federations of clusters. It leverages widely used technologies such as XML for\n data representation, XDR for compact, portable data transport, and RRDtool for data\n storage and visualization. It uses carefully engineered data structures and\n algorithms to achieve very low per-node overheads and high concurrency. The\n implementation is robust, has been ported to an extensive set of operating systems\n and processor architectures, and is currently in use on thousands of clusters around\n the world. It has been used to link clusters across university campuses and around\n the world and can scale to handle clusters with 2000 nodes.\n\nIn short - it monitors stuff and scales really well.\n\n# Usage\n\nThis charm and is subordinate peer - ganglia-node - support using ganglia in a\ncouple of different ways.\n\n## Small\n\n\nFor small deployments, use of a single 'master' head server may be sufficient:\n\n    juju deploy ganglia\n    juju deploy ganglia-node\n    juju add-relation ganglia:node ganglia-node:node\n    juju deploy mysql\n    juju deploy memcached\n    ...\n    juju add-relation ganglia-node mysql\n    juju add-relation ganglia-node memcached\n    juju expose ganglia\n\nGanglia will start reporting metrics about deployed services::\n\n    http://<IP of ganglia service unit>/ganglia\n\n## Large\n\nFor larger deployments which require more scalability, its possible to leverage\nthe hierarchical nature of ganglia to build up resilience and better scale:\n    \n    juju deploy ganglia\n    juju deploy ganglia mysql-ganglia-cluster\n    juju deploy ganglia memcached-ganglia-cluster\n    juju deploy ganglia-node ganglia-node-mysql\n    juju deploy ganglia-node ganglia-node-memcached\n    juju add-relation ganglia:master mysql-ganglia-cluster:head\n    juju add-relation ganglia:master memcached-ganglia-cluster:head\n    juju add-relation mysql-ganglia-cluster:node ganglia-node-mysql:node\n    juju add-relation memcached-ganglia-cluster:node ganglia-node-memcached:node\n    juju deploy mysql\n    juju deploy -n XX memcached\n    juju add-relation ganglia-node-mysql mysql\n    juju add-relation ganglia-node-memcached memcached\n    juju expose ganglia\n\nThe XX-ganglia-cluster service units will receive data from all services associated\nwith ganglia-node deployments, leaving the main ganglia service to cope with the web\ninterface and report generation.\n",
+  "readme": "# Overview\n\n> Ganglia is a scalable distributed monitoring system for high-performance computing\n systems such as clusters and Grids. It is based on a hierarchical design targeted\n at federations of clusters. It leverages widely used technologies such as XML for\n data representation, XDR for compact, portable data transport, and RRDtool for data\n storage and visualization. It uses carefully engineered data structures and\n algorithms to achieve very low per-node overheads and high concurrency. The\n implementation is robust, has been ported to an extensive set of operating systems\n and processor architectures, and is currently in use on thousands of clusters around\n the world. It has been used to link clusters across university campuses and around\n the world and can scale to handle clusters with 2000 nodes.\n\nIn short - it monitors stuff and scales really well.\n\n# Usage\n\nThis charm and is subordinate peer - ganglia-node - support using ganglia in a\ncouple of different ways.\n\n## Small\n\n\nFor small deployments, use of a single 'master' head server may be sufficient:\n\n    juju deploy ganglia\n    juju deploy ganglia-node\n    juju add-relation ganglia:node ganglia-node:node\n    juju deploy mysql\n    juju deploy memcached\n    ...\n    juju add-relation ganglia-node mysql\n    juju add-relation ganglia-node memcached\n    juju expose ganglia\n\nGanglia will start reporting metrics about deployed services::\n\n    http://<IP of ganglia service unit>/ganglia\n\n## Large\n\nFor larger deployments which require more scalability, its possible to leverage\nthe hierarchical nature of ganglia to build up resilience and better scale:\n    \n    juju deploy ganglia\n    juju deploy ganglia mysql-ganglia-cluster\n    juju deploy ganglia memcached-ganglia-cluster\n    juju deploy ganglia-node ganglia-node-mysql\n    juju deploy ganglia-node ganglia-node-memcached\n    juju add-relation ganglia:master mysql-ganglia-cluster:head\n    juju add-relation ganglia:master memcached-ganglia-cluster:head\n    juju add-relation mysql-ganglia-cluster:node ganglia-node-mysql:node\n    juju add-relation memcached-ganglia-cluster:node ganglia-node-memcached:node\n    juju deploy mysql\n    juju deploy -n XX memcached\n    juju add-relation ganglia-node-mysql mysql\n    juju add-relation ganglia-node-memcached memcached\n    juju expose ganglia\n\nThe XX-ganglia-cluster service units will receive data from all services associated\nwith ganglia-node deployments, leaving the main ganglia service to cope with the web\ninterface and report generation.\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

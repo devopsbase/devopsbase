@@ -1,0 +1,127 @@
+{
+  "name": "mediawiki Juju charm",
+  "juju_charm_name": "mediawiki",
+  "revision": "cs:precise/mediawiki-18",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/mediawiki",
+    "https://jujucharms.com/mediawiki/precise",
+    "https://jujucharms.com/mediawiki/precise/18",
+    "https://api.jujucharms.com/v5/mediawiki",
+    "https://api.jujucharms.com/v5/precise/mediawiki",
+    "https://api.jujucharms.com/v5/precise/mediawiki-18"
+  ],
+  "labels": [
+    "Juju charm",
+    "applications",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Mode/API/Toolkit",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Middleware/Application Server/IIS"
+  ],
+  "info_url": "https://jujucharms.com/mediawiki",
+  "package_url": "https://api.jujucharms.com/v5/precise/mediawiki-18/archive",
+  "created": "2015-06-17T09:32:57.737Z",
+  "updated": "2015-06-17T09:32:57.737Z",
+  "description": "Website engine for collaborative work\n\nMediaWiki is a wiki engine (a program for creating a collaboratively\nedited website). It is designed to handle heavy websites containing\nlibrary-like document collections, and supports user uploads of\nimages/sounds, multilingual content, TOC autogeneration, ISBN links,\netc.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "precise",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= precise"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/memcache",
+      "self_resolve": true,
+      "juju_interface": "memcache",
+      "juju_name": "cache",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/mysql",
+      "self_resolve": true,
+      "juju_interface": "mysql",
+      "juju_name": "db",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/mysql",
+      "self_resolve": true,
+      "juju_interface": "mysql",
+      "juju_name": "slave",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "admins": {
+      "type": "string",
+      "description": "Admin users to create, user:pass",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "debug": {
+      "type": "boolean",
+      "description": "turn on debugging features of mediawiki",
+      "default": false,
+      "mapping": "charm_option"
+    },
+    "logo": {
+      "type": "string",
+      "description": "URL to fetch logo from",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "name": {
+      "type": "string",
+      "description": "The name, or Title of the Wiki",
+      "default": "Please set name of wiki",
+      "mapping": "charm_option"
+    },
+    "server_address": {
+      "type": "string",
+      "description": "The server url to set \"$wgServer\". Useful for reverse proxies",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "skin": {
+      "type": "string",
+      "description": "skin for the Wiki",
+      "default": "vector",
+      "mapping": "charm_option"
+    },
+    "use_suffix": {
+      "type": "boolean",
+      "description": "If we should put '/mediawiki' suffix on the url",
+      "default": true,
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/http",
+      "juju_interface": "http",
+      "juju_name": "website",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "# Overview\n\nMediaWiki is a free wiki software application. Developed by the Wikimedia Foundation and others, it is used to run all of the projects\nhosted by the Foundation, including Wikipedia, Wiktionary and Commons. Numerous other wikis around the world also use it to power their \nwebsites. It is written in the PHP programming language and uses a backend database.\n\nThis charm will deploy MediaWiki in to the cloud while applying best practices for running scale-out infrastructures, php based applications \nand MediaWiki. In addition to the required minimum of MySQL -> MediaWiki; this charm also accepts several other services to provide a more robust service experience.\n\n# Usage\n\nThis charm is available in the Juju Charm Store along with hundreds of others. To deploy this charm you will need: [a cloud environment][1], a working [Juju][2] \ninstallation, and an already bootstrapped environment.\n\nOnce bootstrapped, deploy the [MySQL][3] and MediaWiki charm:\n\n    juju deploy mysql\n    juju deploy mediawiki\n\nAdd a relation between the two. Note: To avoid recieving \"ambiguous relation\" error, specify the \"db\" relation:\n\n    juju add-relation mysql mediawiki:db\n\nExpose the MediaWiki service\n\n    juju expose mediawiki\n\n## Scale Out Usage\n\nMediaWiki is designed to cache against memcached to provide a faster and smoother site experience. To add memcached to your mediawiki service first \ndeploy memcached:\n\n    juju deploy memcached\n\nthen relate it to the mediawiki service\n\n    juju add-relation memcached mediawiki\n\nMemcached is recommended for environments with more than one unit deployed. Otherwise there is very little advantage gained by using memcached since \nMediaWiki will already use whatever byte-code cache is specified in the charm's configuration.\n\n## MySQL Slave\n\nIf you're running MySQL with a slave set up you can attach MediaWiki to those slaves directly as MediaWiki (both the application and service) can handle this. To \ndo this first set up a slave relation with MySQL (If you've already done so skip to the next set of commands):\n\n    juju deploy mysql mysql-slave\n    juju add-relation mysql mysql-slave\n\nGoing forward you can scale out MySQL by adding slaves via `juju add-unit mysql-slave`.\n\nCreate a relation between the new slave services and MediaWiki:\n\n    juju add-relation mediawiki:slave mysql-slave\n\n## Known Limitations and Issues\n\n### Maintenance Scripts\n\nFrom time to time, during routine operation of a MediaWiki installation, maintenace via [the maintenace scripts directory][8] may need to be executed. Depending on the nature of the maintenance operation this might need to occur on one node or all nodes of a MediaWiki deployment.\nThe following examples outline how to run maintenance on either a single machine or all units in a service.\n\n### All units\n\nIn the event you need to run a script on all machines at once you can use the following bash loop (replacing:\n\n    maint_script_to_run=\"\"\n    \n    for unit in `juju status mediawiki | egrep -E \"machine: ([0-9])\" | tr -d ' ' | cut -d ':' -f2`; do\n        juju ssh $unit \"php -q /var/www/maintenance/$maint_script_to_run\"\n    done\n\n# Configuration\n\nMediaWiki charm comes with a handful of settings designed to help streamline and manage your deployment. For convenience if any applicable MediaWiki setting variables are \nassociated with the change they'll be listed in parentheses ().\n\n## MediaWiki name ($wgSitename)\n\nThis will set the name of the Wiki installation.\n\n    juju set mediawiki name='Juju Wiki!'\n\n## Skin ($wgDefaultSkin)\n\nAs the option implies, this sets the default skin for all new users and anonymous users.\n\n    juju set mediawiki skin='monobook'\n\nOne limitation is already registered users will have whatever Skin was set as the default applied to their account. This is a [MediaWiki \"limitation\"][4]. See caveats \nfor more information on running Maintenance scripts.\n\n## Admins\n\nThis will configure admin accounts for the MediaWiki instance. The expected format is user:pass\n\n    juju set mediawiki admins=\"tom:swordfish\"\n\nThis creates a user \"tom\" and sets their password to \"swordfish\". In the even you wish to add more than one admin at a time you can provide a list of user:pass values separated by a space \" \":\n\n    juju set mediawiki admins=\"tom:swordfish mike:wazowsk1\"\n\nThis will create both of those users. At this time setting the admins option to noting (\"\") will neither add or remove any existing admins. It's simply skipped. To avoid having the password and usernames exposed consider running the following after you've set up admin accounts:\n\n    juju set mediawiki admins=\"\"\n\n## Debug ($wgDebugLogFile)\n\nWhen set to true this option will enable the following MediaWiki options: `$wgDebugLogFile`, `$wgDebugComments`, `$wgShowExceptionDetails`, `$wgShowSQLErrors`, `$wgDebugDumpSql`, and `$wgShowDBErrorBacktrace`. A log file will be crated in the charm's root directory on each machine called \"debug.log\". For most providers this will be `/var/lib/juju/units/mediawiki-0/charm/debug.log`, where `mediawiki-0` is the name of the service and unit number.\n\n# Contact Information\n\n## MediaWiki Project Information\n\n- [MediaWiki home page](http://www.mediawiki.org)\n- [MediaWiki bug tracker](http://www.mediawiki.org/wiki/Bugzilla)\n- [MediaWiki mailing lists](http://www.mediawiki.org/wiki/Mailing_lists)\n\n[1]: https://juju.ubuntu.com/docs/getting-started.html\n[2]: https://juju.ubuntu.com/docs/getting-started.html#installation\n[3]: http://jujucharms.com/charms/precise/mysql\n[4]: http://www.mediawiki.org/wiki/Manual:$wgDefaultSkin\n[5]: http://packages.ubuntu.com/precise/mediawiki\n[6]: http://www.mediawiki.org/wiki/Download_from_Git\n[7]: https://integration.mediawiki.org/nightly/mediawiki/core/?C=M;O=D\n[8]: http://www.mediawiki.org/wiki/Manual:Maintenance_scripts\n[9]: http://askubuntu.com/questions/152428/how-to-ssh-into-local-juju-instance\n",
+  "readme": "# Overview\n\nMediaWiki is a free wiki software application. Developed by the Wikimedia Foundation and others, it is used to run all of the projects\nhosted by the Foundation, including Wikipedia, Wiktionary and Commons. Numerous other wikis around the world also use it to power their \nwebsites. It is written in the PHP programming language and uses a backend database.\n\nThis charm will deploy MediaWiki in to the cloud while applying best practices for running scale-out infrastructures, php based applications \nand MediaWiki. In addition to the required minimum of MySQL -> MediaWiki; this charm also accepts several other services to provide a more robust service experience.\n\n# Usage\n\nThis charm is available in the Juju Charm Store along with hundreds of others. To deploy this charm you will need: [a cloud environment][1], a working [Juju][2] \ninstallation, and an already bootstrapped environment.\n\nOnce bootstrapped, deploy the [MySQL][3] and MediaWiki charm:\n\n    juju deploy mysql\n    juju deploy mediawiki\n\nAdd a relation between the two. Note: To avoid recieving \"ambiguous relation\" error, specify the \"db\" relation:\n\n    juju add-relation mysql mediawiki:db\n\nExpose the MediaWiki service\n\n    juju expose mediawiki\n\n## Scale Out Usage\n\nMediaWiki is designed to cache against memcached to provide a faster and smoother site experience. To add memcached to your mediawiki service first \ndeploy memcached:\n\n    juju deploy memcached\n\nthen relate it to the mediawiki service\n\n    juju add-relation memcached mediawiki\n\nMemcached is recommended for environments with more than one unit deployed. Otherwise there is very little advantage gained by using memcached since \nMediaWiki will already use whatever byte-code cache is specified in the charm's configuration.\n\n## MySQL Slave\n\nIf you're running MySQL with a slave set up you can attach MediaWiki to those slaves directly as MediaWiki (both the application and service) can handle this. To \ndo this first set up a slave relation with MySQL (If you've already done so skip to the next set of commands):\n\n    juju deploy mysql mysql-slave\n    juju add-relation mysql mysql-slave\n\nGoing forward you can scale out MySQL by adding slaves via `juju add-unit mysql-slave`.\n\nCreate a relation between the new slave services and MediaWiki:\n\n    juju add-relation mediawiki:slave mysql-slave\n\n## Known Limitations and Issues\n\n### Maintenance Scripts\n\nFrom time to time, during routine operation of a MediaWiki installation, maintenace via [the maintenace scripts directory][8] may need to be executed. Depending on the nature of the maintenance operation this might need to occur on one node or all nodes of a MediaWiki deployment.\nThe following examples outline how to run maintenance on either a single machine or all units in a service.\n\n### All units\n\nIn the event you need to run a script on all machines at once you can use the following bash loop (replacing:\n\n    maint_script_to_run=\"\"\n    \n    for unit in `juju status mediawiki | egrep -E \"machine: ([0-9])\" | tr -d ' ' | cut -d ':' -f2`; do\n        juju ssh $unit \"php -q /var/www/maintenance/$maint_script_to_run\"\n    done\n\n# Configuration\n\nMediaWiki charm comes with a handful of settings designed to help streamline and manage your deployment. For convenience if any applicable MediaWiki setting variables are \nassociated with the change they'll be listed in parentheses ().\n\n## MediaWiki name ($wgSitename)\n\nThis will set the name of the Wiki installation.\n\n    juju set mediawiki name='Juju Wiki!'\n\n## Skin ($wgDefaultSkin)\n\nAs the option implies, this sets the default skin for all new users and anonymous users.\n\n    juju set mediawiki skin='monobook'\n\nOne limitation is already registered users will have whatever Skin was set as the default applied to their account. This is a [MediaWiki \"limitation\"][4]. See caveats \nfor more information on running Maintenance scripts.\n\n## Admins\n\nThis will configure admin accounts for the MediaWiki instance. The expected format is user:pass\n\n    juju set mediawiki admins=\"tom:swordfish\"\n\nThis creates a user \"tom\" and sets their password to \"swordfish\". In the even you wish to add more than one admin at a time you can provide a list of user:pass values separated by a space \" \":\n\n    juju set mediawiki admins=\"tom:swordfish mike:wazowsk1\"\n\nThis will create both of those users. At this time setting the admins option to noting (\"\") will neither add or remove any existing admins. It's simply skipped. To avoid having the password and usernames exposed consider running the following after you've set up admin accounts:\n\n    juju set mediawiki admins=\"\"\n\n## Debug ($wgDebugLogFile)\n\nWhen set to true this option will enable the following MediaWiki options: `$wgDebugLogFile`, `$wgDebugComments`, `$wgShowExceptionDetails`, `$wgShowSQLErrors`, `$wgDebugDumpSql`, and `$wgShowDBErrorBacktrace`. A log file will be crated in the charm's root directory on each machine called \"debug.log\". For most providers this will be `/var/lib/juju/units/mediawiki-0/charm/debug.log`, where `mediawiki-0` is the name of the service and unit number.\n\n# Contact Information\n\n## MediaWiki Project Information\n\n- [MediaWiki home page](http://www.mediawiki.org)\n- [MediaWiki bug tracker](http://www.mediawiki.org/wiki/Bugzilla)\n- [MediaWiki mailing lists](http://www.mediawiki.org/wiki/Mailing_lists)\n\n[1]: https://juju.ubuntu.com/docs/getting-started.html\n[2]: https://juju.ubuntu.com/docs/getting-started.html#installation\n[3]: http://jujucharms.com/charms/precise/mysql\n[4]: http://www.mediawiki.org/wiki/Manual:$wgDefaultSkin\n[5]: http://packages.ubuntu.com/precise/mediawiki\n[6]: http://www.mediawiki.org/wiki/Download_from_Git\n[7]: https://integration.mediawiki.org/nightly/mediawiki/core/?C=M;O=D\n[8]: http://www.mediawiki.org/wiki/Manual:Maintenance_scripts\n[9]: http://askubuntu.com/questions/152428/how-to-ssh-into-local-juju-instance\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

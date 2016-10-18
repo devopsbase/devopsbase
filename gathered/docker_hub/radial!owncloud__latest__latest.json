@@ -1,0 +1,111 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/radial/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/radial/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/radial/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/radial/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/radial/owncloud/autobuild",
+    "user": "radial",
+    "name": "owncloud",
+    "namespace": "radial",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 4,
+    "pull_count": 529,
+    "last_updated": "2016-10-13T22:06:32.268794Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 172963122,
+        "id": 52386,
+        "repository": 57606,
+        "creator": 16199,
+        "last_updater": 16199,
+        "last_updated": "2016-10-13T22:06:31.933911Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "radial/wheel-owncloud"
+  },
+  "name": "radial/owncloud Docker container",
+  "description": "Spoke container for Owncloud, an open source personal cloud platform written in PHP.",
+  "readme": "# Owncloud: Open source personal cloud platform written in PHP\n\nThis is a Radial Wheel repository for an [Owncloud][owncloud] app.\n\nIt doesn't actually run by itself. The Spoke container that this repository\ncreates merely gathers the source code for the owncloud app itself, the php\nlanguage data needed to run it, and results in creating the CGI (Common Gateway\nInterface) as a final step, which is a php-fpm socket by default.\n\nIt is up to the user to put together the rest of the stack needed to actually\nserve this app and combine all the configuration and other Spokes into one\nhybrid Wheel repository. One may configure any server, any database, and any\nother supplementary tools as long as it can reach this app via the standard unix\nsocket.\n\n[owncloud]: http://owncloud.org/\n\n## Tunables\n\nTunable environment variables; modify at runtime. Italics are defaults.\n\n  - **$OWNCLOUD_VERSION**: [_\"7.0.2\"_] Which owncloud source code version to\n    download. (ex.  \"7.0.2\")\n  - **$WWW_DIR**: [_\"/data/www\"_] Location to store source. Radial\n    \"best-practice\" is in the '/data' directory.\n\n## Radial\n\n[Radial][radial] is a [Docker][docker] container topology strategy that\nseeks to put the cannon of Docker best-practices into simple, re-usable, and\nscalable images, dockerfiles, and repositories. Radial categorizes containers\ninto 3 types: Axles, Hubs, and Spokes. A Wheel is a repository used to recreate\nan application stack consisting of any combination of all three types of\ncontainers. Check out the [Radial documentation][radialdocs] for more.\n\nOne of the main design goals of Radial containers is simple and painless\nmodularity. All Spoke (application/binary) containers are designed to be run by\nthemselves as a service (a Wheel consisting of a Hub container for configuration\nand a Spoke container for the running binary) or as part of a larger stack as a\nWheel of many Spokes all joined by the Hub container (database, application\ncode, web server, backend services etc.). Check out the [Wheel\ntutorial][wheel-template] for some more details on how this works.\n\nNote also that for now, Radial makes use of [Fig][fig] for all orchestration,\ndemonstration, and testing. Radial is just a collection of images and\nstrategies, so technically, any orchestration tool can work. But Fig was the\nleanest and most logical to use for now. \n\n[wheel-template]: https://github.com/radial/template-wheel\n[fig]: http://www.fig.sh\n[docker]: http://docker.io/\n[radial]: https://github.com/radial\n[radialdocs]: http://radial.viewdocs.io/docs\n\n## How to Use\n### Static Build\n\nIn case you need to modify the entrypoint script, the Dockerfile itself, create\nyour \"config\" branch for dynamic building, or just prefer to build your own from\nscratch, then you can do the following:\n\n1. Clone this repository\n2. Make whatever changes needed to configuration and add whatever files\n3. `fig up`\n\n### Dynamic Build\n\nA standard feature of all Radial images is their ability to be used dynamically.\nThis means that since great care is made to separate the application code from\nit's configuration, as long as you make your application configuration available\nas a git repository, and in it's own \"config\" branch as per the guidelines in\nthe [Wheel template][wheel-template], no building of any images will be\nnecessary at deploy time. This has many benefits as it allows rapid deployment\nand configuration without any wait time in the building process. However:\n\n**Dynamic builds will not commit your configuration files into any\nresulting images like static builds.**\n\nStatic builds do a \"COPY\" of files into the image before exposing the\ndirectories as volumes. Dynamic builds do a `git fetch` at run time and the\nresulting data is downloaded to an already existing volume location, which is\nnow free from Docker versioning. Both methods have their advantages and\ndisadvantages. Deploying the same exact configuration might benefit from a\nsingle image built statically whereas deploying many different disposable \nconfigurations rapidly are best done dynamically with no building.\n\nTo run dynamically:\n\n1. Modify the `fig-dynamic.yml` file to point at your own Wheel repository\n   location by setting the `$WHEEL_REPO` variable. When run, the Hub container\n   will pull the \"config\" branch of that repository and use it to run the Spoke\n   container with your own configuration.\n3. `fig -f fig-dynamic.yml up`\n",
+  "dockerfile": "# Spoke Dockerfile for owncloud\n\nFROM            radial/spoke-base:latest\nMAINTAINER      Brian Clements <radial@brianclements.net>\n\n# Install packages\nENV             DEBIAN_FRONTEND noninteractive\nRUN             apt-get -q update && apt-get -qyV install \\\n                    curl libcurl3 bzip2 wget openssl ssl-cert sharutils libmcrypt4 \\\n                    ffmpegthumbnailer smbclient php5 php5-fpm php5-gd php-xml-parser php5-intl \\\n                    php5-pgsql php5-curl liboauth-php libphp-pclzip libphp-phpmailer php-file \\\n                    php-aws-sdk php-crypt-blowfish php-doctrine-common php-dompdf php-dropbox \\\n                    php-font-lib php-getid3 php-google-api-php-client php-guzzle php-irods-prods \\\n                    php-opencloud php-patchwork-utf8 php-pear php-phpdocx php-sabre-dav \\\n                    php-sabre-vobject php-seclib php-services-json php-symfony-console \\\n                    php-symfony-eventdispatcher php-symfony-routing php-fpdf php5-apcu php5-cli \\\n                    php5-common php5-imagick php-net-ftp php5-gmp php5-json php5-ldap php5-mcrypt \\\n                    php5-oauth php5-readline php5-tidy php5-xsl sdop zend-framework \\\n                    zend-framework-bin libzend-framework-php &&\\\n                apt-get clean &&\\\n                rm -rf /var/lib/apt/lists/*\n\n# Process startup info\nENV             SPOKE_NAME ocApp\n\nCOPY            /entrypoint.sh /entrypoint.sh\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "            apt-get -q update && apt-get -qyV install                     curl libcurl3 bzip2 wget openssl ssl-cert sharutils libmcrypt4                     ffmpegthumbnailer smbclient php5 php5-fpm php5-gd php-xml-parser php5-intl                     php5-pgsql php5-curl liboauth-php libphp-pclzip libphp-phpmailer php-file                     php-aws-sdk php-crypt-blowfish php-doctrine-common php-dompdf php-dropbox                     php-font-lib php-getid3 php-google-api-php-client php-guzzle php-irods-prods                     php-opencloud php-patchwork-utf8 php-pear php-phpdocx php-sabre-dav                     php-sabre-vobject php-seclib php-services-json php-symfony-console                     php-symfony-eventdispatcher php-symfony-routing php-fpdf php5-apcu php5-cli                     php5-common php5-imagick php-net-ftp php5-gmp php5-json php5-ldap php5-mcrypt                     php5-oauth php5-readline php5-tidy php5-xsl sdop zend-framework                     zend-framework-bin libzend-framework-php &&                apt-get clean &&                rm -rf /var/lib/apt/lists/*"
+    ],
+    "workdir": [],
+    "from": "           radial/spoke-base:latest",
+    "maintainer": "     Brian Clements <radial@brianclements.net>",
+    "env": {
+      "": "",
+      "DEBIAN_FRONTEND": "noninteractive",
+      "SPOKE_NAME": "ocApp"
+    },
+    "copy": "           /entrypoint.sh /entrypoint.sh"
+  },
+  "source_repository_url": "https://github.com/radial/wheel-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/radial/wheel-owncloud",
+  "docker_repository": "radial/owncloud",
+  "docker_image": "radial/owncloud",
+  "parameters_schema": {
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SPOKE_NAME": {
+      "default": "ocApp",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "radial/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/radial/owncloud",
+    "https://hub.docker.com/v2/repositories/radial/owncloud",
+    "https://github.com/radial/wheel-owncloud.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Devopsware/Cloud Platform",
+    "Type/Middleware/Runtime/PHP"
+  ],
+  "info_url": "https://hub.docker.com/r/radial/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

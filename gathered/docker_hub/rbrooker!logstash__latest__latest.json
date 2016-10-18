@@ -1,0 +1,193 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/rbrooker/logstash",
+    "repository_url": "https://hub.docker.com/v2/repositories/rbrooker/logstash",
+    "tags_url": "https://hub.docker.com/v2/repositories/rbrooker/logstash/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/rbrooker/logstash/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/rbrooker/logstash/autobuild",
+    "user": "rbrooker",
+    "name": "logstash",
+    "namespace": "rbrooker",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 86,
+    "last_updated": "2015-06-16T20:10:01.470662Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 322398225,
+        "id": 234917,
+        "repository": 204242,
+        "creator": 254830,
+        "last_updater": 254830,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "3.2",
+        "full_size": 322398373,
+        "id": 234893,
+        "repository": 204242,
+        "creator": 254830,
+        "last_updater": 254830,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "3.1",
+        "full_size": 322397695,
+        "id": 234867,
+        "repository": 204242,
+        "creator": 254830,
+        "last_updater": 254830,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "2",
+        "full_size": 332405311,
+        "id": 234842,
+        "repository": 204242,
+        "creator": 254830,
+        "last_updater": 254830,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "2.1",
+        "full_size": 322391464,
+        "id": 234821,
+        "repository": 204242,
+        "creator": 254830,
+        "last_updater": 254830,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1",
+        "full_size": 321937522,
+        "id": 234791,
+        "repository": 204242,
+        "creator": 254830,
+        "last_updater": 254830,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "cognition/rbrooker-logstash"
+  },
+  "name": "rbrooker/logstash Docker container",
+  "description": "Docker image to run Logstash version 1.5.0 build on Vivid ",
+  "readme": "Logstash  \n========\n\nBase Docker image to run Logstash version 1.5.0\n\n\n\nUsage\n-----\n```\ndocker run -d -it --link=es:es  --name=\"logstash\" -v /opt/logstash/c:/etc/logstash -v /opt/logstash/log:/var/log/logstash -e ES=\"elasticsearch\" rbrooker/logstash\n```\n\nNotes\n-----\n\n* You must set ``ES`` (ElasticSearch hostname) if you don't have your own config file\n* Exposed volume to for mounting is \"/etc/logstash\" and '/var/log/logstash\"\n* Exposed enviroment variable ``JAVA_OPTS`` for setting heap. Default:``JAVA_OPTS=\"-Xms512m -Xmx1gm\"``\n* Use the `` -e REBUILD=1 `` if the directory structure for volumes is already set, and a new container is needed with different flags (such as ``--restart=\"always\"``) \n\n\nDocumentation \n-------------\n\n* [Elastic.co Logstash Product Site](https://www.elastic.co/products/logstash)\n* [Logstash Documentation](https://www.elastic.co/guide/en/logstash/current/index.html)\n* A really good book that helped me a lot, [The Logstash Book](http://www.logstashbook.com/), by James Turnbull\n\n\nMaintained by \n-------------\n\nRamon Brooker <rbrooker@aetherealmind.com>\n\n\n\n!Important: tag 3.1 has errors, (not sure how to delete it, but fixed now) \n\n\n\n",
+  "dockerfile": "FROM ubuntu:vivid\n\nMAINTAINER Ramon Brooker <rbrooker@aetherealmind.com>\n\nENV DEBIAN_FRONTEND noninteractive\n\n# to allow supervisor to be installed \nRUN echo exit 101 > /usr/sbin/policy-rc.d\nRUN chmod +x /usr/sbin/policy-rc.d\n\n\n# for setting\nENV LS_VERSION_MAJOR=1.5\nENV LS_VERISON_MINOR=1.5.0-1\n\n# install need java run time and update system \nRUN apt-get update && apt-get -y upgrade &&apt-get install -y openjdk-7-jre-headless logrotate\n\n# get and install logstash\nADD  http://download.elastic.co/logstash/logstash/packages/debian/logstash_${LS_VERISON_MINOR}_all.deb /\n\nRUN dpkg -i logstash_${LS_VERISON_MINOR}_all.deb\n\n# Clean up\nRUN apt-get clean\nRUN rm /logstash_${LS_VERISON_MINOR}_all.deb\n\n# Copy of run script\nCOPY run.sh /\nRUN chmod +x /run.sh\n\n\n# add a time stamp\nCOPY set-time.sh /\nRUN chmod +x /set-time.sh\nRUN /set-time.sh\n\nVOLUME [\"/etc/logstash\",\"/var/log/logstash\"]\n\n# ElasticSeach\nEXPOSE  9200\n# Syslog\nEXPOSE  514 \n# snmptrap\nEXPOSE 1062 \n\n\n\nCMD [\"./run.sh\"]\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "",
+        "dest": "http://download.elastic.co/logstash/logstash/packages/debian/logstash_${LS_VERISON_MINOR}_all.deb"
+      }
+    ],
+    "expose": [
+      9200,
+      514,
+      1062
+    ],
+    "volume": [
+      "[\"/etc/logstash\",\"/var/log/logstash\"]"
+    ],
+    "run": [
+      "echo exit 101 > /usr/sbin/policy-rc.d",
+      "chmod +x /usr/sbin/policy-rc.d",
+      "apt-get update && apt-get -y upgrade &&apt-get install -y openjdk-7-jre-headless logrotate",
+      "dpkg -i logstash_${LS_VERISON_MINOR}_all.deb",
+      "apt-get clean",
+      "rm /logstash_${LS_VERISON_MINOR}_all.deb",
+      "chmod +x /run.sh",
+      "chmod +x /set-time.sh",
+      "/set-time.sh"
+    ],
+    "workdir": [],
+    "from": "ubuntu:vivid",
+    "maintainer": "Ramon Brooker <rbrooker@aetherealmind.com>",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "LS_VERSION_MAJOR": "1.5",
+      "LS_VERISON_MINOR": "1.5.0-1"
+    },
+    "copy": "set-time.sh /",
+    "cmd": "[\"./run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/cognition/rbrooker-logstash.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/cognition/rbrooker-logstash",
+  "docker_repository": "rbrooker/logstash",
+  "docker_image": "rbrooker/logstash",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LS_VERSION_MAJOR": {
+      "default": "1.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LS_VERISON_MINOR": {
+      "default": "1.5.0-1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        9200,
+        514,
+        1062
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "rbrooker/logstash",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/rbrooker/logstash",
+    "https://hub.docker.com/v2/repositories/rbrooker/logstash",
+    "https://github.com/cognition/rbrooker-logstash.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Build",
+    "Type/Devopsware/Logging/Logstash"
+  ],
+  "info_url": "https://hub.docker.com/r/rbrooker/logstash",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,59 @@
+{
+  "name": "nginx-fastcgi Chef cookbook",
+  "chef_cookbook_name": "nginx-fastcgi",
+  "revision": "0.0.10",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/nginx-fastcgi",
+    "https://supermarket.chef.io/cookbooks/nginx-fastcgi/download",
+    "https://supermarket.chef.io/cookbooks/nginx-fastcgi/versions/0.0.10",
+    "https://supermarket.chef.io/cookbooks/nginx-fastcgi/versions/0.0.10/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/nginx-fastcgi/versions/0.0.10",
+    "https://supermarket.chef.io/api/v1/cookbooks/nginx-fastcgi",
+    "https://supermarket.chef.io/api/v1/cookbooks/nginx-fastcgi/versions/0.0.10/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Style/Virtualization Level/Application",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/nginx-fastcgi",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/nginx-fastcgi/versions/0.0.10/download",
+  "deprecated": false,
+  "created": "2012-05-18T10:54:43.000Z",
+  "updated": "2012-11-28T12:36:17.000Z",
+  "description": "create nginx site to run your fastcgi application under nginx frontend",
+  "maintainer": {
+    "name": "melezhik",
+    "email": "melezhik@gmail.com"
+  },
+  "license": "All rights reserved",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 4,
+  "downloads_count": 11281182,
+  "downloads_count_revision": 1253440,
+  "repository_url": "http://github.com/melezhik/cookbooks/tree/master/nginx-fastcgi",
+  "issues_url": "http://github.com/melezhik/cookbooks/tree/master/nginx-fastcgi",
+  "chef_source_url": "http://github.com/melezhik/cookbooks/tree/master/nginx-fastcgi",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Description\nCreates nginx site to run your fastcgi application with nginx front-end\n\n# Requirements\nShould work on any platform where nginx is installed. Tested on Ubuntu/Debian.\n\n# Limitations\nfastcgi standalone server mode is only supported\n\n# DEFINITIONS\n``nginx_fastcgi``\n\nThis definition can be used to create nginx site to run your fastcgi application with nginx front-end.\n \nThe definition takes the following parameters:\n \n* `name`: specifies a path for nginx site configuration file. No default, this must be specified.\n* `socket`: specifies unix socket of FastCGI server. \n* `inet_socket`: specifies inet socket of FastCGI server. No default. Choose either unix or inet socket. \n\nCheck out http://wiki.nginx.org/HttpFastcgiModule#fastcgi_pass for details.\n\n* `static`: specifies location of static files (to be handled by nginx). Array of Hashes or hash with following keys:\n   * `location`\n   * `root`\n* `servers`: specifies virtual hosts to be included into ngix site configuration. Array of Hashes with following keys:\n   * `ip`\n   * `server_name`\n   * `ssl`\n   * `ssl_include_path`\n   * `error_page`\n   * `redirect`\n* `cookbook`: specifies the cookbook with nginx site configuration template. Optional\n* `fastcgi_param`: specifies additional fastcgi params\n* `error_page` - specifies custom error pages. Array of Hashes with following keys:\n * code\n * handler\n\nCheck out http://wiki.nginx.org/HttpCoreModule#error_page for details\n\n* `fastcgi_intercept_errors` - specify value for fastcgi_intercept_errors. Check out http://wiki.nginx.org/HttpFastcgiModule#fastcgi_intercept_errors for details. Default value is false\n* `fastcgi_read_timeout` - specify value for fastcgi read timeout. Check out http://nginx.org/en/docs/http/ngx_http_fastcgi_module.html#fastcgi_read_timeout for details. Default value is nil.\n\n# Usage cases\n\n## named virtual host, port 80\n\n    nginx_fastcgi '/etc/nginx/sites-available/foo.site.conf' do\n        socket '/tmp/application.socket'\n        servers [\n            {\n                :ip => '127.0.0.1',\n                :server_name => 'foo.site.x'\n            }\n        ]\n    end\n\n## fastcgi running on inet socket\n\n    nginx_fastcgi '/etc/nginx/sites-available/foo.site.conf' do\n        inet_socket 'localhost:9000'\n        servers [\n            {\n                :ip => '127.0.0.1',\n                :server_name => 'foo.site.x'\n            }\n        ]\n    end\n\n## ssl enabled virtual host\n    \n    nginx_fastcgi '/etc/nginx/sites-available/foo.site.conf' do\n        socket '/tmp/application.socket'\n        servers [\n            {\n                :server_name => 'bar.site.x',\n                :ssl => true,\n                :ssl_include_path => 'nginx_ssl_settings.conf'\n                \n            }\n        ]\n    end\n\n## set document root\n\n    nginx_fastcgi '/etc/nginx/sites-available/foo.site.conf' do\n        root  '/var/www/MyApp/root'\n        socket '/tmp/application.socket'\n        servers [\n            {\n                :server_name => 'foo.site.x',\n            }\n        ]\n    end\n\n## enabling http -> https redirect\n\n # all http traffic get redirected to https host:\n    \n    nginx_fastcgi '/etc/nginx/sites-available/foo.site.conf' do\n        socket '/tmp/application.socket'\n        servers [\n            {\n                :ip => '127.0.0.1',\n                :server_name => 'bar.site.x',\n                :redirect => 'https'                \n            },\n            {\n                :ip => '127.0.0.1',\n                :server_name => 'bar.site.x',\n                :ssl => true,\n                :ssl_include_path => 'nginx_ssl_settings.conf'\n            }\n        ]\n    end\n\n## handling static files by nginx\n\n    nginx_fastcgi '/etc/nginx/sites-available/foo.site.conf' do\n        socket '/tmp/application.socket'\n        static(\n                :location => 'static/',\n                :root => '/var/www/MyApp/root'\n        )\n        servers [\n            {\n                :server_name => 'foo.site.x',\n            }\n        ]\n    end\n\n## set specific fastcgi params:\n\n    nginx_fastcgi '/etc/nginx/sites-available/foo.site.conf' do\n        socket '/tmp/application.socket'\n        fastcgi_param  [\n            { :name => 'SCRIPT_NAME', :value => \"\\\"\\\"\" },\n            { :name => 'PATH_INFO' , :value => '$uri' }\n        ]\n        servers [\n            {\n                :server_name => 'foo.site.x',\n            }\n        ]\n    end\n\n## set error page, code 500\n\n    nginx_fastcgi '/etc/nginx/sites-available/foo.site.conf' do\n        socket '/tmp/application.socket'\n        servers [\n            {\n                :server_name => 'foo.site.x'\n            }\n        ]\n        error_page [\n            {\n                :code       => 500,\n                :handler    => '/500.html'\n            }\n        ]\n    end\n\n------\n\nFor complete examples of usage see https://github.com/melezhik/cookbooks/tree/master/nginx-fastcgi/features\n\n\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ]
+}

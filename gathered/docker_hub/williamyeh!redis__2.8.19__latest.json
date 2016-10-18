@@ -1,0 +1,126 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/williamyeh/redis",
+    "repository_url": "https://hub.docker.com/v2/repositories/williamyeh/redis",
+    "tags_url": "https://hub.docker.com/v2/repositories/williamyeh/redis/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/williamyeh/redis/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/williamyeh/redis/autobuild",
+    "user": "williamyeh",
+    "name": "redis",
+    "namespace": "williamyeh",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 1321,
+    "last_updated": "2016-09-23T23:47:44.272863Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2.8.19",
+        "full_size": 58224978,
+        "id": 45671,
+        "repository": 38176,
+        "creator": 20564,
+        "last_updater": 20564,
+        "last_updated": "2016-09-23T23:47:43.908089Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 60828641,
+        "id": 45674,
+        "repository": 38176,
+        "creator": 20564,
+        "last_updater": 20564,
+        "last_updated": "2016-09-23T23:45:16.213889Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "William-Yeh/docker-redis"
+  },
+  "name": "williamyeh/redis Docker container",
+  "description": "Redis image for Docker",
+  "readme": "Docker-Redis\n============\n\n## Summary\n\nRepository name in Docker Hub: **[williamyeh/redis](https://registry.hub.docker.com/u/williamyeh/redis/)**\n\nThis repository contains Dockerized [Redis](http://redis.io/), published to the public [Docker Hub](https://registry.hub.docker.com/) via **automated build** mechanism.\n\n\n\n## Configuration\n\nThis docker image contains the following software stack:\n\n- OS: Debian jessie (built from [debian:jessie](https://registry.hub.docker.com/_/debian/)).\n\n- Redis\n\n\n### Dependencies\n\n- [debian:jessie](https://registry.hub.docker.com/_/debian/).\n\n\n### History\n\n- 0.4 - Make `client` more flexible.\n\n- 0.3 - Add more convenient wrapper (`benchmark`).\n\n- 0.2 - Add more convenient wrappers (`usage.sh`, `start`, `client`).\n\n- 0.1 - This repository was forked from [dockerfile/redis](https://github.com/dockerfile/redis). \n\n\n## Why yet another Redis image for Docker?\n\nThere has been quite a few Redis images for Docker (e.g., [search](https://registry.hub.docker.com/search?q=redis) in the Docker Hub), so why reinvent the wheel?\n\nIn the beginning I used the [dockerfile/redis](https://github.com/dockerfile/redis). It worked well, but left some room for improvement:\n\n- *Base OS image* - It was built from [dockerfile/ubuntu](https://registry.hub.docker.com/u/dockerfile/ubuntu/), which may not be the smallest one.  On the other hand, [debian:jessie](https://registry.hub.docker.com/_/debian/), as recommended in this [article](http://crosbymichael.com/dockerfile-best-practices-take-2.html), worth a try.\n\n- *Unnecessary dependencies* - It installed, at the very beginning of [its parent's Dockerfile](https://github.com/dockerfile/ubuntu/blob/master/Dockerfile), the [software-properties-common](https://packages.debian.org/sid/admin/software-properties-common) package, which in turns installed some Python3 packages.  I prefered to incorporate these stuff only when absolutely needed.\n\nTherefore, I built this Docker image on my own, also as an exercise.\n\nIn addition, I add several convenient wrappers for Redis executables.\n\n\n## Good alternatives\n\nNow Docker official image [`redis`](https://registry.hub.docker.com/_/redis/) has smaller image size and good version management. You may try it, instead.\n\n\n\n## Installation\n\n   ```\n   $ docker pull williamyeh/redis\n   ```\n\n\n## Usage\n\n\n#### Show usage\n\n```\n$ docker run --rm williamyeh/redis\n```\n",
+  "dockerfile": "# Redis for Debian jessie\n#\n# URL: https://github.com/William-Yeh/docker-redis\n#\n# Reference:  https://github.com/dockerfile/redis\n#\n# Version     0.4\n#\n\n# pull base image\nFROM debian:jessie\nMAINTAINER William Yeh <william.pjyeh@gmail.com>\n\nENV TARBALL http://download.redis.io/redis-stable.tar.gz\n\n\nRUN apt-get update  && \\\n    \\\n    echo \"==> Install curl and helper tools...\"  && \\\n    DEBIAN_FRONTEND=noninteractive  apt-get install -y  curl make gcc  && \\\n    \\\n    \\\n    \\\n    echo \"==> Download, compile, and install...\"  && \\\n    cd /tmp  && \\\n    curl -LO $TARBALL  && \\\n    tar xvzf redis-stable.tar.gz  && \\\n    cd redis-stable  && \\\n    make  && \\\n    make install  && \\\n    \\\n    \\\n    echo \"==> Copy default configuration...\"  && \\\n    cp -f src/redis-sentinel /usr/local/bin  && \\\n    mkdir -p /etc/redis  && \\\n    cp -f *.conf /etc/redis  && \\\n    rm -rf /tmp/redis-stable*  && \\\n    \\\n    \\\n    echo \"==> Configure for Dockerized version of Redis...\"  && \\\n    sed -i 's/^\\(bind .*\\)$/#\\1/'       /etc/redis/redis.conf  && \\\n    sed -i 's/^\\(daemonize .*\\)$/#\\1/'  /etc/redis/redis.conf  && \\\n    sed -i 's/^\\(logfile .*\\)$/#\\1/'    /etc/redis/redis.conf  && \\\n    sed -i 's/^\\(dir .*\\)$/dir \\/data/' /etc/redis/redis.conf  && \\\n    \\\n    \\\n    echo \"==> Clean up...\"  && \\\n    apt-get remove -y --auto-remove curl make gcc  && \\\n    apt-get clean  && \\\n    rm -rf /var/lib/apt/lists/*\n\n\n# configure Redis\nVOLUME [ \"/data\", \"/etc/redis\" ]\n\n#sed -i 's/^\\(dir .*\\)$/dir \\/var\\/lib\\/redis/' /etc/redis/redis.conf\n\n\n# Redis port.\nEXPOSE 6379\n\n\n# for convenience\nENV PATH /opt:$PATH\nCOPY usage.sh   /opt/\nCOPY start      /opt/\nCOPY client     /opt/\nCOPY benchmark  /opt/\nRUN date '+%Y-%m-%dT%H:%M:%S%:z' > /var/log/DOCKER_BUILD_TIME\n\n\n# Define default command.\nCMD [\"usage.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      6379
+    ],
+    "volume": [
+      "[ \"/data\", \"/etc/redis\" ]"
+    ],
+    "run": [
+      "apt-get update  &&         echo \"==> Install curl and helper tools...\"  &&     DEBIAN_FRONTEND=noninteractive  apt-get install -y  curl make gcc  &&                 echo \"==> Download, compile, and install...\"  &&     cd /tmp  &&     curl -LO $TARBALL  &&     tar xvzf redis-stable.tar.gz  &&     cd redis-stable  &&     make  &&     make install  &&             echo \"==> Copy default configuration...\"  &&     cp -f src/redis-sentinel /usr/local/bin  &&     mkdir -p /etc/redis  &&     cp -f *.conf /etc/redis  &&     rm -rf /tmp/redis-stable*  &&             echo \"==> Configure for Dockerized version of Redis...\"  &&     sed -i 's/^\\(bind .*\\)$/#\\1/'       /etc/redis/redis.conf  &&     sed -i 's/^\\(daemonize .*\\)$/#\\1/'  /etc/redis/redis.conf  &&     sed -i 's/^\\(logfile .*\\)$/#\\1/'    /etc/redis/redis.conf  &&     sed -i 's/^\\(dir .*\\)$/dir \\/data/' /etc/redis/redis.conf  &&             echo \"==> Clean up...\"  &&     apt-get remove -y --auto-remove curl make gcc  &&     apt-get clean  &&     rm -rf /var/lib/apt/lists/*",
+      "date '+%Y-%m-%dT%H:%M:%S%:z' > /var/log/DOCKER_BUILD_TIME"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "William Yeh <william.pjyeh@gmail.com>",
+    "env": {
+      "TARBALL": "http://download.redis.io/redis-stable.tar.gz",
+      "PATH": "/opt:$PATH"
+    },
+    "copy": "benchmark  /opt/",
+    "cmd": "[\"usage.sh\"]"
+  },
+  "source_repository_url": "https://github.com/William-Yeh/docker-redis.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/William-Yeh/docker-redis",
+  "docker_repository": "williamyeh/redis",
+  "docker_image": "williamyeh/redis",
+  "parameters_schema": {
+    "TARBALL": {
+      "default": "http://download.redis.io/redis-stable.tar.gz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/opt:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        6379
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "williamyeh/redis",
+  "revision": "2.8.19",
+  "uris": [
+    "https://hub.docker.com/r/williamyeh/redis",
+    "https://hub.docker.com/v2/repositories/williamyeh/redis",
+    "https://github.com/William-Yeh/docker-redis.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Middleware/Data Store/Key-Value/Redis"
+  ],
+  "info_url": "https://hub.docker.com/r/williamyeh/redis",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

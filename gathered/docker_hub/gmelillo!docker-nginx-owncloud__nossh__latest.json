@@ -1,0 +1,136 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/gmelillo/docker-nginx-owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/gmelillo/docker-nginx-owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/gmelillo/docker-nginx-owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/gmelillo/docker-nginx-owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/gmelillo/docker-nginx-owncloud/autobuild",
+    "user": "gmelillo",
+    "name": "docker-nginx-owncloud",
+    "namespace": "gmelillo",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 5,
+    "pull_count": 267,
+    "last_updated": "2016-03-24T08:51:51.548788Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "nossh",
+        "full_size": 222962718,
+        "id": 36813,
+        "repository": 53294,
+        "creator": 94640,
+        "last_updater": 94640,
+        "last_updated": "2016-03-24T08:51:51.214003Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 256157113,
+        "id": 36820,
+        "repository": 53294,
+        "creator": 94640,
+        "last_updater": 94640,
+        "last_updated": "2016-03-24T08:46:13.579065Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "gmelillo/docker-nginx-owncloud"
+  },
+  "name": "gmelillo/docker-nginx-owncloud Docker container",
+  "description": "Latest ownCloud with a MySQL backend and ssh access",
+  "readme": "#docker-nginx-owncloud\n\nLatest owncloud with Nginx + Mysql + PHP5-FPM\n\n##Setup\n\n1. Run `docker run -p 10080:80 -p 10022:22 -d gmelillo/docker-nginx-owncloud`\n2. Point your browser on `http://localhost:10080` to triggher the autoconfiguration\n\n## Exported volumes\n\n- `/oc_data`          Owncloud data.\n- `/var/lib/mysql`    MySQL filesystem.\n\n##Users and password\n\nThe root user will be generated automatically and prompted on `docker logs <instanceid>`.\n\nThe first administrative user is **ocadmin** with password `stachaswac`\n\n###TODO\n\n* ~~Make database work if external storage is mounted on `/var/lib/mysql`~~\n* Support for external database\n* Autobackup in sql format scheduled on exported datastore to make easy container backup\n* Make HTTPS available on image.\n",
+  "dockerfile": "FROM ubuntu:14.04\nMAINTAINER Gabriel Melillo \"gabriel@melillo.me\"\n\nADD run-services.sh /usr/local/bin/\nADD mysql_secure.sh /usr/local/bin/\n\nRUN apt-get update && apt-get -y upgrade\nRUN locale-gen en_US.UTF-8 && dpkg-reconfigure locales\n\nRUN echo \"Europe/Berlin\" > /etc/timezone\nRUN dpkg-reconfigure --frontend noninteractive tzdata\n\nRUN apt-get -y install nginx-full php5-fpm mysql-server php5-mysql php5-gd php5-curl php5-cli wget unzip\n\n# Configuring mysql\nRUN rm -rf /var/lib/mysql/* && \\\n    chmod +x /usr/local/bin/*.sh && \\\n    chown -R mysql /var/lib/mysql && chgrp -R mysql /var/lib/mysql && \\\n    mysql_install_db >> /dev/null && \\\n    service mysql start >> /dev/null && \\\n    /usr/local/bin/mysql_secure.sh 0KmF5zArK5 >> /dev/null && \\\n\tmysqladmin -uroot -p0KmF5zArK5 shutdown\n\n# Configuring nginx+php5-fpm\nADD www.conf /etc/php5/fpm/pool.d/\nADD default /etc/nginx/sites-available/\n\n# Download latest OwnCloud\nRUN wget https://download.owncloud.org/download/community/owncloud-latest.zip -O /usr/share/nginx/owncloud-latest.zip && \\\n    unzip /usr/share/nginx/owncloud-latest.zip -d /usr/share/nginx/\nADD autoconfig.php /usr/share/nginx/owncloud/config/\nRUN chown www-data:www-data -R /usr/share/nginx/owncloud && \\\n    mkdir /oc_data && \\\n    chown www-data:www-data -R /oc_data\n\n# Cleanup\nRUN apt-get -y remove wget unzip && \\\n    apt-get autoremove -y && \\\n    rm -rf /usr/share/nginx/owncloud-latest.zip\n\nVOLUME ['/oc_data', '/var/lib/mysql']\n\nEXPOSE 80\n\nCMD /usr/local/bin/run-services.sh\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "run-services.sh",
+        "dest": "/usr/local/bin/"
+      },
+      {
+        "source": "mysql_secure.sh",
+        "dest": "/usr/local/bin/"
+      },
+      {
+        "source": "www.conf",
+        "dest": "/etc/php5/fpm/pool.d/"
+      },
+      {
+        "source": "default",
+        "dest": "/etc/nginx/sites-available/"
+      },
+      {
+        "source": "autoconfig.php",
+        "dest": "/usr/share/nginx/owncloud/config/"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "['/oc_data', '/var/lib/mysql']"
+    ],
+    "run": [
+      "apt-get update && apt-get -y upgrade",
+      "locale-gen en_US.UTF-8 && dpkg-reconfigure locales",
+      "echo \"Europe/Berlin\" > /etc/timezone",
+      "dpkg-reconfigure --frontend noninteractive tzdata",
+      "apt-get -y install nginx-full php5-fpm mysql-server php5-mysql php5-gd php5-curl php5-cli wget unzip",
+      "rm -rf /var/lib/mysql/* &&     chmod +x /usr/local/bin/*.sh &&     chown -R mysql /var/lib/mysql && chgrp -R mysql /var/lib/mysql &&     mysql_install_db >> /dev/null &&     service mysql start >> /dev/null &&     /usr/local/bin/mysql_secure.sh 0KmF5zArK5 >> /dev/null && \tmysqladmin -uroot -p0KmF5zArK5 shutdown",
+      "wget https://download.owncloud.org/download/community/owncloud-latest.zip -O /usr/share/nginx/owncloud-latest.zip &&     unzip /usr/share/nginx/owncloud-latest.zip -d /usr/share/nginx/",
+      "chown www-data:www-data -R /usr/share/nginx/owncloud &&     mkdir /oc_data &&     chown www-data:www-data -R /oc_data",
+      "apt-get -y remove wget unzip &&     apt-get autoremove -y &&     rm -rf /usr/share/nginx/owncloud-latest.zip"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "Gabriel Melillo \"gabriel@melillo.me\"",
+    "cmd": "/usr/local/bin/run-services.sh"
+  },
+  "source_repository_url": "https://github.com/gmelillo/docker-nginx-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/gmelillo/docker-nginx-owncloud",
+  "docker_repository": "gmelillo/docker-nginx-owncloud",
+  "docker_image": "gmelillo/docker-nginx-owncloud",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "gmelillo/docker-nginx-owncloud",
+  "revision": "nossh",
+  "uris": [
+    "https://hub.docker.com/r/gmelillo/docker-nginx-owncloud",
+    "https://hub.docker.com/v2/repositories/gmelillo/docker-nginx-owncloud",
+    "https://github.com/gmelillo/docker-nginx-owncloud.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Test",
+    "Type/Middleware/Web Server/Nginx",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/gmelillo/docker-nginx-owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

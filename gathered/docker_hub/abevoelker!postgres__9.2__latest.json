@@ -1,0 +1,181 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/abevoelker/postgres",
+    "repository_url": "https://hub.docker.com/v2/repositories/abevoelker/postgres",
+    "tags_url": "https://hub.docker.com/v2/repositories/abevoelker/postgres/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/abevoelker/postgres/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/abevoelker/postgres/autobuild",
+    "user": "abevoelker",
+    "name": "postgres",
+    "namespace": "abevoelker",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 10,
+    "pull_count": 4136,
+    "last_updated": "2015-11-14T15:16:52.042315Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "9.2",
+        "full_size": 264125269,
+        "id": 29587,
+        "repository": 19699,
+        "creator": 1793,
+        "last_updater": 1793,
+        "last_updated": "2015-11-14T15:17:03.577195Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "9.3",
+        "full_size": 264444189,
+        "id": 29598,
+        "repository": 19699,
+        "creator": 1793,
+        "last_updater": 1793,
+        "last_updated": "2015-11-14T15:14:36.020364Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "9.1",
+        "full_size": 263526067,
+        "id": 29574,
+        "repository": 19699,
+        "creator": 1793,
+        "last_updater": 1793,
+        "last_updated": "2015-11-14T15:12:03.941624Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 302230357,
+        "id": 29561,
+        "repository": 19699,
+        "creator": 1793,
+        "last_updater": 1793,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "pg_stat_statements",
+        "full_size": 293357463,
+        "id": 29552,
+        "repository": 19699,
+        "creator": 1793,
+        "last_updater": 1793,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "abevoelker/docker-postgres"
+  },
+  "name": "abevoelker/postgres Docker container",
+  "description": "Postgres 9.3 + WAL-E + PL/V8 and PL/Python languages. 9.2 and 9.1 tags available.",
+  "readme": "# Postgres Dockerfile\n\nDocker image for Postgres 9.4 + WAL-E + PL/Python and PL/V8 languages\n\n## Basic usage\n\n```\n$ docker run -p 5432:5432 abevoelker/postgres\n2014-07-31 06:11:07 UTC LOG:  database system was shut down at 2014-07-31 05:52:53 UTC\n2014-07-31 06:11:07 UTC LOG:  database system is ready to accept connections\n2014-07-31 06:11:07 UTC LOG:  autovacuum launcher started\n```\n\n## WAL-E usage\n\nThis image comes with [WAL-E][wal-e] for performing continuous archiving of PostgreSQL WAL files and base backups.  To use WAL-E, you need to do a few things:\n\n1. Create a directory with your secret environment variables (e.g. your AWS secret keys) in [envdir][envdir] format (one variable per file) and mount it as a volume overwriting `/etc/wal-e.d/env` when calling `docker run`.\n\n2. Edit your `postgresql.conf` archive settings to use WAL-E. Changes should look something like this:\n\n  ```\n  wal_level = archive # hot_standby is also acceptable (will log more)\n  archive_mode = on\n  archive_command = 'envdir /etc/wal-e.d/env wal-e wal-push %p'\n  archive_timeout = 60\n  ```\n\n3. Mount a volume to `/etc/cron.d` with a crontab for running your periodic WAL-E tasks (e.g. full backups, deleting old backups).  Here's an example that does a full backup daily at 2AM and deletes old backups (retaining 7 previous backups) at 3AM:\n\n  ```\n  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n  0 2 * * * postgres envdir /etc/wal-e.d/env wal-e backup-push /var/lib/postgresql/9.4/main\n  0 3 * * * postgres envdir /etc/wal-e.d/env wal-e delete --confirm retain 7\n  ```\n\n4. Run the container with `/sbin/my_init` instead of the default command.  This is necessary to start cron, syslog, and Postgres.  In this mode, [runit][runit] manages the cron and Postgres processes and will restart them automatically if they crash.\n\nExample `docker run` that covers basic WAL-E usage:\n\n```\n$ ls -1 /tmp/env\nAWS_ACCESS_KEY_ID\nAWS_SECRET_ACCESS_KEY\nWALE_S3_PREFIX\n$ ls -1 /tmp/cron\nwal-e\n$ cat /tmp/cron/wal-e\nPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n0 2 * * * postgres envdir /etc/wal-e.d/env wal-e backup-push /var/lib/postgresql/9.4/main\n0 3 * * * postgres envdir /etc/wal-e.d/env wal-e delete --confirm retain 7\n$ docker run -v /tmp/env:/etc/wal-e.d/env -v /tmp/cron:/etc/cron.d abevoelker/postgres /sbin/my_init\n*** Running /etc/rc.local...\n*** Booting runit daemon...\n*** Runit started as PID 13\n2014-07-31 06:11:07 UTC LOG:  database system was shut down at 2014-07-31 05:52:53 UTC\n2014-07-31 06:11:07 UTC LOG:  database system is ready to accept connections\n2014-07-31 06:11:07 UTC LOG:  autovacuum launcher started\n```\n\n## License\n\nMIT license.\n\n[wal-e]:  https://github.com/wal-e/wal-e\n[envdir]: https://pypi.python.org/pypi/envdir\n[runit]:  http://smarden.org/runit/\n",
+  "dockerfile": "FROM       phusion/baseimage:0.9.12\nMAINTAINER Abe Voelker <abe@abevoelker.com>\n\nENV USERNAME postgres\nENV PASSWORD password\nENV VERSION  9.4\n\n# Temporary hack around a Docker Hub `docker build` issue. See:\n# https://github.com/docker/docker/issues/6345#issuecomment-49245365\nRUN ln -s -f /bin/true /usr/bin/chfn\n\n# Disable SSH and existing cron jobs\nRUN rm -rf /etc/service/sshd \\\n  /etc/my_init.d/00_regen_ssh_host_keys.sh \\\n  /etc/cron.daily/dpkg \\\n  /etc/cron.daily/apt \\\n  /etc/cron.daily/passwd \\\n  /etc/cron.daily/logrotate \\\n  /etc/cron.daily/upstart \\\n  /etc/cron.weekly/fstrim\n\n# Ensure UTF-8 locale\nCOPY locale /etc/default/locale\nRUN locale-gen en_US.UTF-8 &&\\\n  dpkg-reconfigure locales\n\n# Update APT\nRUN DEBIAN_FRONTEND=noninteractive apt-get update\n\n# Install build dependencies\nRUN DEBIAN_FRONTEND=noninteractive apt-get install -y wget\n\n# Add PostgreSQL Global Development Group apt source\nRUN echo \"deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main\" > /etc/apt/sources.list.d/pgdg.list\n\n# Add PGDG repository key\nRUN wget -qO - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -\n\nRUN DEBIAN_FRONTEND=noninteractive apt-get update\n\n# Install Postgres, PL/Python, PL/V8\nRUN DEBIAN_FRONTEND=noninteractive apt-get install -y \\\n  postgresql-$VERSION \\\n  postgresql-contrib-$VERSION \\\n  postgresql-server-dev-$VERSION \\\n  postgresql-plpython-$VERSION \\\n  postgresql-$VERSION-plv8 \\\n# Install WAL-E dependencies\n  libxml2-dev \\\n  libxslt1-dev \\\n  python-dev \\\n  python-pip \\\n  daemontools \\\n  libevent-dev \\\n  lzop \\\n  pv \\\n  libffi-dev \\\n  libssl-dev &&\\\n  pip install virtualenv\n\n# Install WAL-E into a virtualenv\nRUN virtualenv /var/lib/postgresql/wal-e &&\\\n  . /var/lib/postgresql/wal-e/bin/activate &&\\\n  pip install wal-e &&\\\n  ln -s /var/lib/postgresql/wal-e/bin/wal-e /usr/local/bin/wal-e\n\n# Create directory for storing secret WAL-E environment variables\nRUN umask u=rwx,g=rx,o= &&\\\n  mkdir -p /etc/wal-e.d/env &&\\\n  chown -R root:postgres /etc/wal-e.d\n\n# Remove build dependencies and clean up APT and temporary files\nRUN DEBIAN_FRONTEND=noninteractive apt-get remove --purge -y wget &&\\\n  apt-get clean &&\\\n  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n# Copy basic Postgres configs with values suitable for development\n# (note: these should be overridden in production!)\nCOPY ./pg_hba.conf     /etc/postgresql/$VERSION/main/\nCOPY ./postgresql.conf /etc/postgresql/$VERSION/main/\n\n# COPY sets ownership on this directory to root\nRUN chown -R postgres:postgres /etc/postgresql/$VERSION/main\n\n# Use wrapper scripts to start cron and Postgres\nCOPY scripts /data/scripts\nRUN chmod -R 755 /data/scripts\n\n# Copy runit configs\nRUN mkdir -m 755 -p /etc/service/postgres\nCOPY runit/cron     /etc/service/cron/run\nCOPY runit/postgres /etc/service/postgres/run\nRUN chmod 755 /etc/service/cron/run /etc/service/postgres/run\n\nUSER postgres\n\nRUN /etc/init.d/postgresql start &&\\\n  psql --command \"ALTER USER postgres WITH PASSWORD '$PASSWORD';\" &&\\\n  /etc/init.d/postgresql stop\n\nUSER root\n\n# The image only runs Postgres by default. If you want to run periodic full\n# backups with cron + WAL-E you should start supervisord instead (see README)\nCMD [\"/data/scripts/start_postgres.sh\"]\n\n# Keep Postgres log, config and storage outside of union filesystem\nVOLUME [\"/var/log/postgresql\", \\\n        \"/var/log/supervisor\", \\\n        \"/etc/postgresql/9.4/main\", \\\n        \"/var/lib/postgresql/9.4/main\"]\n\nEXPOSE 5432\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5432
+    ],
+    "volume": [
+      "[\"/var/log/postgresql\",         \"/var/log/supervisor\",         \"/etc/postgresql/9.4/main\",         \"/var/lib/postgresql/9.4/main\"]"
+    ],
+    "run": [
+      "ln -s -f /bin/true /usr/bin/chfn",
+      "rm -rf /etc/service/sshd   /etc/my_init.d/00_regen_ssh_host_keys.sh   /etc/cron.daily/dpkg   /etc/cron.daily/apt   /etc/cron.daily/passwd   /etc/cron.daily/logrotate   /etc/cron.daily/upstart   /etc/cron.weekly/fstrim",
+      "locale-gen en_US.UTF-8 &&  dpkg-reconfigure locales",
+      "DEBIAN_FRONTEND=noninteractive apt-get update",
+      "DEBIAN_FRONTEND=noninteractive apt-get install -y wget",
+      "echo \"deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main\" > /etc/apt/sources.list.d/pgdg.list",
+      "wget -qO - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -",
+      "DEBIAN_FRONTEND=noninteractive apt-get update",
+      "DEBIAN_FRONTEND=noninteractive apt-get install -y   postgresql-$VERSION   postgresql-contrib-$VERSION   postgresql-server-dev-$VERSION   postgresql-plpython-$VERSION   postgresql-$VERSION-plv8 # Install WAL-E dependencies",
+      "virtualenv /var/lib/postgresql/wal-e &&  . /var/lib/postgresql/wal-e/bin/activate &&  pip install wal-e &&  ln -s /var/lib/postgresql/wal-e/bin/wal-e /usr/local/bin/wal-e",
+      "umask u=rwx,g=rx,o= &&  mkdir -p /etc/wal-e.d/env &&  chown -R root:postgres /etc/wal-e.d",
+      "DEBIAN_FRONTEND=noninteractive apt-get remove --purge -y wget &&  apt-get clean &&  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "chown -R postgres:postgres /etc/postgresql/$VERSION/main",
+      "chmod -R 755 /data/scripts",
+      "mkdir -m 755 -p /etc/service/postgres",
+      "chmod 755 /etc/service/cron/run /etc/service/postgres/run",
+      "/etc/init.d/postgresql start &&  psql --command \"ALTER USER postgres WITH PASSWORD '$PASSWORD';\" &&  /etc/init.d/postgresql stop"
+    ],
+    "workdir": [],
+    "from": "      phusion/baseimage:0.9.12",
+    "maintainer": "Abe Voelker <abe@abevoelker.com>",
+    "env": {
+      "USERNAME": "postgres",
+      "PASSWORD": "password",
+      "VERSION": ""
+    },
+    "copy": "runit/postgres /etc/service/postgres/run",
+    "user": "root",
+    "cmd": "[\"/data/scripts/start_postgres.sh\"]"
+  },
+  "source_repository_url": "https://github.com/abevoelker/docker-postgres.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/abevoelker/docker-postgres",
+  "docker_repository": "abevoelker/postgres",
+  "docker_image": "abevoelker/postgres",
+  "parameters_schema": {
+    "USERNAME": {
+      "default": "postgres",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PASSWORD": {
+      "default": "password",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "VERSION": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5432
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "abevoelker/postgres",
+  "revision": "9.2",
+  "uris": [
+    "https://hub.docker.com/r/abevoelker/postgres",
+    "https://hub.docker.com/v2/repositories/abevoelker/postgres",
+    "https://github.com/abevoelker/docker-postgres.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/abevoelker/postgres",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

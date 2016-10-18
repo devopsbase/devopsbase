@@ -1,0 +1,146 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/rotarudan/kibana",
+    "repository_url": "https://hub.docker.com/v2/repositories/rotarudan/kibana",
+    "tags_url": "https://hub.docker.com/v2/repositories/rotarudan/kibana/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/rotarudan/kibana/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/rotarudan/kibana/autobuild",
+    "user": "rotarudan",
+    "name": "kibana",
+    "namespace": "rotarudan",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 42,
+    "last_updated": "2016-06-08T10:52:57.265081Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 118932995,
+        "id": 3321501,
+        "repository": 730165,
+        "creator": 456079,
+        "last_updater": 456079,
+        "last_updated": "2016-06-08T10:52:56.650671Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "RotaruDan/kibana"
+  },
+  "name": "rotarudan/kibana Docker container",
+  "description": "Kibana 5.o Docker Image",
+  "readme": "# kibana\nKibana 5.0 Docker Image\n",
+  "dockerfile": "FROM debian:jessie\n\n# add our user and group first to make sure their IDs get assigned consistently\nRUN groupadd -r kibana && useradd -r -m -g kibana kibana\n\nRUN apt-get update && apt-get install -y \\\n\t\tca-certificates \\\n\t\twget \\\n\t\tcurl \\\n\t--no-install-recommends && rm -rf /var/lib/apt/lists/*\n\n# grab gosu for easy step-down from root\nENV GOSU_VERSION 1.7\nRUN set -x \\\n\t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \\\n\t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \\\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n\t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\n\t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu \\\n\t&& gosu nobody true\n\n# grab tini for signal processing and zombie killing\nENV TINI_VERSION v0.9.0\nRUN set -x \\\n\t&& wget -O /usr/local/bin/tini \"https://github.com/krallin/tini/releases/download/$TINI_VERSION/tini\" \\\n\t&& wget -O /usr/local/bin/tini.asc \"https://github.com/krallin/tini/releases/download/$TINI_VERSION/tini.asc\" \\\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys 6380DC428747F6C393FEACA59A84159D7001A4E5 \\\n\t&& gpg --batch --verify /usr/local/bin/tini.asc /usr/local/bin/tini \\\n\t&& rm -r \"$GNUPGHOME\" /usr/local/bin/tini.asc \\\n\t&& chmod +x /usr/local/bin/tini \\\n\t&& tini -h\n\n# https://www.elastic.co/guide/en/kibana/4.4/setup.html#kibana-apt\n# https://packages.elasticsearch.org/GPG-KEY-elasticsearch\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4\n\nENV KIBANA_MAJOR 5.0\nENV KIBANA_VERSION 5.0.0-alpha3\n\n#RUN echo \"deb http://packages.elastic.co/kibana/${KIBANA_MAJOR}/debian stable main\" > /etc/apt/sources.list.d/kibana.list\nRUN echo 'deb http://packages.elastic.co/kibana/5.0.0-alpha/debian stable main' > /etc/apt/sources.list.d/kibana.list\n# TODO figure out what's going on here and what it'll settle to for 5.0 GA\n\nRUN set -x \\\n\t&& apt-get update \\\n\t&& apt-get install -y --no-install-recommends kibana=$KIBANA_VERSION \\\n\t&& chown -R kibana:kibana /opt/kibana \\\n\t&& rm -rf /var/lib/apt/lists/* \\\n\t\\\n# ensure the default configuration is useful when using --link\n\t&& sed -ri \"s!^(\\#\\s*)?(elasticsearch\\.url:).*!\\2 'http://elasticsearch:9200'!\" /opt/kibana/config/kibana.yml \\\n\t&& grep -q 'elasticsearch:9200' /opt/kibana/config/kibana.yml\n\nENV PATH /opt/kibana/bin:$PATH\n\nCOPY docker-entrypoint.sh /\nCOPY signup-app.js /\nCOPY kibana-routes.js /\n\n# NODEJS\n\n# gpg keys listed at https://github.com/nodejs/node\nRUN set -ex \\\n  && for key in \\\n    9554F04D7259F04124DE6B476D5A82AC7E37093B \\\n    94AE36675C464D64BAFA68DD7434390BDBE9B9C5 \\\n    0034A06D9D9B0064CE8ADF6BF1747F4AD2306D93 \\\n    FD3A5288F042B6850C66B31F09FE44734EB7990E \\\n    71DCFD284A79C3B38668286BC97EC7A07EDE3FC1 \\\n    DD8F2338BAE7501E3DD5AC78C273792F7D83545D \\\n    B9AE9905FFD7803F25714661B63B535A4C206CA9 \\\n    C4F0DFFF4E8C1A8236409D08E73BC641CC11F4C8 \\\n  ; do \\\n    gpg --keyserver ha.pool.sks-keyservers.net --recv-keys \"$key\"; \\\n  done\n\nENV NPM_CONFIG_LOGLEVEL info\nENV NODE_VERSION 4.4.5\n\nRUN buildDeps='xz-utils' \\\n    && set -x \\\n    && apt-get update && apt-get install -y $buildDeps --no-install-recommends \\\n    && rm -rf /var/lib/apt/lists/* \\\n    && curl -SLO \"https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz\" \\\n    && curl -SLO \"https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc\" \\\n    && gpg --batch --decrypt --output SHASUMS256.txt SHASUMS256.txt.asc \\\n    && grep \" node-v$NODE_VERSION-linux-x64.tar.xz\\$\" SHASUMS256.txt | sha256sum -c - \\\n    && tar -xJf \"node-v$NODE_VERSION-linux-x64.tar.xz\" -C /usr/local --strip-components=1 \\\n    && rm \"node-v$NODE_VERSION-linux-x64.tar.xz\" SHASUMS256.txt.asc SHASUMS256.txt \\\n    && apt-get purge -y --auto-remove $buildDeps\n\n\nEXPOSE 5601\nENTRYPOINT [\"/docker-entrypoint.sh\"]\nCMD [\"kibana\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5601
+    ],
+    "volume": [],
+    "run": [
+      "groupadd -r kibana && useradd -r -m -g kibana kibana",
+      "apt-get update && apt-get install -y \t\tca-certificates \t\twget \t\tcurl \t--no-install-recommends && rm -rf /var/lib/apt/lists/*",
+      "set -x \t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \t&& export GNUPGHOME=\"$(mktemp -d)\" \t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu \t&& gosu nobody true",
+      "set -x \t&& wget -O /usr/local/bin/tini \"https://github.com/krallin/tini/releases/download/$TINI_VERSION/tini\" \t&& wget -O /usr/local/bin/tini.asc \"https://github.com/krallin/tini/releases/download/$TINI_VERSION/tini.asc\" \t&& export GNUPGHOME=\"$(mktemp -d)\" \t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys 6380DC428747F6C393FEACA59A84159D7001A4E5 \t&& gpg --batch --verify /usr/local/bin/tini.asc /usr/local/bin/tini \t&& rm -r \"$GNUPGHOME\" /usr/local/bin/tini.asc \t&& chmod +x /usr/local/bin/tini \t&& tini -h",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4",
+      "echo 'deb http://packages.elastic.co/kibana/5.0.0-alpha/debian stable main' > /etc/apt/sources.list.d/kibana.list",
+      "set -x \t&& apt-get update \t&& apt-get install -y --no-install-recommends kibana=$KIBANA_VERSION \t&& chown -R kibana:kibana /opt/kibana \t&& rm -rf /var/lib/apt/lists/* \t# ensure the default configuration is useful when using --link",
+      "set -ex   && for key in     9554F04D7259F04124DE6B476D5A82AC7E37093B     94AE36675C464D64BAFA68DD7434390BDBE9B9C5     0034A06D9D9B0064CE8ADF6BF1747F4AD2306D93     FD3A5288F042B6850C66B31F09FE44734EB7990E     71DCFD284A79C3B38668286BC97EC7A07EDE3FC1     DD8F2338BAE7501E3DD5AC78C273792F7D83545D     B9AE9905FFD7803F25714661B63B535A4C206CA9     C4F0DFFF4E8C1A8236409D08E73BC641CC11F4C8   ; do     gpg --keyserver ha.pool.sks-keyservers.net --recv-keys \"$key\";   done",
+      "buildDeps='xz-utils'     && set -x     && apt-get update && apt-get install -y $buildDeps --no-install-recommends     && rm -rf /var/lib/apt/lists/*     && curl -SLO \"https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz\"     && curl -SLO \"https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc\"     && gpg --batch --decrypt --output SHASUMS256.txt SHASUMS256.txt.asc     && grep \" node-v$NODE_VERSION-linux-x64.tar.xz\\$\" SHASUMS256.txt | sha256sum -c -     && tar -xJf \"node-v$NODE_VERSION-linux-x64.tar.xz\" -C /usr/local --strip-components=1     && rm \"node-v$NODE_VERSION-linux-x64.tar.xz\" SHASUMS256.txt.asc SHASUMS256.txt     && apt-get purge -y --auto-remove $buildDeps"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "env": {
+      "GOSU_VERSION": "1.7",
+      "TINI_VERSION": "v0.9.0",
+      "KIBANA_MAJOR": "5.0",
+      "KIBANA_VERSION": "5.0.0-alpha3",
+      "PATH": "/opt/kibana/bin:$PATH",
+      "NPM_CONFIG_LOGLEVEL": "info",
+      "NODE_VERSION": "4.4.5"
+    },
+    "copy": "kibana-routes.js /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"kibana\"]"
+  },
+  "source_repository_url": "https://github.com/RotaruDan/kibana.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/RotaruDan/kibana",
+  "docker_repository": "rotarudan/kibana",
+  "docker_image": "rotarudan/kibana",
+  "parameters_schema": {
+    "GOSU_VERSION": {
+      "default": "1.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TINI_VERSION": {
+      "default": "v0.9.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIBANA_MAJOR": {
+      "default": "5.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIBANA_VERSION": {
+      "default": "5.0.0-alpha3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/opt/kibana/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NPM_CONFIG_LOGLEVEL": {
+      "default": "info",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NODE_VERSION": {
+      "default": "4.4.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5601
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "rotarudan/kibana",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/rotarudan/kibana",
+    "https://hub.docker.com/v2/repositories/rotarudan/kibana",
+    "https://github.com/RotaruDan/kibana.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image"
+  ],
+  "info_url": "https://hub.docker.com/r/rotarudan/kibana",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

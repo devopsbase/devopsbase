@@ -1,0 +1,174 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/adobeplatform/ci-jenkins",
+    "repository_url": "https://hub.docker.com/v2/repositories/adobeplatform/ci-jenkins",
+    "tags_url": "https://hub.docker.com/v2/repositories/adobeplatform/ci-jenkins/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/adobeplatform/ci-jenkins/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/adobeplatform/ci-jenkins/autobuild",
+    "user": "adobeplatform",
+    "name": "ci-jenkins",
+    "namespace": "adobeplatform",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 342,
+    "last_updated": "2016-10-10T20:11:27.333890Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "mesos",
+        "full_size": 492263616,
+        "id": 2279713,
+        "repository": 547775,
+        "creator": 654463,
+        "last_updater": 654463,
+        "last_updated": "2016-10-10T20:11:26.938695Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 586385023,
+        "id": 2122083,
+        "repository": 547775,
+        "creator": 654463,
+        "last_updater": 654463,
+        "last_updated": "2016-07-22T15:41:03.999620Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "adobe-platform/ci-jenkins"
+  },
+  "name": "adobeplatform/ci-jenkins Docker container",
+  "description": "CI Jenkins container",
+  "readme": "# CI Jenkins\n\nCI jenkins setup that provides GitHub integrations and YAML job templates with [jenkins-job-builder](https://github.com/openstack-infra/jenkins-job-builder)\n\n# Purpose\n\nWant [TravisCI](https://travis-ci.com/)-like integrations with Github? Don't have the money or will to set it up? This [JenkinsCI](https://jenkins-ci.org/) configuration repo is your solution!\n\n##### How this repo aims to achieve this:\n\n- provide an automatable means for creating jobs on the fly for your github repositories using [chamberlain](https://github.com/behance/chamberlain) & [jenkins-job-builder](https://github.com/openstack-infra/jenkins-job-builder)\n- abstract away the setup of [github pullrequest builder plugin](https://github.com/janinko/ghprb)\n\n##### Things that this repo requires that you must provide:\n- a private SSH key that can pull your repositories\n    - must reside within `$JENKINS_USER_HOME/.ssh/id_rsa`\n- an admin [access token](https://developer.github.com/v3/oauth/) from github with the following scopes\n\n    <img src=\"https://github.com/adobe-platform/ci-jenkins/blob/master/docs/permissions.jpg\" width=\"50%\">\n\nOnce you have both of those, just run the `provision` job. If you have user security on, provide a userid & token (in your Jenkins account user profile).\n\n# Configuration & Environment Variables\n\n| Var | Value | Purpose|\n| ------------- | ------------- | ------------- |\n| `PROVISIONER` | `true` or `\"\"` | Whether this instance is provisioning templates or not. |\n| `GITHUB_DOMAIN` | URL to github | Any URL, defaults to `github.com`. Used to clone repos in the `provision-repo` job |\n| `TEMPLATE_DIR` | Defaults to `$JENKINS_HOME/templates` | Where provisioner instances cache, commit & push templates from (copied from `~/.chamberlain/workspace`) |\n| `TEMPLATE_GIT_URL` | A git SSH URL | Repo that is used to cache provisioned projects. |\n| `TEMPLATE_LIB_GIT_URL` | A git SSH URL | Lib repository for chamberlain templates. |\n| `DEVELOPMENT` | `true` or `\"\"` | Whether you're developing or not; switch that turns off `self-update` |\n| `hostname` command (`--hostname` flag for docker) | Actual address of your jenkins server, WITH the port (no `http` or `https`) | This is SPECIFICALLY for jenkins job builder, so that the Github PullRequest Builder plugin uses the correct URL for webhooks |\n\n# Mesos integration\n\nInstances can be launched with Mesos integration so that jobs will be executed on a specified Mesos cluster.\nJobs intended to be executed on Mesos should have the `<assignedNode>` value (the \"Restrict where this project can be run\" parameter via the web UI) set to `docker-ci`.  By default, jobs executed on the Mesos cluster are run using the Docker containerizer, and the docker image itself includes [Docker-in-Docker](https://github.com/jpetazzo/dind), plus a few common language runtimes.  More details can be found in the [mesos/dind-agent](mesos/dind-agent) directory of this repo.\n\nOne thing to note is that in our wrapper script for this container is that we install `make`.\n\nYou can modify the configuration of the Mesos integration in the [mesos/conf/jenkins/clouds.xml](mesos/conf/jenkins/clouds.xml) file.  The `<master>` and `<jenkinsURL>` values are modified at launch time (i.e.: with the `provision` job), and will be overwritten if modified.\n\n# Concepts\n\nThis configuration runs in one of two modes: a provisioner or reader. Which one it runs as depends on the `PROVISIONER` environment variable. You can configure that in the global settings.\n\n#### Provisioner Instances\n\nInstances that come up as provisioners do one thing: provision job templates & save them to `TEMPLATE_GIT_URL`. It should be expected that they only run the `provision-repo` job. This job will run `chamberlain`'s `gh-sync` command, which will create a jenkins job project with metadata pulled from github. Example of a generated project:\n\n```\n- project\n    ghprauth: '{ghprauth}'\n    ghurl: https://github.com/awesome/repo\n    gitauth: '{gitauth}'\n    jobs: ['ci-{repo}']\n    name: local-awesome/repoci-{repo}\n    repo: repo\n    sshurl: git@github.com:awesome/repo.git\n```\n\nThis is where the `TEMPLATE_LIB_GIT_URL` environment variable comes into play. Note the job template name, `ci-{repo}`. It is expected that this name references the name of an actual jenkins job builder template. So, a lib template with that name should exist in `TEMPLATE_LIB_GIT_URL`.\n\nThe project that is generated is highly opinionated to work with the github pullrequest builder plugin. So for example, you would get the most benefits from a lib template that looks something like:\n\n```\n- job-template:\n    name: 'ci-{repo}'\n    project-type: freestyle\n    concurrent: true\n    node: docker-ci\n    wrappers:\n        - workspace-cleanup\n    properties:\n        - github:\n            url: '{ghurl}'\n    scm:\n        - git:\n            url: '{sshurl}'\n            credentials-id: '{gitauth}'\n            skip-tag: true\n    triggers:\n        - github-pull-request:\n            github-hooks: true\n            allow-whitelist-orgs-as-admins: true\n            org-list:\n                - \"awesome\"\n            trigger-phrase: \"retest\"\n            auth-id: '{ghprauth}'\n            status-context: ci-jenkins\n    builders:\n        - shell: make ci\n\n```\n\nThe `gitauth` & `ghprauth` are internal IDs of secret credentials that are created via the `provision` job.\n\n#### Reader Instances\n\nInstances that have `PROVISONER=\"\"` will come up as reader instances. All they do is run the `update-templates` job every minute, polling on `TEMPLATE_LIB_GIT_URL` & `TEMPLATE_GIT_URL` for changes and use jenkins-job-builder itself to provision itself. Theoretically, you don't even need a provisioner instance, you can just directly push to `TEMPLATE_GIT_URL` and this instance will automatically update itself.\n\nThese are also the instances that were designed to run the tests themselves, preferably using SSH slaves (hint: use the `node` parameter, as shown in the example template above).\n\n# Step-By-Step Setup\n\n##### Things to have\n- a repo where you can store your job templates (where your repo-specific jobs are placed)\n- a library repo for jenkins job builder templates (templates that your repo-specific jobs are based on)\n- an automation user in github\n- an SSH key for that user\n- an OAuth token for that user with the permissions show above\n\n##### Manual Steps\n1. Get a machine, clone this repo into where your jenkins home *should* be\n    - e.g. `git clone git@github.com:adobe-platform/ci-jenkins /var/lib/jenkins`\n2. Bring up! Make sure that you have a private RSA SSH key in `<jenkins_user_home>/.ssh` for an automation user (used for the [GitSCM Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Git+Plugin))\n    - for static instances running CentOS, you're going to need a few things. The `cent` target in the [`Makefile`](https://github.com/adobe-platform/ci-jenkins/blob/master/Makefile#L42) will do this. For other systems where you are running this natively you'll have to tweak the commands a bit. Having a chef script do this may be nice...\n    - for dynamic instances, the [docker image](https://hub.docker.com/r/adobeplatform/ci-jenkins/<Paste>) should be enough to get your started. However, this use case is still a bit experimental as it does not persist configs or secrets and these steps will be hard to automate.\n3. Setup any security that you need, create an automation user that has permission to trigger jobs, SCM, etc. Login as that user & get its ID & API token (username @ top-right -> configure -> `Show API Token`)\n4. Set up global configs (`Manage Jenkins` -> `Configure System`)\n    - `GITHUB_DOMAIN` - defaults to `github.com` but can be replaced with your corp instance\n    - `PROVISIONER` - reference the [concepts section](https://github.com/adobe-platform/ci-jenkins#concepts)\n    - `TEMPLATE_GIT_URL` - SSH URL of the repo that this instance will write/cache to\n    - `TEMPLATE_LIB_GIT_URL` - library job templates for chamberlain\n5. Run the `provision` job.\n    - `username` is the userID that you obtained in step 3. Leave empty if you skipped step 3.\n    - `password` is the API token from step 3 too\n    - `orgs` is for chamberlain, but isn't actually required\n    - `oauth` your oauth token for an automation user\n    - `mesos` Mesos leader URL (with port, NO `http` or `https`)\n    - `GHAPIURL` if you're using corp git, provide the API URL (typically `corp.git.com/api/v3`). Used for chamberlain.\n\nThe setup for both provisioner & reader instances are pretty much the same, save for the value that you give for `PROVISIONER` (either `true` or leave it blank). If you don't need the provisioner instance, then you can just bring up a reader instance. Just make sure that you have some way of getting jenkins job templates (like the one mentioned in the [provisioner section](https://github.com/adobe-platform/ci-jenkins#provisioner-instances) into `TEMPLATE_GIT_URL`.\n\n##### Systemd\n\nIf you're using CoreOS, check [this](https://github.com/adobe-platform/ci-jenkins/tree/master/systemd) out!\n",
+  "dockerfile": "FROM nginx:1.9.11\nWORKDIR /tmp\n\n# Environment variables used throughout this Dockerfile\n#\n# $JENKINS_STAGING  will be used to download plugins and copy config files\n#                   during the Docker build process.\n#\n# $JENKINS_HOME     will be the final destination that Jenkins will use as its\n#                   data directory. This cannot be populated before Marathon\n#                   has a chance to create the host-container volume mapping.\n#\nENV JENKINS_WAR_URL https://updates.jenkins-ci.org/download/war/1.642.2/jenkins.war\nENV JENKINS_STAGING /var/jenkins_staging\nENV JENKINS_HOME /var/jenkins_home\nENV JENKINS_FOLDER /usr/share/jenkins/\nENV JAVA_HOME \"/usr/lib/jvm/java-7-openjdk-amd64\"\nENV JENKINS_CONTEXT \"\"\nENV JENKINS_PORT 8080\nENV NGINX_PORT 9999\n\n\nRUN apt-get update && \\\n    apt-get install -y git python zip curl default-jre jq lsb-release build-essential python-pip\n\nRUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv E56151BF && \\\n    echo \"deb http://repos.mesosphere.io/$(lsb_release -is | tr '[:upper:]' '[:lower:]') $(lsb_release -cs)  main\" | tee /etc/apt/sources.list.d/mesosphere.list && \\\n    apt-get update && \\\n    apt-get install -y mesos\n\nRUN git clone https://github.com/behance/chamberlain /opt/chamberlain && \\\n    cd /opt/chamberlain && \\\n    make && \\\n    cd -\n\nRUN mkdir -p /var/log/nginx/jenkins\nCOPY mesos/conf/nginx/nginx.conf /etc/nginx/nginx.conf\n\nRUN mkdir -p $JENKINS_HOME\nRUN mkdir -p ${JENKINS_FOLDER}/war\nADD ${JENKINS_WAR_URL} ${JENKINS_FOLDER}/jenkins.war\n\nADD jobs/ \"${JENKINS_HOME}/jobs/\"\nADD plugins/ \"${JENKINS_HOME}/plugins/\"\nCOPY mesos/scripts/bootstrap.py /usr/local/jenkins/bin/bootstrap.py\n\nCOPY config.xml \"${JENKINS_STAGING}/config.xml\"\nCOPY mesos/conf/jenkins/jenkins.model.JenkinsLocationConfiguration.xml \"${JENKINS_STAGING}/jenkins.model.JenkinsLocationConfiguration.xml\"\nCOPY mesos/conf/jenkins/nodeMonitors.xml \"${JENKINS_STAGING}/nodeMonitors.xml\"\nCOPY mesos/conf/jenkins/clouds.xml \"${JENKINS_STAGING}/clouds.xml\"\nCOPY org.jenkinsci.plugins.ghprb.GhprbTrigger.xml \"${JENKINS_STAGING}/org.jenkinsci.plugins.ghprb.GhprbTrigger.xml\"\n\n# Override the default property for DNS lookup caching\nRUN echo 'networkaddress.cache.ttl=60' >> ${JAVA_HOME}/jre/lib/security/java.security\n\nCMD /usr/local/jenkins/bin/bootstrap.py && nginx && \\\njava ${JVM_OPTS}                                    \\\n    -Dhudson.udp=-1                                 \\\n    -Djava.awt.headless=true                        \\\n    -DhudsonDNSMultiCast.disabled=true              \\\n    -jar ${JENKINS_FOLDER}/jenkins.war              \\\n    --httpPort=${PORT1:-$JENKINS_PORT}                             \\\n    --webroot=${JENKINS_FOLDER}/war                 \\\n    --ajp13Port=-1                                  \\\n    --httpListenAddress=${JENKINS_HOST:-127.0.0.1}  \\\n    --ajp13ListenAddress=${JENKINS_HOST:-127.0.0.1} \\\n    --preferredClassLoader=java.net.URLClassLoader  \\\n    --prefix=${JENKINS_CONTEXT}\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "${JENKINS_WAR_URL}",
+        "dest": "${JENKINS_FOLDER}/jenkins.war"
+      },
+      {
+        "source": "jobs/",
+        "dest": "\"${JENKINS_HOME}/jobs/\""
+      },
+      {
+        "source": "plugins/",
+        "dest": "\"${JENKINS_HOME}/plugins/\""
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update &&     apt-get install -y git python zip curl default-jre jq lsb-release build-essential python-pip",
+      "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv E56151BF &&     echo \"deb http://repos.mesosphere.io/$(lsb_release -is | tr '[:upper:]' '[:lower:]') $(lsb_release -cs)  main\" | tee /etc/apt/sources.list.d/mesosphere.list &&     apt-get update &&     apt-get install -y mesos",
+      "git clone https://github.com/behance/chamberlain /opt/chamberlain &&     cd /opt/chamberlain &&     make &&     cd -",
+      "mkdir -p /var/log/nginx/jenkins",
+      "mkdir -p $JENKINS_HOME",
+      "mkdir -p ${JENKINS_FOLDER}/war",
+      "echo 'networkaddress.cache.ttl=60' >> ${JAVA_HOME}/jre/lib/security/java.security"
+    ],
+    "workdir": [
+      "/tmp"
+    ],
+    "from": "nginx:1.9.11",
+    "env": {
+      "JENKINS_WAR_URL": "https://updates.jenkins-ci.org/download/war/1.642.2/jenkins.war",
+      "JENKINS_STAGING": "/var/jenkins_staging",
+      "JENKINS_HOME": "/var/jenkins_home",
+      "JENKINS_FOLDER": "/usr/share/jenkins/",
+      "JAVA_HOME": "\"/usr/lib/jvm/java-7-openjdk-amd64\"",
+      "JENKINS_CONTEXT": "\"\"",
+      "JENKINS_PORT": "8080",
+      "NGINX_PORT": "9999"
+    },
+    "copy": "org.jenkinsci.plugins.ghprb.GhprbTrigger.xml \"${JENKINS_STAGING}/org.jenkinsci.plugins.ghprb.GhprbTrigger.xml\"",
+    "cmd": "/usr/local/jenkins/bin/bootstrap.py && nginx && java ${JVM_OPTS}                                        -Dhudson.udp=-1                                     -Djava.awt.headless=true                            -DhudsonDNSMultiCast.disabled=true                  -jar ${JENKINS_FOLDER}/jenkins.war                  --httpPort=${PORT1:-$JENKINS_PORT}                                 --webroot=${JENKINS_FOLDER}/war                     --ajp13Port=-1                                      --httpListenAddress=${JENKINS_HOST:-127.0.0.1}      --ajp13ListenAddress=${JENKINS_HOST:-127.0.0.1}     --preferredClassLoader=java.net.URLClassLoader      --prefix=${JENKINS_CONTEXT}"
+  },
+  "source_repository_url": "https://github.com/adobe-platform/ci-jenkins.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/adobe-platform/ci-jenkins",
+  "docker_repository": "adobeplatform/ci-jenkins",
+  "docker_image": "adobeplatform/ci-jenkins",
+  "parameters_schema": {
+    "JENKINS_WAR_URL": {
+      "default": "https://updates.jenkins-ci.org/download/war/1.642.2/jenkins.war",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_STAGING": {
+      "default": "/var/jenkins_staging",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_HOME": {
+      "default": "/var/jenkins_home",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_FOLDER": {
+      "default": "/usr/share/jenkins/",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_HOME": {
+      "default": "\"/usr/lib/jvm/java-7-openjdk-amd64\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_CONTEXT": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_PORT": {
+      "default": "8080",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NGINX_PORT": {
+      "default": "9999",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "adobeplatform/ci-jenkins",
+  "revision": "mesos",
+  "uris": [
+    "https://hub.docker.com/r/adobeplatform/ci-jenkins",
+    "https://hub.docker.com/v2/repositories/adobeplatform/ci-jenkins",
+    "https://github.com/adobe-platform/ci-jenkins.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Integration/Jenkins"
+  ],
+  "info_url": "https://hub.docker.com/r/adobeplatform/ci-jenkins",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

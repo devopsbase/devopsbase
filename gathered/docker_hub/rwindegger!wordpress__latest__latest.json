@@ -1,0 +1,110 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/rwindegger/wordpress",
+    "repository_url": "https://hub.docker.com/v2/repositories/rwindegger/wordpress",
+    "tags_url": "https://hub.docker.com/v2/repositories/rwindegger/wordpress/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/rwindegger/wordpress/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/rwindegger/wordpress/autobuild",
+    "user": "rwindegger",
+    "name": "wordpress",
+    "namespace": "rwindegger",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 121,
+    "last_updated": "2016-10-17T05:53:42.637554Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 240728440,
+        "id": 4546483,
+        "repository": 882735,
+        "creator": 558419,
+        "last_updater": 558419,
+        "last_updated": "2016-10-17T05:53:42.311991Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "rwindegger/docker-wordpress"
+  },
+  "name": "rwindegger/wordpress Docker container",
+  "description": "A wordpress php-fpm backend.",
+  "readme": null,
+  "dockerfile": "FROM php:fpm\n\n# install the PHP extensions we need\nRUN apt-get update \\\n\t&& apt-get install -y \\\n\t\tmysql-client \\\n\t\tlibmysqlclient-dev \\\n\t\tlibpng12-dev \\\n\t\tlibjpeg-dev \\\n\t\tlibmemcached-dev \\\n\t\tlibfreetype6-dev \\\n    \t\tlibmagickwand-dev \\\n\t\tlibxml2-dev \\\n    \t\t--no-install-recommends \\\n    \t&& rm -rf /var/lib/apt/lists/* \\\n\t&& docker-php-ext-configure gd --with-gd --with-freetype-dir=/usr --with-png-dir=/usr --with-jpeg-dir=/usr \\\n\t&& docker-php-ext-install gd mysqli opcache soap \\\n\t&& docker-php-ext-enable gd \\\n\t&& docker-php-ext-enable opcache \\\n\t&& docker-php-ext-enable memcached \\\n\t&& docker-php-ext-enable memcache \\\n\t&& pecl install imagick \\\n\t&& docker-php-ext-enable imagick \\\n\n# set recommended PHP.ini settings\n# see https://secure.php.net/manual/en/opcache.installation.php\nRUN { \\\n\t\techo 'opcache.memory_consumption=128'; \\\n\t\techo 'opcache.interned_strings_buffer=8'; \\\n\t\techo 'opcache.max_accelerated_files=4000'; \\\n\t\techo 'opcache.revalidate_freq=60'; \\\n\t\techo 'opcache.fast_shutdown=1'; \\\n\t\techo 'opcache.enable_cli=1'; \\\n\t} > /usr/local/etc/php/conf.d/opcache-recommended.ini\n\t\nRUN { \\\n\techo 'max_input_time = 60'; \\\n\techo 'max_execution_time = 120'; \\\n\techo 'upload_max_filesize = 64M'; \\\n\techo 'post_max_size = 64m'; \\\n\techo 'memory_limit = 256M'; \\\n\techo 'expose_php = off'; \\\n} > /usr/local/etc/php/conf.d/uploadsettings.ini\n\nVOLUME /var/www/html\n\nENV WORDPRESS_VERSION 4.6\nENV WORDPRESS_SHA1 830962689f350e43cd1a069f3a4f68a44c0339c8\n\n# upstream tarballs include ./wordpress/ so this gives us /usr/src/wordpress\nRUN curl -o wordpress.tar.gz -SL https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz \\\n\t&& echo \"$WORDPRESS_SHA1 *wordpress.tar.gz\" | sha1sum -c - \\\n\t&& tar -xzf wordpress.tar.gz -C /usr/src/ \\\n\t&& rm wordpress.tar.gz \\\n\t&& chown -R www-data:www-data /usr/src/wordpress\n\nCOPY docker-entrypoint.sh /entrypoint.sh\n\n# grr, ENTRYPOINT resets CMD now\nENTRYPOINT [\"/entrypoint.sh\"]\nCMD [\"php-fpm\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "/var/www/html"
+    ],
+    "run": [
+      "apt-get update \t&& apt-get install -y \t\tmysql-client \t\tlibmysqlclient-dev \t\tlibpng12-dev \t\tlibjpeg-dev \t\tlibmemcached-dev \t\tlibfreetype6-dev     \t\tlibmagickwand-dev \t\tlibxml2-dev     \t\t--no-install-recommends     \t&& rm -rf /var/lib/apt/lists/* \t&& docker-php-ext-configure gd --with-gd --with-freetype-dir=/usr --with-png-dir=/usr --with-jpeg-dir=/usr \t&& docker-php-ext-install gd mysqli opcache soap \t&& docker-php-ext-enable gd \t&& docker-php-ext-enable opcache \t&& docker-php-ext-enable memcached \t&& docker-php-ext-enable memcache \t&& pecl install imagick \t&& docker-php-ext-enable imagick ",
+      "{ \t\techo 'opcache.memory_consumption=128'; \t\techo 'opcache.interned_strings_buffer=8'; \t\techo 'opcache.max_accelerated_files=4000'; \t\techo 'opcache.revalidate_freq=60'; \t\techo 'opcache.fast_shutdown=1'; \t\techo 'opcache.enable_cli=1'; \t} > /usr/local/etc/php/conf.d/opcache-recommended.ini",
+      "{ \techo 'max_input_time = 60'; \techo 'max_execution_time = 120'; \techo 'upload_max_filesize = 64M'; \techo 'post_max_size = 64m'; \techo 'memory_limit = 256M'; \techo 'expose_php = off'; } > /usr/local/etc/php/conf.d/uploadsettings.ini",
+      "curl -o wordpress.tar.gz -SL https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz \t&& echo \"$WORDPRESS_SHA1 *wordpress.tar.gz\" | sha1sum -c - \t&& tar -xzf wordpress.tar.gz -C /usr/src/ \t&& rm wordpress.tar.gz \t&& chown -R www-data:www-data /usr/src/wordpress"
+    ],
+    "workdir": [],
+    "from": "php:fpm",
+    "env": {
+      "WORDPRESS_VERSION": "4.6",
+      "WORDPRESS_SHA1": "830962689f350e43cd1a069f3a4f68a44c0339c8"
+    },
+    "copy": "docker-entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"php-fpm\"]"
+  },
+  "source_repository_url": "https://github.com/rwindegger/docker-wordpress.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/rwindegger/docker-wordpress",
+  "docker_repository": "rwindegger/wordpress",
+  "docker_image": "rwindegger/wordpress",
+  "parameters_schema": {
+    "WORDPRESS_VERSION": {
+      "default": "4.6",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WORDPRESS_SHA1": {
+      "default": "830962689f350e43cd1a069f3a4f68a44c0339c8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "rwindegger/wordpress",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/rwindegger/wordpress",
+    "https://hub.docker.com/v2/repositories/rwindegger/wordpress",
+    "https://github.com/rwindegger/docker-wordpress.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Middleware/Runtime/PHP"
+  ],
+  "info_url": "https://hub.docker.com/r/rwindegger/wordpress",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,155 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/trurlmcbyte/docker-owncloud-client",
+    "repository_url": "https://hub.docker.com/v2/repositories/trurlmcbyte/docker-owncloud-client",
+    "tags_url": "https://hub.docker.com/v2/repositories/trurlmcbyte/docker-owncloud-client/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/trurlmcbyte/docker-owncloud-client/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/trurlmcbyte/docker-owncloud-client/autobuild",
+    "user": "trurlmcbyte",
+    "name": "docker-owncloud-client",
+    "namespace": "trurlmcbyte",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 227,
+    "last_updated": "2016-08-19T15:31:56.651488Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "alpine",
+        "full_size": 36590149,
+        "id": 3512556,
+        "repository": 742837,
+        "creator": 733686,
+        "last_updater": 733686,
+        "last_updated": "2016-08-19T15:31:56.230145Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 36590267,
+        "id": 3411917,
+        "repository": 742837,
+        "creator": 733686,
+        "last_updater": 733686,
+        "last_updated": "2016-08-09T11:10:15.077439Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "alpine-usync",
+        "full_size": 36590287,
+        "id": 4229372,
+        "repository": 742837,
+        "creator": 733686,
+        "last_updater": 733686,
+        "last_updated": "2016-08-09T10:20:41.504513Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "official-based",
+        "full_size": 146701258,
+        "id": 4229320,
+        "repository": 742837,
+        "creator": 733686,
+        "last_updater": 733686,
+        "last_updated": "2016-08-09T10:16:45.993539Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "TrurlMcByte/docker-owncloud-client"
+  },
+  "name": "trurlmcbyte/docker-owncloud-client Docker container",
+  "description": "Owncloud headless client",
+  "readme": "# docker-owncloud-client\nOwncloud headless client so I can run multiple owncloud-clients on one machine to dfferent owncloud servers :)\n\nImage should install the latest client (currently 2.1.0)\n\n```\n*Usage: \ndocker run -d -v <hostdirtosync:dockerdirtosync> <environment vars> \\ \n         idef1x/docker-owncloud-client \n\n*Example : \ndocker run -d \\\n   -v ~/mydocs:/mydocs \n   -e LOCALDIR=\"/mydocs\" \\ \n   -e USER=\"example\" \\\n   -e PASSWORD=\"examplepassword\" \\\n   -e URL=\"https://<owncloudserver_name>/owncloud/remote.php/webdav/mydocs\" \\  \n   -e INTERVAL=\"30\" \\\n   -e HOSTUSER=\"myuserid\" \\ \n   --name <container name> \\\n   idef1x/docker-owncloud-client\n```\n\n# Environment vars to use:\n* USER => owncloud user\n* PASSWORD => owncloud user password\n* LOCALDIR => local (to docker client) directory to sync (create one with -v <hostdir>:<dockerdir> )\n* URL      => owncloud server URL with remote directory to sync\n* INTERVAL => interval to check for changes \n* HOSTUSER => user on host system so files get written by this user instead of root!\n\n# Remarks\n* if one of those environment variables are not available it won't work!\n* naming the container (--name) is just for conveniance\n* client will trust any https certificate, so you can use it with self-signed certificates as well\n  so check the certificate of the server URL before yourself!\n* logging is done to a file inside the container because it did show credentials via the docker logs.\n  Inside the container in the log these are still shown, but can only be hidden by logging to /dev/null\n  instead as far as I know :(\n",
+  "dockerfile": "FROM alpine:latest\n\n#RUN cp /etc/apk/repositories /etc/apk/repositories.orig \\\n#    && echo http://dl-4.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories \\\n#    && apk add --no-cache \\\n#        curl owncloud-client\n\nENV VERSION=2.2.2 \\\n    QTKC_VERSION=0.7.0\n\nRUN apk add --no-cache --virtual .build-deps \\\n        cmake \\\n        qt5-qttools-dev \\\n        qt5-qtwebkit-dev \\\n        git \\\n        alpine-sdk \\\n    && mkdir -p /usr/local/src \\\n    && cd /usr/local/src \\\n    && curl -s https://codeload.github.com/frankosterfeld/qtkeychain/tar.gz/v$QTKC_VERSION | tar -xz \\\n    && cd qtkeychain-$QTKC_VERSION \\\n    && cmake \\\n        -DCMAKE_INSTALL_PREFIX=/usr \\\n        -DCMAKE_INSTALL_LIBDIR=lib \\\n        -DCMAKE_INSTALL_LIBEXECDIR=lib/qtkeychain \\\n        -DCMAKE_BUILD_TYPE=Release \\\n    && make \\\n    && make install \\\n    && cd /usr/local/src \\\n    && curl -s https://codeload.github.com/owncloud/client/tar.gz/v$VERSION | tar -xz \\\n    && cd client-$VERSION \\\n    && cmake \\\n        -DCMAKE_BUILD_TYPE=\"Release\" \\\n        -DCMAKE_INSTALL_LIBDIR=lib \\\n        -DCMAKE_INSTALL_PREFIX=/usr \\\n        -DCMAKE_INSTALL_SYSCONFDIR=/etc/owncloud-client \\\n    && make \\\n    && cp bin/owncloudcmd /usr/bin/owncloudcmd \\\n    && mv src/libsync/libowncloudsync.so* /usr/lib/ \\\n    && mv csync/src/libocsync.so* /usr/lib/ \\\n    && runDeps=\"$( \\\n        scanelf --needed --nobanner /usr/bin/owncloudcmd \\\n            | awk '{ gsub(/,/, \"\\nso:\", $2); print \"so:\" $2 }' \\\n            | sort -u \\\n            | xargs -r apk info --installed \\\n            | sort -u \\\n        )\" \\\n    && apk add --no-cache --virtual .rundeps $runDeps \\\n    && apk del --no-cache .build-deps \\\n    && rm -rf /usr/local/src\n\nADD startup.sh /startup.sh\n\nCMD [ \"/startup.sh\" ]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "startup.sh",
+        "dest": "/startup.sh"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apk add --no-cache --virtual .build-deps         cmake         qt5-qttools-dev         qt5-qtwebkit-dev         git         alpine-sdk     && mkdir -p /usr/local/src     && cd /usr/local/src     && curl -s https://codeload.github.com/frankosterfeld/qtkeychain/tar.gz/v$QTKC_VERSION | tar -xz     && cd qtkeychain-$QTKC_VERSION     && cmake         -DCMAKE_INSTALL_PREFIX=/usr         -DCMAKE_INSTALL_LIBDIR=lib         -DCMAKE_INSTALL_LIBEXECDIR=lib/qtkeychain         -DCMAKE_BUILD_TYPE=Release     && make     && make install     && cd /usr/local/src     && curl -s https://codeload.github.com/owncloud/client/tar.gz/v$VERSION | tar -xz     && cd client-$VERSION     && cmake         -DCMAKE_BUILD_TYPE=\"Release\"         -DCMAKE_INSTALL_LIBDIR=lib         -DCMAKE_INSTALL_PREFIX=/usr         -DCMAKE_INSTALL_SYSCONFDIR=/etc/owncloud-client     && make     && cp bin/owncloudcmd /usr/bin/owncloudcmd     && mv src/libsync/libowncloudsync.so* /usr/lib/     && mv csync/src/libocsync.so* /usr/lib/     && runDeps=\"$(         scanelf --needed --nobanner /usr/bin/owncloudcmd             | awk '{ gsub(/,/, \"\\nso:\", $2); print \"so:\" $2 }'             | sort -u             | xargs -r apk info --installed             | sort -u         )\"     && apk add --no-cache --virtual .rundeps $runDeps     && apk del --no-cache .build-deps     && rm -rf /usr/local/src"
+    ],
+    "workdir": [],
+    "from": "alpine:latest",
+    "env": {
+      "VERSION": "2.2.2",
+      "": "",
+      "QTKC_VERSION": "0.7.0"
+    },
+    "cmd": "[ \"/startup.sh\" ]"
+  },
+  "source_repository_url": "https://github.com/TrurlMcByte/docker-owncloud-client.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/TrurlMcByte/docker-owncloud-client",
+  "docker_repository": "trurlmcbyte/docker-owncloud-client",
+  "docker_image": "trurlmcbyte/docker-owncloud-client",
+  "parameters_schema": {
+    "VERSION": {
+      "default": "2.2.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "QTKC_VERSION": {
+      "default": "0.7.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "trurlmcbyte/docker-owncloud-client",
+  "revision": "alpine",
+  "uris": [
+    "https://hub.docker.com/r/trurlmcbyte/docker-owncloud-client",
+    "https://hub.docker.com/v2/repositories/trurlmcbyte/docker-owncloud-client",
+    "https://github.com/TrurlMcByte/docker-owncloud-client.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/CLI"
+  ],
+  "info_url": "https://hub.docker.com/r/trurlmcbyte/docker-owncloud-client",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

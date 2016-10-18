@@ -1,0 +1,113 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/fedora/postgresql",
+    "repository_url": "https://hub.docker.com/v2/repositories/fedora/postgresql",
+    "tags_url": "https://hub.docker.com/v2/repositories/fedora/postgresql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/fedora/postgresql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/fedora/postgresql/autobuild",
+    "user": "fedora",
+    "name": "postgresql",
+    "namespace": "fedora",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 327,
+    "last_updated": "2016-09-18T14:37:54.094949Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 124945000,
+        "id": 876389,
+        "repository": 318497,
+        "creator": 17785,
+        "last_updater": 17785,
+        "last_updated": "2016-09-18T14:37:53.765224Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "fedora-cloud/Fedora-Dockerfiles"
+  },
+  "name": "fedora/postgresql Docker container",
+  "description": "postgresql",
+  "readme": "dockerfiles-fedora-postgresql\n=============================\n\nFedora dockerfile for PostgreSQL\n\n1. To build\n\n    Copy the sources down and do the build:\n\n    `# docker build --rm -t username/postgresql . |& tee postgres_build.log`\n\n2. To get help output\n\n    `# docker run username/postgresql container-usage`\n\n3. To run\n\n    If port 5432 is open on your host:\n\n    ```\n    # mkdir data\n    # chown 26:26 data\n    # chcon -t svirt_sandbox_file_t data\n    # docker run -v \"`pwd`/data:/var/lib/pgsql/data\" -d -p 5432:5432 username/postgresql\n    ```\n\n    or to assign a random port that maps to port 5432 on the container:\n\n    ``# docker run -v \"`pwd`/data:/var/lib/pgsql/data\" -d -p 5432 username/postgresql``\n\n    To see the random port that the container is listening on:\n\n    `# docker ps`\n\n4. To test\n\n    To find the IP address, get the container ID:\n\n    `# docker ps`\n\n    Then get the IP addr:\n\n    `# docker inspect --format '{{ .NetworkSettings.IPAddress }}' a0d14cc9830B`\n\n    Now connect to the instance of PostgreSQL.  There is no default database at this\n    time, neither the \"default\" password for 'postgres' (admin) user.  Please look\n    at the 'container-usage' output described above how to setup that.\n\n    ```\n    # psql -h 172.17.0.x -U postgres\n    Password for user postgres:\n    ```\n",
+  "dockerfile": "FROM index.docker.io/fedora:23\nMAINTAINER Pavel Raiskup <praiskup@redhat.com>\n\nENV container=\"docker\"\n\nLABEL INSTALL=\"docker run -t -i --rm --privileged -u 0:0 -v /:/host --net=host --ipc=host --pid=host -e HOST=/host -e LOGDIR=/var/log/\\\"\\${NAME}\\\" -e DATADIR=/var/lib/\\\"\\${NAME}\\\" -e CONFDIR=/etc/\\\"\\${NAME}\\\" -e IMAGE=\\\"\\${IMAGE}\\\" -e NAME=\\\"\\${NAME}\\\" -e OPT1 -e OPT2 -e OPT3 \\${OPT2} \\${IMAGE} /usr/share/cont-postgresql/atomic/install.sh\" \\\n    UNINSTALL=\"docker run -t -i --rm --privileged -u 0:0 -v /:/host --net=host --ipc=host --pid=host -e HOST=/host -e LOGDIR=/var/log/\\\"\\${NAME}\\\" -e DATADIR=/var/lib/\\\"\\${NAME}\\\" -e CONFDIR=/etc/\\\"\\${NAME}\\\" -e IMAGE=\\\"\\${IMAGE}\\\" -e NAME=\\\"\\${NAME}\\\" -e OPT1 -e OPT2 -e OPT3 \\${OPT2} \\${IMAGE} /usr/share/cont-postgresql/atomic/uninstall.sh\"\n\nRUN dnf -y --setopt=tsflags=nodocs install postgresql-server \\\n    && dnf -y --setopt=tsflags=nodocs update glibc-common \\\n    && dnf -y --setopt=tsflags=nodocs reinstall glibc-common \\\n    && dnf -y --setopt=tsflags=nodocs clean all --enablerepo='*'\n\nADD \"root\" \\\n    \"/\"\n\nRUN systemctl disable getty.service console-getty.service \\\n    && systemctl enable postgresql-container.service \\\n    && touch /var/lib/pgsql/data/.container_internal && chown 26:26 /var/lib/pgsql/data \\\n    && container-build && rm /usr/bin/container-build\n\nVOLUME \\\n    \"/var/lib/pgsql/data\"\n\nEXPOSE 5432\n\nUSER postgres\nENTRYPOINT [\"/usr/bin/container-entrypoint\"]\nCMD [\"container-start\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "\"root\"",
+        "dest": ""
+      }
+    ],
+    "expose": [
+      5432
+    ],
+    "volume": [
+      "    \"/var/lib/pgsql/data\""
+    ],
+    "run": [
+      "dnf -y --setopt=tsflags=nodocs install postgresql-server     && dnf -y --setopt=tsflags=nodocs update glibc-common     && dnf -y --setopt=tsflags=nodocs reinstall glibc-common     && dnf -y --setopt=tsflags=nodocs clean all --enablerepo='*'",
+      "systemctl disable getty.service console-getty.service     && systemctl enable postgresql-container.service     && touch /var/lib/pgsql/data/.container_internal && chown 26:26 /var/lib/pgsql/data     && container-build && rm /usr/bin/container-build"
+    ],
+    "workdir": [],
+    "from": "index.docker.io/fedora:23",
+    "maintainer": "Pavel Raiskup <praiskup@redhat.com>",
+    "env": {
+      "container": "\"docker\""
+    },
+    "label": "INSTALL=\"docker run -t -i --rm --privileged -u 0:0 -v /:/host --net=host --ipc=host --pid=host -e HOST=/host -e LOGDIR=/var/log/\\\"\\${NAME}\\\" -e DATADIR=/var/lib/\\\"\\${NAME}\\\" -e CONFDIR=/etc/\\\"\\${NAME}\\\" -e IMAGE=\\\"\\${IMAGE}\\\" -e NAME=\\\"\\${NAME}\\\" -e OPT1 -e OPT2 -e OPT3 \\${OPT2} \\${IMAGE} /usr/share/cont-postgresql/atomic/install.sh\"     UNINSTALL=\"docker run -t -i --rm --privileged -u 0:0 -v /:/host --net=host --ipc=host --pid=host -e HOST=/host -e LOGDIR=/var/log/\\\"\\${NAME}\\\" -e DATADIR=/var/lib/\\\"\\${NAME}\\\" -e CONFDIR=/etc/\\\"\\${NAME}\\\" -e IMAGE=\\\"\\${IMAGE}\\\" -e NAME=\\\"\\${NAME}\\\" -e OPT1 -e OPT2 -e OPT3 \\${OPT2} \\${IMAGE} /usr/share/cont-postgresql/atomic/uninstall.sh\"",
+    "user": "postgres",
+    "entrypoint": "[\"/usr/bin/container-entrypoint\"]",
+    "cmd": "[\"container-start\"]"
+  },
+  "source_repository_url": "https://github.com/fedora-cloud/Fedora-Dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/fedora-cloud/Fedora-Dockerfiles",
+  "docker_repository": "fedora/postgresql",
+  "docker_image": "fedora/postgresql",
+  "parameters_schema": {
+    "container": {
+      "default": "\"docker\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5432
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "fedora/postgresql",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/fedora/postgresql",
+    "https://hub.docker.com/v2/repositories/fedora/postgresql",
+    "https://github.com/fedora-cloud/Fedora-Dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Fedora",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/fedora/postgresql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

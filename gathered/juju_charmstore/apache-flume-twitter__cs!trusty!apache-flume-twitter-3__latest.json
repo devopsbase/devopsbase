@@ -1,0 +1,125 @@
+{
+  "name": "apache-flume-twitter Juju charm",
+  "juju_charm_name": "apache-flume-twitter",
+  "revision": "cs:trusty/apache-flume-twitter-3",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/apache-flume-twitter",
+    "https://jujucharms.com/apache-flume-twitter/trusty",
+    "https://jujucharms.com/apache-flume-twitter/trusty/3",
+    "https://api.jujucharms.com/v5/apache-flume-twitter",
+    "https://api.jujucharms.com/v5/trusty/apache-flume-twitter",
+    "https://api.jujucharms.com/v5/trusty/apache-flume-twitter-3"
+  ],
+  "labels": [
+    "Juju charm",
+    "applications",
+    "bigdata",
+    "apache",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://jujucharms.com/apache-flume-twitter",
+  "package_url": "https://api.jujucharms.com/v5/trusty/apache-flume-twitter-3/archive",
+  "created": "2015-10-07T21:01:53.446Z",
+  "updated": "2015-10-07T21:01:53.446Z",
+  "description": "Ingest tweets with Apache Flume\n\nUses a Twitter source, memory channel, and Avro sink in Apache Flume\nto ingest Twitter data.\n",
+  "maintainer": {
+    "name": "bigdata-charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "bigdata-charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/flume-agent",
+      "self_resolve": true,
+      "juju_interface": "flume-agent",
+      "juju_name": "flume-agent",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "channel_capacity": {
+      "type": "string",
+      "description": "The maximum number of events stored in the channel.\n",
+      "default": "1000",
+      "mapping": "charm_option"
+    },
+    "channel_transaction_capacity": {
+      "type": "string",
+      "description": "The maximum number of events the channel will take from a source or\ngive to a sink per transaction.\n",
+      "default": "100",
+      "mapping": "charm_option"
+    },
+    "event_dir": {
+      "type": "string",
+      "description": "The HDFS subdirectory under /user/flume where events will be stored.\n",
+      "default": "flume-twitter",
+      "mapping": "charm_option"
+    },
+    "resources_mirror": {
+      "type": "string",
+      "description": "URL from which to fetch resources (e.g., Hadoop binaries) instead\nof Launchpad.\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "twitter_access_token": {
+      "type": "string",
+      "description": "OAuth Access token from your Twitter developer account\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "twitter_access_token_secret": {
+      "type": "string",
+      "description": "OAuth Access token secret from your Twitter developer account\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "twitter_consumer_key": {
+      "type": "string",
+      "description": "OAuth Consumer key from your Twitter developer account\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "twitter_consumer_secret": {
+      "type": "string",
+      "description": "OAth Consumer secret from your Twitter developer account\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "twitter_max_batch_duration": {
+      "type": "int",
+      "description": "Maximum number of milliseconds to wait before closing a batch\n",
+      "default": 1000,
+      "mapping": "charm_option"
+    },
+    "twitter_max_batch_size": {
+      "type": "int",
+      "description": "Maximum number of twitter messages to put in a single batch\n",
+      "default": 1000,
+      "mapping": "charm_option"
+    },
+    "twitter_source": {
+      "type": "string",
+      "description": "The application to use for this Flume source. Deafult to TwitterSource\nbundled with Flume.\n",
+      "default": "org.apache.flume.source.twitter.TwitterSource",
+      "mapping": "charm_option"
+    }
+  },
+  "license": "## Overview\n\nFlume is a distributed, reliable, and available service for efficiently\ncollecting, aggregating, and moving large amounts of log data. It has a simple\nand flexible architecture based on streaming data flows. It is robust and fault\ntolerant with tunable reliability mechanisms and many failover and recovery\nmechanisms. It uses a simple extensible data model that allows for online\nanalytic application. Learn more at [flume.apache.org](http://flume.apache.org).\n\nThis charm provides a Flume agent designed to process tweets from the Twitter\nStreaming API and send them to the `apache-flume-hdfs` agent for storage in\nthe shared filesystem (HDFS) of a connected Hadoop cluster. This leverages the\nTwitterSource jar packaged with Flume. Learn more about the\n[1% firehose](https://flume.apache.org/FlumeUserGuide.html#twitter-1-firehose-source-experimental).\n\n\n## Prerequisites\n\nThe Twitter Streaming API requires developer credentials. You'll need to\nconfigure those for this charm. Find your credentials (or create an account\nif needed) [here](https://apps.twitter.com/).\n\nCreate a `secret.yaml` file with your Twitter developer credentials:\n\n    flume-twitter:\n        twitter_access_token: 'YOUR_TOKEN'\n        twitter_access_token_secret: 'YOUR_TOKEN_SECRET'\n        twitter_consumer_key: 'YOUR_CONSUMER_KEY'\n        twitter_consumer_secret: 'YOUR_CONSUMER_SECRET'\n\n\n## Usage\n\nThis charm leverages our pluggable Hadoop model with the `hadoop-plugin`\ninterface. This means that you will need to deploy a base Apache Hadoop cluster\nto run Flume. The suggested deployment method is to use the\n[apache-ingestion-flume](https://jujucharms.com/u/bigdata-dev/apache-ingestion-flume/)\nbundle. This will deploy the Apache Hadoop platform with a single Apache Flume\nunit that communicates with the cluster by relating to the\n`apache-hadoop-plugin` subordinate charm:\n\n    juju quickstart u/bigdata-dev/apache-ingestion-flume\n\nAlternatively, you may manually deploy the recommended environment as follows:\n\n    juju deploy apache-hadoop-hdfs-master hdfs-master\n    juju deploy apache-hadoop-yarn-master yarn-master\n    juju deploy apache-hadoop-compute-slave compute-slave\n    juju deploy apache-hadoop-plugin plugin\n    juju deploy apache-flume-hdfs flume-hdfs\n\n    juju add-relation yarn-master hdfs-master\n    juju add-relation compute-slave yarn-master\n    juju add-relation compute-slave hdfs-master\n    juju add-relation plugin yarn-master\n    juju add-relation plugin hdfs-master\n    juju add-relation flume-hdfs plugin\n\nOnce the bundle has been deployed, add the `apache-flume-twitter` charm and\nrelate it to the `flume-hdfs` agent:\n\n    juju deploy apache-flume-twitter flume-twitter --config=secret.yaml\n    juju add-relation flume-twitter flume-hdfs\n\nThat's it! Once the Flume agents start, tweets will start flowing into\nHDFS in year-month-day/hour directories here: `/user/flume/events/%y-%m-%d/%H`.\n\n\n## Test the deployment\n\nTo verify this charm is working as intended, SSH to the `flume-hdfs` unit,\nlocate an event, and cat it:\n\n    juju ssh flume-hdfs/0\n    hdfs dfs -ls /user/flume/events  # <-- find a date\n    hdfs dfs -ls /user/flume/events/yy-mm-dd  # <-- find an hour\n    hdfs dfs -ls /user/flume/events/yy-mm-dd/HH  # <-- find an event\n    hdfs dfs -cat /user/flume/events/yy-mm-dd/HH/FlumeData.[id].avro\n\nYou'll see AVRO headers since that's the default format used to contain the\ntweets. You may not recognize the body of the tweet if it's not in a\nlanguage you understand (remember, this is a 1% firehose from tweets all over\nthe world). You may have to cat a few different events before you find a\ntweet worth reading. Happy hunting!\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Help\n\n- [Apache Flume home page](http://flume.apache.org/)\n- [Apache Flume bug tracker](https://issues.apache.org/jira/browse/flume)\n- [Apache Flume mailing lists](https://flume.apache.org/mailinglists.html)\n- `#juju` on `irc.freenode.net`\n",
+  "readme": "## Overview\n\nFlume is a distributed, reliable, and available service for efficiently\ncollecting, aggregating, and moving large amounts of log data. It has a simple\nand flexible architecture based on streaming data flows. It is robust and fault\ntolerant with tunable reliability mechanisms and many failover and recovery\nmechanisms. It uses a simple extensible data model that allows for online\nanalytic application. Learn more at [flume.apache.org](http://flume.apache.org).\n\nThis charm provides a Flume agent designed to process tweets from the Twitter\nStreaming API and send them to the `apache-flume-hdfs` agent for storage in\nthe shared filesystem (HDFS) of a connected Hadoop cluster. This leverages the\nTwitterSource jar packaged with Flume. Learn more about the\n[1% firehose](https://flume.apache.org/FlumeUserGuide.html#twitter-1-firehose-source-experimental).\n\n\n## Prerequisites\n\nThe Twitter Streaming API requires developer credentials. You'll need to\nconfigure those for this charm. Find your credentials (or create an account\nif needed) [here](https://apps.twitter.com/).\n\nCreate a `secret.yaml` file with your Twitter developer credentials:\n\n    flume-twitter:\n        twitter_access_token: 'YOUR_TOKEN'\n        twitter_access_token_secret: 'YOUR_TOKEN_SECRET'\n        twitter_consumer_key: 'YOUR_CONSUMER_KEY'\n        twitter_consumer_secret: 'YOUR_CONSUMER_SECRET'\n\n\n## Usage\n\nThis charm leverages our pluggable Hadoop model with the `hadoop-plugin`\ninterface. This means that you will need to deploy a base Apache Hadoop cluster\nto run Flume. The suggested deployment method is to use the\n[apache-ingestion-flume](https://jujucharms.com/u/bigdata-dev/apache-ingestion-flume/)\nbundle. This will deploy the Apache Hadoop platform with a single Apache Flume\nunit that communicates with the cluster by relating to the\n`apache-hadoop-plugin` subordinate charm:\n\n    juju quickstart u/bigdata-dev/apache-ingestion-flume\n\nAlternatively, you may manually deploy the recommended environment as follows:\n\n    juju deploy apache-hadoop-hdfs-master hdfs-master\n    juju deploy apache-hadoop-yarn-master yarn-master\n    juju deploy apache-hadoop-compute-slave compute-slave\n    juju deploy apache-hadoop-plugin plugin\n    juju deploy apache-flume-hdfs flume-hdfs\n\n    juju add-relation yarn-master hdfs-master\n    juju add-relation compute-slave yarn-master\n    juju add-relation compute-slave hdfs-master\n    juju add-relation plugin yarn-master\n    juju add-relation plugin hdfs-master\n    juju add-relation flume-hdfs plugin\n\nOnce the bundle has been deployed, add the `apache-flume-twitter` charm and\nrelate it to the `flume-hdfs` agent:\n\n    juju deploy apache-flume-twitter flume-twitter --config=secret.yaml\n    juju add-relation flume-twitter flume-hdfs\n\nThat's it! Once the Flume agents start, tweets will start flowing into\nHDFS in year-month-day/hour directories here: `/user/flume/events/%y-%m-%d/%H`.\n\n\n## Test the deployment\n\nTo verify this charm is working as intended, SSH to the `flume-hdfs` unit,\nlocate an event, and cat it:\n\n    juju ssh flume-hdfs/0\n    hdfs dfs -ls /user/flume/events  # <-- find a date\n    hdfs dfs -ls /user/flume/events/yy-mm-dd  # <-- find an hour\n    hdfs dfs -ls /user/flume/events/yy-mm-dd/HH  # <-- find an event\n    hdfs dfs -cat /user/flume/events/yy-mm-dd/HH/FlumeData.[id].avro\n\nYou'll see AVRO headers since that's the default format used to contain the\ntweets. You may not recognize the body of the tweet if it's not in a\nlanguage you understand (remember, this is a 1% firehose from tweets all over\nthe world). You may have to cat a few different events before you find a\ntweet worth reading. Happy hunting!\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Help\n\n- [Apache Flume home page](http://flume.apache.org/)\n- [Apache Flume bug tracker](https://issues.apache.org/jira/browse/flume)\n- [Apache Flume mailing lists](https://flume.apache.org/mailinglists.html)\n- `#juju` on `irc.freenode.net`\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

@@ -1,0 +1,89 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/digitalwonderland/logstash-forwarder",
+    "repository_url": "https://hub.docker.com/v2/repositories/digitalwonderland/logstash-forwarder",
+    "tags_url": "https://hub.docker.com/v2/repositories/digitalwonderland/logstash-forwarder/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/digitalwonderland/logstash-forwarder/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/digitalwonderland/logstash-forwarder/autobuild",
+    "user": "digitalwonderland",
+    "name": "logstash-forwarder",
+    "namespace": "digitalwonderland",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 14,
+    "pull_count": 1195777,
+    "last_updated": "2015-12-27T10:46:57.862066Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 80799847,
+        "id": 39736,
+        "repository": 36101,
+        "creator": 17804,
+        "last_updater": 17804,
+        "last_updated": "2015-12-27T10:46:57.085589Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "digital-wonderland/docker-logstash-forwarder"
+  },
+  "name": "digitalwonderland/logstash-forwarder Docker container",
+  "description": "Docker Logstash Integration - run once per Docker host.",
+  "readme": "# Docker Logstash Integration\n[![Build Status](https://travis-ci.org/digital-wonderland/docker-logstash-forwarder.svg)](https://travis-ci.org/digital-wonderland/docker-logstash-forwarder)\n[![Go Walker](http://gowalker.org/api/v1/badge)](http://gowalker.org/github.com/digital-wonderland/docker-logstash-forwarder)\n[![Gobuild Download](http://gobuild.io/badge/github.com/digital-wonderland/docker-logstash-forwarder/download.png)](http://gobuild.io/github.com/digital-wonderland/docker-logstash-forwarder)\n\nShip all your logs from [Docker](http://www.docker.io/) (including in container logs) to [Logstash](http://logstash.net/) via [logstash-forwarder](https://github.com/elasticsearch/logstash-forwarder) (aka lumberjack).\n\nThis means:\n\n* any Docker log files\n* whatever log files you configure logstash-forwarder to ship within a container (just put a config at ```/etc/logstash-forwarder.conf```, only the ```files``` section gets evaluated while ```network``` section is globally configured).\n\n## Why?\n\nI wasn't too happy with existing possibilities and while I know that the Docker team is working on a solution, this scratches my itch right now.\n\nAlso I didn't see an obvious way to extend [docker-gen](https://github.com/jwilder/docker-gen) to handle generic in container templates.\n\nBesides that, how much reason do you need to play with Go & Docker? ;-)\n\n\n## How it works:\n\n```docker-logstash-forwarder``` listens to Docker events and continually restarts a logstash-forwarder instance, after refreshing its configuration, every ```laziness``` seconds after a new event was received (to avoid unnecessary restarts - configurable via ```-laziness``` flag - defaults to 5 seconds).\n\nFor every running container the docker log file is added and it is checked if a logstash-forwarder config exists within the container at ```/etc/logstash-forwarder.conf```.\n\nIf an in container specific config exists, the path of all files will be expanded to be valid within the logstash-forwarder container before adding them to the global configuration.\n\nThis requires the following (in container defaults in brackets):\n\n* read-only access to the directory containing your docker data (```/var/lib/docker```)\n* connection to Docker (```unix:///var/run/docker.sock```)\n* connection to Logstash (```logstash:5043```)\n\n### Read-only access to Docker data:\n\nMount the directory containing your Docker data into the containers ```/var/lib/docker``` - i.e. run the container with ```-v /var/lib/docker:/var/lib/docker:ro``` (assuming your Docker files are stored in ```/var/lib/docker``` on the host).\n\n### Connection with Docker:\n\nFor communication with Docker the following endpoints are evaluated:\n\n1. whatever is passed via the ```-docker``` command line flag\n2. the ```$DOCKER_HOST``` environment variable\n3.  ```unix:///var/run/docker.sock```\n\nIt is suggested to use the later - as in run the container with ```-v /var/run/docker.sock:/var/run/docker.sock```\n\nBehind the screens [fsouza/go-dockerclient](https://github.com/fsouza/go-dockerclient/) is used for communication with Docker.\n\n### Connection with Logstash:\n\nFor communication with Logstash the following endpoints are evaluated:\n\n1. whatever is passed via the ```-logstash``` command line flag\n2. the ```$LOGSTASH_HOST``` environment variable\n3. ```logstash:5043```\n\nThis allows you to ```docker -link``` your [Logstash](https://github.com/digital-wonderland/docker-logstash) instance to the containers ```logstash``` host.\n\n#### Certificate Handling:\n\nlogstash-forwarder authentication can be managed in the following ways:\n\n1. specify a custom config pointing to some imported volume containing the required cert & key via the ```-config``` flag (only the ```network``` section is evaluated)\n2. make your keys available bellow ```/mnt/logstash-forwarder```\n\n## TL;DR / Quickstart:\n\nIf you have my [elasticsearch](https://registry.hub.docker.com/u/digitalwonderland/elasticsearch/) & [logstash](https://registry.hub.docker.com/u/digitalwonderland/logstash/) containers running just do\n\n    $ docker pull digitalwonderland/logstash-forwarder\n    $ docker run -d --name logstash-forwarder -v /var/lib/docker:/var/lib/docker:ro -v /var/run/docker.sock:/var/run/docker.sock --link logstash:logstash --volumes-from logstash digitalwonderland/logstash-forwarder\n\nIf you start from scratch / use [Vagrant](http://www.vagrantup.com/) / are on a Mac: just clone this repository and run ```vagrant up```. This gives you a VM based on [CoreOS](https://coreos.com/) (which is awesome btw) running those 3 containers & [Kibana](http://www.elasticsearch.org/overview/kibana/) listening to [localhost:5601](http://localhost:5601) (Docker listens to [localhost:2375](http://localhost:2375/containers/json)).\n\n## Known Issues:\n\n1. docker-logstash-forwarder must be run as root until Docker provides configurable ownership of shared volumes, because ```/var/lib/docker``` is owned by root on the host and mounted read only, so a non root user can not read from it ([docker#7918](https://github.com/docker/docker/issues/7198)).\n\n2. The path of the containers content, on the hosts file system, has to be calculated by trying to take an educated guess based on your currently used docker driver since the docker folks consider this path internal and don't want to make it available via API ([docker#7915](https://github.com/docker/docker/issues/7915)). \n\n\tKnown to be working drivers are:\n\t\n\t* aufs\n\t* btrfs\n\t* devicemapper\n\t* overlay\n\nLast but not least it probably should be mentioned, that this is the first time I wrote any go code (a few days, after work), so any 'Duh' pointers are greatly appreciated.\n\nPull Requests welcome :)\n",
+  "dockerfile": "FROM digitalwonderland/base\n\nRUN curl -Lo /usr/local/bin/docker-logstash-forwarder https://github.com/digital-wonderland/docker-logstash-forwarder/releases/download/latest/linux_amd64_docker-logstash-forwarder \\\n && curl -Lo /usr/local/bin/logstash-forwarder https://github.com/digital-wonderland/docker-logstash-forwarder/releases/download/latest/linux_amd64_logstash-forwarder \\\n && chmod 0755 /usr/local/bin/{docker-logstash-forwarder,logstash-forwarder}\n\nENTRYPOINT [\"/usr/local/bin/docker-logstash-forwarder\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "curl -Lo /usr/local/bin/docker-logstash-forwarder https://github.com/digital-wonderland/docker-logstash-forwarder/releases/download/latest/linux_amd64_docker-logstash-forwarder  && curl -Lo /usr/local/bin/logstash-forwarder https://github.com/digital-wonderland/docker-logstash-forwarder/releases/download/latest/linux_amd64_logstash-forwarder  && chmod 0755 /usr/local/bin/{docker-logstash-forwarder,logstash-forwarder}"
+    ],
+    "workdir": [],
+    "from": "digitalwonderland/base",
+    "entrypoint": "[\"/usr/local/bin/docker-logstash-forwarder\"]"
+  },
+  "source_repository_url": "https://github.com/digital-wonderland/docker-logstash-forwarder.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/digital-wonderland/docker-logstash-forwarder",
+  "docker_repository": "digitalwonderland/logstash-forwarder",
+  "docker_image": "digitalwonderland/logstash-forwarder",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "digitalwonderland/logstash-forwarder",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/digitalwonderland/logstash-forwarder",
+    "https://hub.docker.com/v2/repositories/digitalwonderland/logstash-forwarder",
+    "https://github.com/digital-wonderland/docker-logstash-forwarder.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Version Control/Git",
+    "Type/Devopsware/Integration",
+    "Type/Devopsware/Logging/Logstash",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/digitalwonderland/logstash-forwarder",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

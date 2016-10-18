@@ -1,0 +1,103 @@
+{
+  "name": "mesos Chef cookbook",
+  "chef_cookbook_name": "mesos",
+  "revision": "2.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/mesos",
+    "https://supermarket.chef.io/cookbooks/mesos/download",
+    "https://supermarket.chef.io/cookbooks/mesos/versions/2.0.0",
+    "https://supermarket.chef.io/cookbooks/mesos/versions/2.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/mesos/versions/2.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/mesos",
+    "https://supermarket.chef.io/api/v1/cookbooks/mesos/versions/2.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Orchestration/Cluster-based/Mesos",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/mesos",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/mesos/versions/2.0.0/download",
+  "deprecated": false,
+  "created": "2013-12-12T22:34:37.000Z",
+  "updated": "2015-12-23T18:45:34.262Z",
+  "description": "Installs/Configures Apache Mesos",
+  "maintainer": {
+    "name": "rayray2030",
+    "email": "hwilkinson@mdsol.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 17,
+  "downloads_count": 11345132,
+  "downloads_count_revision": 696488,
+  "repository_url": "https://github.com/mdsol/mesos_cookbook",
+  "issues_url": "https://github.com/mdsol/mesos_cookbook/issues",
+  "chef_source_url": "https://github.com/mdsol/mesos_cookbook",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Mesos Cookbook\n==============\n[![Build Status](https://secure.travis-ci.org/mdsol/mesos_cookbook.png?branch=master)](http://travis-ci.org/mdsol/mesos_cookbook)\n\n\nDescription\n===========\n\nApplication cookbook for installing the [Apache Mesos][] cluster manager.\nMesos provides efficient resource isolation and sharing across distributed \napplications, or frameworks.  This cookbook installs Mesos via packages\nprovided by [Mesosphere][].\n\nThis cookbook serves as the base for the following additional Mesos framework\ncookbooks maintained by [Medidata Solutions][]:\n\n* [marathon][] - This cookbook installs the Apache Mesos Marathon framework.\n* [chronos][] - This cookbook installs the Apache Mesos Chronos framework.\n\n\nRequirements\n============\n\nChef 11.12.2+\n\nThis cookbook assumes you will be running a ZooKeeper ensemble for production \nuse of Mesos.\n\nThe following cookbooks are dependencies:\n\n* apt\n* yum\n* java\n* docker\n\nThe following cookbooks are suggested:\n\n* zookeeper (used for discovering ZooKeeper ensembles via [Netflix Exhibitor][])\n\n## Platform:\n\nTested on\n\n* Ubuntu 12.04\n* Ubuntu 13.04\n* Ubuntu 14.04\n* Debian Wheezy\n* CentOS 6\n* Scientific Linux 6.3\n\n## Attributes\n\n* `node['mesos']['version']` - Mesosphere Mesos package version. Default: \n'0.17.0'.\n* `node['mesos']['cluster_name']` - Human readable name for the cluster, \ndisplayed in the webui. Default: 'MyMesosCluster'.\n* `node['mesos']['port']` - Port to listen on. Default: 5050.\n* `node['mesos']['logs_dir']` - Location to put log files. Default: \n'/var/log/mesos'.\n* `node['mesos']['work_dir']` - Where to place framework work directories. \nDefault: '/tmp/mesos'\n* `node['mesos']['isolation_type']` - Isolation mechanism, may be one of: \nprocess, cgroups. Default: 'process'.\n* `node['mesos']['zookeeper_server_list']` - List of ZooKeeper hostnames or \nIP addresses. Default: [].\n* `node['mesos']['zookeeper_port']` - ZooKeeper port. Default: 2181.\n* `node['mesos']['zookeeper_path']` - ZooKeeper path. Default: 'mesos'.\n* `node['mesos']['zookeeper_exhibitor_discovery']` - Flag to enable ZooKeeper \nensemble discovery via Netflix Exhibitor. Default: false.\n* `node['mesos']['zookeeper_exhibitor_url']` - Netflix Exhibitor ZooKeeper \nensemble url.\n* `node['mesos']['set_ec2_hostname']` - If true and running in ec2, set hostname\nto public dns name.  Default: true.\n* `node['mesos']['python_egg']` - URL of mesos python egg to download\n* `node['mesos']['slave']['checkpoint']` - Enable slave recovery. Default:\n'true'.\n* `node['mesos']['slave']['strict']` - If true, any recovery error is fatal.\nDefault: 'false'.\n* `node['mesos']['slave']['recover']` - Whether to recover status updates and \nreconnect with old executors. Default: 'reconnect'\n\n## Recipes\n\n### default\nThe default mesos recipe will run mesos::install.\n\n### install\nThe install recipe pulls down the specified version of the mesosphere mesos \npackage and installs it.  It also configures to stop both mesos-master and \nmesos-slave init files so that they don't automatically start on server \nrestart.\n\n### master\nThe master recipe runs mesos::install as well as creating several\nmesos-master configuration files that are used at startup.  This recipe also\nuses the zookeeper attributes and/or exhibitor attributes to configure the \nmesos-master using zookeeper.  Lastly it sets the mesos-master init config to\n'start' so that mesos-master is started on server restart.\n\n### slave\nThe slave recipe runs mesos::install as well as creating several\nmesos-slave configuration files that are used at startup.  This recipe also\nuses the zookeeper attributes and/or exhibitor attributes to configure the \nmesos-slave using zookeeper.  Lastly it sets the mesos-slave init config to\n'start' so that mesos-slave is started on server restart.\n\n### docker\nThe docker recipe installs docker via [Brian Flad's docker cookbook][] as well\nas [Jason Dusek's mesos-docker script][] as a mesos executor.  After running \nthis recipe on a mesos slave you should be able to run the mesos-docker\nexamples listed in [Jason Dusek's docker on mesos blog post][].\n\n## Usage\n\nHere is a sample role for configuring a Mesos master in a ZooKeeper backed \nproduction mode.\n\n```YAML\nchef_type:           role\ndefault_attributes:\ndescription:\nenv_run_lists:\njson_class:          Chef::Role\nname:                mesos_master\noverride_attributes:\n  mesos:\n    version: 0.17.0\n    cluster_name: mesos-sandbox\n    zookeeper_server_list: [ '203.0.113.2', '203.0.113.3', '203.0.113.4' ]\n    zookeeper_port: 2181\n    zookeeper_path: 'mesos-sandbox'\nrun_list:\n  recipe[mesos::master]\n```\n\nHere is a sample role for creating a Mesos slave node with a seperate ZooKeeper \nensemble dynamically discovered via Netflix Exhibitor:\n```YAML\nchef_type:           role\ndefault_attributes:\ndescription:\nenv_run_lists:\njson_class:          Chef::Role\nname:                mesos_slave\noverride_attributes:\n  mesos:\n    version: 0.17.0\n    cluster_name: mesos-sandbox\n    zookeeper_path: 'mesos'\n    zookeeper_exhibitor_discovery: true\n    zookeeper_exhibitor_url: 'http://zk-exhibitor-endpoint.example.com:8080'\nrun_list:\n  recipe[mesos::slave]\n```\n\nHere is a sample role for creating a Mesos slave node running the experimental \ndocker executor.  This node is also dynamically configured via zookeeper and\nexhibitor.  (Note: this recipe only works with Ubuntu 13.04 as of now.)\n```YAML\nchef_type:           role\ndefault_attributes:\ndescription:\nenv_run_lists:\njson_class:          Chef::Role\nname:                mesos_slave_docker\noverride_attributes:\n  mesos:\n    version: 0.17.0\n    cluster_name: mesos-sandbox\n    zookeeper_path: 'mesos'\n    zookeeper_exhibitor_discovery: true\n    zookeeper_exhibitor_url: 'http://zk-exhibitor-endpoint.example.com:8080'\nrun_list:\n  recipe[mesos::docker]\n```\n\n[Apache Mesos]: http://mesos.apache.org\n[Netflix Exhibitor]: https://github.com/Netflix/exhibitor\n[Mesosphere]: http://mesosphere.io\n[Brian Flad's docker cookbook]: https://github.com/bflad/chef-docker\n[Jason Dusek's mesos-docker script]: https://github.com/mesosphere/mesos-docker\n[Jason Dusek's docker on mesos blog post]: http://mesosphere.io/2013/09/26/docker-on-mesos/\n[Medidata Solutions]: http://www.mdsol.com\n[marathon]: https://github.com/mdsol/marathon_cookbook\n[chronos]: https://github.com/mdsol/chronos_cookbook\n\nDevelopment\n-----------\nPlease see the [Contributing](CONTRIBUTING.md) Guidelines.\n\nLicense and Author\n------------------\n* Author: [Ray Rodriguez](https://github.com/rayrod2030)(rayrod2030@gmail.com)\n* Author: [Mark Corwin](https://github.com/mjcdiggity)\n* Contributor: [Asher Feldman](https://github.com/asher)\n* Contributor: [Steven Borrelli](https://github.com/stevendborrelli)\n\nCopyright 2014 Medidata Solutions Worldwide\n\nLicensed under the Apache License, Version 2.0 (the \"License\"); you may not use \nthis file except in compliance with the License. You may obtain a copy of the \nLicense at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software distributed \nunder the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR \nCONDITIONS OF ANY KIND, either express or implied. See the License for the \nspecific language governing permissions and limitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/java",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/docker",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": "~> 3.0",
+      "self_resolve": true
+    }
+  ],
+  "recommends": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/zookeeper",
+      "revision": ">= 0.0.0"
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "name": "asset_provider Chef cookbook",
+  "chef_cookbook_name": "asset_provider",
+  "revision": "0.2.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/asset_provider",
+    "https://supermarket.chef.io/cookbooks/asset_provider/download",
+    "https://supermarket.chef.io/cookbooks/asset_provider/versions/0.2.0",
+    "https://supermarket.chef.io/cookbooks/asset_provider/versions/0.2.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/asset_provider/versions/0.2.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/asset_provider",
+    "https://supermarket.chef.io/api/v1/cookbooks/asset_provider/versions/0.2.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Provider",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/asset_provider",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/asset_provider/versions/0.2.0/download",
+  "deprecated": false,
+  "created": "2015-01-24T09:26:49.472Z",
+  "updated": "2015-01-31T15:17:33.207Z",
+  "description": "Installs/Configures asset_provider",
+  "maintainer": {
+    "name": "tnarik",
+    "email": "tnarik@lecafeautomatique.co.uk"
+  },
+  "license": "all_rights",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 1345862,
+  "downloads_count_revision": 453983,
+  "repository_url": "https://github.com/tnarik/chef-asset_provider",
+  "issues_url": "https://github.com/tnarik/chef-asset_provider/issues",
+  "chef_source_url": "https://github.com/tnarik/chef-asset_provider",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# asset_provider\n\nProvides two LWRPs to manage the fetching of remote resources: `asset_provider_directory` and `asset_provider_file`.\n\nThe main reason to create this cookbook was the `asset_provider_directory` LWRP, to allow for a simple way of transferring full directories as tarballs from a remote HTTP/S server to a node being converged.\n\nTypically this LWRP is used with [piedesaint](https://rubygems.org/gems/piedesaint), as this lightweight server based on [Puma](https://rubygems.org/gems/puma) supports the transfer of full directories via cached tarballs, created on the fly.\n\nIn addition to this, by centralizing the configuration of the asset provider server, it declutters the configuration of multiple remote sources from the same endpoint.\n\n# Requirements\n\nThis is a Chef Cookbook and therefore requires a [Chef](https://www.chef.io/) installation.\n\nWhen using the `asset_provider_directory` LWRP, an accessible `tar` installation is expected in the converging node. \n\n# Usage\n\nTypically this cookbook will be used as a dependency of more complex one introducing recipes.\n\nAdd the corresponding dependency to the `metadata.rb` or any other dependency description file.\n\n```\n%w{asset_provider}.each do |cookbook|\n  depends cookbook\nend\n```\n\nThen, set the correct node attributes to point to your asset provider and have fun using `assset_provider_directory` and `asset_provider_file`. \n\n# Attributes\nIt's so much better if you take a look at the `attributes/default.rb` file for the full list, but this is a brief summary:\n\n* **node[:asset_provider][:username]**   - Basic Authentication username. Default is: 'user'.\n* **node[:asset_provider][:password]**   - Basic Authentication password. Default is: 'password'.\n* **node[:asset_provider][:protocol]**   - Asset Provider protocol. Default is: 'http'.\n* **node[:asset_provider][:host]**   - Asset Provider hostname or IP. Default is: 'localhost'.\n* **node[:asset_provider][:port]**   - Asset Provider TCP port. Default is: '8080'.\n\n\n# LWRPs\n##asset_provider_directory\n###syntax\n```\nexecute \"copy_#{web_server_name}_untared\" do\n  command \"cp -r /tmp/untarred/#{web_server_name}/* #{web_server[:root]}\"\n  user node[:apache][:user]\n  group node[:apache][:group]\n  action :nothing\nend\n\nasset_provider_directory web_server_name do\n  tmp_folder '/tmp/untarred'\n  chown_user node['apache']['user']\n  chown_group node['apache']['group']\n  notifies :run, \"execute[copy_#{web_server_name}_untared]\", :immediately\nend\n```\n\nThis example will fetch the `web_server_name` resource from the asset provider, untar it, assign it to `node['apache']['user']:node['apache']['group']` and then copy it to the root of the web server.\n\n###attributes\n| Attribute |      Description      |  Example | Default |\n|-----------|:----------------------|---------:|:-------:|\n| name        | Resource name. It will be used to set the 'tmp_file' if that attribute is missing | 'myserver' | '' |\n| source      | Path to the source folder in the asset provider server | 'myserver.backup.latest' | '' |\n| owner       | User which will own the tar file once fetched | 'admin' | nil |\n| group       | Group which will own the tar file once fetched | 'admin' | nil |\n| user        | User to execute the untarring | 'admin' | nil |\n| chown_user  | User to set as owner after untarring | 'foo' | nil |\n| chown_group | User to set as group after untarring | 'users' | nil |\n| tmp_file    | File name for the fetched tarball | 'backup.temporary.tar' | nil |\n| tmp_folder  | Folder where the temporary tar file will be untarred | '/tmp/untarred' | nil |\n\n`tmp_file` will be automatically set based on `name` if it is not specified, like this;\n\n```\ntmp_file = File.join(Chef::Config[:file_cache_path], \"#{new_resource.name}.tar\")\n```\n\n* `owner` and `group` are used to assing permissions to the fetched resource.\n* `user` is used to execute the untarring.\n* `chown_user` and `chown_group` are used at the very last step.\n\n\n##asset_provider_file\n###example\n```\nasset_provider_file \"/tmp/backup_file\" do\n  source 'backup.latest'\n  owner 'apache'\n  group 'apache'\n  mode \"0744\"\n  notifies :run, \"bash[import_backup_file]\", :immediately\nend\n```\n###attributes\n| Attribute |      Description      |  Example | Default |\n|-----------|:----------------------|---------:|:-------:|\n| name   | Destination path of the file in the node   | '/tmp/backup_file' | '' |\n| source | Path to the source file in the asset provider server | 'backup.latest' | '' |\n| owner  | User which will own the file once fetched  | 'admin' | nil |\n| group  | Group which will own the file once fetched | 'admin' | nil |\n| mode   | File permissions                           | '0744'  | '' |\n\n\n# Author\n\nAuthor:: Tnarik Innael (tnarik@lecafeautomatique.co.uk)",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "solaris",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "solaris2",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ]
+}

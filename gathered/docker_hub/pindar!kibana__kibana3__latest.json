@@ -1,0 +1,150 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/pindar/kibana",
+    "repository_url": "https://hub.docker.com/v2/repositories/pindar/kibana",
+    "tags_url": "https://hub.docker.com/v2/repositories/pindar/kibana/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/pindar/kibana/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/pindar/kibana/autobuild",
+    "user": "pindar",
+    "name": "kibana",
+    "namespace": "pindar",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 660,
+    "last_updated": "2015-11-14T03:35:22.362667Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "kibana3",
+        "full_size": 93593451,
+        "id": 69359,
+        "repository": 102409,
+        "creator": 96852,
+        "last_updater": 96852,
+        "last_updated": "2015-11-14T03:35:27.148664Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 36806093,
+        "id": 69366,
+        "repository": 102409,
+        "creator": 96852,
+        "last_updater": 96852,
+        "last_updated": "2015-11-14T03:34:51.821153Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "kibana4-ubuntu",
+        "full_size": 279178108,
+        "id": 69362,
+        "repository": 102409,
+        "creator": 96852,
+        "last_updater": 96852,
+        "last_updated": "2015-11-14T03:34:09.242888Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "Pindar/docker-kibana"
+  },
+  "name": "pindar/kibana Docker container",
+  "description": "Kibana 4.0.2 Dashboard, ~90MB, Environment variable support, without elasticsearch server",
+  "readme": "docker-kibana\r\n=============\r\n\r\nKibana 4.0.2 running in a docker container. You can easily change the endpoint of elasticsearch via an environment variable.\r\nTo save bandwidth and disk space this image uses an alpine linux.\r\n\r\nUsage:\r\n\r\n```\r\ndocker run \\\r\n--name kibana \\\r\n-e ELASTICSEARCH_ENDPOINT=http://elasticsearch_client.staging.example.local:9200 \\\r\n-p 5601:5601 \\\r\npindar/kibana\r\n```\r\n",
+  "dockerfile": "FROM gliderlabs/alpine\nMAINTAINER Simon Dittlmann\n\nRUN apk-install bash curl tar gzip\n\nENV KIBANA_VERSION 4.0.2\nRUN curl -L -O https://download.elastic.co/kibana/kibana/kibana-${KIBANA_VERSION}-linux-x64.tar.gz && \\\n\ttar xfv kibana-${KIBANA_VERSION}-linux-x64.tar.gz -C / && \\\n  rm /kibana-4.0.2-linux-x64/node/bin/node && \\\n  rm /kibana-4.0.2-linux-x64/node/bin/npm\n\n# install node for alpine\nENV VERSION=v1.7.1 CMD=iojs DOMAIN=iojs.org\n\nRUN apk update && \\\n  apk add make gcc g++ python paxctl curl && \\\n  curl -sSL https://${DOMAIN}/dist/${VERSION}/${CMD}-${VERSION}.tar.gz | tar -xz && \\\n  cd /${CMD}-${VERSION} && \\\n  NPROC=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || 1) && \\\n  export CFLAGS=\"$CFLAGS -D__USE_MISC\" && \\\n  ./configure --prefix=/usr && \\\n  make -j${NPROC} -C out mksnapshot && \\\n  paxctl -c -m out/Release/mksnapshot && \\\n  make -j${NPROC} && \\\n  make install && \\\n  paxctl -cm /usr/bin/${CMD} && \\\n  apk del make gcc g++ python paxctl curl && \\\n  apk add libgcc libstdc++ && \\\n  cd / && \\\n  rm -rf /${CMD}-${VERSION} /var/cache/apk/* /tmp/* /root/.npm \\\n    /usr/lib/node_modules/npm/man /usr/lib/node_modules/npm/doc /usr/lib/node_modules/npm/html\n\nRUN ln -s /usr/bin/node /kibana-4.0.2-linux-x64/node/bin/node && \\\n  ln -s /usr/bin/npm /kibana-4.0.2-linux-x64/node/bin/npm\n\nADD scripts/start.sh /start.sh\nRUN chmod +x /start.sh\nCMD [\"/start.sh\"]\n\nEXPOSE 5601",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "scripts/start.sh",
+        "dest": "/start.sh"
+      }
+    ],
+    "expose": [
+      5601
+    ],
+    "volume": [],
+    "run": [
+      "apk-install bash curl tar gzip",
+      "curl -L -O https://download.elastic.co/kibana/kibana/kibana-${KIBANA_VERSION}-linux-x64.tar.gz && \ttar xfv kibana-${KIBANA_VERSION}-linux-x64.tar.gz -C / &&   rm /kibana-4.0.2-linux-x64/node/bin/node &&   rm /kibana-4.0.2-linux-x64/node/bin/npm",
+      "apk update &&   apk add make gcc g++ python paxctl curl &&   curl -sSL https://${DOMAIN}/dist/${VERSION}/${CMD}-${VERSION}.tar.gz | tar -xz &&   cd /${CMD}-${VERSION} &&   NPROC=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || 1) &&   export CFLAGS=\"$CFLAGS -D__USE_MISC\" &&   ./configure --prefix=/usr &&   make -j${NPROC} -C out mksnapshot &&   paxctl -c -m out/Release/mksnapshot &&   make -j${NPROC} &&   make install &&   paxctl -cm /usr/bin/${CMD} &&   apk del make gcc g++ python paxctl curl &&   apk add libgcc libstdc++ &&   cd / &&   rm -rf /${CMD}-${VERSION} /var/cache/apk/* /tmp/* /root/.npm     /usr/lib/node_modules/npm/man /usr/lib/node_modules/npm/doc /usr/lib/node_modules/npm/html",
+      "ln -s /usr/bin/node /kibana-4.0.2-linux-x64/node/bin/node &&   ln -s /usr/bin/npm /kibana-4.0.2-linux-x64/node/bin/npm",
+      "chmod +x /start.sh"
+    ],
+    "workdir": [],
+    "from": "gliderlabs/alpine",
+    "maintainer": "Simon Dittlmann",
+    "env": {
+      "KIBANA_VERSION": "4.0.2",
+      "VERSION": "v1.7.1",
+      "CMD": "iojs",
+      "DOMAIN": "iojs.org"
+    },
+    "cmd": "[\"/start.sh\"]"
+  },
+  "source_repository_url": "https://github.com/Pindar/docker-kibana.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Pindar/docker-kibana",
+  "docker_repository": "pindar/kibana",
+  "docker_image": "pindar/kibana",
+  "parameters_schema": {
+    "KIBANA_VERSION": {
+      "default": "4.0.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "VERSION": {
+      "default": "v1.7.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CMD": {
+      "default": "iojs",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DOMAIN": {
+      "default": "iojs.org",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5601
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "pindar/kibana",
+  "revision": "kibana3",
+  "uris": [
+    "https://hub.docker.com/r/pindar/kibana",
+    "https://hub.docker.com/v2/repositories/pindar/kibana",
+    "https://github.com/Pindar/docker-kibana.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/pindar/kibana",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

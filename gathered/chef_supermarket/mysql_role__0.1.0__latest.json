@@ -1,0 +1,74 @@
+{
+  "name": "mysql_role Chef cookbook",
+  "chef_cookbook_name": "mysql_role",
+  "revision": "0.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/mysql_role",
+    "https://supermarket.chef.io/cookbooks/mysql_role/download",
+    "https://supermarket.chef.io/cookbooks/mysql_role/versions/0.1.0",
+    "https://supermarket.chef.io/cookbooks/mysql_role/versions/0.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/mysql_role/versions/0.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/mysql_role",
+    "https://supermarket.chef.io/api/v1/cookbooks/mysql_role/versions/0.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Databases",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/mysql_role",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/mysql_role/versions/0.1.0/download",
+  "deprecated": false,
+  "created": "2014-10-02T17:28:28.324Z",
+  "updated": "2014-10-02T17:28:28.138Z",
+  "description": "MySQL role wrapper cookbook",
+  "maintainer": {
+    "name": "fabn",
+    "email": "f.napoleoni@gmail.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 852684,
+  "downloads_count_revision": 852684,
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Description\n\n[Role wrapper cookbook](http://www.getchef.com/blog/2013/12/03/doing-wrapper-cookbooks-right/) for MySQL.\n\nInstall MySQL and configure utility tools such as Percona Toolkit, mysqltuner and other shell tools.\n\nCurrently tested with [test-kitchen](https://github.com/test-kitchen/test-kitchen) and Chef 11.10.4.\n\nOn Ubuntu/Debian, Opscode's `apt` cookbook is used to ensure the package\ncache is updated so Chef can install mysql chef gem.\n\nFull description on [github](https://github.com/fabn/chef-mysql_role)\n\n# Requirements\n\n## Platform:\n\n* Ubuntu (>= 12.04)\n\n## Cookbooks:\n\n* mysql (= 3.0.2)\n* database (~> 1.3.12)\n* mysql-chef_gem\n* apt (>= 2.6.0)\n\n# Attributes\n\n* `node[:mysql][:bind_address]` -  Defaults to `\"0.0.0.0\"`.\n* `node[:mysql][:allow_remote_root]` -  Defaults to `\"false\"`.\n* `node[:mysql][:remove_test_database]` -  Defaults to `\"true\"`.\n* `node[:mysql][:remove_anonymous_users]` -  Defaults to `\"true\"`.\n* `node[:mysql][:tunable][:log_bin]` - Binary log path used for database replication and incremental backups. Defaults to `\"/var/log/mysql/mysql-bin.log\"`.\n* `node[:mysql][:tunable][:innodb_file_per_table]` - Whether innodb tables should be stored one file per table. Defaults to `\"true\"`.\n* `node[:mysql][:users_databag]` - Databag containing MySQL users. Defaults to `\"mysql_users\"`.\n\n# Recipes\n\n* [mysql_role::databag_users](#mysql_roledatabag_users) - The recipe is used to create MySQL users from databag contents.\n* [mysql_role::default](#mysql_roledefault) - Main recipe used to install and configure MySQL.\n* [mysql_role::full](#mysql_rolefull) - Used to install and configure MySQL and configure users through databags.\n* [mysql_role::shell_config](#mysql_roleshell_config) - This recipes provides passwordless mysql access for root user.\n* [mysql_role::tools](#mysql_roletools) - Installs some useful system tools to interact with MySQL installation.\n\n## mysql_role::databag_users\n\nThe recipe is used to create MySQL users from databag contents.\n\nUsers are fetched from a `search` into `node[:mysql][:users_databag]` with the key `server:#{server_fqdn}`\nwhere `server_fqdn` is computed from `node[:fqdn]`. If cookbook user is using the [hostname](https://github.com/3ofcoins/chef-cookbook-hostname)\ncookbook and he has set `node[:set_fqdn]` to change the hostname it will take precedence on `node[:fqdn]` to\navoid issues on first run.\n\nSee [databag format](#databag_format_for_users) for details on databag content.\n\n## mysql_role::default\n\nMain recipe used to install and configure MySQL.\n\nDepends on `apt::default` to update the package cache, then it includes all other recipes but `databag_users`\n\n## mysql_role::full\n\nUsed to install and configure MySQL and configure users through databags.\n\nAlso includes [default recipe](#mysql_roledefault).\n\n## mysql_role::shell_config\n\nThis recipes provides passwordless mysql access for root user. It writes `'/root/.my.cnf'` file (with `0600` permissions)\nto allow root user to access mysql from shell without providing password.\n\n## mysql_role::tools\n\nInstalls some useful system tools to interact with MySQL installation. Provided tools are:\n\n* [Percona toolkit](http://www.percona.com/software/percona-toolkit)\n* [mysqltuner](https://raw.githubusercontent.com/major/MySQLTuner-perl/master/mysqltuner.pl)\n* [tuning-primer](https://launchpad.net/mysql-tuning-primer)\n* [slave_status](http://www.day32.com/MySQL/)\n\nPercona toolkit is installed with Ubuntu native package.\n\nThe latter three tools are installed from vendored files into `/usr/local/bin` so they are available in `$PATH`.\n\n## Databag format for users\n\nThis is the JSON structure used in databag for defining users\n\n```json\n{\n   \"id\": \"uniq_id\", # not used in recipe but required for databag semantic\n   \"server\": \"db.example.org\", // Single or multiple elements allowed\n   \"server\": [\"db1.example.org\", \"db2.example.org\"], // if array the user will be created on all matching servers\n   \"username\": \"db_username\", // mandatory parameter\n   \"password\": \"db_password\", // mandatory, plain or hashed password\n   \"host\": \"%.example.org\", // optional, default localhost\n   \"privileges\": [\"SELECT, UPDATE\"], // optional, default :all\n   \"database_name\": \"db\", // optional, default *, i.e. all databases\n   // if given the previous grants will be given for all of these database and database parameter is ignored\n   \"databases\": [\n       \"db1\",\n       \"db2\",\n       \"db3\"\n   ]\n}\n```\n\n# License and Maintainer\n\nMaintainer:: Fabio Napoleoni (<f.napoleoni@gmail.com>)\n\nLicense:: Apache 2.0\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 12.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/mysql",
+      "revision": "= 3.0.2",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/database",
+      "revision": "~> 1.3.12",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/mysql-chef_gem",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 2.6.0",
+      "self_resolve": true
+    }
+  ]
+}

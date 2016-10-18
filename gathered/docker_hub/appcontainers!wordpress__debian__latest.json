@@ -1,0 +1,253 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/appcontainers/wordpress",
+    "repository_url": "https://hub.docker.com/v2/repositories/appcontainers/wordpress",
+    "tags_url": "https://hub.docker.com/v2/repositories/appcontainers/wordpress/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/appcontainers/wordpress/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/appcontainers/wordpress/autobuild",
+    "user": "appcontainers",
+    "name": "wordpress",
+    "namespace": "appcontainers",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 33,
+    "pull_count": 223908,
+    "last_updated": "2016-06-20T19:45:07.734022Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "debian",
+        "full_size": 144795738,
+        "id": 821956,
+        "repository": 70491,
+        "creator": 79833,
+        "last_updater": 79833,
+        "last_updated": "2016-06-20T19:45:07.387896Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "centos",
+        "full_size": 177830706,
+        "id": 821943,
+        "repository": 70491,
+        "creator": 79833,
+        "last_updater": 79833,
+        "last_updated": "2016-06-20T19:41:35.441928Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 177830647,
+        "id": 56402,
+        "repository": 70491,
+        "creator": 79833,
+        "last_updater": 79833,
+        "last_updated": "2016-06-20T19:39:12.692324Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "ubuntu",
+        "full_size": 200842994,
+        "id": 821959,
+        "repository": 70491,
+        "creator": 79833,
+        "last_updater": 79833,
+        "last_updated": "2016-06-17T03:45:53.833319Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "appcontainers/wordpress"
+  },
+  "name": "appcontainers/wordpress Docker container",
+  "description": "Centos/Debian Based Customizable Wordpress Container - Updated 06/20/2016",
+  "readme": "**Centos/Debian/Ubuntu Based Customizable Wordpress Container - 485 MB - Updated 06/20/2016**\n\n**CentOS 6.8 Based Customizable Wordpress Container - 485 MB - Updated 06/20/2016**\n>**Built from appcontainers/apache:centos**\n\n> appcontainers/wordpress:latest\n> appcontainers/wordpress:centos\n\n>##### In Depth Container Details, and Change log can be found here:\nhttp://www.appcontainers.com/wordpress\n\n&nbsp;\n\n**Debian 8 Jessie Based Customizable Wordpress Container - 462 MB - Updated 06/20/2016**\n>**Built from appcontainers/apache:debian**\n\n> appcontainers/wordpress:debian\n\n>##### In Depth Container Details, and Change log can be found here:\nhttp://www.appcontainers.com/wordpress\n\n&nbsp;\n",
+  "dockerfile": "############################################################\n# Dockerfile to build Wordpress Base Container\n# Based on: appcontainers/apache:debian\n# DATE: 08/31/2015\n# COPYRIGHT: Appcontainers.com\n############################################################\n\n# Set the base image to Centos 6.6 Base\nFROM appcontainers/apache:debian\n\n# File Author / Maintainer\nMAINTAINER Rich Nason rnason@appcontainers.com\n\n###################################################################\n#*************************  Reset Apache CTN  *********************\n###################################################################\n\n# This section will handle undoing any install magic that the apache base container did on setup.\nRUN rm -fr /etc/apache2/sites-available/apache_deb.conf && \\\nrm -fr /var/www/*; mkdir -p /var/www/html && \\\nrm -fr /tmp/install.log && \\\nchown -R www-data:www-data /var/www/html && \\\nls -lah /var/www\n\n###################################################################\n#*************************  APP VERSIONS  *************************\n###################################################################\n\n\n###################################################################\n#***************  OVERRIDE ENABLED ENV VARIABLES  *****************\n###################################################################\n\nENV ENV dev\nENV TERMTAG wordpress\nENV MODE standalone\nENV APP_NAME wordpress.local\nENV APACHE_SVRALIAS www.wordpress.local localhost\nENV MYSQL_SERVER localhost\nENV MYSQL_CLIENT localhost\nENV MYSQL_USER root\nENV MYSQL_PASS PAssw0rd\nENV MYSQL_DB wordpress\nENV APP_USER admin\nENV APP_PASS PAssw0rd\nENV WP_KEY \"Check us out at www.appcontainers.com\"\n\n###################################################################\n#******************  ADD REQUIRED APP FILES  **********************\n###################################################################\n\nADD apache_deb.conf /etc/apache2/sites-available/\n\n###################################################################\n#*******************  UPDATES & PRE-REQS  *************************\n###################################################################\n\nRUN apt-get clean all && \\\napt-get -y update && \\\nDEBIAN_FRONTEND=noninteractive apt-get -y upgrade && \\\nDEBIAN_FRONTEND=noninteractive apt-get -y install php5 php5-cli php5-common php5-mysql mysql-client-5.5 mysql-common mysql-server-5.5 unzip wget && \\\napt-get clean && \\\nrm -fr /var/lib/apt/lists/*\n\n# Remove locales other than english\nRUN for x in `ls /usr/share/locale | grep -v en_GB`; do rm -fr /usr/share/locale/$x; done && \\\nfor x in `ls /usr/share/i18n/locales/ | grep -v en_`; do rm -fr /usr/share/i18n/locales/$x; done\n\n# Enable the mod_env module and headers\nRUN a2enmod env ssl rewrite\n# ln -s /etc/apache2/mods-available/headers.load /etc/apache2/mods-enabled/\n\n\n###################################################################\n#*******************  APPLICATION INSTALL  ************************\n###################################################################\n\n# Grab the latest Wordpress, install it and remove the zip file\nRUN wget -P /var/www/html/ https://wordpress.org/latest.zip && \\\nunzip /var/www/html/latest.zip -d /var/www/html/ && \\\nrm -fr /var/www/html/latest.zip\n\n# Copy the WP-Config file\nRUN cp /var/www/html/wordpress/wp-config-sample.php /var/www/html/wordpress/wp-config.php\n\n###################################################################\n#******************  POST DEPLOY CLEAN UP  ************************\n###################################################################\n\n# Ensure all services are stopped and fix ubuntu pid exists issue\nRUN service apache2 stop\n\n###################################################################\n#*****************  CONFIGURE START ITEMS  ************************\n###################################################################\n\n# Add Database Scripts, and Runconfig\nADD runconfig.sh /tmp/.runconfig.sh\nADD mysql_setup.sql /tmp/.mysql_setup.sql\n\n# Set boot items\nRUN chmod +x /tmp/.runconfig.sh && \\\necho \"/tmp/./.runconfig.sh\" >> /root/.bashrc && \\\necho \"[ -f /tmp/.runconfig.sh ] && rm -fr /tmp/.runconfig.sh\" >> /root/.bashrc\n\n# Set up Data Volume and Set docker run command.\nCMD /bin/bash -c \"/tmp/.runconfig.sh && service apache2 stop && /usr/sbin/apache2ctl -D FOREGROUND\"\n\n###################################################################\n#****************  EXPOSE APPLICATION PORTS  **********************\n###################################################################\n\n# Expose ports to other containers only\nEXPOSE 80\nEXPOSE 443\nEXPOSE 3306\n\n###################################################################\n#*******************  OPTIONAL / LEGACY  **************************\n###################################################################",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "apache_deb.conf",
+        "dest": "/etc/apache2/sites-available/"
+      },
+      {
+        "source": "runconfig.sh",
+        "dest": "/tmp/.runconfig.sh"
+      },
+      {
+        "source": "mysql_setup.sql",
+        "dest": "/tmp/.mysql_setup.sql"
+      }
+    ],
+    "expose": [
+      80,
+      443,
+      3306
+    ],
+    "volume": [],
+    "run": [
+      "rm -fr /etc/apache2/sites-available/apache_deb.conf && rm -fr /var/www/*; mkdir -p /var/www/html && rm -fr /tmp/install.log && chown -R www-data:www-data /var/www/html && ls -lah /var/www",
+      "apt-get clean all && apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-get -y install php5 php5-cli php5-common php5-mysql mysql-client-5.5 mysql-common mysql-server-5.5 unzip wget && apt-get clean && rm -fr /var/lib/apt/lists/*",
+      "for x in `ls /usr/share/locale | grep -v en_GB`; do rm -fr /usr/share/locale/$x; done && for x in `ls /usr/share/i18n/locales/ | grep -v en_`; do rm -fr /usr/share/i18n/locales/$x; done",
+      "a2enmod env ssl rewrite",
+      "wget -P /var/www/html/ https://wordpress.org/latest.zip && unzip /var/www/html/latest.zip -d /var/www/html/ && rm -fr /var/www/html/latest.zip",
+      "cp /var/www/html/wordpress/wp-config-sample.php /var/www/html/wordpress/wp-config.php",
+      "service apache2 stop",
+      "chmod +x /tmp/.runconfig.sh && echo \"/tmp/./.runconfig.sh\" >> /root/.bashrc && echo \"[ -f /tmp/.runconfig.sh ] && rm -fr /tmp/.runconfig.sh\" >> /root/.bashrc"
+    ],
+    "workdir": [],
+    "from": "appcontainers/apache:debian",
+    "maintainer": "Rich Nason rnason@appcontainers.com",
+    "env": {
+      "ENV": "dev",
+      "TERMTAG": "wordpress",
+      "MODE": "standalone",
+      "APP_NAME": "wordpress.local",
+      "APACHE_SVRALIAS": "www.wordpress.local",
+      "MYSQL_SERVER": "localhost",
+      "MYSQL_CLIENT": "localhost",
+      "MYSQL_USER": "root",
+      "MYSQL_PASS": "PAssw0rd",
+      "MYSQL_DB": "wordpress",
+      "APP_USER": "admin",
+      "APP_PASS": "PAssw0rd",
+      "WP_KEY": "\"Check",
+      "us": "out",
+      "at": "www.appcontainers.com\""
+    },
+    "cmd": "/bin/bash -c \"/tmp/.runconfig.sh && service apache2 stop && /usr/sbin/apache2ctl -D FOREGROUND\""
+  },
+  "source_repository_url": "git@bitbucket.org:appcontainers/wordpress.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/appcontainers/wordpress",
+  "docker_repository": "appcontainers/wordpress",
+  "docker_image": "appcontainers/wordpress",
+  "parameters_schema": {
+    "ENV": {
+      "default": "dev",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TERMTAG": {
+      "default": "wordpress",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MODE": {
+      "default": "standalone",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APP_NAME": {
+      "default": "wordpress.local",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APACHE_SVRALIAS": {
+      "default": "www.wordpress.local",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_SERVER": {
+      "default": "localhost",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_CLIENT": {
+      "default": "localhost",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_USER": {
+      "default": "root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_PASS": {
+      "default": "PAssw0rd",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_DB": {
+      "default": "wordpress",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APP_USER": {
+      "default": "admin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APP_PASS": {
+      "default": "PAssw0rd",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WP_KEY": {
+      "default": "\"Check",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "us": {
+      "default": "out",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "at": {
+      "default": "www.appcontainers.com\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80,
+        443,
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "appcontainers/wordpress",
+  "revision": "debian",
+  "uris": [
+    "https://hub.docker.com/r/appcontainers/wordpress",
+    "https://hub.docker.com/v2/repositories/appcontainers/wordpress",
+    "git@bitbucket.org:appcontainers/wordpress.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System/Linux/CentOS",
+    "Type/Infrastructure/Operating System/Linux/Debian"
+  ],
+  "info_url": "https://hub.docker.com/r/appcontainers/wordpress",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

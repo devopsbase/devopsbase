@@ -1,0 +1,110 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/duruu/haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/duruu/haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/duruu/haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/duruu/haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/duruu/haproxy/autobuild",
+    "user": "duruu",
+    "name": "haproxy",
+    "namespace": "duruu",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 48,
+    "last_updated": "2015-10-22T07:02:28.841751Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 122175498,
+        "id": 1155334,
+        "repository": 366838,
+        "creator": 406389,
+        "last_updater": 406389,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "mr-jojo8/docker-haproxy"
+  },
+  "name": "duruu/haproxy Docker container",
+  "description": "haproxy",
+  "readme": "# HAProxy Load Balancer \n[![Circle CI](https://circleci.com/gh/million12/docker-haproxy/tree/master.svg?style=svg)](https://circleci.com/gh/million12/docker-haproxy/tree/master)\n\nThis is a [million12/haproxy](https://registry.hub.docker.com/u/million12/haproxy/) docker container with HAProxy load balancer. This work is very similar to official [dockerfile/haproxy](https://registry.hub.docker.com/u/dockerfile/haproxy/), but it's based on CentOS-7 and, more importantly, offers ability to provide any arguments to haproxy process. It's also pretty lightweight, only ~240M (vs. ~420M Ubuntu-based dockerfile/haproxy).\n\nThis container is built that any extra parameters provided to `docker run` will be passed directly to `haproxy` command. For example, if you run `docker run [run options] million12/haproxy -n 1000` you pass `-n 1000` to haproxy daemon.\n\nThe default [haproxy.cfg](container-files/etc/haproxy/haproxy.cfg) is provided just for demonstration purposes, so of course you will want to override it.\n\n#### Auto restart when config changes\nThis container comes with inotify to monitor changes in HAProxy config and **reload** HAProxy daemon. The reload is done in a way that no connection is lost.\n\n\n## ENV variables\n\n**HAPROXY_CONFIG**  \nDefault: `HAPROXY_CONFIG=/etc/haproxy/haproxy.cfg`  \nIf you mount your config to different location, simply edit it.\n\n\n## Usage\n\n### Basic\n\n`docker run -ti -p 80:80 -p 443:443 million12/haproxy`\n\n### Mount custom config , override some options\n\n`docker run -d -p 80:80 -v /my-haproxy.cfg:/etc/haproxy/haproxy.cfg million12/haproxy -n 10000`  \nNote: in this case config is mounted to its default location, so you don't need to modify `HAPROXY_CONFIG` variable.\n\n### Check version and build options\n\n`docker run -ti million12/haproxy -vv`\n\n### Stats\nThe default URL for stats is `http://CONTAINER_IP/admin?stats` with username:password ser to `admin:admin`.\n\n## Authors\n\nAuthor: Marcin ryzy Ryzycki (<marcin@m12.io>)  \nAuthor: Przemyslaw Ozgo (<linux@ozgo.info>)\n\n---\n\n**Sponsored by** [Typostrap.io - the new prototyping tool](http://typostrap.io/) for building highly-interactive prototypes of your website or web app. Built on top of TYPO3 Neos CMS and Zurb Foundation framework.\n",
+  "dockerfile": "FROM ubuntu:trusty\n\nENV HAPROXY_VERSION=1.5.14\n\nRUN \\\n  set -x && \\\n  apt-get update && apt-get install -y inotify-tools wget tar gzip make gcc libc6-dev libpcre3-dev libssl-dev && \\\n  wget -O /tmp/haproxy.tgz http://www.haproxy.org/download/1.5/src/haproxy-${HAPROXY_VERSION}.tar.gz && \\\n  mkdir -p /usr/local/haproxy && \\\n  tar -zxvf /tmp/haproxy.tgz -C /usr/local/haproxy/ --strip-components 1 && \\\n  rm -f /tmp/haproxy.tgz && \\\n  cd /usr/local/haproxy && \\\n  make \\\n  USE_LINUX_TPROXY=1 USE_ZLIB=1 \\\n  USE_REGPARM=1 \\\n  USE_OPENSSL=1 \\\n  USE_PCRE=1 \\\n  TARGET=linux2628 \\\n  CFLAGS=\"-O2 -g -fno-strict-aliasing -DTCP_USER_TIMEOUT=18\" && \\\n  make install && \\\n  #apt-get remove -y make gcc libssl-dev && \\\n  apt-get clean all && \\\n  rm -rf /usr/local/haproxy && \\\n  mkdir -p /var/lib/haproxy && \\\n  chown -R 777 /var/lib/haproxy\n  #groupadd haproxy && adduser Ganduruu haproxy && chown -R 777 haproxy:haproxy /var/lib/haproxy\n\nADD container-files /\n\nENV HAPROXY_CONFIG /etc/haproxy/haproxy.cfg\n\n#ADD bootstrap.sh /bootstrap.sh \nRUN chmod +x /*.sh\n\nEXPOSE 80 443 1936\n\nCMD [\"./bootstrap.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "container-files",
+        "dest": "/"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "  set -x &&   apt-get update && apt-get install -y inotify-tools wget tar gzip make gcc libc6-dev libpcre3-dev libssl-dev &&   wget -O /tmp/haproxy.tgz http://www.haproxy.org/download/1.5/src/haproxy-${HAPROXY_VERSION}.tar.gz &&   mkdir -p /usr/local/haproxy &&   tar -zxvf /tmp/haproxy.tgz -C /usr/local/haproxy/ --strip-components 1 &&   rm -f /tmp/haproxy.tgz &&   cd /usr/local/haproxy &&   make   USE_LINUX_TPROXY=1 USE_ZLIB=1   USE_REGPARM=1   USE_OPENSSL=1   USE_PCRE=1   TARGET=linux2628   CFLAGS=\"-O2 -g -fno-strict-aliasing -DTCP_USER_TIMEOUT=18\" &&   make install &&   #apt-get remove -y make gcc libssl-dev &&   apt-get clean all &&   rm -rf /usr/local/haproxy &&   mkdir -p /var/lib/haproxy &&   chown -R 777 /var/lib/haproxy",
+      "chmod +x /*.sh"
+    ],
+    "workdir": [],
+    "from": "ubuntu:trusty",
+    "env": {
+      "HAPROXY_VERSION": "1.5.14",
+      "HAPROXY_CONFIG": "/etc/haproxy/haproxy.cfg"
+    },
+    "cmd": "[\"./bootstrap.sh\"]"
+  },
+  "source_repository_url": "https://github.com/mr-jojo8/docker-haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mr-jojo8/docker-haproxy",
+  "docker_repository": "duruu/haproxy",
+  "docker_image": "duruu/haproxy",
+  "parameters_schema": {
+    "HAPROXY_VERSION": {
+      "default": "1.5.14",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_CONFIG": {
+      "default": "/etc/haproxy/haproxy.cfg",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "duruu/haproxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/duruu/haproxy",
+    "https://hub.docker.com/v2/repositories/duruu/haproxy",
+    "https://github.com/mr-jojo8/docker-haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/duruu/haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

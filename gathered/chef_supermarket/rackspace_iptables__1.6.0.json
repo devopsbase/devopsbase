@@ -1,0 +1,72 @@
+{
+  "name": "rackspace_iptables Chef cookbook",
+  "chef_cookbook_name": "rackspace_iptables",
+  "revision": "1.6.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/rackspace_iptables",
+    "https://supermarket.chef.io/cookbooks/rackspace_iptables/download",
+    "https://supermarket.chef.io/cookbooks/rackspace_iptables/versions/1.6.0",
+    "https://supermarket.chef.io/cookbooks/rackspace_iptables/versions/1.6.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/rackspace_iptables/versions/1.6.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/rackspace_iptables",
+    "https://supermarket.chef.io/api/v1/cookbooks/rackspace_iptables/versions/1.6.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/rackspace_iptables",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/rackspace_iptables/versions/1.6.0/download",
+  "deprecated": false,
+  "created": "2014-08-27T21:07:49.213Z",
+  "updated": "2014-12-12T20:18:12.646Z",
+  "description": "Installs/Configures rackspace_iptables",
+  "maintainer": {
+    "name": "rackops",
+    "email": "rackspace-cookbooks@rackspace.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 4336702,
+  "downloads_count_revision": 728306,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "## rackspace_iptables cookbook\n\nThe rackspace_iptables cookbook manages all iptables rules for a node. The user adds rules by including the rackspace_iptables default recipe in some node-specific or environment-specific recipe (i.e. a 'rolebook') and defining rules via the data structure `node['rackspace_iptables']['config']['chains']`. If a user includes this cookbook but does not define any rules, the default recipe will overwrite existing iptables configuration with an empty rule list.\n\nObviously this cookbook should not be used in environments where iptables is managed by other means (e.g. RackConnect).\n\nRequirements\n--------\nChef version 0.11.6+.\n\n### Platforms\nThis cookbook has been tested on:\n\n* Debian 7.2\n* Ubuntu 12.04\n* CentOS 6.4\n\nIt may or may not behave as expected on other versions of these distributions.\n\n### Cookbooks\nThis cookbook has no dependencies.\n\nUsage\n--------\n### Include the default recipe and define in metadata\nSome recipe in your run list must include the iptables recipe:\n\n`include_recipe 'rackspace_iptables'`\n\nYou must also add a `depends` line in the metadata for your cookbook.\n\n### Define rules\nThere are a few different ways to add iptables rules to your node, but they all work by building the data structure `node['rackspace_iptables']['config']['chains']`. The data structure contains five hashes from which this cookbook will build a node's rules file: 'INPU'T, 'OUTPUT', 'FORWARD', 'PREROUTING', and 'POSTROUTING'.\n\n##### manual definition\nYou may manually add rules to the data structure in the following way:\n\n`node['rackspace_iptables']['config']['chains']['INPUT']['-s 10.0.0.1 -p tcp --dport 22 -j ACCEPT'] = { weight: 50, comment: 'allow ssh' }`\n\nAt a minimum you must define a weight for each rule; this is what the cookbook uses to order the rules. Rules with a higher weight will appear *before* rules with a lower weight. Rule comments are optional.\n\nFor example, if you define the following two rules:\n\n```\nnode['rackspace_iptables']['config']['chains']['INPUT']['-s 10.0.0.1 -p tcp --dport 22 -j ACCEPT'] = { weight: 50, comment: 'allow ssh' }\nnode['rackspace_iptables']['config']['chains']['INPUT']['-s 10.0.0.1 -p tcp --dport 21 -j ACCEPT'] = { weight: 51 }\n```\n\nthey will be written to the iptables rules file as follows:\n\n```\n-A INPUT -s 10.0.0.1 -p tcp --dport 21 -j ACCEPT\n-A INPUT -s 10.0.0.1 -p tcp --dport 22 -j ACCEPT -m comment --comment \"allow ssh\"\n```\n\n##### convenience function\nYou may use the following function to more succinctly define rules:\n\n`add_iptables_rule('INPUT', '-s 10.0.0.1 -p tcp --dport 22 -j ACCEPT', 50, 'allow ssh')`\n\nAs with manual specifications, you may omit comments. Unlike manual specifications, you may also omit weight:\n\n```\nadd_iptables_rule('INPUT', '-s 10.0.0.1 -p tcp --dport 22 -j ACCEPT')\nadd_iptables_rule('INPUT', '-s 10.0.0.1 -p tcp --dport 21 -j ACCEPT', 51)\n```\n\nThe function will use a *default weight of 50* for calls that do not pass in a weight, so from the example above, the cookbook will add the two rules in same order as in the example for manual definitions (port 21 rule appears first).\n\nNote that you cannot include a comment while ommitting weight.\n\n##### search for nodes \nOftentimes you will want to allow access to/from other specific nodes controlled by your Chef server. There is also a convenience function for this:\n\n`search_add_iptables_rules('node:*web*', 'INPUT', '-p tcp --dport 3306 -j ACCEPT', 70, 'web nodes')`\n\nThis will perform a Chef `search` for all nodes whose names match `*web*`. If the search returns two nodes whose IP addresses are 1.1.1.1 and 1.1.1.2, the cookbook will add the following two rules:\n\n```\n-A INPUT -s 1.1.1.1 -p tcp --dport 3306 -j ACCEPT -m comment --comment \"web nodes\"\n-A INPUT -s 1.1.1.2 -p tcp --dport 3306 -j ACCEPT -m comment --comment \"web nodes\"\n```\n\nNote that these rules will have the same weight as each other (70), and so the cookbook may produce them in any order relative to each other. In a common scenario, you may want to supplement these rules with one that denies MySQL access to any other nodes. You would accomplish this by defining a rule with weight < 70 (manually or using `add_iptables_rule`) that denies connections to port 3306.\n\nIf you want to add multiple rules for each node returned in a search, you may pass an array of rules to the function rather than a single string:\n\n`search_add_iptables_rules('node:*web*', 'INPUT', ['-p tcp --dport 3306 -j ACCEPT', '-p tcp --dport 22 -j ACCEPT'], 70, 'web nodes')`\n\nThis avoids searching the Chef server an unnecessary number of times.\n\n---\nPlease read the `add_iptables_rule` and `search_add_iptables_rules` functions in `libraries/helpers.rb` to determine if they satisfy your use case. If not, you can manually define your rules.\n\nRecipes\n--------\n### default\n\n* Uninstalls 'ufw' if installed (e.g. on Ubuntu)\n* Installs iptables packages if not installed\n* Builds the iptables rules file from `node['rackspace_iptables']['config']['chains']`\n* Loads iptables rules if not loaded or if the rules file has changed\n\nLicense & Authors\n------------\n\nAuthor:: Thomas Cate (thomas.cate@rackspace.com)\nAuthor:: Kent Shultz (kent.shultz@rackspace.com)\n\n```text\nCopyright 2014, Rackspace, US Inc.\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "rhel",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

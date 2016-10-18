@@ -1,0 +1,122 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/denmojo/cassandra",
+    "repository_url": "https://hub.docker.com/v2/repositories/denmojo/cassandra",
+    "tags_url": "https://hub.docker.com/v2/repositories/denmojo/cassandra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/denmojo/cassandra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/denmojo/cassandra/autobuild",
+    "user": "denmojo",
+    "name": "cassandra",
+    "namespace": "denmojo",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 25,
+    "last_updated": "2016-09-23T23:35:50.882240Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 157161183,
+        "id": 2927769,
+        "repository": 674438,
+        "creator": 380366,
+        "last_updater": 380366,
+        "last_updated": "2016-09-23T23:35:24.901609Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "denmojo/dockerfiles"
+  },
+  "name": "denmojo/cassandra Docker container",
+  "description": "Base cassandra container",
+  "readme": "# dockerfiles\nThis repository contains files to build applications using Docker containers. \n",
+  "dockerfile": "# vim:set ft=dockerfile:\nFROM debian:jessie-backports\n\n# explicitly set user/group IDs\nRUN groupadd -r cassandra --gid=999 && useradd -r -g cassandra --uid=999 cassandra\n\n# grab gosu for easy step-down from root\nENV GOSU_VERSION 1.7\nRUN set -x \\\n    && apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/* \\\n    && wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \\\n    && wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \\\n    && export GNUPGHOME=\"$(mktemp -d)\" \\\n    && gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n    && gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\n    && rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\n    && chmod +x /usr/local/bin/gosu \\\n    && gosu nobody true \\\n    && apt-get purge -y --auto-remove ca-certificates wget\n\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 514A2AD631A57A16DD0047EC749D6EEC0353B12C\n\nRUN echo 'deb http://www.apache.org/dist/cassandra/debian 30x main' >> /etc/apt/sources.list.d/cassandra.list\n\nENV CASSANDRA_VERSION 3.0.9\n\nRUN apt-get update \\\n    && apt-get install -y cassandra=\"$CASSANDRA_VERSION\" \\\n    && rm -rf /var/lib/apt/lists/*\n\n# https://issues.apache.org/jira/browse/CASSANDRA-11661\nRUN sed -ri 's/^(JVM_PATCH_VERSION)=.*/\\1=25/' /etc/cassandra/cassandra-env.sh\n\nENV CASSANDRA_CONFIG /etc/cassandra\n\nCOPY docker-entrypoint.sh /docker-entrypoint.sh\nENTRYPOINT [\"/docker-entrypoint.sh\"]\n\nRUN mkdir -p /var/lib/cassandra \"$CASSANDRA_CONFIG\" \\\n    && chown -R cassandra:cassandra /var/lib/cassandra \"$CASSANDRA_CONFIG\" \\\n    && chmod 777 /var/lib/cassandra \"$CASSANDRA_CONFIG\"\nVOLUME /var/lib/cassandra\n\n# 7000: intra-node communication\n# 7001: TLS intra-node communication\n# 7199: JMX\n# 9042: CQL\n# 9160: thrift service\nEXPOSE 7000 7001 7199 9042 9160\nCMD [\"cassandra\", \"-f\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      7000
+    ],
+    "volume": [
+      "/var/lib/cassandra"
+    ],
+    "run": [
+      "groupadd -r cassandra --gid=999 && useradd -r -g cassandra --uid=999 cassandra",
+      "set -x     && apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/*     && wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\"     && wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\"     && export GNUPGHOME=\"$(mktemp -d)\"     && gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4     && gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu     && rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc     && chmod +x /usr/local/bin/gosu     && gosu nobody true     && apt-get purge -y --auto-remove ca-certificates wget",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 514A2AD631A57A16DD0047EC749D6EEC0353B12C",
+      "echo 'deb http://www.apache.org/dist/cassandra/debian 30x main' >> /etc/apt/sources.list.d/cassandra.list",
+      "apt-get update     && apt-get install -y cassandra=\"$CASSANDRA_VERSION\"     && rm -rf /var/lib/apt/lists/*",
+      "sed -ri 's/^(JVM_PATCH_VERSION)=.*/\\1=25/' /etc/cassandra/cassandra-env.sh",
+      "mkdir -p /var/lib/cassandra \"$CASSANDRA_CONFIG\"     && chown -R cassandra:cassandra /var/lib/cassandra \"$CASSANDRA_CONFIG\"     && chmod 777 /var/lib/cassandra \"$CASSANDRA_CONFIG\""
+    ],
+    "workdir": [],
+    "from": "debian:jessie-backports",
+    "env": {
+      "GOSU_VERSION": "1.7",
+      "CASSANDRA_VERSION": "3.0.9",
+      "CASSANDRA_CONFIG": "/etc/cassandra"
+    },
+    "copy": "docker-entrypoint.sh /docker-entrypoint.sh",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"cassandra\", \"-f\"]"
+  },
+  "source_repository_url": "https://github.com/denmojo/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/denmojo/dockerfiles",
+  "docker_repository": "denmojo/cassandra",
+  "docker_image": "denmojo/cassandra",
+  "parameters_schema": {
+    "GOSU_VERSION": {
+      "default": "1.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CASSANDRA_VERSION": {
+      "default": "3.0.9",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CASSANDRA_CONFIG": {
+      "default": "/etc/cassandra",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        7000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "denmojo/cassandra",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/denmojo/cassandra",
+    "https://hub.docker.com/v2/repositories/denmojo/cassandra",
+    "https://github.com/denmojo/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/denmojo/cassandra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

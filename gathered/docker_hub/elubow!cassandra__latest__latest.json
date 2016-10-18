@@ -1,0 +1,116 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/elubow/cassandra",
+    "repository_url": "https://hub.docker.com/v2/repositories/elubow/cassandra",
+    "tags_url": "https://hub.docker.com/v2/repositories/elubow/cassandra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/elubow/cassandra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/elubow/cassandra/autobuild",
+    "user": "elubow",
+    "name": "cassandra",
+    "namespace": "elubow",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 1685,
+    "last_updated": "2015-09-27T21:55:39.747929Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 185221094,
+        "id": 1010259,
+        "repository": 336970,
+        "creator": 340482,
+        "last_updater": 340482,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "elubow/cassandra"
+  },
+  "name": "elubow/cassandra Docker container",
+  "description": "Cassandra 2.1 Docker",
+  "readme": "Cassandra 2.1 on Docker\n=======================\n\nThis is a fork of [github.com/pokle/cassandra](https://github.com/pokle/cassandra) with OpsCenter removed and forcing Cassandra 2.1 (as that is what is required for Titan). If you want to use Cassandra2.2, please check out the other repo.\n\nThis is a collection of images and scripts to help you run Cassandra in Docker containers.\nThese images are great to provision ephemeral Cassandra topologies for testing and development purpose.\n\n- Currently supported:\n    - A single Cassandra node\n    - A client container to run tools such as cqlsh, nodetool, etc.\n    - A multi-node cluster - running on a single Docker host\n\nIf you'd like to help, please get in touch with me, and/or send me pull requests.\n\n\nPrerequisites\n-------------\n\n- A recent version of Docker - See [https://www.docker.com](https://www.docker.com)\n- Verify that the docker command works. Try running 'docker ps' for example.\n- Build the cassandra and opscenter images (optional)\n\n        ./cassandra/build.sh\n\nThe last step is optional because Docker will automatically pull the images from [index.docker.io](https://index.docker.io) if you don't already have them. The build process needs an Internet connection, but it is executed only once and then cached on Docker. If you modify the scripts, this is also how you can re-build the images with your changes.\n\n\nSingle Cassandra node\n-----------------------------------\nHere's how to start a Cassandra cluster with a single node, and run some CQL on it. These instructions use the docker command directly to demonstrate what's happening behind the scenes. \n\n\n1. Launch a container running Cassandra called cassone:\n\n        docker run --detach --name cassone poklet/cassandra\n\n2. Connect to it using cqlsh\n\n        docker run -it --rm --net container:cassone poklet/cassandra cqlsh\n\n    You should see something like:\n\n        [cqlsh 5.0.1 | Cassandra 2.2.0 | CQL spec 3.3.0 | Native protocol v4]\n\t\tUse HELP for help.\n\t\tcqlsh> quit\n\n\tIf not, then try it again in a few seconds - cassandra might still be starting up.\n\n\n3. Lets try some CQL\n\n\tPaste the following into your cqlsh prompt to create a test keyspace, and a test table:\n\n\t\tCREATE KEYSPACE test_keyspace WITH REPLICATION = \n\t\t{'class': 'SimpleStrategy', 'replication_factor': 1};\n\t\t\n\t\tUSE test_keyspace;\n\t\t\n\t\tCREATE TABLE test_table (\n\t\t  id text,\n\t\t  test_value text,\n\t\t  PRIMARY KEY (id)\n\t\t);\n\t\t\n\t\tINSERT INTO test_table (id, test_value) VALUES ('1', 'one');\n\t\tINSERT INTO test_table (id, test_value) VALUES ('2', 'two');\n\t\tINSERT INTO test_table (id, test_value) VALUES ('3', 'three');\n\t\t\n\t\tSELECT * FROM test_table;\n\n\n\tIf that worked, you should see:\n\t\n\t\t id | test_value\n\t\t----+------------\n\t\t  3 |      three\n\t\t  2 |        two\n\t\t  1 |        one\n\t\t\n\t\t(3 rows)\n\n\n3-node Cassandra cluster\n------------------------\n\n1. Launch three containers (one seed plus two more)\n\n        docker run -d --name cass1 poklet/cassandra start\n        docker run -d --name cass2 --link cass1:seed poklet/cassandra start seed\n        docker run -d --name cass3 --link cass1:seed poklet/cassandra start seed\n\n\n    Note: The poklet/cassandra docker image contains a shell script called `start` that takes an optional seed host. We use `--link cass1:seed` to name the cass1 host as our seed host.\n\n2. Run `nodetool status` on cass1 to check the cluster status:\n\n        docker run -it --rm --net container:cass1 poklet/cassandra nodetool status\n\n3. Create some data on the first container:\n\n    Launch `cqlsh`:\n\n        docker run -it --rm --net container:cass1 poklet/cassandra cqlsh\n\n    Paste this in:\n\n        create keyspace demo with replication = {'class':'SimpleStrategy', 'replication_factor':2};\n        use demo;\n        create table names ( id int primary key, name text );\n        insert into names (id,name) values (1, 'gibberish');\n        quit;\n        \n\n4. Connect to the second container, and check if it can see your data:\n\n    Start up `cqlsh` (on cass2 this time):\n\n        docker run -it --rm --net container:cass2 poklet/cassandra cqlsh\n\n    Paste in:\n\n        select * from demo.names;\n\n    You should see:\n\n        cqlsh> select * from demo.names;\n\n         id | name\n        ----+-----------\n          1 | gibberish\n\n        (1 rows)\n\n\n10-node Cassandra cluster (scripted!)\n-------------------------------------\n\n1. Right, lets dive right in with some shell scripts in the scripts directory to help us:\n\n        ./scripts/run.sh 10\n\n2. That will start 10 nodes. Lets see what they're called:\n\n        ./scripts/ips.sh\n\n        172.17.0.10 cass6\n        172.17.0.12 cass4\n        172.17.0.11 cass5\n        172.17.0.6 cass10\n        172.17.0.7 cass9\n        172.17.0.9 cass7\n        172.17.0.8 cass8\n        172.17.0.4 cass2\n        172.17.0.3 cass3\n        172.17.0.2 cass1\n\n3. Same, but with the nodetool:\n\n        ./scripts/nodetool.sh cass1 status\n\n        Datacenter: datacenter1\n        =======================\n        Status=Up/Down\n        |/ State=Normal/Leaving/Joining/Moving\n        --  Address      Load       Tokens  Owns (effective)  Host ID                               Rack\n        UN  172.17.0.11  74.19 KB   256     21.4%             dfd44ca5-bf73-4487-bcb2-db882d0a9231  rack1\n        UN  172.17.0.10  74.21 KB   256     19.6%             f479a4e6-55ac-4533-8ce5-d137a93f2cc4  rack1\n        UN  172.17.0.9   74.34 KB   256     20.4%             0bb389a0-f111-459c-9620-0faccc75cbc0  rack1\n        UN  172.17.0.8   74.19 KB   256     20.1%             2eb4a4dd-2bbc-46a3-9f64-4e761509307d  rack1\n        UN  172.17.0.12  74.14 KB   256     20.2%             a2547289-0c6a-458f-b982-823711c5293e  rack1\n        UN  172.17.0.3   74.19 KB   256     20.3%             3667cc1a-1f63-4cd1-bebc-841f428a0f4d  rack1\n        UN  172.17.0.2   74.24 KB   256     20.3%             2b48c8ac-ad68-48a0-9c41-c8f2fb7f38e6  rack1\n        UN  172.17.0.7   67.7 KB    256     19.2%             e361f6d8-28ef-4cf8-baa1-88c2d1fec094  rack1\n        UN  172.17.0.6   74.15 KB   256     19.6%             230f13b1-a27b-44e8-9b51-5ebdb1c4cb13  rack1\n        UN  172.17.0.4   74.18 KB   256     18.8%             6c90cbaa-e5b3-41de-a160-3ecaf59b8856  rack1\n\n4. When you're tired of your cluster, nuke it with:\n\n        ./scripts/nuke.sh 10\n\nSet snitch and node location\n----------------------------\n\nThe snitch type and node location information can be configured with environment variables.\nThe datacenter and rack configuration is only valid if using the GossipingPropertyFileSnitch type snitch.\nFor example:\n\n        docker run -d --name cass1 -e SNITCH=GossipingPropertyFileSnitch -e DC=SFO -e RACK=RAC3 poklet/cassandra\n\nThis will set the snitch type and set the datacenter to **SFO** and the rack to **RAC3**\n\nAuto-detect seeds\n-----------------\n\nAny containers linked in the run command will also be added to the seed list.  The 3-node cluster example above may also be written as:\n\n        docker run -d --name cass1 poklet/cassandra\n        docker run -d --name cass2 --link cass1:cass1 poklet/cassandra\n        docker run -d --name cass3 --link cass1:cass1 poklet/cassandra\n        # and so on...\n\nSpecifying clustering parameters\n--------------------------------\n\nWhen starting a container, you can pass the SEEDS, LISTEN_ADDRESS environment variables to override the defaults:\n\n    docker run -e SEEDS=a,b,c... -e LISTEN_ADDRESS=10.2.1.4 poklet/cassandra\n\nNote that listen_address will also be used for broadcast_address\n\n",
+  "dockerfile": "# Cassandra\n#\n# VERSION               1.0\n\nFROM centos:centos7\n\n# Add source repositories\nADD src/epel7.repo /etc/yum.repos.d/epel7.repo\nADD src/datastax.repo /etc/yum.repos.d/datastax.repo\n\n# Install Java, Install packages (sshd + supervisord + monitoring tools + cassandra)\nRUN yum install -y wget tar openssh-server openssh-clients supervisor sysstat sudo which openssl hostname\nRUN yum install -y java-1.8.0-openjdk-headless\nRUN yum install -y dsc21\nRUN yum clean all\n\n# Configure SSH server\n# Create OpsCenter account\nRUN mkdir -p /var/run/sshd && chmod -rx /var/run/sshd && \\\n\tssh-keygen -t rsa -N '' -f /etc/ssh/ssh_host_rsa_key && \\\n\tsed -ri 's/#PermitRootLogin yes/PermitRootLogin yes/g' /etc/ssh/sshd_config && \\\n\tsed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config && \\\n\tsed -ri 's/#UsePAM no/UsePAM no/g' /etc/ssh/sshd_config && \\\n\tuseradd -m -G users,root -p $(openssl passwd -1 \"opscenter\") opscenter && \\\n\techo \"%root ALL=(ALL) NOPASSWD: ALL\" >> /etc/sudoers\n\n# Configure supervisord\nADD src/supervisord.conf /etc/supervisord.conf\nRUN mkdir -p /var/log/supervisor\n\n# Deploy startup script\nADD src/start.sh /usr/local/bin/start\n\n# Necessary since cassandra is trying to override the system limitations\n# See https://groups.google.com/forum/#!msg/docker-dev/8TM_jLGpRKU/dewIQhcs7oAJ\nRUN rm -f /etc/security/limits.d/cassandra.conf\n\nEXPOSE 7199 7000 7001 9160 9042\nEXPOSE 22 8012 61621\nUSER root\nCMD start\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "src/epel7.repo",
+        "dest": "/etc/yum.repos.d/epel7.repo"
+      },
+      {
+        "source": "src/datastax.repo",
+        "dest": "/etc/yum.repos.d/datastax.repo"
+      },
+      {
+        "source": "src/supervisord.conf",
+        "dest": "/etc/supervisord.conf"
+      },
+      {
+        "source": "src/start.sh",
+        "dest": "/usr/local/bin/start"
+      }
+    ],
+    "expose": [
+      7199,
+      22
+    ],
+    "volume": [],
+    "run": [
+      "yum install -y wget tar openssh-server openssh-clients supervisor sysstat sudo which openssl hostname",
+      "yum install -y java-1.8.0-openjdk-headless",
+      "yum install -y dsc21",
+      "yum clean all",
+      "mkdir -p /var/run/sshd && chmod -rx /var/run/sshd && \tssh-keygen -t rsa -N '' -f /etc/ssh/ssh_host_rsa_key && \tsed -ri 's/#PermitRootLogin yes/PermitRootLogin yes/g' /etc/ssh/sshd_config && \tsed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config && \tsed -ri 's/#UsePAM no/UsePAM no/g' /etc/ssh/sshd_config && \tuseradd -m -G users,root -p $(openssl passwd -1 \"opscenter\") opscenter && \techo \"%root ALL=(ALL) NOPASSWD: ALL\" >> /etc/sudoers",
+      "mkdir -p /var/log/supervisor",
+      "rm -f /etc/security/limits.d/cassandra.conf"
+    ],
+    "workdir": [],
+    "from": "centos:centos7",
+    "user": "root",
+    "cmd": "start"
+  },
+  "source_repository_url": "https://github.com/elubow/cassandra.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/elubow/cassandra",
+  "docker_repository": "elubow/cassandra",
+  "docker_image": "elubow/cassandra",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        7199,
+        22
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "elubow/cassandra",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/elubow/cassandra",
+    "https://hub.docker.com/v2/repositories/elubow/cassandra",
+    "https://github.com/elubow/cassandra.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/elubow/cassandra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

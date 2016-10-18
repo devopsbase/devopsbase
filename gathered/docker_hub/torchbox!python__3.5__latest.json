@@ -1,0 +1,143 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/torchbox/python",
+    "repository_url": "https://hub.docker.com/v2/repositories/torchbox/python",
+    "tags_url": "https://hub.docker.com/v2/repositories/torchbox/python/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/torchbox/python/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/torchbox/python/autobuild",
+    "user": "torchbox",
+    "name": "python",
+    "namespace": "torchbox",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 99,
+    "last_updated": "2016-09-23T19:06:27.142726Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "3.5",
+        "full_size": 118580939,
+        "id": 4346574,
+        "repository": 859629,
+        "creator": 1036722,
+        "last_updater": 613454,
+        "last_updated": "2016-09-23T19:02:24.665430Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.4",
+        "full_size": 128388097,
+        "id": 4346493,
+        "repository": 859629,
+        "creator": 613454,
+        "last_updater": 613454,
+        "last_updated": "2016-09-23T19:02:16.130477Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.7",
+        "full_size": 122004821,
+        "id": 4549308,
+        "repository": 859629,
+        "creator": 613454,
+        "last_updater": 613454,
+        "last_updated": "2016-09-23T19:01:48.984750Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "torchbox/docker-python"
+  },
+  "name": "torchbox/python Docker container",
+  "description": "Torchbox builds of Python.",
+  "readme": null,
+  "dockerfile": "# Torchbox build of Python.  This is based on the Torchbox uWSGI build;\n# the resulting image is suitable for running Python web applications.\n# Note that this includes a large number of packages to support building\n# common Python libraries.\n\nFROM torchbox/uwsgi:2.1\n\nENV PYTHON_VERSION 3.5.2\nENV PYTHON_PIP_VERSION 8.1.2\nENV XMLSEC1_VERSION 1.2.22\nENV LANG C.UTF-8\n\nRUN apk add --no-cache ca-certificates\n\nRUN\tset -ex\t\t\t\t\t\t\t\t\t\\\n\t&& apk add --no-cache --virtual .python-builddeps \t\t\t\\\n\t\ttar xz openssl bzip2-dev gcc libc-dev linux-headers\t\t\\\n\t\tmake ncurses-dev openssl openssl-dev readline-dev\t\t\\\n\t\tsqlite-dev xz-dev zlib-dev wget\tpcre-dev\t\t\t\\\n\t\tpostgresql-client postgresql-dev postgresql\t\t\t\\\n\t\tmariadb-client mariadb-dev\t\t\t\t\t\\\n\t\tlibxml2-dev libxslt-dev libpng-dev libjpeg-turbo-dev\t\t\\\n\t\ttiff-dev rsync git openssh-client openssl-dev\t\t\t\\\n\t\tcurl wget openldap-dev libtool libltdl\t\t\t\t\\\n\t&& mkdir -p /usr/src/python\t\t\t\t\t\t\\\n\t&& cd /usr/src/python\t\t\t\t\t\t\t\\\n\t&& wget -O python.tar.xz \"https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-$PYTHON_VERSION.tar.xz\" \\\n\t&& xz -dc python.tar.xz | tar xf - --strip-components=1\t\t\t\\\n\t&& ./configure --enable-shared --disable-static\t\t\t\t\\\n\t&& make -j$(getconf _NPROCESSORS_ONLN)\t\t\t\t\t\\\n\t&& make install\t\t\t\t\t\t\t\t\\\n\t&& wget -O /tmp/get-pip.py 'https://bootstrap.pypa.io/get-pip.py'\t\\\n\t&& /usr/local/bin/python3 /tmp/get-pip.py \"pip==$PYTHON_PIP_VERSION\"\t\\\n\t&& rm /tmp/get-pip.py\t\t\t\t\t\t\t\\\n\t&& pip3 install --no-cache-dir --upgrade \"pip==$PYTHON_PIP_VERSION\"\t\\\n\t&& cp -r /usr/src/uwsgi /usr/src/uwsgi-build\t\t\t\t\\\n\t&& cd /usr/src/uwsgi-build/plugins\t\t\t\t\t\\\n\t&& env PYTHON=/usr/local/bin/python3 uwsgi --build-plugin python\t\\\n\t&& env PYTHON=/usr/local/bin/python3 uwsgi --build-plugin gevent\t\\\n\t&& mkdir -p /usr/local/lib/uwsgi\t\t\t\t\t\\\n\t&& cp *.so /usr/local/lib/uwsgi\t\t\t\t\t\t\\\n\t&& cd /usr/src\t\t\t\t\t\t\t\t\\\n\t&& wget http://www.aleksey.com/xmlsec/download/xmlsec1-$XMLSEC1_VERSION.tar.gz\t\\\n\t&& gzip -dc xmlsec1-$XMLSEC1_VERSION.tar.gz | tar xf -\t\t\t\\\n\t&& cd xmlsec1-$XMLSEC1_VERSION\t\t\t\t\t\t\\\n\t&& ./configure\t\t\t\t\t\t\t\t\\\n\t&& make\t\t\t\t\t\t\t\t\t\\\n\t&& make install\t\t\t\t\t\t\t\t\\\n\t&& cd /\t\t\t\t\t\t\t\t\t\\\n\t&& rm -rf python.tar.xz\t\t\t\t\t\t\t\\\n\t&& rm -rf /usr/src/python\t\t\t\t\t\t\\\n\t&& rm -rf /usr/src/uwsgi-build\t\t\t\t\t\t\\\n\t&& rm -rf /usr/src/xmlsec1-$XMLSEC1_VERSION\t\t\t\t\\\n\t&& rm -rf /usr/src/xmlsec1-$XMLSEC1_VERSION.tar.gz\t\t\t\\\n\t&& runDeps=\"$(\t\t\t\t\t\t\t\t\\\n\t\tscanelf --needed --nobanner --recursive /usr/local\t\t\\\n\t\t| awk '{ gsub(/,/, \"\\nso:\", $2); print \"so:\" $2 }'\t\t\\\n\t\t| sort -u\t\t\t\t\t\t\t\\\n\t\t| xargs -r apk info --installed\t\t\t\t\t\\\n\t\t| sort -u\t\t\t\t\t\t\t\\\n\t\t)\"\t\t\t\t\t\t\t\t\\\n\t&& apk add --no-cache --virtual .python-rundeps $runDeps\t\t\\\n\t&& rm /usr/lib/libmysqld.a\t\t\t\t\t\t\\\n\t&& find /usr/local -name '*.a' -o -name '*.pyc' -delete\t\t\t\\\n\t&& rm -rf ~/.cache\n\nRUN\tcd /usr/local/bin\t\t\t\t\t\t\t\\\n\t&& { [ -e easy_install ] || ln -s easy_install-* easy_install; }\t\\\n\t&& ln -s idle3 idle\t\t\t\t\t\t\t\\\n\t&& ln -s pydoc3 pydoc\t\t\t\t\t\t\t\\\n\t&& ln -s python3 python\t\t\t\t\t\t\t\\\n\t&& ln -s python3-config python-config\n\nCMD [\"python3\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apk add --no-cache ca-certificates"
+    ],
+    "workdir": [],
+    "from": "torchbox/uwsgi:2.1",
+    "env": {
+      "PYTHON_VERSION": "3.5.2",
+      "PYTHON_PIP_VERSION": "8.1.2",
+      "XMLSEC1_VERSION": "1.2.22",
+      "LANG": "C.UTF-8"
+    },
+    "cmd": "[\"python3\"]"
+  },
+  "source_repository_url": "https://github.com/torchbox/docker-python.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/torchbox/docker-python",
+  "docker_repository": "torchbox/python",
+  "docker_image": "torchbox/python",
+  "parameters_schema": {
+    "PYTHON_VERSION": {
+      "default": "3.5.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PYTHON_PIP_VERSION": {
+      "default": "8.1.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "XMLSEC1_VERSION": {
+      "default": "1.2.22",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "C.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "torchbox/python",
+  "revision": "3.5",
+  "uris": [
+    "https://hub.docker.com/r/torchbox/python",
+    "https://hub.docker.com/v2/repositories/torchbox/python",
+    "https://github.com/torchbox/docker-python.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Type/Devopsware/Build"
+  ],
+  "info_url": "https://hub.docker.com/r/torchbox/python",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

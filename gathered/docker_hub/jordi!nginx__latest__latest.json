@@ -1,0 +1,109 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jordi/nginx",
+    "repository_url": "https://hub.docker.com/v2/repositories/jordi/nginx",
+    "tags_url": "https://hub.docker.com/v2/repositories/jordi/nginx/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jordi/nginx/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jordi/nginx/autobuild",
+    "user": "jordi",
+    "name": "nginx",
+    "namespace": "jordi",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 228,
+    "last_updated": "2016-10-13T22:44:40.450921Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 103172691,
+        "id": 1935276,
+        "repository": 515844,
+        "creator": 15842,
+        "last_updater": 15842,
+        "last_updated": "2016-10-13T22:44:40.129980Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "jig/docker-openssl"
+  },
+  "name": "jordi/nginx Docker container",
+  "description": "Client OpenSSL to handle certification (w/ jordi/openssl-ca) and nginx https server",
+  "readme": "# OpenSSL Containers\n\nThis are Docker Images to generate Root-CA, TLS-Server containers.\n\nThey are based on [OpenSSL PKI Tutorial](https://pki-tutorial.readthedocs.org/en/latest/simple/index.html), and use OpenSSL toolkit.\n\nIt has pedagogical purposes to follow the PKI part of the [Introduction to Cryptography course](https://github.com/jig/crypto)\n\n# Instructions\n\nTo log into the CA container:\n\n``` \n$ docker run --name CA -ti jordi/openssl-ca\n```\n\nto log into the TLS-Server/nginx container:\n\n```\n$ docker run --name NGINX -p 443:443 -ti jordi/nginx\n```\n\non all these containers you can scroll up throught `bash history` to use the recomended\nshell commands.\n\nTo relaunch the created CA instance:\n\n```\n$ docker rm CA\n$ docker start CA \n$ docker attach CA \n```\n\n## nginx config\n\nCurrent nginx config currently a rather restritive config (for educational purposes). Only PFS cipher-suites with long DHE/ECHDE generators. CipherScan reports:\n\n```\nroot@90cf3bde1d2c:/git/cipherscan# ./cipherscan https://example.lan\n...........\nTarget: example.lan:443\n\nprio  ciphersuite                  protocols  pfs                 curves\n1     ECDHE-RSA-AES256-GCM-SHA384  TLSv1.2    ECDH,P-384,384bits  secp384r1\n2     ECDHE-RSA-AES128-GCM-SHA256  TLSv1.2    ECDH,P-384,384bits  secp384r1\n3     DHE-RSA-AES256-GCM-SHA384    TLSv1.2    DH,4096bits         None\n4     DHE-RSA-AES128-GCM-SHA256    TLSv1.2    DH,4096bits         None\n5     ECDHE-RSA-AES256-SHA384      TLSv1.2    ECDH,P-384,384bits  secp384r1\n6     DHE-RSA-AES256-SHA256        TLSv1.2    DH,4096bits         None\n\nCertificate: trusted, 4096 bits, sha256WithRSAEncryption signature\nTLS ticket lifetime hint: 300\nOCSP stapling: not supported\nCipher ordering: server\nCurves ordering: server - fallback: no\nServer supports secure renegotiation\nServer supported compression methods: NONE\nTLS Tolerance: yes\n\n```\n\n# License\n\nMIT licensed\n\nCopyright (C) 2016 Jordi Íñigo Griera",
+  "dockerfile": "FROM jordi/openssl-with-dhparams\nMAINTAINER Jordi Íñigo Griera\n\n# https://pki-tutorial.readthedocs.org/en/latest/simple/index.html\n# https://evilshit.wordpress.com/2013/06/19/how-to-create-your-own-pki-with-openssl/\n# https://github.com/nginxinc/docker-nginx\n\nRUN apt-get install -y nginx gettext-base \\\n    && rm -rf /var/lib/apt/lists/*\n# forward request and error logs to docker log collector\nRUN ln -sf /dev/stdout /var/log/nginx/access.log \\\n    && ln -sf /dev/stderr /var/log/nginx/error.log\nCOPY nginx.conf /etc/nginx/sites-available/default\n\nWORKDIR /root\nRUN mkdir -p  server/private\nRUN chmod 700 server/private\nADD server.conf etc/server.conf\nADD bash_history .bash_history\n\nEXPOSE 443\nCMD [\"nginx\", \"-g\", \"daemon off;\"]",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "server.conf",
+        "dest": "etc/server.conf"
+      },
+      {
+        "source": "bash_history",
+        "dest": ".bash_history"
+      }
+    ],
+    "expose": [
+      443
+    ],
+    "volume": [],
+    "run": [
+      "apt-get install -y nginx gettext-base     && rm -rf /var/lib/apt/lists/*",
+      "ln -sf /dev/stdout /var/log/nginx/access.log     && ln -sf /dev/stderr /var/log/nginx/error.log",
+      "mkdir -p  server/private",
+      "chmod 700 server/private"
+    ],
+    "workdir": [
+      "/root"
+    ],
+    "from": "jordi/openssl-with-dhparams",
+    "maintainer": "Jordi Íñigo Griera",
+    "copy": "nginx.conf /etc/nginx/sites-available/default",
+    "cmd": "[\"nginx\", \"-g\", \"daemon off;\"]"
+  },
+  "source_repository_url": "https://github.com/jig/docker-openssl.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/jig/docker-openssl",
+  "docker_repository": "jordi/nginx",
+  "docker_image": "jordi/nginx",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jordi/nginx",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jordi/nginx",
+    "https://hub.docker.com/v2/repositories/jordi/nginx",
+    "https://github.com/jig/docker-openssl.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/CLI",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/jordi/nginx",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

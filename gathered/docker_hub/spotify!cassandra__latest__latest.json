@@ -1,0 +1,139 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/spotify/cassandra",
+    "repository_url": "https://hub.docker.com/v2/repositories/spotify/cassandra",
+    "tags_url": "https://hub.docker.com/v2/repositories/spotify/cassandra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/spotify/cassandra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/spotify/cassandra/autobuild",
+    "user": "spotify",
+    "name": "cassandra",
+    "namespace": "spotify",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 112,
+    "pull_count": 6311205,
+    "last_updated": "2016-02-22T19:17:19.668502Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 177872573,
+        "id": 17270,
+        "repository": 40570,
+        "creator": 71662,
+        "last_updater": 71662,
+        "last_updated": "2016-02-22T17:51:46.515285Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "base",
+        "full_size": 177871775,
+        "id": 17264,
+        "repository": 40570,
+        "creator": 71662,
+        "last_updater": 71662,
+        "last_updated": "2016-02-22T17:51:32.012954Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "cluster",
+        "full_size": 177872329,
+        "id": 17258,
+        "repository": 40570,
+        "creator": 71662,
+        "last_updater": 71662,
+        "last_updated": "2016-02-22T17:50:30.185530Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "spotify/docker-cassandra"
+  },
+  "name": "spotify/cassandra Docker container",
+  "description": "Cassandra images optimized for fast startup",
+  "readme": "Cassandra in Docker\n===\n\nThis repository provides everything you need to run Cassandra in Docker, and is tuned for fast\ncontainer startup.\n\nWhy?\n---\nWhile naive Cassandra images take around 30 seconds to start, our containers take only a few seconds.\nOptimizations include:\n\n* Disabling vnodes. We don't use them at Spotify, and Cassandra starts much faster without them\n  (~10 sec).\n* Disabling something called \"waiting for gossip to settle down\" because there is no gossip in a\n  one-node cluster (another ~10 sec).\n\nIn the box\n---\n* **spotify/cassandra**\n\n  This is probably the image you want, it runs a one-node Cassandra cluster.\n  Built from the `cassandra` directory.\n\n* **spotify/cassandra:cluster**\n\n  Runs a Cassandra cluster. Expects `CASSANDRA_SEEDS` and `CASSANDRA_TOKEN` env variables to be set.\n  If `CASSANDRA_SEEDS` is not set, node acts as its own seed. If `CASSANDRA_TOKEN` is not set, the\n  container will not run. Built from the `cassandra-cluster` directory.\n\n* **spotify/cassandra:base**\n\n  The base image with an unconfigured Cassandra installation. You probably don't want to use this\n  directly. Built from the `cassandra-base` directory.\n\nNotes\n---\nThings are still under heavy development:\n* Only Cassandra 2.0 with almost-generic config (miles away from what we actually run Cassandra\n  with) is supported so far.\n* There's nothing to help you with tokens and stuff.\n",
+  "dockerfile": "# Spotify Cassandra 2.0 Base Image\n#\n# VERSION               0.1\n#\n# Installs Cassandra 2.0 package. Does only basic configuration.\n# Tokens and seed nodes should be configured by child images.\n\nFROM java:openjdk-7-jre\n\nENV DEBIAN_FRONTEND noninteractive\n\n# Add DataStax sources\nRUN curl -L http://debian.datastax.com/debian/repo_key | apt-key add -\nRUN echo \"deb http://debian.datastax.com/community stable main\" > /etc/apt/sources.list.d/datastax.list\n\n# Workaround for https://github.com/docker/docker/issues/6345\nRUN ln -s -f /bin/true /usr/bin/chfn\n\n# Install Cassandra 2.0.10\nRUN apt-get update && \\\n    apt-get install -y cassandra=2.0.10 dsc20=2.0.10-1 && \\\n    rm -rf /var/lib/apt/lists/*\n\nENV CASSANDRA_CONFIG /etc/cassandra\n\n# Run base config script\nADD scripts/config-cassandra-base.sh /usr/local/bin/config-cassandra-base\nRUN /usr/local/bin/config-cassandra-base\n\n# Necessary since cassandra is trying to override the system limitations\n# See https://groups.google.com/forum/#!msg/docker-dev/8TM_jLGpRKU/dewIQhcs7oAJ\nRUN rm -f /etc/security/limits.d/cassandra.conf\n\nEXPOSE 7199 7000 7001 9160 9042 22 8012 61621\n\nCMD [\"\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "scripts/config-cassandra-base.sh",
+        "dest": "/usr/local/bin/config-cassandra-base"
+      }
+    ],
+    "expose": [
+      7199
+    ],
+    "volume": [],
+    "run": [
+      "curl -L http://debian.datastax.com/debian/repo_key | apt-key add -",
+      "echo \"deb http://debian.datastax.com/community stable main\" > /etc/apt/sources.list.d/datastax.list",
+      "ln -s -f /bin/true /usr/bin/chfn",
+      "apt-get update &&     apt-get install -y cassandra=2.0.10 dsc20=2.0.10-1 &&     rm -rf /var/lib/apt/lists/*",
+      "/usr/local/bin/config-cassandra-base",
+      "rm -f /etc/security/limits.d/cassandra.conf"
+    ],
+    "workdir": [],
+    "from": "java:openjdk-7-jre",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "CASSANDRA_CONFIG": "/etc/cassandra"
+    },
+    "cmd": "[\"\"]"
+  },
+  "source_repository_url": "https://github.com/spotify/docker-cassandra.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/spotify/docker-cassandra",
+  "docker_repository": "spotify/cassandra",
+  "docker_image": "spotify/cassandra",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CASSANDRA_CONFIG": {
+      "default": "/etc/cassandra",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        7199
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "spotify/cassandra",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/spotify/cassandra",
+    "https://hub.docker.com/v2/repositories/spotify/cassandra",
+    "https://github.com/spotify/docker-cassandra.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/spotify/cassandra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

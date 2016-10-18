@@ -1,0 +1,132 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/h3nrik/nginx-ldap",
+    "repository_url": "https://hub.docker.com/v2/repositories/h3nrik/nginx-ldap",
+    "tags_url": "https://hub.docker.com/v2/repositories/h3nrik/nginx-ldap/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/h3nrik/nginx-ldap/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/h3nrik/nginx-ldap/autobuild",
+    "user": "h3nrik",
+    "name": "nginx-ldap",
+    "namespace": "h3nrik",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 30,
+    "pull_count": 4557,
+    "last_updated": "2016-09-23T20:40:57.545688Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 150972676,
+        "id": 79532,
+        "repository": 140380,
+        "creator": 217353,
+        "last_updater": 217353,
+        "last_updated": "2016-09-23T20:36:35.693193Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.11.3",
+        "full_size": 150939822,
+        "id": 4630420,
+        "repository": 140380,
+        "creator": 217353,
+        "last_updater": 217353,
+        "last_updated": "2016-09-01T18:06:00.518779Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.9.6",
+        "full_size": 150824001,
+        "id": 4630134,
+        "repository": 140380,
+        "creator": 217353,
+        "last_updater": 217353,
+        "last_updated": "2016-09-01T17:50:36.150803Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "g17/nginx-ldap"
+  },
+  "name": "h3nrik/nginx-ldap Docker container",
+  "description": "NGINX web server with LDAP/AD, SSL and proxy support. Perfect for Docker registry authentication.",
+  "readme": "[![](https://images.microbadger.com/badges/image/h3nrik/nginx-ldap.svg)](http://microbadger.com/images/h3nrik/nginx-ldap \"Get your own image badge on microbadger.com\") [![](https://images.microbadger.com/badges/version/h3nrik/nginx-ldap.svg)](http://microbadger.com/images/h3nrik/nginx-ldap \"Get your own version badge on microbadger.com\")\n# ![NGINX logo](https://raw.github.com/g17/nginx-ldap/master/images/NginxLogo.gif)\n\n## Introduction\n\nThe intention to create this Dockerfile was to provide an [NGINX web server](https://github.com/nginx/nginx) with builtin [LDAP support](https://github.com/kvspb/nginx-auth-ldap) and SSL. That can be used as a reverse proxy to a private [Docker registry](https://github.com/docker/docker-registry) which authenticates the users against an LDAP or Active Directory user directory.\n\nThe sources including the configuration sample files can be found at [GitHub](https://github.com/g17/nginx-ldap).\n\nThe docker image can be downloaded from [Docker Hub](https://registry.hub.docker.com/u/h3nrik/nginx-ldap/).\n\n## Usage\n\n### Static page without authentication\n\nThe following container will provide the NGINX static default page:\n\n\n\tdocker run --name nginx -d -p 80:80 h3nrik/nginx-ldap\n\n\nTo run an instance with your own static page run:\n\n\n\tdocker run --name nginx -v /some/content:/usr/local/nginx/html:ro -d -p 80:80 h3nrik/nginx-ldap\n\n\n### Setting up an LDAP container\n\nFor the following chapters you can set up a container providing a test LDAP installation. But the intention is of course to connect to an existing user directory like *OpenLDAP* or *Active Directory* at the end. They can be either running as Docker containers or as a dedicated server. Therefore you might want to use an [ambassador container](http://docs.docker.com/articles/ambassador_pattern_linking/).\n\nFollow these steps to set up an LDAP test container:\n\n1. Start a Docker container with a running LDAP instance. This can be done e.g. using the [nickstenning/slapd](https://registry.hub.docker.com/u/nickstenning/slapd/) image. The root passwort will be set to *toor*.\n\n\t\tdocker run -e LDAP_DOMAIN=example.com -e LDAP_ORGANIZATION=\"Example Ltd.\" -e LDAP_ROOTPASS=toor --name ldap -d -p 389:389 nickstenning/slapd\n\n2. Add some sample groups and users to that LDAP directory. You can find a [sample ldif file](https://github.com/g17/nginx-ldap/blob/master/config/sample.ldif) in the config folder.\n\n\t\tldapadd -v -h <your-ip>:389 -c -x -D cn=admin,dc=example,dc=com -W -f config/sample.ldif\n\n3. Then you can verify that the test user exists:\n\n\t\tldapsearch  -v -h <your-ip>:389 -b 'ou=users,dc=example,dc=com' -D 'cn=admin,dc=example,dc=com'  -x -W '(&(objectClass=person)(uid=test))'\n\nNow the LDAP container is ready to be used.\n        \n### Static page with LDAP authentication\n\nThe following instructions create an NGINX container that provides a static page authenticating against LDAP:\n\n1. Create an NGINX Docker container with an nginx.conf file that has LDAP authentication enabled. You can find a sample [nginx.conf](https://github.com/g17/nginx-ldap/blob/master/config/basic/nginx.conf) file in the config folder that provides the static default NGINX welcome page.\n\n\t\tdocker run --name nginx --link ldap:ldap -d -v `pwd`/config/nginx.conf:/etc/nginx/nginx.conf:ro -p 80:80 h3nrik/nginx-ldap\n\n2. When you now access the NGINX server via port 80 you will get an authentication dialog. The user name for the test user is *test* and the password is *t3st*.\n\nFurther information about how to configure NGINX with ldap can be found at the [nginx-auth-ldap module site](https://github.com/kvspb/nginx-auth-ldap).\n\n### Setting up a Docker registry container\n\nAs the main goal of the NGINX image is to provide LDAP authentication for a private Docker registry in this chapter a Docker registry is prepared.\n\nInstantiate a Docker registre container. It will use the hosts folder */your/local/registry/path* as a volume where the registry data is locally stored. \n\n\tdocker run -d --name registry -v /your/local/registry/path:/registry -e SETTINGS_FLAVOR=local -e STORAGE_PATH=/registry registry\n\nYou cannot connect to this instance from outside the Docker host by purpose. Otherwise it would be open without authentication at all.\n\n### Docker registry proxy configuration\n\nNow as we have a running registry we can configure our NGINX authentication proxy for it.\n\n1. Add a valid SSL certificate to a local folder (e.g. /ssl/cert/path) to be mounted as a volume into the proxy server later. It must be a valid one known by a trusted CA! The certificate file itself must be named *docker-registry.crt* and the private key file *docker-registry.key*.\n\n2. Create a Docker container for the NGINX proxy. The used sample configuration can be found [in the config/proxy folder](https://github.com/g17/nginx-ldap/tree/master/config/proxy).\n\n\t\tdocker run --name nginx --link ldap:ldap --link registry:docker-registry -v /ssl/cert/path:/etc/ssl/docker:ro -v `pwd`/config/proxy:/etc/nginx:ro -p 80:80 -p 443:443 -p 5000:5000 -d h3nrik/nginx-ldap\n\nTheoretically you could also use self-signed certificates. Therefore the Docker daemon need to be started with the *--insecure-registry* command line parameter. But this is not recommended.\n\nFurther information about proxying the Docker registry can be found at the official [Docker registry github page](https://github.com/docker/docker-registry/blob/master/ADVANCED.md).\n\n## Debugging\n\nThe NGINX web server has been compiled with *debug* support. You can add the following line to your NGINX configuration to get debug output:\n\n\terror_log /var/log/nginx/error.log debug;\n\nThen the debug log can be read with the following command:\n\n\tdocker exec -i -t nginx less /var/log/nginx/error.log\n\nYou will then see debug output like:\n\n\t...\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Username is \"test\"\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Authentication loop (phase=0, iteration=0)\n\t2015/02/14 17:57:10 [debug] 5#0: *2 event timer add: 3: 10000:1423936640056\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: request_timeout=10000\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Authentication loop (phase=1, iteration=0)\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Wants a free connection to \"ldapserver\"\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Search filter is \"(&(objectClass=person)(uid=test))\"\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: ldap_search_ext() -> msgid=4\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Waking authentication request \"GET / HTTP/1.1\"\n\t2015/02/14 17:57:10 [debug] 5#0: *2 access phase: 6\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Authentication loop (phase=1, iteration=1)\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Authentication loop (phase=2, iteration=1)\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: User DN is \"uid=test,ou=users,dc=example,dc=com\"\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Authentication loop (phase=3, iteration=0)\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Comparing user group with \"cn=docker,ou=groups,dc=example,dc=com\"\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: ldap_compare_ext() -> msgid=5\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Waking authentication request \"GET / HTTP/1.1\"\n\t2015/02/14 17:57:10 [debug] 5#0: *2 access phase: 6\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Authentication loop (phase=3, iteration=1)\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Authentication loop (phase=4, iteration=0)\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: ldap_sasl_bind() -> msgid=6\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Waking authentication request \"GET / HTTP/1.1\"\n\t2015/02/14 17:57:10 [debug] 5#0: *2 access phase: 6\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Authentication loop (phase=4, iteration=1)\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: User bind successful\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Authentication loop (phase=5, iteration=0)\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Rebinding to binddn\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: ldap_sasl_bind() -> msgid=7\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Waking authentication request \"GET / HTTP/1.1\"\n\t2015/02/14 17:57:10 [debug] 5#0: *2 access phase: 6\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Authentication loop (phase=5, iteration=1)\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: binddn bind successful\n\t2015/02/14 17:57:10 [debug] 5#0: *2 http_auth_ldap: Authentication loop (phase=6, iteration=1)\n    ...\n\n## Licenses\n\nThis docker image contains compiled binaries for:\n\n1. The NGINX web server. Its license can be found on the [NGINX website](http://nginx.org/LICENSE).\n2. The nginx-auth-ldap module. Its license can be found on the [nginx-auth-ldap module project site](https://github.com/kvspb/nginx-auth-ldap/blob/master/LICENSE).\n",
+  "dockerfile": "FROM debian:jessie\n\nMAINTAINER Henrik Sachse <t3x7m3@posteo.de>\n\nENV NGINX_VERSION release-1.11.3\n\nRUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections \\\n\t&& apt-get update \\\n\t&& apt-get install -y \\\n\t\tca-certificates \\\n\t\tgit \\\n\t\tgcc \\\n\t\tmake \\\n\t\tlibpcre3-dev \\\n\t\tzlib1g-dev \\\n\t\tlibldap2-dev \\\n\t\tlibssl-dev \\\n\t\twget\n\n# See http://wiki.nginx.org/InstallOptions\nRUN mkdir /var/log/nginx \\\n\t&& mkdir /etc/nginx \\\n\t&& cd ~ \\\n\t&& git clone https://github.com/kvspb/nginx-auth-ldap.git \\\n\t&& git clone https://github.com/nginx/nginx.git \\\n\t&& cd ~/nginx \\\n\t&& git checkout tags/${NGINX_VERSION} \\\n\t&& ./auto/configure \\\n\t\t--add-module=/root/nginx-auth-ldap \\\n\t\t--with-http_ssl_module \\\n\t\t--with-debug \\\n\t\t--conf-path=/etc/nginx/nginx.conf \\ \n\t\t--sbin-path=/usr/sbin/nginx \\ \n\t\t--pid-path=/var/log/nginx/nginx.pid \\ \n\t\t--error-log-path=/var/log/nginx/error.log \\ \n\t\t--http-log-path=/var/log/nginx/access.log \\ \n\t&& make install \\\n\t&& cd .. \\\n\t&& rm -rf nginx-auth-ldap \\\n\t&& rm -rf nginx \\\n\t&& wget -O /tmp/dockerize.tar.gz https://github.com/jwilder/dockerize/releases/download/v0.0.4/dockerize-linux-amd64-v0.0.4.tar.gz \\\n\t&& tar -C /usr/local/bin -xzvf /tmp/dockerize.tar.gz \\\n\t&& rm -rf /tmp/dockerize.tar.gz\n\nEXPOSE 80 443\n\nCMD [\"dockerize\",\"-stdout\",\"/var/log/nginx/access.log\",\"-stderr\",\"/var/log/nginx/error.log\",\"/usr/sbin/nginx\",\"-g\",\"daemon off;\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections \t&& apt-get update \t&& apt-get install -y \t\tca-certificates \t\tgit \t\tgcc \t\tmake \t\tlibpcre3-dev \t\tzlib1g-dev \t\tlibldap2-dev \t\tlibssl-dev \t\twget",
+      "mkdir /var/log/nginx \t&& mkdir /etc/nginx \t&& cd ~ \t&& git clone https://github.com/kvspb/nginx-auth-ldap.git \t&& git clone https://github.com/nginx/nginx.git \t&& cd ~/nginx \t&& git checkout tags/${NGINX_VERSION} \t&& ./auto/configure \t\t--add-module=/root/nginx-auth-ldap \t\t--with-http_ssl_module \t\t--with-debug \t\t--conf-path=/etc/nginx/nginx.conf \\ "
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "Henrik Sachse <t3x7m3@posteo.de>",
+    "env": {
+      "NGINX_VERSION": "release-1.11.3"
+    },
+    "cmd": "[\"dockerize\",\"-stdout\",\"/var/log/nginx/access.log\",\"-stderr\",\"/var/log/nginx/error.log\",\"/usr/sbin/nginx\",\"-g\",\"daemon off;\"]"
+  },
+  "source_repository_url": "https://github.com/g17/nginx-ldap.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/g17/nginx-ldap",
+  "docker_repository": "h3nrik/nginx-ldap",
+  "docker_image": "h3nrik/nginx-ldap",
+  "parameters_schema": {
+    "NGINX_VERSION": {
+      "default": "release-1.11.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "h3nrik/nginx-ldap",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/h3nrik/nginx-ldap",
+    "https://hub.docker.com/v2/repositories/h3nrik/nginx-ldap",
+    "https://github.com/g17/nginx-ldap.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Web Server/Nginx",
+    "Type/Middleware/Proxy",
+    "Type/Middleware/User Management"
+  ],
+  "info_url": "https://hub.docker.com/r/h3nrik/nginx-ldap",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

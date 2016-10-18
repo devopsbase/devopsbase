@@ -1,0 +1,96 @@
+{
+  "name": "beaver Chef cookbook",
+  "chef_cookbook_name": "beaver",
+  "revision": "1.3.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/beaver",
+    "https://supermarket.chef.io/cookbooks/beaver/download",
+    "https://supermarket.chef.io/cookbooks/beaver/versions/1.3.0",
+    "https://supermarket.chef.io/cookbooks/beaver/versions/1.3.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/beaver/versions/1.3.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/beaver",
+    "https://supermarket.chef.io/api/v1/cookbooks/beaver/versions/1.3.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Monitoring & Trending",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/beaver",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/beaver/versions/1.3.0/download",
+  "deprecated": false,
+  "created": "2013-06-02T19:35:37.000Z",
+  "updated": "2016-02-25T09:15:24.839Z",
+  "description": "Installs/Configures beaver",
+  "maintainer": {
+    "name": "nd",
+    "email": "nd@kaeufli.ch"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 6,
+  "downloads_count": 7837049,
+  "downloads_count_revision": 1269827,
+  "repository_url": "https://github.com/alappe/cookbook-beaver",
+  "issues_url": "https://github.com/alappe/cookbook-beaver",
+  "chef_source_url": "https://github.com/alappe/cookbook-beaver",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "beaver Cookbook\n===============\n\nInstall [beaver](https://github.com/josegonzalez/beaver) - the python daemon that munches on logs and sends their\ncontents to logstash.\n\nRequirements\n------------\n\n### Ohai and Chef:\n\nThis cookbook makes use of `node['platform_family']` to simplify\nplatform selection logic. This attribute was introduced in Ohai v0.6.12.\n\n### Platform:\n\nThe following platform families are supported:\n\n* Debian derivatives (Debian, Ubuntu, etc)\n* RHEL derivatives (RHEL, CentOS, etc)\n\n### Cookbooks\n\n* python (to use the pip LWRP)\n\nAttributes\n----------\n\n### beaver::default\n|Key|Type|Description|Default|\n|---|----|-----------|-------|\n|<tt>['beaver']['version']</tt>|String|Version to install via pip|<tt>29</tt>|\n|<tt>['beaver']['log_path']</tt>|String|Log path|<tt>/var/log</tt>|\n|<tt>['beaver']['log_file']</tt>|String|Log file|<tt>beaver.log</tt>|\n|<tt>['beaver']['generate_keypair']</tt>|Boolean|Whether to generate and expose keypair or not|<tt>false</tt>|\n|<tt>['beaver']['ssh_key_file']</tt>|String|Basename of the keyfiles to generate|<tt>logger</tt>|\n|<tt>['beaver']['config_path']</tt>|String|Configuration path|<tt>/etc/beaver</tt>|\n|<tt>['beaver']['config_file']</tt>|String|Configuration file|<tt>beaver.conf</tt>|\n|<tt>['beaver']['configuration']</tt>|Hash|Key/Value [configuration pairs](https://github.com/josegonzalez/beaver#configuration-file-options)|<tt>{ 'respawn_delay' => 3, 'max_failure' => 7 }|\n|<tt>['beaver']['files']</tt>|Array|Array containing hashes like `{ 'path' => '/var/log/syslog', 'type' => 'syslogs', 'tags' => 'sys, syslog' }` for files to watch|<tt>[]</tt>|\n|<tt>['beaver']['input_type']['tcp/ampq/etc']</tt>|Hash|Key/Value [input_types](http://beaver.readthedocs.org/en/latest/search.html?q=type&check_keywords=yes&area=default)|\n|<tt>['beaver']['output']</tt>|Hash|Key/Value|\n\nResources/Providers\n-------------------\n\n### Managing log files\n\nThis cookbook includes an LWRP for managing log files consumed by Beaver. It\ndoes so by dropping configuration snippets for each log file into Beaver's conf.d\ndirectory.\n\n#### Actions\n\n- :create: Creates a config file and restarts Beaver to load it. (This is the default action)\n- :delete: Removes the config file.\n\n#### Parameters\n\n|Parameter|Type|Description|Default|\n|---------|----|-----------|-------|\n|<tt>name</tt>|String|Should be a name for the log file. e.g. 'syslog'|<tt></tt>|\n|<tt>path</tt>|String|The path to the log file being monitored. (Required)|<tt></tt>|\n|<tt>cookbook</tt>|String|Which cookbook contains the config file template, `beaver-tail.conf.erb`.|<tt>beaver</tt>|\n|<tt>format</tt>|String|What Logstash format should be used to send the log data.|<tt>json\\_event</tt>|\n|<tt>type</tt>|String|What Logstash type to associate with the log data.|<tt>file</tt>|\n|<tt>tags</tt>|Array|The Logstash tags to associate with the log data as an array of strings.|<tt>[]</tt>|\n|<tt>add\\_field</tt>|Array|The Logstash field(s) to associate with the log data. An array of strings in the form ['fieldname1', 'fieldvalue1'].|<tt>[]</tt>|\n|<tt>exclude</tt>|String|Which log files to exclude. Useful if using a file glob in the `path` parameter. The value must be a valid Python regex string. |<tt></tt>|\n\n\n#### Examples\n\n    # Monitor /var/log/syslog\n    beaver_tail \"syslog\" do\n      path \"/var/log/syslog\"\n      type \"syslog\"\n      format \"json_event\"\n    end\n\n    # Follow all logs in /var/log except those with `messages` or `secure` in the name.\n    beaver_tail \"system logs\" do\n      path \"/var/log/*log\"\n      type \"syslog\"\n      tags: [\"sys\"]\n      exclude \"(messages|secure)\"\n    end\n\n    # Stop monitoring syslog\n    beaver_tail \"syslog\" do\n      action :delete\n    end\n\nUsage\n-----\n#### beaver::default\n\nJust include `beaver` in your node's `run_list`:\n\n```json\n{\n  \"name\":\"my_node\",\n  \"run_list\": [\n    \"recipe[beaver]\"\n  ]\n}\n```\n\nAnd configure beaver either in role or on the node. If you set\n`['beaver']['ssh']['generate_keypair']` to true the cokbook will create\na public-key pair in the `config_path` and will expose the public key on\nthe node. This key can then be searched by e.g. the logstash host and\ngrant password-free access to tunnel e.g. redis (or anything else)\nthrough it.\n\n#### Configuration example (role)\n\n```json\n{\n  \"name\": \"logstash-client\",\n  \"description\": \"\",\n  \"json_class\": \"Chef::Role\",\n  \"chef_type\": \"role\",\n  \"default_attributes\": {\n    \"beaver\": {\n      \"generate_keypair\": true,\n      \"configuration\": {\n        \"transport\": \"redis\",\n        \"redis_url\": \"redis://localhost:6379/0\",\n        \"redis_namespace\": \"logstash:beaver\",\n        \"ssh_key_file\": \"remote_key\",\n        \"ssh_tunnel\": \"logging@logs.example.net\",\n        \"ssh_tunnel_port\": 6379,\n        \"ssh_remote_host\": \"127.0.0.1\",\n        \"ssh_remote_port\": \"6379\"\n      }\n    }\n  },\n  \"run_list\": [\n    \"recipe[python]\",\n    \"recipe[beaver]\"\n  ],\n}\n```\n\n#### Input Type Configuration (Hash)\n```\n  node.set['beaver']['input_type']['amqp'] = {\n  'name' => \"logstash_queue\",\n  'type' => \"direct\",\n  'host' => \"10.0.0.1\",\n  'exchange' => \"logstash-exchange\",\n  'key' => \"logstash-key\",\n  'exclusive' => false,\n  'durable' => false,\n  'auto_delete' => false,\n}\n```\n\n#### Output Type Configuration (Hash)\n```\nnode.set['beaver']['output'] = {\n    'output' => 'stdout { debug => true }'\n}\n```\n\nContributing\n------------\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write you change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n\nAuthors\n-------\n\n* [rampire](https://github.com/rampire)\n* [Tim Smith](https://github.com/tas50)\n* [Mirko Kiefer](https://github.com/mirkokiefer)\n* [Josh Pasqualetto](https://github.com/sniperd)\n* [Jeff Ramnani](https://github.com/jramnani)\n* [Andreas Lappe](https://github.com/alappe)\n\nLicense\n-------\n\nLicensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "rhel",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "oracle",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/python",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "beaver": "Installs and configures beaver to ship logs to logstash"
+  }
+}

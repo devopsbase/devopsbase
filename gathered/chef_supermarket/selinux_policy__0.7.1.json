@@ -1,0 +1,82 @@
+{
+  "name": "selinux_policy Chef cookbook",
+  "chef_cookbook_name": "selinux_policy",
+  "revision": "0.7.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/selinux_policy",
+    "https://supermarket.chef.io/cookbooks/selinux_policy/download",
+    "https://supermarket.chef.io/cookbooks/selinux_policy/versions/0.7.1",
+    "https://supermarket.chef.io/cookbooks/selinux_policy/versions/0.7.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/selinux_policy/versions/0.7.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/selinux_policy",
+    "https://supermarket.chef.io/api/v1/cookbooks/selinux_policy/versions/0.7.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Operating Systems & Virtualization",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Operating System/Linux"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/selinux_policy",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/selinux_policy/versions/0.7.1/download",
+  "deprecated": false,
+  "created": "2014-12-09T16:10:17.171Z",
+  "updated": "2016-09-21T06:37:02.701Z",
+  "description": "Manages SELinux policy components",
+  "maintainer": {
+    "name": "backslasher",
+    "email": "nitz.raz@gmail.com"
+  },
+  "license": "GPL v2",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 12,
+  "downloads_count": 4381661,
+  "downloads_count_revision": 154378,
+  "repository_url": "https://github.com/BackSlasher/chef-selinuxpolicy",
+  "issues_url": "https://github.com/BackSlasher/chef-selinuxpolicy/issues",
+  "chef_source_url": "https://github.com/BackSlasher/chef-selinuxpolicy",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "SELinux Policy Cookbook\n======================\nThis cookbbok can be used to manage SELinux policies and components (rather than just enable / disable enforcing).  \nI made it because I needed some SELinux settings done, and the `execute`s started to look annoying.\n\nRequirements\n------------\nNeeds an SELinux policy active (so its values can be managed). Can work with a disabled SELinux system (see attribute `allow_disabled`), which will generate warnings and do nothing (but won't break the run).  \nAlso requires SELinux's management tools, namely `semanage`, `setsebool` and `getsebool`.\nTools are installed by the `selinux_policy::install` recipe (for RHEL/Debian and the like).\n\nAttributes\n----------\n\nThese attributes affect the way all of the LWRPs are behaving.\n\n* `node['selinux_policy']['allow_disabled']` - Whether to allow runs when SELinux is disabled. Will generate warnings, but the run won't fail.  \n   Defaults to `true`, set to `false` if you don't have any machines with disabled SELinux.\n\n\nUsage\n-----\n\nThis cookbook's functionality is exposed via resources, so it should be called from a wrapper cookbook.\nRemember to add `depends 'selinux_policy'` to your `metadata.rb`.\n\n### boolean\nRepresents an SELinux [boolean](http://wiki.gentoo.org/wiki/SELinux/Tutorials/Using_SELinux_booleans).\nYou can either `set` it, meaning it will be changed without persistence (it will revert to default in the next reboot), or `setpersist` it (default action), so it'll keep it value after rebooting.  \nUsing `setpersist` requires an active policy (so that the new value can be saved somewhere).\n\nAttributes:\n\n* `name`: boolean's name. Defaults to resource name.\n* `value`: Its new value (`true`/`false`).\n* `force`: Use `setsebool` even if the current value agrees with the requested one.\n\nExample usage:\n\n```ruby\nselinux_policy_boolean 'httpd_can_network_connect' do\n    value true\n    # Make sure nginx is started if this value was modified\n    notifies :start,'service[nginx]', :immediate\nend\n```\n\n**Note**: Due to ruby interperting `0` as `true`, using `value 0` is unwise.\n\n### port\nAllows assigning a network port to a certain SELinux context.  \nAs explained [here](http://wiki.centos.org/HowTos/SELinux#head-ad837f60830442ae77a81aedd10c20305a811388), it can be useful for running Apache on a non-standard port.\n\nActions:\n\n* `addormodify` (default): Assigns the port to the right context, whether it's already listed another context or not at all.\n* `add`: Assigns the port to the right context it's if not listed (only uses `-a`).\n* `modify`: Changes the port's context if it's already listed (only uses `-m`).\n* `delete`: Removes the port's context if it's listed (uses `-d`).\n\nAttributes:\n\n* `port`: The port in question, defaults to resource name.\n* `protocol`: `tcp`/`udp`.\n* `secontext`: The SELinux context to assign the port to. Uneeded when using `delete`.\n\nExample usage:\n\n```ruby\n# Allow nginx to bind to port 5678, by giving it the http_port_t context\nselinux_policy_port '5678' do\n    protocol 'tcp'\n    secontext 'http_port_t'\nend\n```\n\n### module\nManages SEModules\n\nActions:\n\n* `deploy` (default): Compiles a module from it's `te` file and deploys it. Deploys only when one of the following is true:\n  * The module isn't currently present\n  * `force` is enabled\n  * The policy file has changed\n* `remove`: Removes a module\n\nAttributes:\n\n* `name`: The module name. Defaults to resource name.\n* `content`: The module content, can be extracted from `audit2allow -m NAME`\n* `force`: Whether to install the module even if it seems unnecessary. Defaults to false, can help when the module was modified \"under the nose\" of Chef (since we don't actually download the curernt module and decompile when comparing).\n\nExample usage:\n\n```ruby\n# Allow openvpn to write/delete in '/etc/openvpn'\nselinux_policy_module 'openvpn-googleauthenticator' do\n  content '\nmodule dy-openvpn-googleauthenticator 1.0;\n\nrequire {\n    type openvpn_t;\n    type openvpn_etc_t;\n    class file { write unlink };\n}\n\n\n#============= openvpn_t ==============\nallow openvpn_t openvpn_etc_t:file { write unlink };\n'\n  action :deploy\nend\n```\n### fcontext\nAllows managing the SELinux context of files.\nThis can be used to grant SELinux-protected daemons access to additional / moved files.\n\nActions:\n\n* `addormodify` (default): Assigns the file regexp to the right context, whether it's already listed another context or not at all.\n* `add`: Assigns the file regexp to the right context it's if not listed (only uses -a).\n* `modify`: Changes the file regexp context if it's already listed (only uses -m).\n* `delete`: Removes the file regexp context if it's listed (uses -d).\n\nAttributes:\n\n* `file_spec`: This is the file regexp in question, defaults to resource name.\n* `secontext`: The SELinux context to assign the file regexp to. Not needed when using delete.\n\nExample usage (see mysql cookbook for example daemons ):\n\n```ruby\n# Allow http servers (nginx/apache) to modify moodle files\nselinux_policy_fcontext '/var/www/moodle(/.*)?' do\n  secontext 'httpd_sys_rw_content_t'\nend\n\n# Allow a custom mysql daemon to access its files.\n{'mysqld_etc_t' => \"/etc/mysql-#{service_name}(/.*)?\",\n'mysqld_etc_t' => \"/etc/mysql-#{service_name}/my\\.cnf\",\n'mysqld_log_t' => \"/var/log/mysql-#{service_name}(/.*)?\",\n'mysqld_db_t' => \"/opt/mysql_data_#{service_name}(/.*)?\",\n'mysqld_var_run_t' => \"/var/run/mysql-#{service_name}(/.*)?\",\n'mysqld_initrc_exec_t' => \"/etc/rc\\.d/init\\.d/mysql-#{service_name}\"}.each do |sc, f|\n  selinux_policy_fcontext f do\n    secontext sc\n  end\nend\n```\n\n### permissive\nAllows some types to misbehave without stopping them.  \nNot as good as specific policies, but better than disabling SELinux entirely.\n\nActions:\n\n* `add`: Adds a permissive, unless it's already added\n* `delete`: Deletes a permissive if it's listed\n\nExample usage:\n\n```ruby\n# Disable enforcement on Nginx\n# As described on http://nginx.com/blog/nginx-se-linux-changes-upgrading-rhel-6-6/\n\nselinux_policy_permissive 'nginx' do\n  notifies :restart, 'service[nginx]'\nend\n```\n\n## Testing\nWe currently use a very basic kitchen recipe for testing.  \nWe also only test against CentOS (because Ubuntu comes with SELinux disabled and restarting mid-test is hard).  \n\n## Chef 11 Support\nI don't use Chef 11, but stuff *seems* to work OK to other people.\n\nContributing\n------------\nThe generic method seems fine to me:\n\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n\nLicense and Authors\n-------------------\nLicensed [GPL v2](http://choosealicense.com/licenses/gpl-2.0/)  \nAuthor: [Nitzan Raz](https://github.com/BackSlasher) ([backslasher](http://backslasher.net))\n\nContributors:\n* [Joerg Herzinger](https://github.com/joerg) (http://www.bytesource.net)\n* [Wade Peacock](https://github.com/knightorc) (http://www.visioncritical.com)\n* [Kieren Evans](https://github.com/kierenevans) (http://kle.me)\n* [Antek Baranski](https://github.com/Sauraus)\n* [James Le Cuirot](https://github.com/chewi)\n\nI'll be happy to accept contributions or to hear from you!\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ],
+  "parameters": {
+    "selinux_policy": {
+      "display_name": "SELinux Policy",
+      "description": "Hash of SELinux policy related attributes",
+      "type": "hash",
+      "choice": [],
+      "calculated": false,
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    }
+  }
+}

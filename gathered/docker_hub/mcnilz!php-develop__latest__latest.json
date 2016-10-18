@@ -1,0 +1,89 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mcnilz/php-develop",
+    "repository_url": "https://hub.docker.com/v2/repositories/mcnilz/php-develop",
+    "tags_url": "https://hub.docker.com/v2/repositories/mcnilz/php-develop/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mcnilz/php-develop/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mcnilz/php-develop/autobuild",
+    "user": "mcnilz",
+    "name": "php-develop",
+    "namespace": "mcnilz",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 435,
+    "last_updated": "2016-10-15T03:29:30.580276Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 286377513,
+        "id": 947449,
+        "repository": 329028,
+        "creator": 445714,
+        "last_updater": 445714,
+        "last_updated": "2016-10-15T03:29:30.208932Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "mcnilz/dockerfiles-develop"
+  },
+  "name": "mcnilz/php-develop Docker container",
+  "description": "php image with most used extensions, some locales and $WEB_ROOT environtment variable",
+  "readme": "# dockerfiles-develop\nJust my collection of dockerfiles for development\n",
+  "dockerfile": "FROM\tphp:5.6-apache\n\nMAINTAINER Martin Schnabel <mcnilz@gmail.com>\n\nENV\tWEB_ROOT\t\t/var/www/html\nENV\tMONGO_VERSION\t\t1.6.13\nENV\tXHPROF_VERSION\t\t0.9.4\nENV\tMEMCACHE_VERSION\t3.0.8\nENV\tMEMCACHED_VERSION\t2.2.0\n\nRUN\t\\\n\t   sed -i \"s|/var/www/html|\\$\\{WEB_ROOT\\}|\" /etc/apache2/apache2.conf \\\n\t&& sed -i \"s|/var/www|\\$\\{WEB_ROOT\\}|\"      /etc/apache2/apache2.conf\n\nRUN\t\\\n\t   apt-get update \\\n\t&& apt-get install -y \\\n\t\tlocales \\\n\t\tlibfreetype6-dev \\\n\t\tlibjpeg62-turbo-dev \\\n\t\tlibghc-postgresql-libpq-dev \\\n\t\tlibmcrypt-dev \\\n\t\tlibcurl4-openssl-dev \\\n\t\tlibpng12-dev \\\n\t\tlibxslt1-dev \\\n\t\tlibxml2-dev \\\n\t\tlibicu-dev \\\n\t\tlibtidy-dev \\\n\t\tzlib1g-dev \\\n\t\tlibmemcached-dev \\\n\t\tsocat \\\n\t\tcurl \\\n\t\tgraphicsmagick \\\n\t\tmsmtp \\\n\t&& rm -r /var/lib/apt/lists/*\n\nRUN\ta2enmod rewrite headers expires\n\nRUN\t\\\n\t   echo \"de_DE.UTF-8 UTF-8\" >> /etc/locale.gen \\\n\t&& echo \"en_US.UTF-8 UTF-8\" >> /etc/locale.gen \\\n\t&& echo \"en_GB.UTF-8 UTF-8\" >> /etc/locale.gen \\\n\t&& echo \"fr_FR.UTF-8 UTF-8\" >> /etc/locale.gen \\\n\t&& echo \"it_IT.UTF-8 UTF-8\" >> /etc/locale.gen \\\n\t&& echo \"nl_NL.UTF-8 UTF-8\" >> /etc/locale.gen \\\n\t&& locale-gen \\\n\t&& /usr/sbin/update-locale LANG=en_US.UTF-8\n\nRUN\t\\\n\t   docker-php-source extract \\\n\t&& curl https://pecl.php.net/get/mongo-${MONGO_VERSION}.tgz | tar -xpz -C /usr/src/php/ext \\\n\t&& mv /usr/src/php/ext/mongo-${MONGO_VERSION} /usr/src/php/ext/mongo \\\n\t&& curl https://pecl.php.net/get/xhprof-${XHPROF_VERSION}.tgz | tar -xpz -C /tmp xhprof-${XHPROF_VERSION}/extension \\\n\t&& mv /tmp/xhprof-${XHPROF_VERSION}/extension /usr/src/php/ext/xhprof \\\n\t&& curl https://pecl.php.net/get/memcache-${MEMCACHE_VERSION}.tgz | tar -xpz -C /usr/src/php/ext \\\n\t&& mv /usr/src/php/ext/memcache-${MEMCACHE_VERSION} /usr/src/php/ext/memcache \\\n\t&& curl https://pecl.php.net/get/memcached-${MEMCACHED_VERSION}.tgz | tar -xpz -C /usr/src/php/ext \\\n\t&& mv /usr/src/php/ext/memcached-${MEMCACHED_VERSION} /usr/src/php/ext/memcached \\\n\t&& docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \\\n\t&& docker-php-ext-configure pgsql -with-pgsql=/usr/include/postgresql/ \\\n\t&& docker-php-ext-configure xhprof --with-php-config=/usr/local/bin/php-config \\\n\t&& docker-php-ext-install \\\n\t\txhprof \\\n\t\tmongo \\\n\t\tmemcache \\\n\t\tmemcached \\\n\t\ttidy \\\n\t\ticonv \\\n\t\tsockets \\\n\t\tcurl \\\n\t\tzip \\\n\t\tmbstring \\\n\t\tintl \\\n\t\txmlrpc \\\n\t\txsl \\\n\t\tsoap \\\n\t\tctype \\\n\t\tjson \\\n\t\tmcrypt \\\n\t\tgd \\\n\t\tmysql \\\n\t\tpdo_mysql \\\n\t\tpgsql \\\n\t\tpdo_pgsql \\\n\t&& docker-php-source delete\n\nCOPY\tsendmail.ini\t\t/usr/local/etc/php/conf.d/\nCOPY\tapache2-foreground\t/usr/local/bin/\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [],
+    "workdir": [],
+    "maintainer": "Martin Schnabel <mcnilz@gmail.com>"
+  },
+  "source_repository_url": "https://github.com/mcnilz/dockerfiles-develop.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mcnilz/dockerfiles-develop",
+  "docker_repository": "mcnilz/php-develop",
+  "docker_image": "mcnilz/php-develop",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mcnilz/php-develop",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/mcnilz/php-develop",
+    "https://hub.docker.com/v2/repositories/mcnilz/php-develop",
+    "https://github.com/mcnilz/dockerfiles-develop.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/PHP"
+  ],
+  "info_url": "https://hub.docker.com/r/mcnilz/php-develop",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

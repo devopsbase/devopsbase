@@ -1,0 +1,111 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/zazo/rails",
+    "repository_url": "https://hub.docker.com/v2/repositories/zazo/rails",
+    "tags_url": "https://hub.docker.com/v2/repositories/zazo/rails/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/zazo/rails/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/zazo/rails/autobuild",
+    "user": "zazo",
+    "name": "rails",
+    "namespace": "zazo",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 3243,
+    "last_updated": "2016-04-24T14:48:09.748114Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 371499619,
+        "id": 611743,
+        "repository": 264619,
+        "creator": 269010,
+        "last_updater": 373692,
+        "last_updated": "2016-04-24T14:48:09.201833Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "noplanb/docker-images"
+  },
+  "name": "zazo/rails Docker container",
+  "description": "",
+  "readme": "Docker base image: Rails + Nginx + Puma\n=======================================\n\nDocker base image for [Rails](http://rubyonrails.org) runned with [Nginx](http://nginx.org) and [Puma](http://puma.io) prepared for deploy on [AWS Elasticbeanstalk](http://aws.amazon.com/ru/elasticbeanstalk/).\n\n## Dockerfile\n\nDockerfile on [Github](https://github.com/noplanb/rails-base/blob/master/Dockerfile).\n\n## Build\nCommmit changes and create new tag.\n\nTo build base image use:\n\n```shell\nmake build\n```\n\nTo tag latest image:\n\n```shell\nmake tag_latest\n```\n\nTo push to [Docker Hub repo](https://registry.hub.docker.com/u/zazo/rails/):\n\n```shell\nmake push\n```\n\nOr do this all:\n\n```shell\nmake\n```\n\n## Usage\n\nSimple `Dockerfile` for your rails app is [here](https://github.com/noplanb/rails-base/blob/master/examples/Dockerfile).\n\nSimple `Dockerrun.aws.json` is [here](https://github.com/noplanb/rails-base/blob/master/examples/Dockerrun.aws.json).\n\nSimple EB config file with `rake db:migrate` is [here](https://github.com/noplanb/rails-base/blob/master/examples/eb.config).\n",
+  "dockerfile": "FROM ruby:2.2\nMAINTAINER Alex Ulianytskyi <a.ulyanitsky@gmail.com>\n\n# nginx key\nRUN apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62\n\nRUN curl --silent --location http://nginx.org/keys/nginx_signing.key | apt-key add -\n\n# add nginx mainline repository\nCOPY nginx-mainline.list /etc/apt/sources.list.d/nginx.list\n\n# install NodeJs 0.12\nRUN curl --silent --location https://deb.nodesource.com/setup_0.12 | bash -\n\n# packages\nRUN apt-get -y -q install nginx nodejs mysql-client postgresql-client \\\n      python-pip python-dev --no-install-recommends && \\\n    apt-get clean\n\n# aws cli & eb cli\nRUN pip install --upgrade awscli awsebcli\n\n# pre-install gems\nRUN gem install slack-notifier foreman puma pg mysql2 rails\n\n# nginx\nRUN echo \"\\ndaemon off;\" >> /etc/nginx/nginx.conf\nCOPY nginx-sites.conf /etc/nginx/conf.d/default.conf\n\nRUN mkdir -p /usr/src/app\nWORKDIR /usr/src/app\nENV APP_HOME /usr/src/app\n\nRUN mkdir -p public log log/nginx tmp tmp/sockets tmp/pids tmp/cache\n\nCOPY 502.html 503.html public/\n\n# add default unicorn config\nCOPY puma.rb config/\n\n# add default foreman config\nCOPY Procfile Procfile\n\n# run necessary steps via inherited Dockerfile\nONBUILD COPY config/Gemfile $APP_HOME/\nONBUILD COPY Gemfile.lock $APP_HOME/\nONBUILD RUN bundle install --jobs 8 --retry 3\nONBUILD COPY . $APP_HOME\nONBUILD RUN chown www-data:www-data -R $APP_HOME\n\nEXPOSE 80 443\nCMD foreman start\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62",
+      "curl --silent --location http://nginx.org/keys/nginx_signing.key | apt-key add -",
+      "curl --silent --location https://deb.nodesource.com/setup_0.12 | bash -",
+      "apt-get -y -q install nginx nodejs mysql-client postgresql-client       python-pip python-dev --no-install-recommends &&     apt-get clean",
+      "pip install --upgrade awscli awsebcli",
+      "gem install slack-notifier foreman puma pg mysql2 rails",
+      "echo \"\\ndaemon off;\" >> /etc/nginx/nginx.conf",
+      "mkdir -p /usr/src/app",
+      "mkdir -p public log log/nginx tmp tmp/sockets tmp/pids tmp/cache"
+    ],
+    "workdir": [
+      "/usr/src/app"
+    ],
+    "from": "ruby:2.2",
+    "maintainer": "Alex Ulianytskyi <a.ulyanitsky@gmail.com>",
+    "copy": "Procfile Procfile",
+    "env": {
+      "APP_HOME": "/usr/src/app"
+    },
+    "onbuild": "RUN chown www-data:www-data -R $APP_HOME",
+    "cmd": "foreman start"
+  },
+  "source_repository_url": "https://github.com/noplanb/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/noplanb/docker-images",
+  "docker_repository": "zazo/rails",
+  "docker_image": "zazo/rails",
+  "parameters_schema": {
+    "APP_HOME": {
+      "default": "/usr/src/app",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "zazo/rails",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/zazo/rails",
+    "https://hub.docker.com/v2/repositories/zazo/rails",
+    "https://github.com/noplanb/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby"
+  ],
+  "info_url": "https://hub.docker.com/r/zazo/rails",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

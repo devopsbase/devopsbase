@@ -1,0 +1,156 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/rohanpm/fedora-vagrant",
+    "repository_url": "https://hub.docker.com/v2/repositories/rohanpm/fedora-vagrant",
+    "tags_url": "https://hub.docker.com/v2/repositories/rohanpm/fedora-vagrant/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/rohanpm/fedora-vagrant/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/rohanpm/fedora-vagrant/autobuild",
+    "user": "rohanpm",
+    "name": "fedora-vagrant",
+    "namespace": "rohanpm",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 56,
+    "last_updated": "2016-08-26T04:36:54.861508Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "24",
+        "full_size": 80419684,
+        "id": 4520704,
+        "repository": 751330,
+        "creator": 96718,
+        "last_updater": 96718,
+        "last_updated": "2016-08-26T04:36:54.553972Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 80415941,
+        "id": 3480181,
+        "repository": 751330,
+        "creator": 96718,
+        "last_updater": 96718,
+        "last_updated": "2016-08-26T04:36:52.306174Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "22",
+        "full_size": 73873249,
+        "id": 3552443,
+        "repository": 751330,
+        "creator": 96718,
+        "last_updater": 96718,
+        "last_updated": "2016-08-26T04:36:51.789992Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "23",
+        "full_size": 83525314,
+        "id": 3480170,
+        "repository": 751330,
+        "creator": 96718,
+        "last_updater": 96718,
+        "last_updated": "2016-08-26T04:36:49.861989Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "rohanpm/docker-fedora-vagrant"
+  },
+  "name": "rohanpm/fedora-vagrant Docker container",
+  "description": "Fedora images customized for usage with Vagrant",
+  "readme": "# Fedora Docker images for Vagrant\nThis repository builds on top of the official Fedora Docker images, adding\nthe minimal set of packages and configuration for use by the vagrant\ndocker provider.\n",
+  "dockerfile": "FROM fedora:latest\n\n# This image should be kept to the minimal requirements for vagrant\n# to be able to ssh into the container and run provisioners.\n#\n# openssh-server: let \"vagrant ssh\" work\n# openssh-clients: let scp work\n# sudo: for vagrant user to elevate privileges\n# passwd: to set password for vagrant user\n\nRUN dnf -y install \\\n openssh-server \\\n openssh-clients \\\n sudo \\\n passwd \\\n && dnf clean all\n\n# Disable unneeded services\nRUN [\"/usr/bin/rm\", \"-f\", \\\n     \"/etc/systemd/system/basic.target.wants/dnf-makecache.timer\", \\\n     \"/etc/systemd/system/getty.target.wants/getty@tty1.service\"]\n\n# Disable any getty spawning\nRUN [\"/bin/sh\", \"-c\", \"echo -e NAutoVTs=0\\\\\\\\nReserveVT=0 >> /etc/systemd/logind.conf\"]\n\n# These changes are explained here:\n# https://www.vagrantup.com/docs/boxes/base.html\n\n# Add a user named vagrant\nRUN adduser vagrant\n\n# Let vagrant have passwordless sudo\nRUN echo 'vagrant ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers\n\n# Do not require a tty\nRUN sed -r -e 's|^Defaults.*requiretty|#\\0|' -i /etc/sudoers\n\n# Make ssh connect faster\nRUN echo 'UseDNS no' >> /etc/ssh/sshd_config\n\n# Set password to 'vagrant'\nRUN echo vagrant | passwd --stdin vagrant\n\n# Set up ssh key\nUSER vagrant\nRUN mkdir /home/vagrant/.ssh\nRUN chmod og-rx /home/vagrant/.ssh\nRUN [\"/bin/sh\", \"-c\", \"echo 'ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key' > /home/vagrant/.ssh/authorized_keys\"]\n\nUSER root\n\nVOLUME /var/log\n\nENV container=docker\n\nCMD [\"/sbin/init\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "/var/log"
+    ],
+    "run": [
+      "dnf -y install  openssh-server  openssh-clients  sudo  passwd  && dnf clean all",
+      "[\"/usr/bin/rm\", \"-f\",      \"/etc/systemd/system/basic.target.wants/dnf-makecache.timer\",      \"/etc/systemd/system/getty.target.wants/getty@tty1.service\"]",
+      "[\"/bin/sh\", \"-c\", \"echo -e NAutoVTs=0\\\\\\\\nReserveVT=0 >> /etc/systemd/logind.conf\"]",
+      "adduser vagrant",
+      "echo 'vagrant ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers",
+      "sed -r -e 's|^Defaults.*requiretty|#\\0|' -i /etc/sudoers",
+      "echo 'UseDNS no' >> /etc/ssh/sshd_config",
+      "echo vagrant | passwd --stdin vagrant",
+      "mkdir /home/vagrant/.ssh",
+      "chmod og-rx /home/vagrant/.ssh",
+      "[\"/bin/sh\", \"-c\", \"echo 'ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key' > /home/vagrant/.ssh/authorized_keys\"]"
+    ],
+    "workdir": [],
+    "from": "fedora:latest",
+    "user": "root",
+    "env": {
+      "container": "docker"
+    },
+    "cmd": "[\"/sbin/init\"]"
+  },
+  "source_repository_url": "https://github.com/rohanpm/docker-fedora-vagrant.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/rohanpm/docker-fedora-vagrant",
+  "docker_repository": "rohanpm/fedora-vagrant",
+  "docker_image": "rohanpm/fedora-vagrant",
+  "parameters_schema": {
+    "container": {
+      "default": "docker",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "rohanpm/fedora-vagrant",
+  "revision": "24",
+  "uris": [
+    "https://hub.docker.com/r/rohanpm/fedora-vagrant",
+    "https://hub.docker.com/v2/repositories/rohanpm/fedora-vagrant",
+    "https://github.com/rohanpm/docker-fedora-vagrant.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/JavaScript/Node.js",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Build/Java/Ant",
+    "Type/Devopsware/Deployment/Vagrant",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/rohanpm/fedora-vagrant",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

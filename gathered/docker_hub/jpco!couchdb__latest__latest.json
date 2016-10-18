@@ -1,0 +1,137 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jpco/couchdb",
+    "repository_url": "https://hub.docker.com/v2/repositories/jpco/couchdb",
+    "tags_url": "https://hub.docker.com/v2/repositories/jpco/couchdb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jpco/couchdb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jpco/couchdb/autobuild",
+    "user": "jpco",
+    "name": "couchdb",
+    "namespace": "jpco",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 45,
+    "last_updated": "2016-09-23T21:06:49.626438Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 220212901,
+        "id": 3586657,
+        "repository": 766022,
+        "creator": 898054,
+        "last_updater": 898054,
+        "last_updated": "2016-09-23T21:06:49.204468Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "armv7hf",
+        "full_size": 184093154,
+        "id": 3586637,
+        "repository": 766022,
+        "creator": 898054,
+        "last_updater": 898054,
+        "last_updated": "2016-09-23T19:37:42.871926Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "jpco/docker-couchdb"
+  },
+  "name": "jpco/couchdb Docker container",
+  "description": "A build for CouchDB.\nI followed instructions, it seems it worked",
+  "readme": "# Couchdb\n\nI needed a couchdb image. So I followed some instructions.  \nSeems it works\n\n## Environment Variables\n  * COUCHDB_USER\n  * COUCHDB_PASSWORD\n\n## Suggested Mapping\n  * /usr/local/var/lib/couchdb - database",
+  "dockerfile": "FROM debian:jessie\n\nMAINTAINER  J.P.C. Oudeman\n\n# Loosely based on instructions from https://cwiki.apache.org/confluence/display/COUCHDB/Debian\n\nRUN apt-get update\nRUN apt-get install -y wget\n\nRUN apt-get install -y libmozjs185-1.0 libmozjs185-dev \\\nerlang-nox erlang-dev \\\nbuild-essential \\\nlibnspr4 libnspr4-0d libnspr4-dev libcurl4-openssl-dev curl libicu-dev \\\nsudo\n\n# Set up a couchdb daemon account\nRUN groupadd -r couchdb && useradd -d /var/lib/couchdb -g couchdb couchdb\nRUN mkdir -p /usr/local/lib/couchdb /usr/local/etc/couchdb \\\\\n/usr/local/var/lib/couchdb /usr/local/var/log/couchdb /usr/local/var/run/couchdb /var/lib/couchdb\nRUN chown -R couchdb:couchdb /usr/local/lib/couchdb /usr/local/etc/couchdb \\\\\n/usr/local/var/lib/couchdb /usr/local/var/log/couchdb /usr/local/var/run/couchdb /var/lib/couchdb\nRUN chmod -R g+rw /usr/local/lib/couchdb /usr/local/etc/couchdb \\\\\n/usr/local/var/lib/couchdb /usr/local/var/log/couchdb /usr/local/var/run/couchdb /var/lib/couchdb\n\n# Install CouchDB \nRUN wget --header=\"accept-encoding: gzip\" http://www-us.apache.org/dist/couchdb/source/1.6.1/apache-couchdb-1.6.1.tar.gz -O - | tar -C /tmp -xz\nRUN cd /tmp/apache-couchdb-* \\\n && ./configure --prefix=/usr/local --with-js-lib=/usr/lib --with-js-include=/usr/include/mozjs --enable-init \\\n && make && make install\n\nRUN sed -e 's/^bind_address = .*$/bind_address = 0.0.0.0/' -i /usr/local/etc/couchdb/default.ini\n\nCOPY assets/bin/entrypoint.sh /usr/local/bin\nRUN chmod +x /usr/local/bin/*.sh\n\n# Cleanup\nRUN apt-get purge -y libmozjs185-dev erlang-dev libnspr4-dev libcurl4-openssl-dev curl libicu-dev && \\\napt-get clean && \\\nrm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /tmp/apache-*\n\nENV COUCHDB_USER couchadmin\nENV COUCHDB_PASSWORD couchpasswd\nENV ERL_LIBS \"/var/lib/couchdb/lib/erlang\"\n\nENTRYPOINT [\"entrypoint.sh\"]\nCMD [\"couchdb\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update",
+      "apt-get install -y wget",
+      "apt-get install -y libmozjs185-1.0 libmozjs185-dev erlang-nox erlang-dev build-essential libnspr4 libnspr4-0d libnspr4-dev libcurl4-openssl-dev curl libicu-dev sudo",
+      "groupadd -r couchdb && useradd -d /var/lib/couchdb -g couchdb couchdb",
+      "mkdir -p /usr/local/lib/couchdb /usr/local/etc/couchdb \\/usr/local/var/lib/couchdb /usr/local/var/log/couchdb /usr/local/var/run/couchdb /var/lib/couchdb",
+      "chown -R couchdb:couchdb /usr/local/lib/couchdb /usr/local/etc/couchdb \\/usr/local/var/lib/couchdb /usr/local/var/log/couchdb /usr/local/var/run/couchdb /var/lib/couchdb",
+      "chmod -R g+rw /usr/local/lib/couchdb /usr/local/etc/couchdb \\/usr/local/var/lib/couchdb /usr/local/var/log/couchdb /usr/local/var/run/couchdb /var/lib/couchdb",
+      "wget --header=\"accept-encoding: gzip\" http://www-us.apache.org/dist/couchdb/source/1.6.1/apache-couchdb-1.6.1.tar.gz -O - | tar -C /tmp -xz",
+      "cd /tmp/apache-couchdb-*  && ./configure --prefix=/usr/local --with-js-lib=/usr/lib --with-js-include=/usr/include/mozjs --enable-init  && make && make install",
+      "sed -e 's/^bind_address = .*$/bind_address = 0.0.0.0/' -i /usr/local/etc/couchdb/default.ini",
+      "chmod +x /usr/local/bin/*.sh",
+      "apt-get purge -y libmozjs185-dev erlang-dev libnspr4-dev libcurl4-openssl-dev curl libicu-dev && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /tmp/apache-*"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": " J.P.C. Oudeman",
+    "copy": "assets/bin/entrypoint.sh /usr/local/bin",
+    "env": {
+      "COUCHDB_USER": "couchadmin",
+      "COUCHDB_PASSWORD": "couchpasswd",
+      "ERL_LIBS": "\"/var/lib/couchdb/lib/erlang\""
+    },
+    "entrypoint": "[\"entrypoint.sh\"]",
+    "cmd": "[\"couchdb\"]"
+  },
+  "source_repository_url": "git@bitbucket.org:JPCO/docker-couchdb.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/JPCO/docker-couchdb",
+  "docker_repository": "jpco/couchdb",
+  "docker_image": "jpco/couchdb",
+  "parameters_schema": {
+    "COUCHDB_USER": {
+      "default": "couchadmin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "COUCHDB_PASSWORD": {
+      "default": "couchpasswd",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ERL_LIBS": {
+      "default": "\"/var/lib/couchdb/lib/erlang\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jpco/couchdb",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jpco/couchdb",
+    "https://hub.docker.com/v2/repositories/jpco/couchdb",
+    "git@bitbucket.org:JPCO/docker-couchdb.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Build",
+    "Type/Middleware/Data Store/Document-oriented/CouchDB"
+  ],
+  "info_url": "https://hub.docker.com/r/jpco/couchdb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

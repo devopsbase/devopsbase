@@ -1,0 +1,148 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/travix/postgres",
+    "repository_url": "https://hub.docker.com/v2/repositories/travix/postgres",
+    "tags_url": "https://hub.docker.com/v2/repositories/travix/postgres/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/travix/postgres/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/travix/postgres/autobuild",
+    "user": "travix",
+    "name": "postgres",
+    "namespace": "travix",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 283,
+    "last_updated": "2016-09-23T21:05:25.474630Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 102807235,
+        "id": 1987006,
+        "repository": 524541,
+        "creator": 100853,
+        "last_updater": 100853,
+        "last_updated": "2016-09-23T21:04:56.662350Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9.5",
+        "full_size": 101658454,
+        "id": 1987010,
+        "repository": 524541,
+        "creator": 100853,
+        "last_updater": 100853,
+        "last_updated": "2016-02-12T08:42:40.943262Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "xivart/docker-postgres"
+  },
+  "name": "travix/postgres Docker container",
+  "description": "A container to run the PostgreSQL database.",
+  "readme": "\n# travix/postgres\n\nThis container inherits from *travix/base:latest* and adds the following packages\n\n* postgres\n\n# Usage\n\nTo run this docker container use the following command\n\n```sh\ndocker run -d \\\n    -e POSTGRES_USER=postgres \\\n    -e POSTGRES_PASSWORD=mysecretpassword \\\n    -e PGDATA=/var/lib/postgresql/data/pgdata \\\n    travix/postgres:latest\n```\n\n# Mounting volumes\n\nIn order to keep data over restarts you can mount the following directories\n\n| Directory                       | Description                                                                                                           | Importance                     |\n| ------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------ |\n| /var/lib/postgresql/data/pgdata | This directory holds the data stored in the database; the path is the same as passed with environment variable PGDATA | Absolutely needs to be mounted |\n",
+  "dockerfile": "FROM travix/base-debian:latest\n\nMAINTAINER Travix\n\n# build time env variables\nENV LANG=en_US.utf8 \\\n    PG_MAJOR=9.5 \\\n    PG_VERSION=9.5.0-1.pgdg80+2 \\\n    PATH=/usr/lib/postgresql/$PG_MAJOR/bin:$PATH \\\n    PGDATA=/var/lib/postgresql/data\n\n    # explicitly set user/group IDs\nRUN groupadd -r postgres --gid=999 && useradd -r -g postgres --uid=999 postgres \\\n    # grab gosu for easy step-down from root\n    && gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n    && apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/* \\\n    && wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture)\" \\\n    && wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture).asc\" \\\n    && gpg --verify /usr/local/bin/gosu.asc \\\n    && rm /usr/local/bin/gosu.asc \\\n    && chmod +x /usr/local/bin/gosu \\\n    && apt-get purge -y --auto-remove ca-certificates wget \\\n    # make the \"en_US.UTF-8\" locale so postgres will be utf-8 enabled by default\n    && apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/* \\\n    && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8 \\\n    && mkdir /docker-entrypoint-initdb.d \\\n    && apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8 \\\n    && echo 'deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main' $PG_MAJOR > /etc/apt/sources.list.d/pgdg.list \\\n    && apt-get update \\\n    && apt-get install -y postgresql-common \\\n    && sed -ri 's/#(create_main_cluster) .*$/\\1 = false/' /etc/postgresql-common/createcluster.conf \\\n    && apt-get install -y \\\n      postgresql-$PG_MAJOR \\\n      postgresql-contrib-$PG_MAJOR \\\n    && rm -rf /var/lib/apt/lists/* \\\n    && mkdir -p /var/run/postgresql && chown -R postgres /var/run/postgresql\n\nVOLUME /var/lib/postgresql/data\n\nCOPY docker-entrypoint.sh /\n\nENTRYPOINT [\"/docker-entrypoint.sh\"]\n\nEXPOSE 5432\n\nCMD [\"postgres\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5432
+    ],
+    "volume": [
+      "/var/lib/postgresql/data"
+    ],
+    "run": [
+      "groupadd -r postgres --gid=999 && useradd -r -g postgres --uid=999 postgres     # grab gosu for easy step-down from root"
+    ],
+    "workdir": [],
+    "from": "travix/base-debian:latest",
+    "maintainer": "Travix",
+    "env": {
+      "LANG": "en_US.utf8",
+      "": "",
+      "PG_MAJOR": "9.5",
+      "PG_VERSION": "9.5.0-1.pgdg80+2",
+      "PATH": "/usr/lib/postgresql/$PG_MAJOR/bin:$PATH",
+      "PGDATA": "/var/lib/postgresql/data"
+    },
+    "copy": "docker-entrypoint.sh /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"postgres\"]"
+  },
+  "source_repository_url": "git@bitbucket.org:xivart/docker-postgres.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/xivart/docker-postgres",
+  "docker_repository": "travix/postgres",
+  "docker_image": "travix/postgres",
+  "parameters_schema": {
+    "LANG": {
+      "default": "en_US.utf8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PG_MAJOR": {
+      "default": "9.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PG_VERSION": {
+      "default": "9.5.0-1.pgdg80+2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/usr/lib/postgresql/$PG_MAJOR/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGDATA": {
+      "default": "/var/lib/postgresql/data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5432
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "travix/postgres",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/travix/postgres",
+    "https://hub.docker.com/v2/repositories/travix/postgres",
+    "git@bitbucket.org:xivart/docker-postgres.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/travix/postgres",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

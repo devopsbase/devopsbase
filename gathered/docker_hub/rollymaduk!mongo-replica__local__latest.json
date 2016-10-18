@@ -1,0 +1,141 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/rollymaduk/mongo-replica",
+    "repository_url": "https://hub.docker.com/v2/repositories/rollymaduk/mongo-replica",
+    "tags_url": "https://hub.docker.com/v2/repositories/rollymaduk/mongo-replica/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/rollymaduk/mongo-replica/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/rollymaduk/mongo-replica/autobuild",
+    "user": "rollymaduk",
+    "name": "mongo-replica",
+    "namespace": "rollymaduk",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 82,
+    "last_updated": "2016-09-17T23:01:42.226221Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "local",
+        "full_size": 126246161,
+        "id": 4896103,
+        "repository": 921522,
+        "creator": 971406,
+        "last_updater": 971406,
+        "last_updated": "2016-09-17T23:01:41.833554Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "cloud",
+        "full_size": 229415207,
+        "id": 4903660,
+        "repository": 921522,
+        "creator": 971406,
+        "last_updater": 971406,
+        "last_updated": "2016-09-17T23:00:41.123371Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "rollymaduk/mongo-replica"
+  },
+  "name": "rollymaduk/mongo-replica Docker container",
+  "description": "Easy MongoDb replica-set with automated scaling",
+  "readme": "Description\n------------\nA  project to create docker MongoDb containers and setup replicasets from any number of\ncontainers with automated scaling by configuring and adding new containers\nto any specified replica set automatically. The project can be used to setup\neither local replica set or using docker-cloud.\n\nPossible Uses\n---------------\nGreat for quickly setting up test mongo replicaset containers for cloud and locally\n\nUsage\n-----\n**local**  \n\n**_Run/pull docker image_**<br>\nTo create a replica set with 1 primary and 2 secondary mongo Db's \nrun the commands below but make sure that the --REPLICA_NAME\nenv variable remains the same for sibling Dbs in replica or else it will create 3 different \nprimary Db's the default value is _ReplicaSet_<p>\n\n> _Important: you must specify a shared volume and mount it to the container's\nconfig directory [default: /var/config ] the example below mounts a host\ndirectory /var/config to the container's config volume.  \nYou can use any of the docker recommended ways of sharing volumes between\ncontainers i.e mounting a host directory or data volume container),just\nyou specify the correct path for the config volume (/var/config)._\n \n>  _to change default config directory use the environment variable \n--CONFIG_DIR to setup your container. Make sure to update host volume\npath to reflect your new --CONFIG_DIR name_\n\nadd primary Db\n\n    docker run -it -e REPLICA_NAME=<your_replica_name> -v /var/config:/var/config \n    --name <your_container_name_1> rollymaduk/mongo-replica:local\n\n\nadd another Db to the replica set<p>\n\n    docker run -it -e REPLICA_NAME=<your_replica_name> -v /var/config:/var/config \n    --name <your_container_name_2> rollymaduk/mongo-replica:local\n\nand another\n\n    docker run -it -e REPLICA_NAME=<your_replica_name> -v /var/config:/var/config \n    --name <your_container_name_3> rollymaduk/mongo-replica:local\n<p>\n\n**_Use Docker Compose_**  \n\n setup your docker-compose.yml \n \n    version: \"2\"\n    services:\n      <your_service_name>:\n         image: rollymaduk/mongo-replica:local\n         environment:\n           REPLICA_NAME: \"<your_replica_name>\"\n         volumes:\n         -  /var/config:/var/config\n                \n \n run in command line  \n \n    docker-compose up\n    \n scale up to more containers\n \n    docker-compose scale <your_service_name>=3\n    \n  \n \n**Docker Cloud**  \nTo deploy mongo-db replicaSet using docker-cloud, set up a stack\nfile\n\n_stack.yml: stack file not requiring shared volumes_\n\n    <service_name>:\n      image: rollymaduk/mongo-replica:cloud\n      deployment_strategy: high_availability\n      target_num_containers: 3\n      environment:\n        REPLICA_NAME: <your_replica_name>\n        DOCKERCLOUD_AUTH: <your_docker_auth_key>\n      \n_stack.yml: stack file requiring shared volume_\n\n    <service_name>:\n      image: rollymaduk/mongo-replica:local\n      deployment_strategy: high_availability\n      target_num_containers: 3\n      volumes:\n        - /var/config:/var/config\n      environment:\n        REPLICA_NAME: <your_replica_name>\n        \nusing docker-cloud cli run in command line (If stack file does not exist in cloud)\n\n    docker-cloud stack create --name <your_stack_name> -f <your_stack_file>\n    \n    docker-cloud stack start <your_stack_name>\n        \n\nusing docker-cloud cli run in command line (If stack file already exists in cloud)\n\n    docker-cloud stack update -f <your_stack_file> <your_stack_name>\n    \n    docker-cloud stack redeploy <your_stack_name>\n\nBefore using your docker-cloud cli make sure you authenticate with your credentials.\nyou can learn more about docker-cloud cli [here](https://github.com/docker/dockercloud-cli) ",
+  "dockerfile": "FROM mongo:latest\nMAINTAINER Ronald Maduka\nENV MONGO_DIR /opt/mongor\nENV REPLICA_NAME \"ReplicaSet\"\nENV TRY_TIMES 5\nENV CONFIG_DIR /var/config\nENV REPLICA_LABEL \"mongo.replicaset.db\"\nENV LOG_FILE /var/log/mongodb.log\nCOPY . $MONGO_DIR\nLABEL $REPLICA_LABEL=$REPLICA_NAME\n#RUN bash $MONGO_DIR/init.sh\nENTRYPOINT bash $MONGO_DIR/main.sh",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [],
+    "workdir": [],
+    "from": "mongo:latest",
+    "maintainer": "Ronald Maduka",
+    "env": {
+      "MONGO_DIR": "/opt/mongor",
+      "REPLICA_NAME": "\"ReplicaSet\"",
+      "TRY_TIMES": "5",
+      "CONFIG_DIR": "/var/config",
+      "REPLICA_LABEL": "\"mongo.replicaset.db\"",
+      "LOG_FILE": "/var/log/mongodb.log"
+    },
+    "copy": ". $MONGO_DIR",
+    "label": "$REPLICA_LABEL=$REPLICA_NAME",
+    "entrypoint": "bash $MONGO_DIR/main.sh"
+  },
+  "source_repository_url": "https://github.com/rollymaduk/mongo-replica.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/rollymaduk/mongo-replica",
+  "docker_repository": "rollymaduk/mongo-replica",
+  "docker_image": "rollymaduk/mongo-replica",
+  "parameters_schema": {
+    "MONGO_DIR": {
+      "default": "/opt/mongor",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REPLICA_NAME": {
+      "default": "\"ReplicaSet\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TRY_TIMES": {
+      "default": "5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CONFIG_DIR": {
+      "default": "/var/config",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REPLICA_LABEL": {
+      "default": "\"mongo.replicaset.db\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LOG_FILE": {
+      "default": "/var/log/mongodb.log",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "rollymaduk/mongo-replica",
+  "revision": "local",
+  "uris": [
+    "https://hub.docker.com/r/rollymaduk/mongo-replica",
+    "https://hub.docker.com/v2/repositories/rollymaduk/mongo-replica",
+    "https://github.com/rollymaduk/mongo-replica.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB"
+  ],
+  "info_url": "https://hub.docker.com/r/rollymaduk/mongo-replica",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

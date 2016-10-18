@@ -1,0 +1,61 @@
+{
+  "name": "haproxy_lwrp Chef cookbook",
+  "chef_cookbook_name": "haproxy_lwrp",
+  "revision": "2.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/haproxy_lwrp",
+    "https://supermarket.chef.io/cookbooks/haproxy_lwrp/download",
+    "https://supermarket.chef.io/cookbooks/haproxy_lwrp/versions/2.0.1",
+    "https://supermarket.chef.io/cookbooks/haproxy_lwrp/versions/2.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/haproxy_lwrp/versions/2.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/haproxy_lwrp",
+    "https://supermarket.chef.io/api/v1/cookbooks/haproxy_lwrp/versions/2.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Networking",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/haproxy_lwrp",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/haproxy_lwrp/versions/2.0.1/download",
+  "deprecated": false,
+  "created": "2013-02-23T03:54:59.000Z",
+  "updated": "2013-03-13T02:09:25.000Z",
+  "description": "Installs and configures haproxy",
+  "maintainer": {
+    "name": "scottmlikens",
+    "email": "scott@likens.us"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 3787340,
+  "downloads_count_revision": 1262404,
+  "repository_url": "https://github.com/damm/haproxy_lwrp",
+  "issues_url": "https://github.com/damm/haproxy_lwrp",
+  "chef_source_url": "https://github.com/damm/haproxy_lwrp",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nImplementation free resource and provider to configure haproxy instances.  Example below is a very rough example, you can load settings from roles, environments, data bags and or recipes themselves (like below).  \n\nSometimes design changes, we don't want to rewrite a whole new recipe and template for each change that is not productive.\n\nChanges\n=======\n\n## v2.0.0:\n\n* Add Basic LWRP\n\nRequirements\n============\n\n## Platform\n\nTested on Ubuntu 8.10 and higher.\n\n## Cookbooks:\n\nUsage\n==================\n\nSee tests or `recipe/lwrp_example.rb` for working examples.\n\n```ruby\nfrontend_temp=Array.new  \nfrontend_temp << {\"name\" => \"http-in *:80\", \"acl\" => \"acl bob-acl path_beg /status\\nacl bob-acl2 path_beg /status2 if bob-acl\\n\", \"default_backend\" => \"www\" }  \nfrontend_temp << {\"name\" => \"https-in *:443\", \"default_backend\" => \"www\" }  \nbackend_temp=Array.new  \nbackend_temp << { \"name\" => \"www\", \"mode\" => \"http\", \"balance\" => \"leastconn\" , \"option\" => \"option httpclose\\noption redispatch\\noption httpchk GET / HTTP/1.1\\\\r\\\\nHost: wwww\\noption redispatch\\n\", \"other\" => \"check\", \"server\" => [\"172.29.11.3\",\"172.29.11.4\"], \"start_port\" => 80, \"instance_count\" => 1}  \nbackend_temp << { \"name\" => \"https\", \"mode\" => \"tcp\", \"balance\" => \"leastconn\" , \"option\" => \"option httpclose\\noption redispatch\\noption httpchk GET / HTTP/1.1\\\\r\\\\nHost: wwww\\noption redispatch\\n\", \"other\" => \"check\", \"server\" => [\"127.0.0.1\"], \"maxconn\" => 2, \"start_port\" => 443, \"instance_count\" => 1}  \nbackend_temp << { \"name\" => \"unicorn\", \"mode\" => \"tcp\", \"balance\" => \"leastconn\" , \"option\" => \"option httpclose\\noption redispatch\\noption httpchk GET / HTTP/1.1\\\\r\\\\nHost: wwww\\noption redispatch\\n\", \"other\" => \"check\", \"server\" => [\"127.0.0.1\"], \"maxconn\" => 20, \"start_port\" => 8080, \"instance_count\" => 1}  \nbackend_temp << { \"name\" => \"manythins\", \"mode\" => \"tcp\", \"balance\" => \"leastconn\" , \"option\" => \"option httpclose\\noption redispatch\\noption httpchk GET / HTTP/1.1\\\\r\\\\nHost: wwww\\noption redispatch\\n\", \"other\" => \"check\", \"server\" => [\"127.0.0.1\"], \"maxconn\" => 20, \"start_port\" => 3000, \"instance_count\" => 4}  \nlisten_temp=Array.new  \nlisten_temp <<   {\"name\" => \"fart 0.0.0.0:22002\", \"mode\" => \"http\", \"stats\" => \"stats uri /\"}  \ninclude_recipe \"haproxy::install\"  \ninclude_recipe \"runit\"  \nhaproxy_lwrp_lb \"adserver\" do  \nfrontend(frontend_temp)  \nbackend(backend_temp)  \nlisten(listen_temp)  \naction :create  \nend  \n```\n\nAnother example \n\n```ruby\nlisten_temp=Array.new  \nlisten_temp << { \"name\" => \"carbon-relay-plain 0.0.0.0:2003\", \"mode\" => \"tcp\", \"server\" => [\"127.0.0.1\"], \"start_port\" => 2031, \"instance_count\" => 3}\nlisten_temp << { \"name\" => \"carbon-relay-pickle 0.0.0.0:2004\", \"mode\" => \"tcp\", \"server\" => [\"127.0.0.1\"], \"start_port\" => 2041, \"instance_count\" => 3}\nhaproxy_lwrp_lb \"haproxy\" do\n  global({\"maxconn\" => 65535, \"ulimit-n\" => 160000, \"user\" => \"haproxy\", \"group\" => \"haproxy\", \"stats\" => \"socket /var/run/haproxy.sock mode 0600 level admin user root\" })\n  defaults({ \"log\" => \"global\", \"mode\" => \"http\", \"option\" => \"dontlognull\", \"balance\" => \"leastconn\", \"srvtimeout\" => 60000, \"contimeout\" => 5000, \"retries\" => 3,\"option\" => \"redispatch\\noption contstats\"})\n  listen(listen_temp)\n    action :create\nend\n```    \n\nLicense and Author\n==================\n\nAuthor:: Scott M. Likens (<scott@likens.us>)\n\nCopyright:: 2013, Scott M. Likens.\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": "= 12.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/runit",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "haproxy": "Installs and configures haproxy"
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/tozd/mysql",
+    "repository_url": "https://hub.docker.com/v2/repositories/tozd/mysql",
+    "tags_url": "https://hub.docker.com/v2/repositories/tozd/mysql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/tozd/mysql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/tozd/mysql/autobuild",
+    "user": "tozd",
+    "name": "mysql",
+    "namespace": "tozd",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1639,
+    "last_updated": "2016-10-17T02:51:46.085110Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "5.5",
+        "full_size": 129094983,
+        "id": 1444649,
+        "repository": 236628,
+        "creator": 345635,
+        "last_updater": 169842,
+        "last_updated": "2016-10-17T02:51:45.653759Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 125629316,
+        "id": 404548,
+        "repository": 236628,
+        "creator": 47870,
+        "last_updater": 169842,
+        "last_updated": "2016-10-17T02:24:57.638305Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "tozd/docker-mysql"
+  },
+  "name": "tozd/mysql Docker container",
+  "description": "MySQL (MariaDB fork) Docker image.",
+  "readme": "Image providing [MySQL (MariaDB fork)](https://mariadb.org/) as a service.\n\nDifferent branches/tags provide different MySQL versions.\n\nYou should make sure you mount data volume (`/var/lib/mysql`) so that you do not\nlose database data when you are recreating a container. If a volume is empty, image\nwill initialize it at the first startup.\n\nThe intended use of this image is that it is shared between multiple other services\nand that you create databases and users accordingly.\n\nAfter first run, you can connect to the MySQL as an administrator from the inside\nthe container, for example, for a container named `mysql`:\n\n```\n$ docker exec -t -i mysql /bin/bash\n$ mysql -u root\n```\n\nYou should set MySQL root user's password as soon as possible:\n\n```\n$ mysqladmin -u root password '<PASSWORD>'\n```\n\nAfter that you can connect to the MySQL using:\n\n```\n$ mysql -u root -p\n```\n\nYou can create database:\n\n```\n> CREATE DATABASE <DBNAME>\n```\n\nYou can create users:\n\n```\n> GRANT ALL PRIVILEGES ON <DBNAME>.* TO '<USERNAME>'@'%' IDENTIFIED BY '<PASSWORD>'\n```\n",
+  "dockerfile": "FROM tozd/runit\n\nEXPOSE 3306/tcp\n\nVOLUME /var/log/mysql\nVOLUME /var/lib/mysql\n\nRUN apt-get update -q -q && \\\n apt-get install --yes --force-yes mariadb-server && \\\n mkdir -m 700 /var/lib/mysql.orig && \\\n mv /var/lib/mysql/* /var/lib/mysql.orig/ && \\\n rm -f /etc/mysql/conf.d/mysqld_safe_syslog.cnf\n\nCOPY ./patches patches\n\nRUN \\\n apt-get install patch --yes --force-yes && \\\n for patch in patches/*; do patch --prefix=./patches/ -p0 --force \"--input=$patch\" || exit 1; done && \\\n rm -rf patches && \\\n apt-get purge patch --yes --force-yes && \\\n apt-get autoremove --yes --force-yes\n\nCOPY ./etc /etc\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      "/var/log/mysql",
+      "/var/lib/mysql"
+    ],
+    "run": [
+      "apt-get update -q -q &&  apt-get install --yes --force-yes mariadb-server &&  mkdir -m 700 /var/lib/mysql.orig &&  mv /var/lib/mysql/* /var/lib/mysql.orig/ &&  rm -f /etc/mysql/conf.d/mysqld_safe_syslog.cnf",
+      " apt-get install patch --yes --force-yes &&  for patch in patches/*; do patch --prefix=./patches/ -p0 --force \"--input=$patch\" || exit 1; done &&  rm -rf patches &&  apt-get purge patch --yes --force-yes &&  apt-get autoremove --yes --force-yes"
+    ],
+    "workdir": [],
+    "from": "tozd/runit",
+    "copy": "./etc /etc"
+  },
+  "source_repository_url": "https://github.com/tozd/docker-mysql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/tozd/docker-mysql",
+  "docker_repository": "tozd/mysql",
+  "docker_image": "tozd/mysql",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "tozd/mysql",
+  "revision": "5.5",
+  "uris": [
+    "https://hub.docker.com/r/tozd/mysql",
+    "https://hub.docker.com/v2/repositories/tozd/mysql",
+    "https://github.com/tozd/docker-mysql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Data Store/Relational/MySQL",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/tozd/mysql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

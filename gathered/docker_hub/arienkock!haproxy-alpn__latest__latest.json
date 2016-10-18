@@ -1,0 +1,130 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/arienkock/haproxy-alpn",
+    "repository_url": "https://hub.docker.com/v2/repositories/arienkock/haproxy-alpn",
+    "tags_url": "https://hub.docker.com/v2/repositories/arienkock/haproxy-alpn/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/arienkock/haproxy-alpn/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/arienkock/haproxy-alpn/autobuild",
+    "user": "arienkock",
+    "name": "haproxy-alpn",
+    "namespace": "arienkock",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 67,
+    "last_updated": "2016-09-28T06:36:16.262290Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 126975433,
+        "id": 3724463,
+        "repository": 785154,
+        "creator": 602813,
+        "last_updater": 602813,
+        "last_updated": "2016-09-28T06:36:15.971415Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "arienkock/haproxy"
+  },
+  "name": "arienkock/haproxy-alpn Docker container",
+  "description": "A fork of the official haproxy image, but compiled with OpenSSL 1.0.2j for ALPN support.",
+  "readme": "# Intro\nA fork of the official HAProxy Docker image with a newer OpenSSL so we can use ALPN for HTTP/2. Only version HAProxy 1.6 is built. \n\n# Usage\nThe usage is identical to the original, see https://hub.docker.com/_/haproxy/\nWith the obvious exception that the image name should be `arienkock/haproxy-alpn`.\n\n## Reloading\nAs the official image README suggests, using signals you can reload the configuration for near-zero-downtime updates. However, __!!!IMPORTANT!!!__: if you mount the haproxy .cfg file as a file mount instead of a directory mount in Docker, changes will not be reflected and reloading will simply pick up the old config. That's because the container gets a COPY of the file if you mount a file rather than a directory containing the cfg file. Here is an example _Systemd_ service file you can use (notice the `ExecReload` line).\n\n```\n[Unit]\nDescription=HAProxy\nAfter=docker.service\n\n[Service]\nExecStart=/usr/bin/docker run --rm --name %n -t \\\n  -p 80:80 -p 443:443 \\\n  -v /etc/haproxy:/usr/local/etc/haproxy \\\n  arienkock/haproxy-alpn\nExecReload=/usr/bin/docker kill -s HUP %n\nExecStop=/usr/bin/docker stop -t 10 %n\nExecStopPost=/usr/bin/docker rm -f %n\nRestart=always\n\n[Install]\nWantedBy=multi-user.target\n```\n\n# OpenSSL version\n\nBuilt with OpenSSL 1.0.2h as can be seen by running:\n\n```sh\n$ docker run --rm arienkock/haproxy-alpn haproxy -vv\nHA-Proxy version 1.6.9 2016/08/30\nCopyright 2000-2016 Willy Tarreau <willy@haproxy.org>\n\nBuild options :\n  TARGET  = linux2628\n  CPU     = generic\n  CC      = gcc\n  CFLAGS  = -O2 -g -fno-strict-aliasing -Wdeclaration-after-statement\n  OPTIONS = USE_ZLIB=1 USE_OPENSSL=1 USE_STATIC_PCRE=1 USE_PCRE_JIT=1\n\nDefault settings :\n  maxconn = 2000, bufsize = 16384, maxrewrite = 1024, maxpollevents = 200\n\nEncrypted password support via crypt(3): yes\nBuilt with zlib version : 1.2.8\nCompression algorithms supported : identity(\"identity\"), deflate(\"deflate\"), raw-deflate(\"deflate\"), gzip(\"gzip\")\nBuilt with OpenSSL version : OpenSSL 1.0.2j  26 Sep 2016\nRunning on OpenSSL version : OpenSSL 1.0.2j  26 Sep 2016\nOpenSSL library supports TLS extensions : yes\nOpenSSL library supports SNI : yes\nOpenSSL library supports prefer-server-ciphers : yes\nBuilt with PCRE version : 8.35 2014-04-04\nPCRE library supports JIT : yes\nBuilt without Lua support\nBuilt with transparent proxy support using: IP_TRANSPARENT IPV6_TRANSPARENT IP_FREEBIND\n\nAvailable polling systems :\n      epoll : pref=300,  test result OK\n       poll : pref=200,  test result OK\n     select : pref=150,  test result OK\nTotal: 3 (3 usable), will use epoll.\n\n<7>haproxy-systemd-wrapper: executing /usr/local/sbin/haproxy -p /run/haproxy.pid -vv -Ds\n<5>haproxy-systemd-wrapper: exit, haproxy RC=0\n```\n",
+  "dockerfile": "FROM debian:jessie\n\nRUN apt-get update && apt-get install -y libssl1.0.0 libpcre3 --no-install-recommends && rm -rf /var/lib/apt/lists/*\n\nENV HAPROXY_MAJOR=1.6\nENV HAPROXY_VERSION=1.6.9\nENV HAPROXY_MD5=c52eee40eb66f290d6f089c339b9d2b3\nENV OPENSSL_VERSION=1.0.2j\nENV WORK_DIR=/tmp/build\nENV STATICLIBSSL=$WORK_DIR/staticlibssl\n\nRUN mkdir -p $WORK_DIR; cd $WORK_DIR; buildDeps='gcc libc6-dev libpcre3-dev zlib1g-dev make'; otherDeps='curl ca-certificates' \\\n\t&& apt-get update && apt-get install -y $buildDeps $otherDeps --no-install-recommends \\\n\t&& curl -O https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz \\\n\t&& tar -zxf openssl-$OPENSSL_VERSION.tar.gz \\\n\t&& cd openssl-* \\\n\t&& ./config --prefix=$STATICLIBSSL --openssldir=/etc/ssl --libdir=lib no-shared zlib-dynamic \\\n\t&& make && make install_sw \\\n\t&& curl -SL \"http://www.haproxy.org/download/${HAPROXY_MAJOR}/src/haproxy-${HAPROXY_VERSION}.tar.gz\" -o haproxy.tar.gz \\\n\t&& echo \"${HAPROXY_MD5}  haproxy.tar.gz\" | md5sum -c \\\n\t&& mkdir -p $WORK_DIR/haproxy \\\n\t&& tar -xzf haproxy.tar.gz -C $WORK_DIR/haproxy --strip-components=1 \\\n\t&& rm haproxy.tar.gz \\\n\t&& make -C $WORK_DIR/haproxy \\\n\t\tTARGET=linux2628 \\\n\t\tUSE_PCRE=1 USE_STATIC_PCRE=1 USE_PCRE_JIT=1 \\\n\t\tUSE_OPENSSL=1 SSL_INC=$STATICLIBSSL/include SSL_LIB=$STATICLIBSSL/lib \\\n\t\tUSE_ZLIB=1 ADDLIB=-ldl \\\n\t\tall \\\n\t\tinstall-bin \\\n\t&& rm -rf /usr/src/haproxy \\\n\t&& apt-get purge -y --auto-remove $buildDeps\n\n\nCOPY docker-entrypoint.sh /\nENTRYPOINT [\"/docker-entrypoint.sh\"]\nCMD [\"haproxy\", \"-f\", \"/usr/local/etc/haproxy/haproxy.cfg\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y libssl1.0.0 libpcre3 --no-install-recommends && rm -rf /var/lib/apt/lists/*",
+      "mkdir -p $WORK_DIR; cd $WORK_DIR; buildDeps='gcc libc6-dev libpcre3-dev zlib1g-dev make'; otherDeps='curl ca-certificates' \t&& apt-get update && apt-get install -y $buildDeps $otherDeps --no-install-recommends \t&& curl -O https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz \t&& tar -zxf openssl-$OPENSSL_VERSION.tar.gz \t&& cd openssl-* \t&& ./config --prefix=$STATICLIBSSL --openssldir=/etc/ssl --libdir=lib no-shared zlib-dynamic \t&& make && make install_sw \t&& curl -SL \"http://www.haproxy.org/download/${HAPROXY_MAJOR}/src/haproxy-${HAPROXY_VERSION}.tar.gz\" -o haproxy.tar.gz \t&& echo \"${HAPROXY_MD5}  haproxy.tar.gz\" | md5sum -c \t&& mkdir -p $WORK_DIR/haproxy \t&& tar -xzf haproxy.tar.gz -C $WORK_DIR/haproxy --strip-components=1 \t&& rm haproxy.tar.gz \t&& make -C $WORK_DIR/haproxy \t\tTARGET=linux2628 \t\tUSE_PCRE=1 USE_STATIC_PCRE=1 USE_PCRE_JIT=1 \t\tUSE_OPENSSL=1 SSL_INC=$STATICLIBSSL/include SSL_LIB=$STATICLIBSSL/lib \t\tUSE_ZLIB=1 ADDLIB=-ldl \t\tall \t\tinstall-bin \t&& rm -rf /usr/src/haproxy \t&& apt-get purge -y --auto-remove $buildDeps"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "env": {
+      "HAPROXY_MAJOR": "1.6",
+      "HAPROXY_VERSION": "1.6.9",
+      "HAPROXY_MD5": "c52eee40eb66f290d6f089c339b9d2b3",
+      "OPENSSL_VERSION": "1.0.2j",
+      "WORK_DIR": "/tmp/build",
+      "STATICLIBSSL": "$WORK_DIR/staticlibssl"
+    },
+    "copy": "docker-entrypoint.sh /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"haproxy\", \"-f\", \"/usr/local/etc/haproxy/haproxy.cfg\"]"
+  },
+  "source_repository_url": "https://github.com/arienkock/haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/arienkock/haproxy",
+  "docker_repository": "arienkock/haproxy-alpn",
+  "docker_image": "arienkock/haproxy-alpn",
+  "parameters_schema": {
+    "HAPROXY_MAJOR": {
+      "default": "1.6",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_VERSION": {
+      "default": "1.6.9",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_MD5": {
+      "default": "c52eee40eb66f290d6f089c339b9d2b3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OPENSSL_VERSION": {
+      "default": "1.0.2j",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WORK_DIR": {
+      "default": "/tmp/build",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "STATICLIBSSL": {
+      "default": "$WORK_DIR/staticlibssl",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "arienkock/haproxy-alpn",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/arienkock/haproxy-alpn",
+    "https://hub.docker.com/v2/repositories/arienkock/haproxy-alpn",
+    "https://github.com/arienkock/haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/arienkock/haproxy-alpn",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,226 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/inox42/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/inox42/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/inox42/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/inox42/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/inox42/owncloud/autobuild",
+    "user": "inox42",
+    "name": "owncloud",
+    "namespace": "inox42",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 54,
+    "last_updated": "2016-10-16T20:50:52.516389Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "owncloud-9.1.1",
+        "full_size": 286744089,
+        "id": 5487538,
+        "repository": 669661,
+        "creator": 644268,
+        "last_updater": 644268,
+        "last_updated": "2016-10-16T20:50:52.196677Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 286744566,
+        "id": 3978362,
+        "repository": 669661,
+        "creator": 644268,
+        "last_updater": 644268,
+        "last_updated": "2016-10-16T19:55:51.684962Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "owncloud-9.1.0",
+        "full_size": 270477699,
+        "id": 3978343,
+        "repository": 669661,
+        "creator": 644268,
+        "last_updater": 644268,
+        "last_updated": "2016-07-25T19:55:31.434509Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "owncloud-9.0.4",
+        "full_size": 296293698,
+        "id": 3978334,
+        "repository": 669661,
+        "creator": 644268,
+        "last_updater": 644268,
+        "last_updated": "2016-07-24T20:21:19.615215Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "owncloud-8.2.7",
+        "full_size": 295525460,
+        "id": 3978312,
+        "repository": 669661,
+        "creator": 644268,
+        "last_updater": 644268,
+        "last_updated": "2016-07-24T20:13:32.571544Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "owncloud-8.2.5",
+        "full_size": 286283598,
+        "id": 3110721,
+        "repository": 669661,
+        "creator": 644268,
+        "last_updater": 644268,
+        "last_updated": "2016-05-21T11:16:42.073833Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      }
+    ],
+    "build_name": "inox42/docker-owncloud"
+  },
+  "name": "inox42/owncloud Docker container",
+  "description": "owncloud docker image",
+  "readme": "# docker-owncloud\nMy owncloud docker image\n\nBased on inox42/php-fpm.\n",
+  "dockerfile": "FROM inox42/php-fpm:nginx-1.11.2\nMAINTAINER inox42\n\n# Clear base directory\nRUN rm -rf /data/html/*\n\n# Install packages\nRUN apt-get update && \\\n        apt-get install -y smbclient php5-apcu && \\\n        apt-get clean\n\n# Install ownCloud\nRUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys E3036906AD9F30807351FAC32D5D5E97F6978A26\nENV OWNCLOUD_VERSION 9.1.1\nRUN curl -fsSL -o owncloud.tar.bz2 \"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2\" && \\\n        curl -fsSL -o owncloud.tar.bz2.asc \"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2.asc\" && \\\n        gpg --verify owncloud.tar.bz2.asc && \\\n        tar -xjf owncloud.tar.bz2 -C /usr/src/ && \\\n        rm owncloud.tar.bz2 owncloud.tar.bz2.asc\n\n# Volume\nRUN mkdir /data/owncloud\nVOLUME /data/owncloud\nRUN mkdir /data/tmp\nVOLUME /data/tmp\n\n# Configure php5-fpm\nRUN echo \"env[HOSTNAME] = \\$HOSTNAME\" >> /etc/php5/fpm/php-fpm.conf\nRUN echo \"env[PATH] = /usr/local/bin:/usr/bin:/bin\" >> /etc/php5/fpm/php-fpm.conf\nRUN echo \"env[TMP] = /data/tmp\" >> /etc/php5/fpm/php-fpm.conf\nRUN echo \"env[TMPDIR] = /data/tmp\" >> /etc/php5/fpm/php-fpm.conf\nRUN echo \"env[TEMP] = /data/tmp\" >> /etc/php5/fpm/php-fpm.conf\n\n# Configure ownCloud\nRUN rm /etc/nginx/host.d/*.conf\nRUN rm /etc/nginx/conf.d/*.conf\nADD etc /etc\nADD data /data\n\n# Update php5-fpm to accept big file\nRUN sed -i 's/upload_max_filesize.*/upload_max_filesize = 16G/g' /etc/php5/fpm/php.ini\nRUN sed -i 's/post_max_size.*/post_max_size = 16G/g' /etc/php5/fpm/php.ini\nRUN sed -i 's/output_buffering.*/output_buffering = 0/g' /etc/php5/fpm/php.ini\n\n# Autorize owncloud to change max file size\nRUN chown 777 /usr/src/owncloud/.htaccess\nRUN chown 777 /usr/src/owncloud/.user.ini\nRUN sed -i 's/513M/16G/g' /usr/src/owncloud/.htaccess\nRUN sed -i 's/513M/16G/g' /usr/src/owncloud/.user.ini\n\n# Environnement\nENV OWNCLOUD_SSL \"NO\"\nENV NGINX_SSL_CRT \"/data/cert/owncloud.crt\"\nENV NGINX_SSL_KEY \"/data/cert/owncloud.key\"\nENV NGINX_SSL_DOCKER_PORT 443\n\n# Port\nEXPOSE 80 443\n\n# Entrypoint\nENTRYPOINT [\"/data/init/init.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "etc",
+        "dest": "/etc"
+      },
+      {
+        "source": "data",
+        "dest": "/data"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "/data/owncloud",
+      "/data/tmp"
+    ],
+    "run": [
+      "rm -rf /data/html/*",
+      "apt-get update &&         apt-get install -y smbclient php5-apcu &&         apt-get clean",
+      "gpg --keyserver ha.pool.sks-keyservers.net --recv-keys E3036906AD9F30807351FAC32D5D5E97F6978A26",
+      "curl -fsSL -o owncloud.tar.bz2 \"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2\" &&         curl -fsSL -o owncloud.tar.bz2.asc \"https://download.owncloud.org/community/owncloud-${OWNCLOUD_VERSION}.tar.bz2.asc\" &&         gpg --verify owncloud.tar.bz2.asc &&         tar -xjf owncloud.tar.bz2 -C /usr/src/ &&         rm owncloud.tar.bz2 owncloud.tar.bz2.asc",
+      "mkdir /data/owncloud",
+      "mkdir /data/tmp",
+      "echo \"env[HOSTNAME] = \\$HOSTNAME\" >> /etc/php5/fpm/php-fpm.conf",
+      "echo \"env[PATH] = /usr/local/bin:/usr/bin:/bin\" >> /etc/php5/fpm/php-fpm.conf",
+      "echo \"env[TMP] = /data/tmp\" >> /etc/php5/fpm/php-fpm.conf",
+      "echo \"env[TMPDIR] = /data/tmp\" >> /etc/php5/fpm/php-fpm.conf",
+      "echo \"env[TEMP] = /data/tmp\" >> /etc/php5/fpm/php-fpm.conf",
+      "rm /etc/nginx/host.d/*.conf",
+      "rm /etc/nginx/conf.d/*.conf",
+      "sed -i 's/upload_max_filesize.*/upload_max_filesize = 16G/g' /etc/php5/fpm/php.ini",
+      "sed -i 's/post_max_size.*/post_max_size = 16G/g' /etc/php5/fpm/php.ini",
+      "sed -i 's/output_buffering.*/output_buffering = 0/g' /etc/php5/fpm/php.ini",
+      "chown 777 /usr/src/owncloud/.htaccess",
+      "chown 777 /usr/src/owncloud/.user.ini",
+      "sed -i 's/513M/16G/g' /usr/src/owncloud/.htaccess",
+      "sed -i 's/513M/16G/g' /usr/src/owncloud/.user.ini"
+    ],
+    "workdir": [],
+    "from": "inox42/php-fpm:nginx-1.11.2",
+    "maintainer": "inox42",
+    "env": {
+      "OWNCLOUD_VERSION": "9.1.1",
+      "OWNCLOUD_SSL": "\"NO\"",
+      "NGINX_SSL_CRT": "\"/data/cert/owncloud.crt\"",
+      "NGINX_SSL_KEY": "\"/data/cert/owncloud.key\"",
+      "NGINX_SSL_DOCKER_PORT": "443"
+    },
+    "entrypoint": "[\"/data/init/init.sh\"]"
+  },
+  "source_repository_url": "https://github.com/inox42/docker-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/inox42/docker-owncloud",
+  "docker_repository": "inox42/owncloud",
+  "docker_image": "inox42/owncloud",
+  "parameters_schema": {
+    "OWNCLOUD_VERSION": {
+      "default": "9.1.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OWNCLOUD_SSL": {
+      "default": "\"NO\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NGINX_SSL_CRT": {
+      "default": "\"/data/cert/owncloud.crt\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NGINX_SSL_KEY": {
+      "default": "\"/data/cert/owncloud.key\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NGINX_SSL_DOCKER_PORT": {
+      "default": "443",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "inox42/owncloud",
+  "revision": "owncloud-9.1.1",
+  "uris": [
+    "https://hub.docker.com/r/inox42/owncloud",
+    "https://hub.docker.com/v2/repositories/inox42/owncloud",
+    "https://github.com/inox42/docker-owncloud.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image"
+  ],
+  "info_url": "https://hub.docker.com/r/inox42/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

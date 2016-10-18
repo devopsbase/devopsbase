@@ -1,0 +1,149 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/qnib/alpn-go-dev",
+    "repository_url": "https://hub.docker.com/v2/repositories/qnib/alpn-go-dev",
+    "tags_url": "https://hub.docker.com/v2/repositories/qnib/alpn-go-dev/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/qnib/alpn-go-dev/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/qnib/alpn-go-dev/autobuild",
+    "user": "qnib",
+    "name": "alpn-go-dev",
+    "namespace": "qnib",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 97,
+    "last_updated": "2016-10-09T08:44:59.304747Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 403683497,
+        "id": 2098671,
+        "repository": 543824,
+        "creator": 14576,
+        "last_updater": 14576,
+        "last_updated": "2016-10-09T08:44:56.936394Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "edge",
+        "full_size": 423752298,
+        "id": 5277653,
+        "repository": 543824,
+        "creator": 14576,
+        "last_updater": 14576,
+        "last_updated": "2016-10-06T13:37:19.631013Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "libsodium",
+        "full_size": 156659497,
+        "id": 3069546,
+        "repository": 543824,
+        "creator": 14576,
+        "last_updater": 14576,
+        "last_updated": "2016-05-18T16:12:05.549254Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      }
+    ],
+    "build_name": "qnib/alpn-go-dev"
+  },
+  "name": "qnib/alpn-go-dev Docker container",
+  "description": "Alpine image to build golang projects",
+  "readme": "# alpn-go-dev\nAlpine image to build golang projects\n",
+  "dockerfile": "FROM qnib/alpn-base\n\nENV GOPATH=/usr/local \\\n    LD_LIBRARY_PATH=/usr/local/lib \\\n    PKG_CONFIG_PATH=/usr/local/lib/pkgconfig/\nARG ZMQ_VER=4.1.5\nARG CZMQ_VER=3.0.2\nARG SODIUM_VER=1.0.11\nARG GLIBC_VER=2.23-r3\n\n# do all in one step\nRUN apk --no-cache add bc curl ca-certificates bash git go make python py-configobj py-mock libtool automake autoconf g++ make libffi-dev openssl-dev openssl mercurial \\\n && curl -sLo /tmp/glibc.apk \"https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-${GLIBC_VER}.apk\" \\\n && apk add --allow-untrusted /tmp/glibc.apk \\\n && curl -sLo /tmp/glibc-bin.apk \"https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-bin-${GLIBC_VER}.apk\" \\\n && apk add --allow-untrusted /tmp/glibc-bin.apk \\\n && ldconfig /lib /usr/glibc/usr/lib \\\n && mkdir -p /opt/ \\\n && wget -qO - https://download.libsodium.org/libsodium/releases/libsodium-${SODIUM_VER}.tar.gz |tar xfz - -C /opt/ \\\n && cd /opt/libsodium-${SODIUM_VER} \\\n && ./configure --prefix=/usr/local/ \\\n && make check \\\n && make install \\\n && wget -qO - https://github.com/zeromq/zeromq4-1/releases/download/v${ZMQ_VER}/zeromq-${ZMQ_VER}.tar.gz |tar xfz - -C /opt/ \\\n && cd /opt/zeromq-${ZMQ_VER} \\\n && ./configure --with-libsodium \\\n && make \\\n && make install \\\n && wget -qO - https://github.com/zeromq/czmq/archive/v${CZMQ_VER}.tar.gz | tar xfz - -C /opt/ \\\n && cd /opt/czmq-${CZMQ_VER} \\\n && ./autogen.sh \\\n && ./configure \\\n && make -j2 \\\n && make install \\\n && cd \\\n && rm -rf /opt/zeromq* /opt/czmq*\nRUN echo http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories \\\n  && apk --no-cache add gnuplot\nRUN for x in docker/docker docker/go-connections docker/go-units Sirupsen/logrus\\\n             BurntSushi/toml bugsnag/osext \\\n             bugsnag/panicwrap codegangsta/cli denverdino/aliyungo \\\n             docker/distribution docker/go docker/goamz docker/libkv \\\n             docker/libnetwork docker/libtrust garyburd/redigo godbus/dbus \\\n             golang/protobuf gorilla/context gorilla/handlers gorilla/mux \\\n             hashicorp/memberlist inconshreveable/mousetrap influxdata/influxdb \\\n             kr/pty mattn/go microsoft/hcsshim mistifyio/gozfs \\\n             mitchellh/mapstructure natefinch/npipe ncw/swift opencontainers/runc \\\n             pebbe/zmq4 pquerna/ffjson qnib/qcollect seccomp/libseccomp \\\n             stevvooe/resumable syndtr/gocapability urfave/cli vishvananda/netlink \\\n             vishvananda/netns xenolf/lego ;do echo \"# ${x}\"; if [ \"X${x}\" != \"X\" ];then git clone https://github.com/${x} ${GOPATH}/src/github.com/${x}; fi ;done\n             #yvasiyarov/go yvasiyarov/gorelic  yvasiyarov/newrelic\nRUN go get golang.org/x/net/context cmd/cover github.com/mattn/gom github.com/stretchr/testify/assert github.com/pkg/errors\nRUN git clone https://github.com/davecheney/profile.git ${GOPATH}/src/github.com/davecheney/profile \\\n && git -C ${GOPATH}/src/github.com/davecheney/profile checkout v0.1.0-rc.1\nRUN git clone  https://github.com/docker/engine-api ${GOPATH}/src/github.com/docker/engine-api \\\n && git -C ${GOPATH}/src/github.com/docker/engine-api checkout release/1.12\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apk --no-cache add bc curl ca-certificates bash git go make python py-configobj py-mock libtool automake autoconf g++ make libffi-dev openssl-dev openssl mercurial  && curl -sLo /tmp/glibc.apk \"https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-${GLIBC_VER}.apk\"  && apk add --allow-untrusted /tmp/glibc.apk  && curl -sLo /tmp/glibc-bin.apk \"https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-bin-${GLIBC_VER}.apk\"  && apk add --allow-untrusted /tmp/glibc-bin.apk  && ldconfig /lib /usr/glibc/usr/lib  && mkdir -p /opt/  && wget -qO - https://download.libsodium.org/libsodium/releases/libsodium-${SODIUM_VER}.tar.gz |tar xfz - -C /opt/  && cd /opt/libsodium-${SODIUM_VER}  && ./configure --prefix=/usr/local/  && make check  && make install  && wget -qO - https://github.com/zeromq/zeromq4-1/releases/download/v${ZMQ_VER}/zeromq-${ZMQ_VER}.tar.gz |tar xfz - -C /opt/  && cd /opt/zeromq-${ZMQ_VER}  && ./configure --with-libsodium  && make  && make install  && wget -qO - https://github.com/zeromq/czmq/archive/v${CZMQ_VER}.tar.gz | tar xfz - -C /opt/  && cd /opt/czmq-${CZMQ_VER}  && ./autogen.sh  && ./configure  && make -j2  && make install  && cd  && rm -rf /opt/zeromq* /opt/czmq*",
+      "echo http://nl.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories   && apk --no-cache add gnuplot",
+      "for x in docker/docker docker/go-connections docker/go-units Sirupsen/logrus             BurntSushi/toml bugsnag/osext              bugsnag/panicwrap codegangsta/cli denverdino/aliyungo              docker/distribution docker/go docker/goamz docker/libkv              docker/libnetwork docker/libtrust garyburd/redigo godbus/dbus              golang/protobuf gorilla/context gorilla/handlers gorilla/mux              hashicorp/memberlist inconshreveable/mousetrap influxdata/influxdb              kr/pty mattn/go microsoft/hcsshim mistifyio/gozfs              mitchellh/mapstructure natefinch/npipe ncw/swift opencontainers/runc              pebbe/zmq4 pquerna/ffjson qnib/qcollect seccomp/libseccomp              stevvooe/resumable syndtr/gocapability urfave/cli vishvananda/netlink              vishvananda/netns xenolf/lego ;do echo \"# ${x}\"; if [ \"X${x}\" != \"X\" ];then git clone https://github.com/${x} ${GOPATH}/src/github.com/${x}; fi ;done",
+      "go get golang.org/x/net/context cmd/cover github.com/mattn/gom github.com/stretchr/testify/assert github.com/pkg/errors",
+      "git clone https://github.com/davecheney/profile.git ${GOPATH}/src/github.com/davecheney/profile  && git -C ${GOPATH}/src/github.com/davecheney/profile checkout v0.1.0-rc.1",
+      "git clone  https://github.com/docker/engine-api ${GOPATH}/src/github.com/docker/engine-api  && git -C ${GOPATH}/src/github.com/docker/engine-api checkout release/1.12"
+    ],
+    "workdir": [],
+    "from": "qnib/alpn-base",
+    "env": {
+      "GOPATH": "/usr/local",
+      "": "",
+      "LD_LIBRARY_PATH": "/usr/local/lib",
+      "PKG_CONFIG_PATH": "/usr/local/lib/pkgconfig/"
+    },
+    "arg": "GLIBC_VER=2.23-r3"
+  },
+  "source_repository_url": "https://github.com/qnib/alpn-go-dev.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/qnib/alpn-go-dev",
+  "docker_repository": "qnib/alpn-go-dev",
+  "docker_image": "qnib/alpn-go-dev",
+  "parameters_schema": {
+    "GOPATH": {
+      "default": "/usr/local",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LD_LIBRARY_PATH": {
+      "default": "/usr/local/lib",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PKG_CONFIG_PATH": {
+      "default": "/usr/local/lib/pkgconfig/",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "qnib/alpn-go-dev",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/qnib/alpn-go-dev",
+    "https://hub.docker.com/v2/repositories/qnib/alpn-go-dev",
+    "https://github.com/qnib/alpn-go-dev.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Golang",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Build"
+  ],
+  "info_url": "https://hub.docker.com/r/qnib/alpn-go-dev",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

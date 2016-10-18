@@ -1,0 +1,145 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/vrtsystems/nginx",
+    "repository_url": "https://hub.docker.com/v2/repositories/vrtsystems/nginx",
+    "tags_url": "https://hub.docker.com/v2/repositories/vrtsystems/nginx/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/vrtsystems/nginx/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/vrtsystems/nginx/autobuild",
+    "user": "vrtsystems",
+    "name": "nginx",
+    "namespace": "vrtsystems",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1069,
+    "last_updated": "2016-09-23T20:01:49.150043Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 104611195,
+        "id": 1323240,
+        "repository": 394666,
+        "creator": 488169,
+        "last_updater": 327862,
+        "last_updated": "2016-09-23T19:59:44.546520Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.2.0",
+        "full_size": 104605986,
+        "id": 3299531,
+        "repository": 394666,
+        "creator": 327862,
+        "last_updater": 327862,
+        "last_updated": "2016-06-06T04:36:06.144340Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "master",
+        "full_size": 104392843,
+        "id": 1826502,
+        "repository": 394666,
+        "creator": 585477,
+        "last_updater": 585477,
+        "last_updated": "2016-01-26T15:06:44.706513Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "vrtsystems/docker-nginx"
+  },
+  "name": "vrtsystems/nginx Docker container",
+  "description": "VRT build of Nginx using vrtsystems/baseimage and the supervisord entrypoint.",
+  "readme": "VRT Systems Nginx\n=================\n\n[`vrtsystems/nginx`](https://hub.docker.com/r/vrtsystems/nginx/) is a [docker](https://www.docker.com/) image based on ['vrtsystems/baseimage'](https://hub.docker.com/r/vrtsystems/baseimage/) that bundles [https://www.nginx.com/](https://https://www.nginx.com/)\n\nIt is intended to be used to build other application-specific images for VRT Systems projects (see below).\n\nHow to use this image\n---------------------\n\nTo create the image `vrtsystems/nginx`, execute the following command on docker-nginx folder:\n\n    docker build -t vrtsystems/nginx .\n\nThe image alone won't do much, unless you mount a data volume or host directory\ncontaining content to host, or extend the image. Note that this image uses the path\n`/usr/share/nginx/html/` to host the application.\n\n",
+  "dockerfile": "# vim:set ft=dockerfile:\n\n# Base on VRT Base image\nFROM vrtsystems/baseimage:0.1.0\nMAINTAINER VRT Engineering <engineering@vrt.com.au>\n\n# add our user and group first to make sure their IDs get assigned\n# consistently, regardless of whatever dependencies get added later\nRUN groupadd -r nginx && useradd -r -g nginx nginx\n\nENV NGINX_VERSION 1.9.6-1~jessie\n\nRUN apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62 \\\n\t&& echo \"deb http://nginx.org/packages/mainline/debian/ jessie nginx\" >> /etc/apt/sources.list \\\n\t&& apt-get update \\\n\t&& echo \"=== Installing Nginx ===================\" \\\n\t&& apt-get install -y ca-certificates nginx=${NGINX_VERSION} \\\n\t&& ln -sf /dev/stdout /var/log/nginx/access.log \\\n\t&& ln -sf /dev/stderr /var/log/nginx/error.log \\\n\t&& mkdir -p /usr/local/etc/docker-nginx/prestart-init.d \\\n\t&& echo \"=== Cleaning up ========================\" \\\n\t&& /usr/local/sbin/docker-cleanup.sh\n\nADD docker-entrypoint.sh /usr/local/sbin/\nADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf\n\n# forward request and error logs to docker log collector\nRUN ln -sf /dev/stdout /var/log/nginx/access.log\nRUN ln -sf /dev/stderr /var/log/nginx/error.log\n\nVOLUME [\"/var/cache/nginx\"]\n\nEXPOSE 80 443\n\n# CMD [\"nginx\", \"-g\", \"daemon off;\"]\nENTRYPOINT [\"/usr/local/sbin/docker-entrypoint.sh\"]\n\nCMD [\"supervisor\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "docker-entrypoint.sh",
+        "dest": "/usr/local/sbin/"
+      },
+      {
+        "source": "supervisord.conf",
+        "dest": "/etc/supervisor/conf.d/supervisord.conf"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/var/cache/nginx\"]"
+    ],
+    "run": [
+      "groupadd -r nginx && useradd -r -g nginx nginx",
+      "apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62 \t&& echo \"deb http://nginx.org/packages/mainline/debian/ jessie nginx\" >> /etc/apt/sources.list \t&& apt-get update \t&& echo \"=== Installing Nginx ===================\" \t&& apt-get install -y ca-certificates nginx=${NGINX_VERSION} \t&& ln -sf /dev/stdout /var/log/nginx/access.log \t&& ln -sf /dev/stderr /var/log/nginx/error.log \t&& mkdir -p /usr/local/etc/docker-nginx/prestart-init.d \t&& echo \"=== Cleaning up ========================\" \t&& /usr/local/sbin/docker-cleanup.sh",
+      "ln -sf /dev/stdout /var/log/nginx/access.log",
+      "ln -sf /dev/stderr /var/log/nginx/error.log"
+    ],
+    "workdir": [],
+    "from": "vrtsystems/baseimage:0.1.0",
+    "maintainer": "VRT Engineering <engineering@vrt.com.au>",
+    "env": {
+      "NGINX_VERSION": "1.9.6-1~jessie"
+    },
+    "entrypoint": "[\"/usr/local/sbin/docker-entrypoint.sh\"]",
+    "cmd": "[\"supervisor\"]"
+  },
+  "source_repository_url": "https://bitbucket.org/vrtsystems/docker-nginx.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/vrtsystems/docker-nginx",
+  "docker_repository": "vrtsystems/nginx",
+  "docker_image": "vrtsystems/nginx",
+  "parameters_schema": {
+    "NGINX_VERSION": {
+      "default": "1.9.6-1~jessie",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "vrtsystems/nginx",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/vrtsystems/nginx",
+    "https://hub.docker.com/v2/repositories/vrtsystems/nginx",
+    "https://bitbucket.org/vrtsystems/docker-nginx.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Build",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/vrtsystems/nginx",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

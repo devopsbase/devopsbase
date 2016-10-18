@@ -1,0 +1,227 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/livingstoneonline/tomcat",
+    "repository_url": "https://hub.docker.com/v2/repositories/livingstoneonline/tomcat",
+    "tags_url": "https://hub.docker.com/v2/repositories/livingstoneonline/tomcat/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/livingstoneonline/tomcat/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/livingstoneonline/tomcat/autobuild",
+    "user": "livingstoneonline",
+    "name": "tomcat",
+    "namespace": "livingstoneonline",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 94,
+    "last_updated": "2016-08-25T22:14:17.639853Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 1167366150,
+        "id": 2688522,
+        "repository": 640778,
+        "creator": 566579,
+        "last_updater": 566579,
+        "last_updated": "2016-08-25T22:14:17.301482Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "livingstoneonline/docker-tomcat"
+  },
+  "name": "livingstoneonline/tomcat Docker container",
+  "description": "Tomcat Docker image.",
+  "readme": "# docker-tomcat\n\n[![Docker Stars](https://img.shields.io/docker/stars/livingstoneonline/tomcat.svg)][hub]\n[![Docker Pulls](https://img.shields.io/docker/pulls/livingstoneonline/tomcat.svg)][hub]\n[![Image Size](https://img.shields.io/imagelayers/image-size/livingstoneonline/livingstone/latest.svg)](https://imagelayers.io/?images=livingstoneonline/tomcat:latest)\n[![Image Layers](https://img.shields.io/imagelayers/layers/livingstoneonline/livingstone/latest.svg)](https://imagelayers.io/?images=livingstoneonline/tomcat:latest)\n\nTomcat Docker image for use in the http://livingstoneonline.org/ stack.\n\n## Current Maintainers\n\nCurrent maintainers:\n\n* [Nigel Banks](https://github.com/nigelgbanks)\n\n[hub]: https://hub.docker.com/r/livingstoneonline/tomcat/\n",
+  "dockerfile": "FROM livingstoneonline/mysql\nMAINTAINER Nigel Banks <nigel.g.banks@gmail.com>\n\nLABEL \"License\"=\"GPLv3\" \\\n      \"Version\"=\"0.0.1\"\n\nEXPOSE 8080\n\nCOPY build /build\n\n# Install Java / Tomcat.\nARG TOMCAT_VERSION=\"7.0.69\"\n\nENV JAVA_HOME=/usr/lib/jvm/java-8-oracle \\\n    CATALINA_HOME=/opt/tomcat \\\n    CATALINA_BASE=/opt/tomcat \\\n    KAKADU_HOME=/opt/adore-djatoka/bin/Linux-x86-64 \\\n    SOLR_HOME=/opt/solr\n\nRUN addgroup --gid 110 tomcat && \\\n    adduser --system --disabled-password --no-create-home --ingroup tomcat --uid 105 --shell /sbin/nologin --home /opt/tomcat tomcat && \\\n    apt-get update && \\\n    add-apt-repository -y ppa:webupd8team/java && \\\n    echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \\\n    echo debconf shared/accepted-oracle-license-v1-1 seen true | debconf-set-selections && \\\n    apt-get update && \\\n    apt-get -y dist-upgrade && \\\n    apt-get -y install maven oracle-java8-installer oracle-java8-set-default && \\\n    update-java-alternatives -s java-8-oracle && \\\n    curl -L http://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_VERSION%%.*}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz | \\\n    tar -xzf - -C /tmp && \\\n    mv /tmp/apache-tomcat-${TOMCAT_VERSION} ${CATALINA_HOME} && \\\n    rm -rf ${CATALINA_HOME}/webapps/docs && \\\n    rm -rf ${CATALINA_HOME}/webapps/examples && \\\n    ln -s /opt/adore-djatoka/bin/Linux-x86-64/kdu_compress /usr/bin/kdu_compress && \\\n    ln -s /opt/adore-djatoka/bin/Linux-x86-64/kdu_expand /usr/bin/kdu_expand && \\\n    ln -s /opt/adore-djatoka/lib/Linux-x86-64/libkdu_a60R.so /usr/lib/libkdu_a60R.so && \\\n    ln -s /opt/adore-djatoka/lib/Linux-x86-64/libkdu_jni.so /usr/lib/libkdu_jni.so && \\\n    ln -s /opt/adore-djatoka/lib/Linux-x86-64/libkdu_v60R.so /usr/lib/libkdu_v60R.so && \\\n    cleanup\n\n# Install Fedora.\nARG FEDORA_VERSION=\"3.8.1\"\n\nENV FEDORA_HOME=/opt/fedora\nRUN mysql_install_db --datadir=\"/var/lib/mysql\" --user=mysql && \\\n    sleep 15 && \\\n    { mysqld_safe & } && \\\n    sleep 10 && \\\n    mysql -e \"CREATE DATABASE fedora3;\" && \\\n    mysql -e \"CREATE USER 'fedoraAdmin'@'localhost' IDENTIFIED BY 'fedoraAdmin';\" && \\\n    mysql -e \"GRANT ALL ON fedora3.* TO fedoraAdmin@'%' IDENTIFIED BY 'fedoraAdmin';\" && \\\n    mkdir ${FEDORA_HOME} && \\\n    curl -L -o /tmp/fcrepo-installer-${FEDORA_VERSION}.jar \\\n    http://sourceforge.net/projects/fedora-commons/files/fedora/${FEDORA_VERSION}/fcrepo-installer-${FEDORA_VERSION}.jar/download && \\\n    java -jar /tmp/fcrepo-installer-${FEDORA_VERSION}.jar /build/install.properties && \\\n    ${CATALINA_HOME}/bin/catalina.sh start && sleep 90 && \\\n    ${CATALINA_HOME}/bin/catalina.sh stop && sleep 30 && \\\n    mysqldump -u fedoraAdmin --password=fedoraAdmin fedora3 | gzip -c > /run/fedora3.sql.gz && \\\n    rm -fr ${FEDORA_HOME}/data/fedora-xacml-policies/repository-policies/default && \\\n    mysqladmin shutdown && sleep 30 && \\\n    curl -L -o ${CATALINA_HOME}/webapps/fedora/WEB-INF/lib/fcrepo-drupalauthfilter-3.8.1.jar \\\n    https://github.com/Islandora/islandora_drupal_filter/releases/download/v7.1.3/fcrepo-drupalauthfilter-3.8.1.jar && \\\n    chown -R tomcat:tomcat ${FEDORA_HOME} && \\\n    rm -rf ${FEDORA_HOME}/data/fedora-xacml-policies/repository-policies/default/* && \\\n    rm -rf ${FEDORA_HOME}/docs && \\\n    rm -rf ${CATALINA_HOME}/webapps/*.war && \\\n    rm -rf ${CATALINA_HOME}/webapps/fedora-demo && \\\n    rm -rf ${CATALINA_HOME}/logs/* && \\\n    rm -rf ${FEDORA_HOME}/server/logs/* && \\\n    rm -rf /var/lib/mysql/* && \\\n    cleanup\n\n# Configuration Settings.\nENV JAVA_OPTS=\"\" \\\n    CATALINA_OPTS=\"-server -XX:+CMSClassUnloadingEnabled -Djava.awt.headless=true -Djava.security.egd=file:/dev/urandom -Dkakadu.home=/opt/adore-djatoka/bin/Linux-x86-64 -DLD_LIBRARY_PATH=/opt/adore-djatoka/lib/Linux-x86-64 -Djava.library.path=/opt/adore-djatoka/lib/Linux-x86-64\" \\\n    TOMCAT_ADMIN_USER=admin \\\n    TOMCAT_ADMIN_PASSWORD=tomcat \\\n    FEDORA_DB_NAME=fedora3 \\\n    FEDORA_DB_USER=fedoraAdmin \\\n    FEDORA_DB_PASSWORD=fedoraAdmin \\\n    FEDORA_ADMIN_USER=fedoraAdmin \\\n    FEDORA_ADMIN_PASSWORD=fedoraAdmin \\\n    FEDORA_INTERNAL_PASSWORD=password \\\n    FEDORA_IMPORT_DATA=no \\\n    FEDORA_REBUILD=no\n\nRUN rm -rf ${FEDORA_HOME}/data/activemq-data/localhost/KahaDB/* \\\n           ${FEDORA_HOME}/data/resourceIndex/xaStatementStore/* \\\n           ${FEDORA_HOME}/data/resourceIndex/xaStringPool/*\n\n# Adore-Djatoka and Solr are installed by this copy.\nCOPY rootfs /\n\nRUN chown -R tomcat:tomcat /opt/fedora /opt/tomcat /opt/solr\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "addgroup --gid 110 tomcat &&     adduser --system --disabled-password --no-create-home --ingroup tomcat --uid 105 --shell /sbin/nologin --home /opt/tomcat tomcat &&     apt-get update &&     add-apt-repository -y ppa:webupd8team/java &&     echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections &&     echo debconf shared/accepted-oracle-license-v1-1 seen true | debconf-set-selections &&     apt-get update &&     apt-get -y dist-upgrade &&     apt-get -y install maven oracle-java8-installer oracle-java8-set-default &&     update-java-alternatives -s java-8-oracle &&     curl -L http://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_VERSION%%.*}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz |     tar -xzf - -C /tmp &&     mv /tmp/apache-tomcat-${TOMCAT_VERSION} ${CATALINA_HOME} &&     rm -rf ${CATALINA_HOME}/webapps/docs &&     rm -rf ${CATALINA_HOME}/webapps/examples &&     ln -s /opt/adore-djatoka/bin/Linux-x86-64/kdu_compress /usr/bin/kdu_compress &&     ln -s /opt/adore-djatoka/bin/Linux-x86-64/kdu_expand /usr/bin/kdu_expand &&     ln -s /opt/adore-djatoka/lib/Linux-x86-64/libkdu_a60R.so /usr/lib/libkdu_a60R.so &&     ln -s /opt/adore-djatoka/lib/Linux-x86-64/libkdu_jni.so /usr/lib/libkdu_jni.so &&     ln -s /opt/adore-djatoka/lib/Linux-x86-64/libkdu_v60R.so /usr/lib/libkdu_v60R.so &&     cleanup",
+      "mysql_install_db --datadir=\"/var/lib/mysql\" --user=mysql &&     sleep 15 &&     { mysqld_safe & } &&     sleep 10 &&     mysql -e \"CREATE DATABASE fedora3;\" &&     mysql -e \"CREATE USER 'fedoraAdmin'@'localhost' IDENTIFIED BY 'fedoraAdmin';\" &&     mysql -e \"GRANT ALL ON fedora3.* TO fedoraAdmin@'%' IDENTIFIED BY 'fedoraAdmin';\" &&     mkdir ${FEDORA_HOME} &&     curl -L -o /tmp/fcrepo-installer-${FEDORA_VERSION}.jar     http://sourceforge.net/projects/fedora-commons/files/fedora/${FEDORA_VERSION}/fcrepo-installer-${FEDORA_VERSION}.jar/download &&     java -jar /tmp/fcrepo-installer-${FEDORA_VERSION}.jar /build/install.properties &&     ${CATALINA_HOME}/bin/catalina.sh start && sleep 90 &&     ${CATALINA_HOME}/bin/catalina.sh stop && sleep 30 &&     mysqldump -u fedoraAdmin --password=fedoraAdmin fedora3 | gzip -c > /run/fedora3.sql.gz &&     rm -fr ${FEDORA_HOME}/data/fedora-xacml-policies/repository-policies/default &&     mysqladmin shutdown && sleep 30 &&     curl -L -o ${CATALINA_HOME}/webapps/fedora/WEB-INF/lib/fcrepo-drupalauthfilter-3.8.1.jar     https://github.com/Islandora/islandora_drupal_filter/releases/download/v7.1.3/fcrepo-drupalauthfilter-3.8.1.jar &&     chown -R tomcat:tomcat ${FEDORA_HOME} &&     rm -rf ${FEDORA_HOME}/data/fedora-xacml-policies/repository-policies/default/* &&     rm -rf ${FEDORA_HOME}/docs &&     rm -rf ${CATALINA_HOME}/webapps/*.war &&     rm -rf ${CATALINA_HOME}/webapps/fedora-demo &&     rm -rf ${CATALINA_HOME}/logs/* &&     rm -rf ${FEDORA_HOME}/server/logs/* &&     rm -rf /var/lib/mysql/* &&     cleanup",
+      "rm -rf ${FEDORA_HOME}/data/activemq-data/localhost/KahaDB/*            ${FEDORA_HOME}/data/resourceIndex/xaStatementStore/*            ${FEDORA_HOME}/data/resourceIndex/xaStringPool/*",
+      "chown -R tomcat:tomcat /opt/fedora /opt/tomcat /opt/solr"
+    ],
+    "workdir": [],
+    "from": "livingstoneonline/mysql",
+    "maintainer": "Nigel Banks <nigel.g.banks@gmail.com>",
+    "label": "\"License\"=\"GPLv3\"       \"Version\"=\"0.0.1\"",
+    "copy": "rootfs /",
+    "arg": "FEDORA_VERSION=\"3.8.1\"",
+    "env": {
+      "JAVA_HOME": "/usr/lib/jvm/java-8-oracle",
+      "": "FEDORA_REBUILD",
+      "CATALINA_HOME": "/opt/tomcat",
+      "CATALINA_BASE": "/opt/tomcat",
+      "KAKADU_HOME": "/opt/adore-djatoka/bin/Linux-x86-64",
+      "SOLR_HOME": "/opt/solr",
+      "FEDORA_HOME": "/opt/fedora",
+      "JAVA_OPTS": "\"\"",
+      "CATALINA_OPTS": "\"-server",
+      "-XX:+CMSClassUnloadingEnabled": "-Djava.awt.headless",
+      "true": "-Djava.security.egd",
+      "file:/dev/urandom": "-Dkakadu.home",
+      "/opt/adore-djatoka/bin/Linux-x86-64": "-DLD_LIBRARY_PATH",
+      "/opt/adore-djatoka/lib/Linux-x86-64": "-Djava.library.path",
+      "/opt/adore-djatoka/lib/Linux-x86-64\"": "",
+      "admin": "",
+      "tomcat": "",
+      "fedora3": "",
+      "fedoraAdmin": "",
+      "password": "",
+      "no": ""
+    }
+  },
+  "source_repository_url": "https://github.com/livingstoneonline/docker-tomcat.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/livingstoneonline/docker-tomcat",
+  "docker_repository": "livingstoneonline/tomcat",
+  "docker_image": "livingstoneonline/tomcat",
+  "parameters_schema": {
+    "JAVA_HOME": {
+      "default": "/usr/lib/jvm/java-8-oracle",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "FEDORA_REBUILD",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CATALINA_HOME": {
+      "default": "/opt/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CATALINA_BASE": {
+      "default": "/opt/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KAKADU_HOME": {
+      "default": "/opt/adore-djatoka/bin/Linux-x86-64",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SOLR_HOME": {
+      "default": "/opt/solr",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FEDORA_HOME": {
+      "default": "/opt/fedora",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_OPTS": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CATALINA_OPTS": {
+      "default": "\"-server",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "-XX:+CMSClassUnloadingEnabled": {
+      "default": "-Djava.awt.headless",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "true": {
+      "default": "-Djava.security.egd",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "file:/dev/urandom": {
+      "default": "-Dkakadu.home",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "/opt/adore-djatoka/bin/Linux-x86-64": {
+      "default": "-DLD_LIBRARY_PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "/opt/adore-djatoka/lib/Linux-x86-64": {
+      "default": "-Djava.library.path",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "/opt/adore-djatoka/lib/Linux-x86-64\"": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "admin": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "tomcat": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "fedora3": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "fedoraAdmin": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "password": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "no": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "livingstoneonline/tomcat",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/livingstoneonline/tomcat",
+    "https://hub.docker.com/v2/repositories/livingstoneonline/tomcat",
+    "https://github.com/livingstoneonline/docker-tomcat.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/livingstoneonline/tomcat",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

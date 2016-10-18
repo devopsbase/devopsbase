@@ -1,0 +1,119 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/iilab/ltfhc-couch",
+    "repository_url": "https://hub.docker.com/v2/repositories/iilab/ltfhc-couch",
+    "tags_url": "https://hub.docker.com/v2/repositories/iilab/ltfhc-couch/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/iilab/ltfhc-couch/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/iilab/ltfhc-couch/autobuild",
+    "user": "iilab",
+    "name": "ltfhc-couch",
+    "namespace": "iilab",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 59,
+    "last_updated": "2015-11-13T16:43:40.212020Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 201475896,
+        "id": 70404,
+        "repository": 62750,
+        "creator": 13811,
+        "last_updater": 13811,
+        "last_updated": "2015-11-13T16:43:45.945215Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "iilab/ltfhc-couch"
+  },
+  "name": "iilab/ltfhc-couch Docker container",
+  "description": "",
+  "readme": "ltfhc-couch\n===========\n",
+  "dockerfile": "FROM debian:wheezy\n\nMAINTAINER Jun Matsushita jun@iilab.org\n\nADD sources.list /etc/apt/sources.list\n\nRUN apt-get install debian-archive-keyring && apt-get update\n\nRUN apt-get install -y --force-yes build-essential wget curl\n\n# erlang and couch deps\nRUN apt-get install -y erlang-base-hipe \\\n  erlang-xmerl \\\n  erlang-inets \\\n  erlang-manpages \\\n  erlang-dev erlang-nox \\\n  erlang-eunit \\\n  libmozjs185-dev \\\n  libicu-dev \\\n  libcurl4-gnutls-dev \\\n  libtool\n\n# Get the source\nRUN cd /opt && \\\n wget http://apache.openmirror.de/couchdb/source/1.6.0/apache-couchdb-1.6.0.tar.gz && \\\n tar xzf /opt/apache-couchdb-1.6.0.tar.gz\n\n# build couchdb\nRUN cd /opt/apache-couchdb-* && ./configure && make && make install\n\n# install github.com/visionmedia/mon v1.2.3\nRUN (mkdir /tmp/mon && cd /tmp/mon && curl -L# https://github.com/visionmedia/mon/archive/1.2.3.tar.gz | tar zx --strip 1 && make install)\n\n# cleanup\n# RUN apt-get remove -y build-essential wget curl && \\\n#  apt-get autoremove -y && apt-get clean -y && \\\n#  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /opt/apache-couchdb-*\n\nADD ./opt /opt\n\nRUN apt-get install -y adduser\n# Configuration\nRUN sed -e 's/^bind_address = .*$/bind_address = 0.0.0.0/' -i /usr/local/etc/couchdb/default.ini\nRUN /opt/couchdb-config\n\n#RUN apt-get update && apt-get install -y curl libev4 libssl-dev libev-dev\n#RUN (mkdir /tmp/stud && cd /tmp/stud && curl -L# https://github.com/bumptech/stud/archive/master.tar.gz | tar zx --strip 1 && make && make install && rm -rf /tmp/stud)\n\nRUN apt-get install -y sudo\n\n# cleanup\nRUN apt-get remove -y curl && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n#ADD ./opt/stud.conf /usr/local/etc/stud/\n#ADD ./opt/generate-pem /root/\nADD ./opt/start /opt/start\nADD ./opt/start_couch /opt/start_couch\n#ADD ./opt/stud-config /opt/\n\n#RUN ./root/generate-pem\n#RUN ./opt/stud-config\n\n# Define mountable directories.\nVOLUME [\"/usr/local/var/log/couchdb\", \"/usr/local/var/lib/couchdb\", \"/usr/local/etc/couchdb\"]\n\nEXPOSE 6984\nCMD [\"/opt/start\"]",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "sources.list",
+        "dest": "/etc/apt/sources.list"
+      },
+      {
+        "source": "./opt",
+        "dest": "/opt"
+      },
+      {
+        "source": "./opt/start",
+        "dest": "/opt/start"
+      },
+      {
+        "source": "./opt/start_couch",
+        "dest": "/opt/start_couch"
+      }
+    ],
+    "expose": [
+      6984
+    ],
+    "volume": [
+      "[\"/usr/local/var/log/couchdb\", \"/usr/local/var/lib/couchdb\", \"/usr/local/etc/couchdb\"]"
+    ],
+    "run": [
+      "apt-get install debian-archive-keyring && apt-get update",
+      "apt-get install -y --force-yes build-essential wget curl",
+      "apt-get install -y erlang-base-hipe   erlang-xmerl   erlang-inets   erlang-manpages   erlang-dev erlang-nox   erlang-eunit   libmozjs185-dev   libicu-dev   libcurl4-gnutls-dev   libtool",
+      "cd /opt &&  wget http://apache.openmirror.de/couchdb/source/1.6.0/apache-couchdb-1.6.0.tar.gz &&  tar xzf /opt/apache-couchdb-1.6.0.tar.gz",
+      "cd /opt/apache-couchdb-* && ./configure && make && make install",
+      "(mkdir /tmp/mon && cd /tmp/mon && curl -L# https://github.com/visionmedia/mon/archive/1.2.3.tar.gz | tar zx --strip 1 && make install)",
+      "apt-get install -y adduser",
+      "sed -e 's/^bind_address = .*$/bind_address = 0.0.0.0/' -i /usr/local/etc/couchdb/default.ini",
+      "/opt/couchdb-config",
+      "apt-get install -y sudo",
+      "apt-get remove -y curl && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+    ],
+    "workdir": [],
+    "from": "debian:wheezy",
+    "maintainer": "Jun Matsushita jun@iilab.org",
+    "cmd": "[\"/opt/start\"]"
+  },
+  "source_repository_url": "https://github.com/iilab/ltfhc-couch.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/iilab/ltfhc-couch",
+  "docker_repository": "iilab/ltfhc-couch",
+  "docker_image": "iilab/ltfhc-couch",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        6984
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "iilab/ltfhc-couch",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/iilab/ltfhc-couch",
+    "https://hub.docker.com/v2/repositories/iilab/ltfhc-couch",
+    "https://github.com/iilab/ltfhc-couch.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/iilab/ltfhc-couch",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

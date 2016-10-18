@@ -1,0 +1,200 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dkubb/alpine-rails-nginx",
+    "repository_url": "https://hub.docker.com/v2/repositories/dkubb/alpine-rails-nginx",
+    "tags_url": "https://hub.docker.com/v2/repositories/dkubb/alpine-rails-nginx/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dkubb/alpine-rails-nginx/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dkubb/alpine-rails-nginx/autobuild",
+    "user": "dkubb",
+    "name": "alpine-rails-nginx",
+    "namespace": "dkubb",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 988,
+    "last_updated": "2016-06-22T22:54:33.952852Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 93714056,
+        "id": 1210196,
+        "repository": 373890,
+        "creator": 387648,
+        "last_updater": 387648,
+        "last_updated": "2016-06-22T22:54:33.533544Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "master",
+        "full_size": 87816894,
+        "id": 1432190,
+        "repository": 373890,
+        "creator": 387648,
+        "last_updater": 387648,
+        "last_updated": "2016-04-19T19:16:20.431505Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "fix_repository-url",
+        "full_size": 88001824,
+        "id": 2713694,
+        "repository": 373890,
+        "creator": 387648,
+        "last_updater": 387648,
+        "last_updated": "2016-04-19T19:08:08.942879Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "fix_upgrade-deps",
+        "full_size": 89531951,
+        "id": 1911931,
+        "repository": 373890,
+        "creator": 387648,
+        "last_updater": 387648,
+        "last_updated": "2016-04-18T21:31:33.828218Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "fix_stricter-bash",
+        "full_size": 90666571,
+        "id": 2466211,
+        "repository": 373890,
+        "creator": 387648,
+        "last_updater": 387648,
+        "last_updated": "2016-03-29T23:37:49.651267Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "feature_add-pgdata",
+        "full_size": 89682735,
+        "id": 1996953,
+        "repository": 373890,
+        "creator": 387648,
+        "last_updater": 387648,
+        "last_updated": "2016-02-13T07:15:26.721678Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "feature_upgrade-nginx",
+        "full_size": 89597442,
+        "id": 1957331,
+        "repository": 373890,
+        "creator": 387648,
+        "last_updater": 387648,
+        "last_updated": "2016-02-09T20:20:14.442399Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "feature_upgrade-deps",
+        "full_size": 89630384,
+        "id": 1930688,
+        "repository": 373890,
+        "creator": 387648,
+        "last_updater": 387648,
+        "last_updated": "2016-02-05T20:42:31.966918Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "fix_stricter-perms",
+        "full_size": 88754169,
+        "id": 1871192,
+        "repository": 373890,
+        "creator": 387648,
+        "last_updater": 387648,
+        "last_updated": "2016-02-01T00:48:09.703294Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "dkubb/dockerfiles"
+  },
+  "name": "dkubb/alpine-rails-nginx Docker container",
+  "description": "An Alpine Linux container for Rails applications, reverse proxied by Nginx",
+  "readme": "# dkubb Dockerfiles\n\nA collection of Dockerfile configurations.\n\n## Requirements\n\n* [Ruby 2.2.4+](https://www.ruby-lang.org/en/downloads/)\n* [Rails 4.2.5+](https://rubygems.org/gems/rails)\n\n## Quickstart\n\n```bash\n# Build and run an example rails application\n./build.sh && docker run --interactive --tty --rm --sig-proxy --publish 80:8080 dkubb/alpine-rails-nginx/example\n```\n",
+  "dockerfile": "# dkubb/alpine-rails-nginx\n\nFROM dkubb/alpine-ruby\nMAINTAINER Dan Kubb <dkubb@fastmail.com>\n\nENV BUNDLE_GEMFILE=/opt/rails/Gemfile\n\nCOPY etc /etc\n\n# Upgrade installed system dependencies\nCOPY apk-packages /tmp/\nRUN sed 's/#.*$//;/^$/d' /tmp/apk-packages \\\n  | tr -d ' ' \\\n  | xargs apk add --update-cache \\\n  && rm /tmp/apk-packages\n\n# Create system users\nRUN adduser -DSH nginx \\\n  && adduser -DS rails\n\n# Create system directories and service symlinks\nRUN setup-directories.sh  root  r  /etc/service/nginx /etc/service/rails \\\n  && setup-directories.sh nginx rw /var/run/nginx /var/cache/nginx /var/log/nginx \\\n  && setup-directories.sh rails r  /opt/rails \\\n  && setup-directories.sh rails rw /var/run/rails /opt/rails/log /opt/rails/tmp \\\n  && ln -s /etc/sv/nginx /etc/service/nginx/run \\\n  && ln -s /etc/sv/rails /etc/service/rails/run\n\n# Install nginx\nCOPY install-nginx.sh nginx.patch /usr/local/src/\nRUN /usr/local/src/install-nginx.sh \\\n  && setup-directories.sh nginx r /etc/nginx \\\n  && rm -rf /usr/local/src\n\n# Setup bundler for application\nRUN cp --recursive ~/.bundle /opt/rails \\\n  && setup-directories.sh rails r /opt/rails/.bundle\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "sed 's/#.*$//;/^$/d' /tmp/apk-packages   | tr -d ' '   | xargs apk add --update-cache   && rm /tmp/apk-packages",
+      "adduser -DSH nginx   && adduser -DS rails",
+      "setup-directories.sh  root  r  /etc/service/nginx /etc/service/rails   && setup-directories.sh nginx rw /var/run/nginx /var/cache/nginx /var/log/nginx   && setup-directories.sh rails r  /opt/rails   && setup-directories.sh rails rw /var/run/rails /opt/rails/log /opt/rails/tmp   && ln -s /etc/sv/nginx /etc/service/nginx/run   && ln -s /etc/sv/rails /etc/service/rails/run",
+      "/usr/local/src/install-nginx.sh   && setup-directories.sh nginx r /etc/nginx   && rm -rf /usr/local/src",
+      "cp --recursive ~/.bundle /opt/rails   && setup-directories.sh rails r /opt/rails/.bundle"
+    ],
+    "workdir": [],
+    "from": "dkubb/alpine-ruby",
+    "maintainer": "Dan Kubb <dkubb@fastmail.com>",
+    "env": {
+      "BUNDLE_GEMFILE": "/opt/rails/Gemfile"
+    },
+    "copy": "install-nginx.sh nginx.patch /usr/local/src/"
+  },
+  "source_repository_url": "https://github.com/dkubb/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/dkubb/dockerfiles",
+  "docker_repository": "dkubb/alpine-rails-nginx",
+  "docker_image": "dkubb/alpine-rails-nginx",
+  "parameters_schema": {
+    "BUNDLE_GEMFILE": {
+      "default": "/opt/rails/Gemfile",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dkubb/alpine-rails-nginx",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/dkubb/alpine-rails-nginx",
+    "https://hub.docker.com/v2/repositories/dkubb/alpine-rails-nginx",
+    "https://github.com/dkubb/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Style/Virtualization Level/Application",
+    "Type/Infrastructure/Operating System/Linux",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/dkubb/alpine-rails-nginx",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

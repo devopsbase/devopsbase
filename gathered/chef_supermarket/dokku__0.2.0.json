@@ -1,0 +1,90 @@
+{
+  "name": "dokku Chef cookbook",
+  "chef_cookbook_name": "dokku",
+  "revision": "0.2.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/dokku",
+    "https://supermarket.chef.io/cookbooks/dokku/download",
+    "https://supermarket.chef.io/cookbooks/dokku/versions/0.2.0",
+    "https://supermarket.chef.io/cookbooks/dokku/versions/0.2.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/dokku/versions/0.2.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/dokku",
+    "https://supermarket.chef.io/api/v1/cookbooks/dokku/versions/0.2.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/dokku",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/dokku/versions/0.2.0/download",
+  "deprecated": false,
+  "created": "2013-10-01T15:12:09.000Z",
+  "updated": "2016-05-31T15:10:11.429Z",
+  "description": "Manages a dokku install.",
+  "maintainer": {
+    "name": "fgrehm",
+    "email": "fgrehm@gmail.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 4,
+  "downloads_count": 2530694,
+  "downloads_count_revision": 1265378,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# chef-dokku\n\nManages a [dokku](https://github.com/progrium/dokku) installation, allowing\nconfiguration of application's [environment variables](https://github.com/progrium/dokku#environment-setup),\ninstallation of [plugins](https://github.com/progrium/dokku/wiki/Plugins) and\nmanagement of ssh keys.\n\n## Usage\n\nInclude the `bootstrap` recipe in your run list to have dokku installed/updated\nduring chef runs.\n\n## Attributes\n\nThese attributes are under the `node['dokku']` namespace.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\nroot | dokku's home directory | String | `/home/dokku`\ndomain | Domain name to write to `['dokku']['root]'/VHOST` | String | nil (`node['fqdn']` will be used)\nssh_keys | SSH keys that can push to dokku | Hash | `{}` see [SSH Keys](https://github.com/fgrehm/chef-dokku#ssh-keys)\nplugins | Plugins to install | Hash with plugin name as key and GitHub repository URL as value | `{}` see [Plugins](https://github.com/fgrehm/chef-dokku#plugins)\nplugin_path | Directory where plugins are installed | String | `/var/lib/dokku/plugins`\napps | App environment settings to populate | Hash | `{}` see [Apps](https://github.com/fgrehm/chef-dokku#apps)\ngit_repository | The git repository for the base dokku code | String | https://github.com/progrium/dokku.git\ngit_revision | The git revision to check out from `git_repository` | String | v0.2.0\n\n## Configuration\n\nWhile this cookbook will be able to provide you with a working dokku installation,\nthere is some configuration you will likely want to do first:\n\n### SSH Keys\n\nThis is a required step to getting dokku working. You will want to set\n`node['dokku']['ssh_keys']` to a hash of the following structure:\n\n    default['dokku']['ssh_keys'] = {\n      'awesome_user' => 'awesome_users_pubkey',\n      'superb_user' => 'superb_users_pubkey'\n    }\n\nThe [`ssh_keys`](https://github.com/fgrehm/chef-dokku#recipes) recipe will handle\nsetting up the keys for dokku\n\n### Apps\n\nPre-configured applications. These attributes are used to configure environment\nvariables or remove an app:\n\n    default['dokku']['apps'] = {\n      'cool_app' => {\n        'env' => {\n          'ENV_VAR' => 'ENV_VAR_VALUE',\n          'ENV_VAR2' => 'ENV_VAR2_VALUE'\n        }\n      }\n    }\n\n### Plugins\n\nYou will likely want to install plugins to expand the functionality of your\ndokku installation. See the dokku [wiki page](https://github.com/progrium/dokku/wiki/Plugins)\nfor a list of available plugins.\n\nPlugins are defined on the `node['dokku']['plugins']` attribute:\n\n    default['dokku']['plugins'] = {\n      'plugin_name' => 'plugin_repository_url',\n      # For example:\n      'postgresql' => 'https://github.com/Kloadut/dokku-pg-plugin'\n    }\n\n### Applications Attributes\n\nThese attributes are under the `node['dokku']['apps']['YOUR_APP_NAME']` namespace.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\nenv | Application's [environment variables](https://github.com/progrium/dokku#environment-setup) | Hash | nil\nremove | Whether the application should be removed | Boolean | nil\n\n### Sync attributes\n\nThese attributes are under the `node['dokku']['sync']` namespace. They control\nwhether remote code bases will be updated on chef runs\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\nbase | Whether the dokku codebase will be synced with the remote repository | Boolean | true\nplugins | Whether the dokku plugins will be synced with their remote repositories | Boolean | true\ndependencies | Whether the sshcommand and pluginhook dependencies will be updated from their remotes | Boolean | true\n\n### Build Stack attributes\n\nThese attributes are under the `node['dokku']['buildstack']` namespace. They\ncorrespond to the [buildstep](https://github.com/progrium/buildstep) that is\nused by dokku.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\nimage_name | The name of the image to use when importing into Docker | String | progrium/buildstep\nuse_prebuilt | Whether to use the prebuilt image or build off the git repository | Boolean | true\nstack_url | The url to the buildstep git repository | String | github.com/progrium/buildstep\nprebuilt_url | The url to the prebuild docker image for the buildstep | String | https://s3.amazonaws.com/progrium-dokku/progrium_buildstep_79cf6805cf.tgz\n\n### PluginHook Attributes\n\nThese attributes are under the `node['dokku']['pluginhook']` namespace.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\nsrc_url | The source url for the pluginhook .deb file | String | https://s3.amazonaws.com/progrium-pluginhook/pluginhook_0.1.0_amd64.deb\nfilename | The pluginhook .deb file name | String | pluginhook_0.1.0_amd64.deb\nchecksum | The SHA-256 checksum for the pluginhook .deb file | String | 26a790070ee0c34fd4c53b24aabeb92778faed4004110c480c13b48608545fe5\n\n## Recipes\n\n* `recipe[dokku]` - Noop. Will be used to include LWRPs in the future\n* `recipe[dokku::bootstrap]` - A chef version of [`bootstrap.sh`](https://github.com/progrium/dokku/blob/master/bootstrap.sh).\n   Include this recipe to have dokku installed/updated by chef\n* `recipe[dokku::install]` - Clones/checks out the dokku git repository and\n   copies the required files via `make copyfiles`\n* `recipe[dokku::buildstack]` - Builds/imports the dokku [buildstep](https://github.com/progrium/buildstep) docker image. See\n  `node['dokku']['buildstack']['use_prebuilt']` to set which buildstep is imported\n\n## Testing and Development\n\n### Vagrant\n\nHere's how you can quickly get testing or developing against the cookbook thanks\nto [Vagrant](http://vagrantup.com/).\n\n    vagrant plugin install vagrant-omnibus\n    git clone git://github.com/fgrehm/chef-dokku.git\n    cd chef-dokku\n    bundle install\n    bundle exec berks install -p vendor/cookbooks\n    vagrant up\n\nYou can then SSH into the running VM using the `vagrant ssh` command.\n\nThe VM can easily be stopped and deleted with the `vagrant destroy` command.\nPlease see the official [Vagrant documentation](http://docs.vagrantup.com/v2/cli/index.html)\nfor a more in depth explanation of available commands.\n\n## Roadmap\n\n* Convert things like ssh keys, app env, etc to LWPRs w/ Chefspec v3 matchers\n* Reduce rewritten/overridden areas of the bootstrap process to better keep up\n  with dokku's rapid development\n* Plugin removal\n* Use dokku app removal process\n* Support dokku [addons](https://github.com/progrium/dokku/pull/292)\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": "= 13.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/git",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/nginx",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/docker",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/user",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/sudo",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

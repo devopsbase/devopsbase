@@ -1,0 +1,134 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/clickandmortar/apache-php",
+    "repository_url": "https://hub.docker.com/v2/repositories/clickandmortar/apache-php",
+    "tags_url": "https://hub.docker.com/v2/repositories/clickandmortar/apache-php/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/clickandmortar/apache-php/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/clickandmortar/apache-php/autobuild",
+    "user": "clickandmortar",
+    "name": "apache-php",
+    "namespace": "clickandmortar",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 579,
+    "last_updated": "2016-09-23T21:06:10.553376Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 136391140,
+        "id": 2001191,
+        "repository": 527749,
+        "creator": 625024,
+        "last_updater": 625024,
+        "last_updated": "2016-09-23T21:05:52.858827Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "debian-jessie",
+        "full_size": 136391426,
+        "id": 2030263,
+        "repository": 527749,
+        "creator": 625024,
+        "last_updater": 625024,
+        "last_updated": "2016-09-23T20:59:00.539568Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "ClickAndMortar/docker"
+  },
+  "name": "clickandmortar/apache-php Docker container",
+  "description": "Debian Jessie based Apache 2.4 & PHP 5.6 Docker with Composer",
+  "readme": "# Apache PHP Docker\n\nDebian Jessie based Apache2 and PHP Docker image.\n\n## Exposed ports\n\n* `80` (HTTP)\n\n## Volumes\n\n* `/var/www`\n\n# Build\n\n```bash\nmake\n```\n\n# Run\n\n```bash\ndocker run -d -P -v $PWD:/var/www clickandmortar/apache-php --name=<my_container>\n```\n",
+  "dockerfile": "FROM debian:jessie\n\n# Heavily inspired by CenturyLinkLabs Dockerfiles\nMAINTAINER  Click & Mortar <contact@clickandmortar.fr>\n\n# Install packages\nRUN LC_ALL=C DEBIAN_FRONTEND=noninteractive apt-get update && \\\n LC_ALL=C DEBIAN_FRONTEND=noninteractive apt-get -y install ca-certificates curl git netcat supervisor tar vim wget && \\\n LC_ALL=C DEBIAN_FRONTEND=noninteractive apt-get -y install apache2 libapache2-mod-php5 php5-mysql php5-intl php5-mcrypt php5-gd php-pear php-apc php5-apcu php5-xsl php5-cli php5-curl && \\\n LC_ALL=C DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && apt-get clean && rm -r /var/lib/apt/lists/* && \\\n curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer\n\n# PHP configuration\n RUN sed -i \"s/;date.timezone =.*/date.timezone = UTC/\" /etc/php5/apache2/php.ini /etc/php5/cli/php.ini && \\\n     sed -i -e  's/post_max_size = 8M/post_max_size = 16M/g' \\\n     -e 's/upload_max_filesize = 2M/upload_max_filesize = 16M/g' \\\n     -e 's/error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT/error_reporting = E_ALL/g' \\\n     -e 's/display_errors = Off/display_errors = On/' \\\n     -e \"s/max_execution_time = 30/max_execution_time = 300/\" \\\n     -e \"s/max_input_time = 60/max_input_time = 300/\" \\\n     -e \"s/memory_limit = 128M/memory_limit = 1024M/\" /etc/php5/apache2/php.ini\n\n# Override default Apache conf\nADD apache-vhost.conf /etc/apache2/sites-available/000-default.conf\n\n# Enable Apache rewrite & ssl modules\nRUN a2enmod rewrite\n\n# Add image configuration and scripts\nADD apache2.sh /apache2.sh\nADD entrypoint.sh /entrypoint.sh\nRUN chmod 755 /*.sh\nADD supervisord-apache2.conf /etc/supervisor/conf.d/supervisord-apache2.conf\n\n# Expose HTTP\nEXPOSE 80\n\n# Share Apache DocumentRoot\nVOLUME [\"/var/www\"]\n\nWORKDIR /var/www\n\nCMD [\"/entrypoint.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "apache-vhost.conf",
+        "dest": "/etc/apache2/sites-available/000-default.conf"
+      },
+      {
+        "source": "apache2.sh",
+        "dest": "/apache2.sh"
+      },
+      {
+        "source": "entrypoint.sh",
+        "dest": "/entrypoint.sh"
+      },
+      {
+        "source": "supervisord-apache2.conf",
+        "dest": "/etc/supervisor/conf.d/supervisord-apache2.conf"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/var/www\"]"
+    ],
+    "run": [
+      "LC_ALL=C DEBIAN_FRONTEND=noninteractive apt-get update &&  LC_ALL=C DEBIAN_FRONTEND=noninteractive apt-get -y install ca-certificates curl git netcat supervisor tar vim wget &&  LC_ALL=C DEBIAN_FRONTEND=noninteractive apt-get -y install apache2 libapache2-mod-php5 php5-mysql php5-intl php5-mcrypt php5-gd php-pear php-apc php5-apcu php5-xsl php5-cli php5-curl &&  LC_ALL=C DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && apt-get clean && rm -r /var/lib/apt/lists/* &&  curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer",
+      "a2enmod rewrite",
+      "chmod 755 /*.sh"
+    ],
+    "workdir": [
+      "/var/www"
+    ],
+    "from": "debian:jessie",
+    "maintainer": " Click & Mortar <contact@clickandmortar.fr>",
+    "cmd": "[\"/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/ClickAndMortar/docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/ClickAndMortar/docker",
+  "docker_repository": "clickandmortar/apache-php",
+  "docker_image": "clickandmortar/apache-php",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "clickandmortar/apache-php",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/clickandmortar/apache-php",
+    "https://hub.docker.com/v2/repositories/clickandmortar/apache-php",
+    "https://github.com/ClickAndMortar/docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/CLI",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/clickandmortar/apache-php",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,91 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/anderssv/openshift-cassandra",
+    "repository_url": "https://hub.docker.com/v2/repositories/anderssv/openshift-cassandra",
+    "tags_url": "https://hub.docker.com/v2/repositories/anderssv/openshift-cassandra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/anderssv/openshift-cassandra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/anderssv/openshift-cassandra/autobuild",
+    "user": "anderssv",
+    "name": "openshift-cassandra",
+    "namespace": "anderssv",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 1996,
+    "last_updated": "2016-05-26T09:52:31.432918Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 181665963,
+        "id": 2144398,
+        "repository": 552413,
+        "creator": 15695,
+        "last_updater": 15695,
+        "last_updated": "2016-05-26T09:52:30.394915Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      }
+    ],
+    "build_name": "anderssv/openshift-cassandra"
+  },
+  "name": "anderssv/openshift-cassandra Docker container",
+  "description": "Sort of a fork from Kubernetes examples to enable for OpenShift",
+  "readme": "This is a simple set up for Cassandra with two nodes in a cluster.\n\n# Create Cassandra cluster\n\n    ./run.sh\n\n# Start CQLSH\n\n    oc exec -ti $(oc get -o jsonpath='{@.items[0].metadata.name}' pods) -- bash -c 'cqlsh $POD_IP 9042'\n\n# List nodes with nodetool\n\n    oc exec -ti $(oc get -o jsonpath='{@.items[0].metadata.name}' pods) -- nodetool status\n\n# Test performance\n\nCassandra has a build in stress test tool that is awesome.\n\n## Demo mode\n\nYou can easily run the benchmarks inside the same pod as one of the server processes. You normally don't want to do this though as it affects the server process and is constrained to the same cpu and memory as the server.\n\n    oc exec -ti $(oc get -o jsonpath='{@.items[0].metadata.name}' pods) -- bash -c 'cassandra-stress write -node $POD_IP' | tee stress.txt\n\n## Stress testing pod\nTo launch it in a different pod:\n\n    oc run cassandra-stress -i --tty --attach=false --image=anderssv/openshift-cassandra /bin/bash\n\nRunning the test:\n    \n    oc exec \\\n        -t $(oc get -l 'run=cassandra-stress' -o jsonpath='{@.items[0].metadata.name}' pods) \\\n        -- cassandra-stress write -rate threads\\>\\=500 \\\n            -node $(oc get -o jsonpath='{@.items[0].status.podIP}' pods) \\\n            -graph file=/tmp/openshift-benchmark.html title=Openshift revision=benchmark-0\n\nThis will display stats but also generate a HTML report. To extract the report from the pod you can do:\n\n    mkdir -p /tmp/openshift-cassandra-report \\\n    && oc rsync \\\n        $(oc get -l 'run=cassandra-stress' -o jsonpath='{@.items[0].metadata.name}' pods):/tmp /tmp/openshift-cassandra-report\n\nMake sure to check which node the cassandra-stress pod is running on, and that it is different from the nodes you are testing. :)\n\n# Resources\n\n- Cassandra tuning guide: https://tobert.github.io/pages/als-cassandra-21-tuning-guide.html\n- Load testing and graphing: http://thelastpickle.com/blog/2015/10/23/cassandra-stress-and-graphs.html",
+  "dockerfile": "# Copyright 2016 The Kubernetes Authors All rights reserved.\n#\n# Licensed under the Apache License, Version 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions and\n# limitations under the License.\n\nFROM google/debian:jessie\n\nCOPY cassandra.list /etc/apt/sources.list.d/cassandra.list\nCOPY run.sh /run.sh\n\nRUN gpg --keyserver pgp.mit.edu --recv-keys F758CE318D77295D && \\\n  gpg --export --armor F758CE318D77295D | apt-key add - && \\\n  gpg --keyserver pgp.mit.edu --recv-keys 2B5C1B00 && \\\n  gpg --export --armor 2B5C1B00 | apt-key add - && \\\n  gpg --keyserver pgp.mit.edu --recv-keys 0353B12C && \\\n  gpg --export --armor 0353B12C | apt-key add - && \\\n  apt-get update && \\\n  apt-get -qq -y install procps cassandra openjdk-8-jre-headless rsync\n\nRUN chmod a+rx /run.sh && \\\n  mkdir -p /etc/cassandra && mkdir -p /cassandra_data && \\\n  chown -R cassandra.cassandra /etc/cassandra /cassandra_data && \\\n  chmod o+w -R /etc/cassandra /cassandra_data && \\\n  mkdir -p /var/lib/cassandra && chmod o+rwx /var/lib/cassandra && \\ \n  rm -rf /var/lib/apt/lists/* && \\\n  rm -rf /usr/share/doc/ && \\\n  rm -rf /usr/share/doc-base/ && \\\n  rm -rf /usr/share/man/ && \\\n  rm -rf /tmp/* \n\nCOPY cassandra.yaml /etc/cassandra/cassandra.yaml\nCOPY logback.xml /etc/cassandra/logback.xml\nCOPY kubernetes-cassandra.jar /kubernetes-cassandra.jar\n\nCMD [ \"/run.sh\", \"|\", \"tee\", \"-a\", \"/cassandra_data/run.log\" ]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "gpg --keyserver pgp.mit.edu --recv-keys F758CE318D77295D &&   gpg --export --armor F758CE318D77295D | apt-key add - &&   gpg --keyserver pgp.mit.edu --recv-keys 2B5C1B00 &&   gpg --export --armor 2B5C1B00 | apt-key add - &&   gpg --keyserver pgp.mit.edu --recv-keys 0353B12C &&   gpg --export --armor 0353B12C | apt-key add - &&   apt-get update &&   apt-get -qq -y install procps cassandra openjdk-8-jre-headless rsync",
+      "chmod a+rx /run.sh &&   mkdir -p /etc/cassandra && mkdir -p /cassandra_data &&   chown -R cassandra.cassandra /etc/cassandra /cassandra_data &&   chmod o+w -R /etc/cassandra /cassandra_data &&   mkdir -p /var/lib/cassandra && chmod o+rwx /var/lib/cassandra && \\ "
+    ],
+    "workdir": [],
+    "from": "google/debian:jessie",
+    "copy": "kubernetes-cassandra.jar /kubernetes-cassandra.jar",
+    "cmd": "[ \"/run.sh\", \"|\", \"tee\", \"-a\", \"/cassandra_data/run.log\" ]"
+  },
+  "source_repository_url": "https://github.com/anderssv/openshift-cassandra.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/anderssv/openshift-cassandra",
+  "docker_repository": "anderssv/openshift-cassandra",
+  "docker_image": "anderssv/openshift-cassandra",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "anderssv/openshift-cassandra",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/anderssv/openshift-cassandra",
+    "https://hub.docker.com/v2/repositories/anderssv/openshift-cassandra",
+    "https://github.com/anderssv/openshift-cassandra.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Orchestration/Cluster-based/Kubernetes",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/anderssv/openshift-cassandra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

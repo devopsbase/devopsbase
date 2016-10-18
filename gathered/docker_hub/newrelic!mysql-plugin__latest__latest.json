@@ -1,0 +1,151 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/newrelic/mysql-plugin",
+    "repository_url": "https://hub.docker.com/v2/repositories/newrelic/mysql-plugin",
+    "tags_url": "https://hub.docker.com/v2/repositories/newrelic/mysql-plugin/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/newrelic/mysql-plugin/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/newrelic/mysql-plugin/autobuild",
+    "user": "newrelic",
+    "name": "mysql-plugin",
+    "namespace": "newrelic",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 653,
+    "last_updated": "2016-10-11T00:01:09.826723Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 45027949,
+        "id": 3466689,
+        "repository": 749482,
+        "creator": 39490,
+        "last_updater": 39490,
+        "last_updated": "2016-10-11T00:01:08.820047Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "newrelic/dockerized-mysql-plugin"
+  },
+  "name": "newrelic/mysql-plugin Docker container",
+  "description": "New Relic Plugin for monitoring MySQL databases",
+  "readme": "# The New Relic MySQL Plugin\n\nThis is the New Relic Plugin for monitoring MySQL databases. It is the same one that can be found in [Plugin Central](https://rpm.newrelic.com/plugins) and on GitHub as [newrelic-platform/newrelic_mysql_java_plugin](https://github.com/newrelic-platform/newrelic_mysql_java_plugin), but packaged as a Docker container image for ease of use!\n\nIn order to use the MySQL Plugin, you will need an active New Relic account\nand a New Relic license key.\n\n## How to use this image\n\nThe MySQL Plugin image is configured by environment variables. These are mandatory:\n\n* `NEW_RELIC_LICENSE_KEY`\n* `AGENT_HOST`\n* `AGENT_USER`\n* `AGENT_PASSWD`\n\nOptionally, you can also set:\n\n* `NEW_RELIC_LOG_LEVEL` (default is `info`)\n* `AGENT_NAME` (to change what name the Plugin reports as)\n* `AGENT_METRICS` (see [metric.category.json](https://github.com/newrelic-platform/newrelic_mysql_java_plugin/blob/master/config/metric.category.json) for details)\n\n### Example\n\n```shell\n$ docker run -d \\\n  -e NEW_RELIC_LICENSE_KEY=foobarbaz \\\n  -e AGENT_HOST=your-db-host \\\n  -e AGENT_USER=newrelic \\\n  -e AGENT_PASSWD=SuPeRsEcUrE \\\n  newrelic/mysql-plugin\n```\n\n## Additional Configuration\n\n### HTTP Proxy\n\nIf you are running your plugin from a machine that runs outbound traffic through a proxy, you can use the following optional configurations:\n\n* `PROXY_HOST` - The proxy host (e.g. webcache.example.com)\n* `PROXY_PORT` - The proxy port (e.g. 8080). Defaults to 80 if a proxy_host is set\n* `PROXY_USERNAME` - The proxy username\n* `PROXY_PASSWORD` - The proxy password\n\n### Monitoring MySQL Replication\n\nTo monitor stats like Replication Lag and Relay Log Volume are disabled by default. To monitor MySQL Replication the plugin needs to be told to check those additional metric sets by changing the `AGENT_METRICS` variable. The default is `newrelic,status`.\n\nOn your MySQL replicas:\n`AGENT_METRICS=\"newrelic,status,slave\"`\n\nOn your MySQL master:\n`AGENT_METRICS=\"newrelic,status,master\"`\n\n\n## Getting logs and troubleshooting\n\nTo prevent filling up the container filesystem, no logs are written locally inside the container. Instead they are sent to Docker's logging system. By default, the logging level is `info`, however when troubleshooting it may be useful to set `NEW_RELIC_LOG_LEVEL=debug`.\n\nIf the plugin is failing to report data, we recommend trying to run it attached to the terminal with `docker run -t` instead of in daemon mode `-d`.\n\n```shell\ndocker run -t \\\n  -e NEW_RELIC_LOG_LEVEL=debug \\\n  -e NEW_RELIC_LICENSE_KEY=foobarbaz \\\n  -e AGENT_HOST=your-db-host-but-with-a-typo \\\n  -e AGENT_USER=newrelic \\\n  -e AGENT_PASSWD=SuPeRsEcUrE \\\n  newrelic/mysql-plugin\n```\n\n## Contributing\n\nYou are welcome to send pull requests to us - however, by doing so you agree that you are granting New Relic a non-exclusive, non-revokable, no-cost license to use the code, algorithms, patents, and ideas in that code in our products if we so choose. You also agree the code is provided as-is and you provide no warranties as to its fitness or correctness for any purpose.\n",
+  "dockerfile": "FROM java:8-jre-alpine\nMAINTAINER New Relic <support@newrelic.com>\n\nENV PLUGIN_VERSION=newrelic_mysql_plugin-2.0.0\n\nADD https://github.com/newrelic-platform/newrelic_mysql_java_plugin/raw/master/dist/${PLUGIN_VERSION}.tar.gz /tmp/\nRUN mkdir -p /usr/src/myapp/ && tar -C /usr/src/myapp/ -xzf /tmp/${PLUGIN_VERSION}.tar.gz\n\nADD configure-and-run-mysql-plugin /usr/src/myapp/${PLUGIN_VERSION}/\nWORKDIR /usr/src/myapp/${PLUGIN_VERSION}\n\nENV NEW_RELIC_LICENSE_KEY=\"\" NEW_RELIC_LOG_LEVEL=\"info\"\nENV AGENT_NAME=\"\" AGENT_HOST=\"\" AGENT_USER=\"\" AGENT_PASSWD=\"\" AGENT_METRICS=\"status,newrelic\"\n\nCMD [\"./configure-and-run-mysql-plugin\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "https://github.com/newrelic-platform/newrelic_mysql_java_plugin/raw/master/dist/${PLUGIN_VERSION}.tar.gz",
+        "dest": "/tmp/"
+      },
+      {
+        "source": "configure-and-run-mysql-plugin",
+        "dest": "/usr/src/myapp/${PLUGIN_VERSION}/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "mkdir -p /usr/src/myapp/ && tar -C /usr/src/myapp/ -xzf /tmp/${PLUGIN_VERSION}.tar.gz"
+    ],
+    "workdir": [
+      "/usr/src/myapp/${PLUGIN_VERSION}"
+    ],
+    "from": "java:8-jre-alpine",
+    "maintainer": "New Relic <support@newrelic.com>",
+    "env": {
+      "PLUGIN_VERSION": "newrelic_mysql_plugin-2.0.0",
+      "NEW_RELIC_LICENSE_KEY": "\"\"",
+      "NEW_RELIC_LOG_LEVEL": "\"info\"",
+      "AGENT_NAME": "\"\"",
+      "AGENT_HOST": "\"\"",
+      "AGENT_USER": "\"\"",
+      "AGENT_PASSWD": "\"\"",
+      "AGENT_METRICS": "\"status,newrelic\""
+    },
+    "cmd": "[\"./configure-and-run-mysql-plugin\"]"
+  },
+  "source_repository_url": "https://github.com/newrelic/dockerized-mysql-plugin.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/newrelic/dockerized-mysql-plugin",
+  "docker_repository": "newrelic/mysql-plugin",
+  "docker_image": "newrelic/mysql-plugin",
+  "parameters_schema": {
+    "PLUGIN_VERSION": {
+      "default": "newrelic_mysql_plugin-2.0.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NEW_RELIC_LICENSE_KEY": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NEW_RELIC_LOG_LEVEL": {
+      "default": "\"info\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "AGENT_NAME": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "AGENT_HOST": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "AGENT_USER": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "AGENT_PASSWD": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "AGENT_METRICS": {
+      "default": "\"status,newrelic\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "newrelic/mysql-plugin",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/newrelic/mysql-plugin",
+    "https://hub.docker.com/v2/repositories/newrelic/mysql-plugin",
+    "https://github.com/newrelic/dockerized-mysql-plugin.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Monitoring/New Relic",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/newrelic/mysql-plugin",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

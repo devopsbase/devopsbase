@@ -1,0 +1,124 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/loicmathieu/apache-httpd-flume",
+    "repository_url": "https://hub.docker.com/v2/repositories/loicmathieu/apache-httpd-flume",
+    "tags_url": "https://hub.docker.com/v2/repositories/loicmathieu/apache-httpd-flume/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/loicmathieu/apache-httpd-flume/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/loicmathieu/apache-httpd-flume/autobuild",
+    "user": "loicmathieu",
+    "name": "apache-httpd-flume",
+    "namespace": "loicmathieu",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 28,
+    "last_updated": "2016-05-10T14:49:33.970406Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 311906554,
+        "id": 2925217,
+        "repository": 673707,
+        "creator": 726085,
+        "last_updater": 726085,
+        "last_updated": "2016-05-10T14:49:29.752164Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "httpd_2.4.20_flume_1.6.0",
+        "full_size": 311906343,
+        "id": 2960270,
+        "repository": 673707,
+        "creator": 726085,
+        "last_updater": 726085,
+        "last_updated": "2016-05-10T13:20:23.640596Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      }
+    ],
+    "build_name": "loicmathieu/docker-apache-flume"
+  },
+  "name": "loicmathieu/apache-httpd-flume Docker container",
+  "description": "Apache 2 httpd webserver and Apache Flume",
+  "readme": "# docker-apache-flume\nDockerfile for Apache httpd 2 with a flume agent.\n\nThe port 80 of httpd is exposed.\n\nApache flume is configured via /flume_httpd.conf file and will tail the httpd access log and send it to an external flume agent edgenode:9000, it's purpose is to be a test container for the Hadoop Cloudera containers that I maintain, check https://hub.docker.com/r/loicmathieu/cloudera-cdh-edgenode for more info on it.\n\n**To use it**\nFirst, setup an Hadoop cluster following https://hub.docker.com/r/loicmathieu/cloudera-cdh-edgenode, be sure that all container are in the same docker network.\n\nThen: \n```\ndocker pull loicmathieu/apache-httpd-flume\ndocker run -d --net hadoop --net-alias flume -p 80:80 loicmathieu/apache-httpd-flume\nfirefox localhost\n```\n\nIf firefow is installed and the port 80 of the container is mapped to the port 80 of the host, doing so will open the httpd homepage and write a ligne to the access log that will be read by flume and send to the edge node on it's 9000 port (the edge node will then write it to HDFS).\n",
+  "dockerfile": "###########################################################################################\n# This dockerfile is derived from loicmathieu/openjdk and will setup an Apache 2 httd\n# webserver and Apache Flume with an agent configure to collect the apache access log file\n# and send it to an Hadoop edge node (see loicmathieu/cloudera-cdh-edgenode).\n#\n# The namenode will expose it's 8020 port, to use it, you first need to start a datanode \n# (using loicmathieu/cloudera-hdfs-datanode) and make sure the netword stack is OK \n# so that the namenode and datanode can communicate together\n#\n# The container will use supervisor to start both the apache httpd and the flume agent\n###########################################################################################\nFROM loicmathieu/openjdk\n\nMAINTAINER Loic Mathieu <loicmathieu@free.fr>\n\n#Install epel repo because supervisor isn't in the base repo\nRUN yum -y install epel-release && rm -rf /var/cache/yum/*\n\n#install needed tools wget and supervisor\nRUN yum -y install wget supervisor && yum clean all\n\n#install Apache dependances : APR (Apache Portable Runtime), GCC, make \n#and PCRE (Perl Compatible Regular Expressions)\nRUN yum -y install apr-devel apr-util-devel pcre-devel gcc make && yum clean all\n\n#Install the Apache httpd webserver : we cannot install it directly with yum because of the still not\n#solved cap_set_file issue : https://github.com/docker/hub-feedback/issues/543 so I do it manually\n#RUN yum -y install httpd-2.4.20 && rm -rf /var/cache/yum/*\nWORKDIR /tmp\nRUN wget -q http://apache.trisect.eu//httpd/httpd-2.4.20.tar.gz\nRUN tar -xvf httpd-2.4.20.tar.gz\nWORKDIR /tmp/httpd-2.4.20\nRUN ./configure\nRUN make -s && make -s install\nRUN rm -rf /tmp/httpd-2.4.20\n\n#install Apache flume\nWORKDIR /tmp\nRUN wget -q http://apache.crihan.fr/dist/flume/1.6.0/apache-flume-1.6.0-bin.tar.gz\nRUN tar -xvf apache-flume-1.6.0-bin.tar.gz -C /usr/lib\nRUN rm -rf /tmp/apache-flume-1.6.0-bin.tar.gz\n\n#configure flume\nCOPY flume_httpd.conf /usr/lib/apache-flume-1.6.0-bin/conf/flume_httpd.conf\n\n#setup supervisor\nCOPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf\n\n#expose httpd port (/usr/local/apache2/htdocs)\nEXPOSE 80\n\n#start the supervisor\nCMD [\"/usr/bin/supervisord\", \"-c\", \"/etc/supervisor/conf.d/supervisord.conf\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "yum -y install epel-release && rm -rf /var/cache/yum/*",
+      "yum -y install wget supervisor && yum clean all",
+      "yum -y install apr-devel apr-util-devel pcre-devel gcc make && yum clean all",
+      "wget -q http://apache.trisect.eu//httpd/httpd-2.4.20.tar.gz",
+      "tar -xvf httpd-2.4.20.tar.gz",
+      "./configure",
+      "make -s && make -s install",
+      "rm -rf /tmp/httpd-2.4.20",
+      "wget -q http://apache.crihan.fr/dist/flume/1.6.0/apache-flume-1.6.0-bin.tar.gz",
+      "tar -xvf apache-flume-1.6.0-bin.tar.gz -C /usr/lib",
+      "rm -rf /tmp/apache-flume-1.6.0-bin.tar.gz"
+    ],
+    "workdir": [
+      "/tmp",
+      "/tmp/httpd-2.4.20",
+      "/tmp"
+    ],
+    "from": "loicmathieu/openjdk",
+    "maintainer": "Loic Mathieu <loicmathieu@free.fr>",
+    "copy": "supervisord.conf /etc/supervisor/conf.d/supervisord.conf",
+    "cmd": "[\"/usr/bin/supervisord\", \"-c\", \"/etc/supervisor/conf.d/supervisord.conf\"]"
+  },
+  "source_repository_url": "https://github.com/loicmathieu/docker-apache-flume.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/loicmathieu/docker-apache-flume",
+  "docker_repository": "loicmathieu/apache-httpd-flume",
+  "docker_image": "loicmathieu/apache-httpd-flume",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "loicmathieu/apache-httpd-flume",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/loicmathieu/apache-httpd-flume",
+    "https://hub.docker.com/v2/repositories/loicmathieu/apache-httpd-flume",
+    "https://github.com/loicmathieu/docker-apache-flume.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/Europe/EU",
+    "Type/Devopsware/Deployment/Chef",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/loicmathieu/apache-httpd-flume",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

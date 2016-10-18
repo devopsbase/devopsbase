@@ -1,0 +1,140 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/wetransform/dockup-mongo",
+    "repository_url": "https://hub.docker.com/v2/repositories/wetransform/dockup-mongo",
+    "tags_url": "https://hub.docker.com/v2/repositories/wetransform/dockup-mongo/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/wetransform/dockup-mongo/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/wetransform/dockup-mongo/autobuild",
+    "user": "wetransform",
+    "name": "dockup-mongo",
+    "namespace": "wetransform",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 997,
+    "last_updated": "2016-06-23T07:30:07.109769Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 210353945,
+        "id": 3402211,
+        "repository": 741611,
+        "creator": 318896,
+        "last_updater": 318896,
+        "last_updated": "2016-06-23T07:30:06.738667Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "wetransform-os/dockup-mongo"
+  },
+  "name": "wetransform/dockup-mongo Docker container",
+  "description": "Docker image to backup/restore your MongoDB to AWS S3",
+  "readme": "dockup-mongo\n============\n\n[![Docker Hub Badge](https://img.shields.io/badge/Docker-Hub%20Hosted-blue.svg)](https://hub.docker.com/r/wetransform/dockup-mongo/)\n\nDocker image to backup/restore your MongoDB to AWS S3.\nBuilds upon [dockup](https://github.com/wetransform-os/dockup).\n\nConfiguration\n-------------\n\nThis Docker image uses `mongodump` to create a MongoDB database dump and backup or restore it with [dockup](https://github.com/wetransform-os/dockup).\nPlease see the [dockup](https://github.com/wetransform-os/dockup) repository for extended information on configuration options, for instance on how to configure encryption with GnuPG.\n\nThe following MongoDB specific configuration options have been added:\n\n* **MONGODB_HOST** - the host/ip of your mongodb database (defaults to `mongodb`)\n* **MONGODB_PORT** - the port number of your mongodb database (defaults to `27017`)\n* **MONGODB_USER** - the username of your mongodb database. If MONGODB_USER is empty while MONGODB_PASS is not, the image will use admin as the default username\n* **MONGODB_PASS** - the password of your mongodb database\n* **MONGODB_AUTH_DB** - the authentication database to use, if any\n* **MONGODB_DB** - the database name to dump. If not specified, it will dump all the databases\n* **MONGODB_DUMP_EXTRA_OPTS** - the extra options to pass to mongodump command\n\nUsually you will link your MongoDB container to the *dockup* container, if you use `mongodb` as the link name you don't need to configure the host.\n\nFor an example runnning backup and restore, see the `./test-backup.sh` script.\nBefore running it, ensure there is a file `test-env.txt` with configuration options as in `test-env.txt.sample`.\n\nThe following *dockup* environment variables should **not be overriden** if using the specialised MongoDB image:\n\n* **BEFORE_BACKUP_CMD**\n* **AFTER_BACKUP_CMD**\n* **AFTER_RESTORE_CMD**\n* **PATHS_TO_BACKUP**\n",
+  "dockerfile": "FROM wetransform/dockup:latest\nMAINTAINER Simon Templer <simon@wetransform.to>\n\n# install MongoDB shell & tools\nRUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927 && \\\n  echo \"deb http://repo.mongodb.org/apt/ubuntu \"$(lsb_release -sc)\"/mongodb-org/3.2 multiverse\" | tee /etc/apt/sources.list.d/mongodb-org-3.2.list && \\\n  apt-get update && \\\n  apt-get install -y mongodb-org-shell mongodb-org-tools\n\nADD /scripts /dockup/\nRUN chmod 755 /dockup/*.sh\n\nENV PATHS_TO_BACKUP /dockup/mongodump\nENV MONGO_BACKUP_NAME mongodump\nENV BEFORE_BACKUP_CMD ./mongodump.sh\nENV AFTER_BACKUP_CMD ./mongoclean.sh\nENV AFTER_RESTORE_CMD ./mongorestore.sh\nENV MONGODB_HOST mongodb\nENV MONGODB_PORT 27017\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "/scripts",
+        "dest": "/dockup/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927 &&   echo \"deb http://repo.mongodb.org/apt/ubuntu \"$(lsb_release -sc)\"/mongodb-org/3.2 multiverse\" | tee /etc/apt/sources.list.d/mongodb-org-3.2.list &&   apt-get update &&   apt-get install -y mongodb-org-shell mongodb-org-tools",
+      "chmod 755 /dockup/*.sh"
+    ],
+    "workdir": [],
+    "from": "wetransform/dockup:latest",
+    "maintainer": "Simon Templer <simon@wetransform.to>",
+    "env": {
+      "PATHS_TO_BACKUP": "/dockup/mongodump",
+      "MONGO_BACKUP_NAME": "mongodump",
+      "BEFORE_BACKUP_CMD": "./mongodump.sh",
+      "AFTER_BACKUP_CMD": "./mongoclean.sh",
+      "AFTER_RESTORE_CMD": "./mongorestore.sh",
+      "MONGODB_HOST": "mongodb",
+      "MONGODB_PORT": "27017"
+    }
+  },
+  "source_repository_url": "https://github.com/wetransform-os/dockup-mongo.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/wetransform-os/dockup-mongo",
+  "docker_repository": "wetransform/dockup-mongo",
+  "docker_image": "wetransform/dockup-mongo",
+  "parameters_schema": {
+    "PATHS_TO_BACKUP": {
+      "default": "/dockup/mongodump",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGO_BACKUP_NAME": {
+      "default": "mongodump",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BEFORE_BACKUP_CMD": {
+      "default": "./mongodump.sh",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "AFTER_BACKUP_CMD": {
+      "default": "./mongoclean.sh",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "AFTER_RESTORE_CMD": {
+      "default": "./mongorestore.sh",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGODB_HOST": {
+      "default": "mongodb",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGODB_PORT": {
+      "default": "27017",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "wetransform/dockup-mongo",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/wetransform/dockup-mongo",
+    "https://hub.docker.com/v2/repositories/wetransform/dockup-mongo",
+    "https://github.com/wetransform-os/dockup-mongo.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/Amazon",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB"
+  ],
+  "info_url": "https://hub.docker.com/r/wetransform/dockup-mongo",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,75 @@
+{
+  "name": "lita Chef cookbook",
+  "chef_cookbook_name": "lita",
+  "revision": "0.0.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/lita",
+    "https://supermarket.chef.io/cookbooks/lita/download",
+    "https://supermarket.chef.io/cookbooks/lita/versions/0.0.2",
+    "https://supermarket.chef.io/cookbooks/lita/versions/0.0.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/lita/versions/0.0.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/lita",
+    "https://supermarket.chef.io/api/v1/cookbooks/lita/versions/0.0.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/lita",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/lita/versions/0.0.2/download",
+  "deprecated": false,
+  "created": "2014-07-23T20:54:19.503Z",
+  "updated": "2016-03-03T16:24:09.171Z",
+  "description": "Installs/configures the Lita chatbot",
+  "maintainer": {
+    "name": "harlanbarnes",
+    "email": "hbarnes@pobox.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 6637348,
+  "downloads_count_revision": 1201229,
+  "repository_url": "https://github.com/litaio/chef-lita",
+  "issues_url": "https://github.com/litaio/chef-lita/issues",
+  "chef_source_url": "https://github.com/litaio/chef-lita",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# lita-cookbook\n\nInstalls and configures the [lita](https://www.lita.io/) chatbot.\n\n## Supported Platforms\n\n* Ubuntu\n * 12.04 (precise)\n * 14.04 (precise)\n\nIt will likely work on other Ubuntu versions, however the automatic methods of installing ruby and redis will have issues.\n\n## Tunable Attributes\n\nAll tunable attributes are in the `lita` heirarchy.\n\nKey | Type | Description | Default\n:---|:---|:---|:---\n`name` | String  | Name of chatbot | Lita Chatbot\n`version` | String  | Gemfile-style version dependency of lita to install | nil (latest)\n`config_coookbook` | String  | Name of cookbook where config template stored | lita (current)\n`config_template` | String  | Name of config template file | lita (current)\n`locale` | String/Symbol  | Language to use | \":en\"\n`log_level` | String/Symbol  | Locale | \":info\"\n`admin` | Array of Strings  | Adapter specific IDs of Lita admins | empty\n`adapter` | String/Symbol  | Adapter to use for Lita instance | \":shell\"\n`adapter_version` | Fixed  | Version of adapter to use | nil (latest)\n`adapter_config` | Hash  | Hash of adapter specific configuration | emtpy\n`plugins` | Array of String and/or Hashes  | List of plugins to install and, optionally, Gemfile-style version dependency | empty\n`plugin_config` | Hash of Hashes  | Hash of plugin specific configuration | empty\n`redis_host` | String  | IP address of redis instance | 127.0.01\n`redis_port` | Numeric  | Port of redis instance | 6379\n`install_dir` | String  | Lita home directory | /opt/lita\n`log_dir` | String  | Lita log directory | /opt/lita/logs\n`run_dir` | String  | Lita var/run directory | /opt/lita/run\n`daemon_user` | String  | User to run daemon as | nobody\n`ruby_install_type` | String  | How to install ruby depedency | auto\n`redis_install_type` | String  | How to install redis depedency | auto\n\n### Important Note\n\nMany of the configuration elements (particularly in adapter or plugins) require symbols instead of strings. Since:\n\n* The cookbook is using Chef templates (ERB) to generate more ruby AND\n* ERB calls to_s on variables in the template\n\nyou'll need to put your items that should be symbols in as strings For example:\n\n```ruby\ndefault[\"lita\"][\"adapter\"] = \":shell\"\n```\n\nFor the adapter and plugin config the template will try to detect strings that begin with ```:``` and not quote them in the ```lita_config.rb```.\n\n## Usage\n\n### lita::default\n\nInstalls and configures the lita chatbot.\n\n## Configuration\n\n### Adapter\n\nTo make this effective you'll need to choose a non-default adapter from the [Lita plugin page](https://www.lita.io/plugins). The ```:shell``` adapter will not startup in daemon mode so the only way to test with it is to spin up a node, change into the ```node[\"lita\"][\"install_dir\"]``` and run ```lita```\n\n### Adapter Configuration\n\nThe adapter config is simply key/value pairs. If you need more complicated ruby configuratino (as some adapters do) you'll likely want to create a wrapper cookbook and set the ```config_cookbook``` and ```config_template``` attributes to your own template.\n\n### Plugins\n\nPlugins can be listed in an arry or, optionally listed as an array of hashes using plugin name as the key and Gemfile dependency syntax:\n\n```ruby\ndefault[\"lita\"][\"plugins\"] = [\n  \"ping\",\n  { \"jenkins\" => \">= 0.0.1\" }\n]\n```\n\n### Plugin Configuration\n\nThe plugins can be configured with a hash of hashes that are keyed off the plugin name:\n\n```ruby\ndefault[\"lita\"][\"plugin_config\"] = {\n  \"jenkins\" => {\n    \"url\" => \"http://test.com\"\n    \"auth\" => \"user1:sekret\"\n  }\n}\n```\n\n### Ruby and Redis\n\nLita [requires recent versions](http://docs.lita.io/getting-started/installation/) of Ruby and Redis. By default, the ```lita``` cookbook will automatically try to find appropriate ruyb and redis versions for your platform and version.\n\nTo install those dependencies yourself, simple set the install type attributes to ```none``` as such:\n\n```\nnode.default[\"lita\"][\"ruby_install_type\"] = \"none\"\nnode.default[\"lita\"][\"redit_install_type\"] = \"none\"\n```\n\nIf these versions don't work for you (or the cookbook doesn't currently support your platform/version), you can manage the installation of ruby and redis yourself through various methods:\n\n* Add ruby and redis using community cookbooks in your node/role run_list\n* Creating a wrapper cookbook that does the same\n* Using a base image that already includes the dependencies\n\nThe only requirement for the ```lita``` cookbook is that ```ruby```, ```gem``` and ```bundler``` are in the system path and provide the appropriate versions to work with lita.\n\n## Example\n\nHere's an example node configuration for leveraging ```lita-hipchat```:\n\n```\n{\n  \"lita\": {\n    \"adapter\": \"hipchat\",\n    \"adapter_config\": {\n      \"jid\": \"99999_0000000@chat.hipchat.com\",\n      \"password\": \"sekret1\",\n      \"rooms\": \":all\",\n      \"muc_domain\": \"conf.hipchat.com\"\n    }\n  },\n    \"plugins\": [\n      \"jenkins\",\n      \"pagerduty\",\n      \"cron\",\n      \"dig\",\n      \"youtube\",\n      \"xkcd\",\n      \"jenkins\",\n      \"wikipedia\"\n    ],\n    \"plugin_config\": {\n      \"jenkins\": {\n        \"url\": \"http://jenkins.notreally.com/\",\n        \"auth\": \"lita:sekret1\"\n      },\n      \"pagerduty\": {\n        \"api_key\": \"kkkkkkkkkkkkkkkkkkkkkk\",\n        \"subdomain\": \"notreally\"\n      }\n    }\n}\n```\n\n# TODO\n\n* Remove Pagerduty Hack - The ```lita-pagerduty``` plugin depends on the gem ```pagerduty-sdk```. The current version of ```pagerduty-sdk``` on rubygems.org has a bad dependency listed in it. (It references ```activesupport``` as ```active_support```.) However, it has been fixed in Github since Feb 25, but not released. [More info](https://github.com/kryptek/pagerduty-sdk/pull/2). As such, the Gemfile will detect if ```pagerduty``` is in the plugin list and pull the ```pagerduty-sdk``` directly from Github instead of rubygems.org.\n\n## License and Authors\n\n- Author:: Harlan Barnes (<hbarnes@pobox.com>)\n\n```text\nCopyright:: 2014 Harlan Barnes\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ruby-ng",
+      "revision": "~> 0.1.1",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/redis2",
+      "revision": "~> 0.5.0",
+      "self_resolve": true
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/diabol/logstash",
+    "repository_url": "https://hub.docker.com/v2/repositories/diabol/logstash",
+    "tags_url": "https://hub.docker.com/v2/repositories/diabol/logstash/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/diabol/logstash/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/diabol/logstash/autobuild",
+    "user": "diabol",
+    "name": "logstash",
+    "namespace": "diabol",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 503,
+    "last_updated": "2016-09-26T18:41:20.332396Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 766119430,
+        "id": 5046695,
+        "repository": 937346,
+        "creator": 35108,
+        "last_updater": 35108,
+        "last_updated": "2016-09-26T18:41:19.929810Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Diabol/docker-elk"
+  },
+  "name": "diabol/logstash Docker container",
+  "description": "Image for logstash",
+  "readme": "# docker-elk\n## A one button setup of ELK-stack\n\n### How you do it:\n\n```bash\n    ./run.sh\n```\n### This will happen\n - The latest images of ELK-components (elasticsearch, logstash and kibana) will be downloaded from diabol docker-hub repo using the `docker pull` command\n - One instance of each component will be started according to the `docker-compose.yml` file\n - The logstash component will parse the demolog entrys found in the log file in `logstash/demologs`\n  - This behaviour can be overridden by editing the `command:`-clause of the logstash service in the `docker-compose.yml` file.\n  - The `/opt/logstash/config/demo.conf` part of the `command` indicates that the _demo config file_ found in the `logstash/config` directory is used - **A file of your choosing can be used instead**\n  - You will most likely want to add a `volume` for your log files \n - The components can also be started with the `docker-compose up` command (which is executed at the end of `run.sh`)\n  - **This will make the startup faster** because no `docker pull` will be issued\n   - Make sure to run the `run.sh` command if changes have been made to images\n\n### Further customisation\n - Creating your own elk-stack images is totally possible by editing the `Dockerfile` files and then build them with the `docker build` command, e.g. `docker build -t local/myelastic .` in the directory containing the `Dockerfile`\n  - There are number of reasons to create a your own images, these may include:\n    - To be able to always use the latest versions of elk-stack components released by elastic\n    - To be able to use another linux distribution of your liking\n - You can also add other services in the `docker-compose.yml` file\n  - It can be useful to use a caching mechanism before parsing your log files with logstash\n  - Multiple logstash instances for different kinds of log files can be useful to keep the logstash config readable\n",
+  "dockerfile": "FROM diabol/elkbase\nMAINTAINER Diabol.se\nRUN set -ex \\\n\t&& curl -L -o /opt/logstash.tar.gz https://download.elastic.co/logstash/logstash/logstash-all-plugins-2.4.0.tar.gz \\\n\t&& tar -xzf /opt/logstash.tar.gz -C /opt \\\n        && yum update -y \\\n        && groupadd logstash \\\n        && useradd -g logstash logstash \\\n        && mv /opt/logstash-[0-9].* /opt/logstash \\\n        && chmod 777 /opt/logstash\nWORKDIR /opt/logstash\nRUN set -ex \\\n\t&& for path in \\\n\t\t./data \\\n\t\t./logs \\\n\t\t./config \\\n\t\t./config/scripts \\\n\t; do \\\n\t\tmkdir -p \"$path\"; \\\n\t\tchown -R logstash:logstash \"$path\"; \\\n\tdone\nUSER logstash\nENV JAVA_HOME=/opt/java/jdk\nENV PATH=$PATH:JAVA_HOME/bin\n#ENTRYPOINT [\"/opt/logstash/bin/logstash\"]\nCMD [\"/opt/logstash/bin/logstash\", \"-f\", \"/opt/logstash/config/demo.conf\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "set -ex \t&& curl -L -o /opt/logstash.tar.gz https://download.elastic.co/logstash/logstash/logstash-all-plugins-2.4.0.tar.gz \t&& tar -xzf /opt/logstash.tar.gz -C /opt         && yum update -y         && groupadd logstash         && useradd -g logstash logstash         && mv /opt/logstash-[0-9].* /opt/logstash         && chmod 777 /opt/logstash",
+      "set -ex \t&& for path in \t\t./data \t\t./logs \t\t./config \t\t./config/scripts \t; do \t\tmkdir -p \"$path\"; \t\tchown -R logstash:logstash \"$path\"; \tdone"
+    ],
+    "workdir": [
+      "/opt/logstash"
+    ],
+    "from": "diabol/elkbase",
+    "maintainer": "Diabol.se",
+    "user": "logstash",
+    "env": {
+      "JAVA_HOME": "/opt/java/jdk",
+      "PATH": "$PATH:JAVA_HOME/bin"
+    },
+    "cmd": "[\"/opt/logstash/bin/logstash\", \"-f\", \"/opt/logstash/config/demo.conf\"]"
+  },
+  "source_repository_url": "https://github.com/Diabol/docker-elk.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Diabol/docker-elk",
+  "docker_repository": "diabol/logstash",
+  "docker_image": "diabol/logstash",
+  "parameters_schema": {
+    "JAVA_HOME": {
+      "default": "/opt/java/jdk",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:JAVA_HOME/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "diabol/logstash",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/diabol/logstash",
+    "https://hub.docker.com/v2/repositories/diabol/logstash",
+    "https://github.com/Diabol/docker-elk.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image",
+    "Type/Devopsware/Logging/Logstash"
+  ],
+  "info_url": "https://hub.docker.com/r/diabol/logstash",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

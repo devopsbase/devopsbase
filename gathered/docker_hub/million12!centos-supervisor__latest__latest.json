@@ -1,0 +1,120 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/million12/centos-supervisor",
+    "repository_url": "https://hub.docker.com/v2/repositories/million12/centos-supervisor",
+    "tags_url": "https://hub.docker.com/v2/repositories/million12/centos-supervisor/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/million12/centos-supervisor/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/million12/centos-supervisor/autobuild",
+    "user": "million12",
+    "name": "centos-supervisor",
+    "namespace": "million12",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 12,
+    "pull_count": 3756,
+    "last_updated": "2016-10-09T12:46:39.327985Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 96661917,
+        "id": 41585,
+        "repository": 54499,
+        "creator": 22393,
+        "last_updater": 22393,
+        "last_updated": "2016-10-09T12:46:38.998364Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "devel",
+        "full_size": 120437881,
+        "id": 41591,
+        "repository": 54499,
+        "creator": 22393,
+        "last_updater": 59891,
+        "last_updated": "2015-11-14T09:34:53.144365Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "sv",
+        "full_size": 79823695,
+        "id": 41588,
+        "repository": 54499,
+        "creator": 22393,
+        "last_updater": 59891,
+        "last_updated": "2015-11-14T09:33:23.538819Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "million12/docker-centos-supervisor"
+  },
+  "name": "million12/centos-supervisor Docker container",
+  "description": "Base CentOS-7 with supervisord launcher, highly extensible.",
+  "readme": "# CentOS-7 with supervisord launcher | Docker\n[![Circle CI](https://circleci.com/gh/million12/docker-centos-supervisor.svg?style=svg)](https://circleci.com/gh/million12/docker-centos-supervisor)\n\nThis is a CentOS-7 Docker [million12/centos-supervisor](https://registry.hub.docker.com/u/million12/centos-supervisor/) image, perfect in case when you need to launch more then one process inside a container. This image is based on official [centos:centos7](https://registry.hub.docker.com/_/centos/) and it adds only ca. 20MB on top of it.\n\n## What's included\n\n##### - bootstrap.sh script\n\nThe container has an **ENTRYPOINT** set to `/config/bootstrap.sh`. It iterates through all `/config/init/*.sh` scripts and runs them, then launches supervisord. See [bootstrap.sh](container-files/config/bootstrap.sh) for details.\n\nBy default, the **CMD** option in Dockerfile is empty, but the bootstrap.sh script is configured to run everything which is passed into it. Therefore you can launch it in several ways:\n* detached mode, no argument(s) passed: supervisord starts in foreground mode and stays until container is stopped.\n* detached mode, some argument(s) passed: arguments are executed; supervisord starts in foreground mode and stays until container is stopped.\n* interactive mode with TTY (-it), no argument(s) passed: supervisord starts in background mode; interactive bash waits for user input. Exiting from bash (CMD+D) exists the container.\n* interactive mode with TTY (-it), some argument(s) passed: supervisord starts in background mode, passed command is executed; container exits.\n\n##### - supervisord\n\nSupervisord is installed and loads services to run from `/etc/supervisor.d/` directory. Add your own files there to launch your services. For example in your `Dockerfile` you could put:  \n```ADD my-supervisord-service.conf /etc/supervisord.d/my-supervisord-service.conf```\n\nLearn more about about [supervisord inside containers on official Docker documentation](https://docs.docker.com/articles/using_supervisord/).\n\n##### - init scripts\n\nYou can add your .sh scripts to `/config/init` directory to have them executed when container starts. The bootstrap script is configured to run them just before supervisord starts. See [million12/nginx](https://github.com/million12/docker-nginx) for example usage.\n\n##### - error logging\n\nLogfile for supervisord is switched off to avoid logging inside container. Instead, all logs are easily available via `docker logs [container name]`.\n\nThis is probably the best approach if you would like to source your logs from outside the container via `docker logs` (also via CoreOS `journald') and you do not want to worry about logging and log management inside your container and/or data volume.\n\n##### - /data volume\n\nThe `/data` directory is meant to be used to simply and easily deploy web applications using a volume binding on `/data`, presumably using [data only containers](https://docs.docker.com/userguide/dockervolumes/) pattern.\n\nRecommended structure:  \n```\n/data/run/ # pid, sockets\n/data/conf/ # extra configs for your services\n/data/logs/ # logs\n/data/www/ # your web application data\n```\n\n\n## Usage\n\nAs explained above, this container is configured to run your service(s) both in interactive and non-interactive modes.\n  \n`docker run -it million12/centos-supervisor`: runs supervisord, then interactive bash shell and waits for user's input. Exiting from the shell kills the container.\n\n`docker run -it million12/centos-supervisor ps aux`:  runs supervisord, then `ps aux` command inside container and exists.\n\n`docker run -it million12/centos-supervisor top`:  runs supervisord, then `top` tool. Exiting from top exits the container.\n\n`docker run -d million12/centos-supervisor`: detached, runs supervisord in foreground mode and its configured services\n\n`docker run -d million12/centos-supervisor touch 'test-file'`: detached, runs `touch 'test-file'` command, then supervisord in foreground mode and its configured services\n\n\n## Build\n\n`docker build --tag=million12/centos-supervisor .`\n\n\n## Author\n\nAuthor: Marcin Ryzycki (<marcin@m12.io>)  \nAuthor: Przemyslaw Ozgo (<linux@ozgo.info>)  \nThis work is also inspired by [maxexcloo](https://github.com/maxexcloo)'s work on his [docker images](https://github.com/maxexcloo/Docker). Many thanks!\n\n---\n\n**Sponsored by [Prototype Brewery](http://prototypebrewery.io/)** - the new prototyping tool for building highly-interactive prototypes of your website or web app. Built on top of [Neos CMS](https://www.neos.io/) and [Zurb Foundation](http://foundation.zurb.com/) framework.\n",
+  "dockerfile": "FROM centos:centos7\nMAINTAINER Marcin Ryzycki marcin@m12.io, Przemyslaw Ozgo linux@ozgo.info\n\n# - Install basic packages (e.g. python-setuptools is required to have python's easy_install)\n# - Install yum-utils so we have yum-config-manager tool available\n# - Install inotify, needed to automate daemon restarts after config file changes\n# - Install jq, small library for handling JSON files/api from CLI\n# - Install supervisord (via python's easy_install - as it has the newest 3.x version)\nRUN \\\n  yum update -y && \\\n  yum install -y epel-release && \\\n  yum install -y iproute python-setuptools hostname inotify-tools yum-utils which jq && \\\n  yum clean all && \\\n\n  easy_install supervisor\n\n# Add supervisord conf, bootstrap.sh files\nADD container-files /\n\nVOLUME [\"/data\"]\n\nENTRYPOINT [\"/config/bootstrap.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "container-files",
+        "dest": "/"
+      }
+    ],
+    "expose": [],
+    "volume": [
+      "[\"/data\"]"
+    ],
+    "run": [
+      "  yum update -y &&   yum install -y epel-release &&   yum install -y iproute python-setuptools hostname inotify-tools yum-utils which jq &&   yum clean all && "
+    ],
+    "workdir": [],
+    "from": "centos:centos7",
+    "maintainer": "Marcin Ryzycki marcin@m12.io, Przemyslaw Ozgo linux@ozgo.info",
+    "entrypoint": "[\"/config/bootstrap.sh\"]"
+  },
+  "source_repository_url": "https://github.com/million12/docker-centos-supervisor.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/million12/docker-centos-supervisor",
+  "docker_repository": "million12/centos-supervisor",
+  "docker_image": "million12/centos-supervisor",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "million12/centos-supervisor",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/million12/centos-supervisor",
+    "https://hub.docker.com/v2/repositories/million12/centos-supervisor",
+    "https://github.com/million12/docker-centos-supervisor.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/CentOS"
+  ],
+  "info_url": "https://hub.docker.com/r/million12/centos-supervisor",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

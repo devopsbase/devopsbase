@@ -1,0 +1,166 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/voidbridge/haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/voidbridge/haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/voidbridge/haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/voidbridge/haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/voidbridge/haproxy/autobuild",
+    "user": "voidbridge",
+    "name": "haproxy",
+    "namespace": "voidbridge",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 753,
+    "last_updated": "2016-09-09T16:42:15.090192Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1.6",
+        "full_size": 186339832,
+        "id": 4114303,
+        "repository": 701130,
+        "creator": 402924,
+        "last_updater": 451135,
+        "last_updated": "2016-09-09T16:42:13.913087Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "1.5",
+        "full_size": 181843076,
+        "id": 3208345,
+        "repository": 701130,
+        "creator": 402924,
+        "last_updater": 402924,
+        "last_updated": "2016-06-10T15:28:54.745182Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 181839056,
+        "id": 3113933,
+        "repository": 701130,
+        "creator": 402924,
+        "last_updater": 402924,
+        "last_updated": "2016-05-27T16:32:52.005238Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      }
+    ],
+    "build_name": "voidbridge/docker-haproxy"
+  },
+  "name": "voidbridge/haproxy Docker container",
+  "description": "HAProxy",
+  "readme": null,
+  "dockerfile": "FROM voidbridge/centos7\nMAINTAINER Voidbridge <developers@voidbridge.com>\n\nLABEL io.k8s.description=\"HAProxy load balancer\" \\\n      io.k8s.display-name=\"HAProxy\"\n\nRUN haproxy_version=\"1.6.7\" && \\\n    build_deps=\"make gcc pcre-static pcre-devel openssl-devel\" && \\\n    yum install -y --enablerepo=centosplus gettext epel-release && \\\n    yum install -y $build_deps && \\\n    mkdir /tmp/haproxy-src && \\\n    curl -fL http://www.haproxy.org/download/1.6/src/haproxy-${haproxy_version}.tar.gz | \\\n      tar -zxf - -C /tmp/haproxy-src --strip-components 1 && \\\n    make -C /tmp/haproxy-src \\\n      TARGET=linux2628 \\\n      USE_PCRE=1 \\\n      USE_OPENSSL=1 \\\n      USE_ZLIB=1 \\\n      all install-bin && \\\n    rm -rf /tmp/haproxy-src && \\\n    yum remove -y $build_deps && \\\n    yum install -y rsyslog nodejs npm hostname bind-utils telnet && \\\n    yum clean all -y && \\\n    setcap 'cap_net_bind_service=+ep' /usr/local/sbin/haproxy && \\\n    mkdir /etc/haproxy /var/lib/haproxy && \\\n    chmod 777 /var/run /etc/haproxy /var/lib/haproxy\n\n# Install Tini\nADD https://github.com/krallin/tini/releases/download/v0.9.0/tini /usr/bin/tini\nADD https://github.com/krallin/tini/releases/download/v0.9.0/tini.asc /usr/bin/tini.asc\nRUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys 0527A9B7 && \\\n    gpg --verify /usr/bin/tini.asc && \\\n    chmod 755 /usr/bin/tini\n\n# Prepare NodeJS modules\nADD files/opt/haproxy-updater/package.json /tmp/node/package.json\nRUN cd /tmp/node && \\\n    npm install && \\\n    mkdir -p /opt/haproxy-updater && \\\n    cp -a /tmp/node/node_modules /opt/haproxy-updater/ && \\\n    rm -rf /tmp/node\n\nADD files /\nRUN mkdir -p /var/spool/rsyslog && \\\n    chmod 755 /usr/bin/run-haproxy && \\\n    chmod 777 /var/spool/rsyslog\n\nENV STATS_USERNAME = admin\nENV STATS_PASSWORD = admin\n\nUSER 1001\nEXPOSE 80 1936\nVOLUME /mnt/data\nENTRYPOINT [\"/usr/bin/tini\", \"--\"]\nCMD [\"run-haproxy\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "https://github.com/krallin/tini/releases/download/v0.9.0/tini",
+        "dest": "/usr/bin/tini"
+      },
+      {
+        "source": "https://github.com/krallin/tini/releases/download/v0.9.0/tini.asc",
+        "dest": "/usr/bin/tini.asc"
+      },
+      {
+        "source": "files/opt/haproxy-updater/package.json",
+        "dest": "/tmp/node/package.json"
+      },
+      {
+        "source": "files",
+        "dest": "/"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "/mnt/data"
+    ],
+    "run": [
+      "haproxy_version=\"1.6.7\" &&     build_deps=\"make gcc pcre-static pcre-devel openssl-devel\" &&     yum install -y --enablerepo=centosplus gettext epel-release &&     yum install -y $build_deps &&     mkdir /tmp/haproxy-src &&     curl -fL http://www.haproxy.org/download/1.6/src/haproxy-${haproxy_version}.tar.gz |       tar -zxf - -C /tmp/haproxy-src --strip-components 1 &&     make -C /tmp/haproxy-src       TARGET=linux2628       USE_PCRE=1       USE_OPENSSL=1       USE_ZLIB=1       all install-bin &&     rm -rf /tmp/haproxy-src &&     yum remove -y $build_deps &&     yum install -y rsyslog nodejs npm hostname bind-utils telnet &&     yum clean all -y &&     setcap 'cap_net_bind_service=+ep' /usr/local/sbin/haproxy &&     mkdir /etc/haproxy /var/lib/haproxy &&     chmod 777 /var/run /etc/haproxy /var/lib/haproxy",
+      "gpg --keyserver ha.pool.sks-keyservers.net --recv-keys 0527A9B7 &&     gpg --verify /usr/bin/tini.asc &&     chmod 755 /usr/bin/tini",
+      "cd /tmp/node &&     npm install &&     mkdir -p /opt/haproxy-updater &&     cp -a /tmp/node/node_modules /opt/haproxy-updater/ &&     rm -rf /tmp/node",
+      "mkdir -p /var/spool/rsyslog &&     chmod 755 /usr/bin/run-haproxy &&     chmod 777 /var/spool/rsyslog"
+    ],
+    "workdir": [],
+    "from": "voidbridge/centos7",
+    "maintainer": "Voidbridge <developers@voidbridge.com>",
+    "label": "io.k8s.description=\"HAProxy load balancer\"       io.k8s.display-name=\"HAProxy\"",
+    "env": {
+      "STATS_USERNAME": "",
+      "": "admin",
+      "STATS_PASSWORD": ""
+    },
+    "user": "1001",
+    "entrypoint": "[\"/usr/bin/tini\", \"--\"]",
+    "cmd": "[\"run-haproxy\"]"
+  },
+  "source_repository_url": "git@bitbucket.org:voidbridge/docker-haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/voidbridge/docker-haproxy",
+  "docker_repository": "voidbridge/haproxy",
+  "docker_image": "voidbridge/haproxy",
+  "parameters_schema": {
+    "STATS_USERNAME": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "admin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "STATS_PASSWORD": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "voidbridge/haproxy",
+  "revision": "1.6",
+  "uris": [
+    "https://hub.docker.com/r/voidbridge/haproxy",
+    "https://hub.docker.com/v2/repositories/voidbridge/haproxy",
+    "git@bitbucket.org:voidbridge/docker-haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/voidbridge/haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

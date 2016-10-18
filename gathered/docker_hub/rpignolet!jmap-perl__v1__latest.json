@@ -1,0 +1,134 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/rpignolet/jmap-perl",
+    "repository_url": "https://hub.docker.com/v2/repositories/rpignolet/jmap-perl",
+    "tags_url": "https://hub.docker.com/v2/repositories/rpignolet/jmap-perl/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/rpignolet/jmap-perl/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/rpignolet/jmap-perl/autobuild",
+    "user": "rpignolet",
+    "name": "jmap-perl",
+    "namespace": "rpignolet",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 144,
+    "last_updated": "2016-07-18T08:00:20.059477Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "v1",
+        "full_size": 374852472,
+        "id": 3880627,
+        "repository": 247464,
+        "creator": 311891,
+        "last_updater": 311891,
+        "last_updated": "2016-07-18T08:00:16.266051Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 374793438,
+        "id": 523776,
+        "repository": 247464,
+        "creator": 311891,
+        "last_updater": 311891,
+        "last_updated": "2016-07-13T17:07:14.821882Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "docker-v1",
+        "full_size": 374787036,
+        "id": 3822601,
+        "repository": 247464,
+        "creator": 311891,
+        "last_updater": 311891,
+        "last_updated": "2016-07-13T14:36:03.927031Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "rpignolet/jmap-perl"
+  },
+  "name": "rpignolet/jmap-perl Docker container",
+  "description": "Container for jmap-perl, a JMAP to IMAP proxy",
+  "readme": "Perl JMAP Proxy Server\n======================\n\nThis is a simple implementation of a proxy server for the JMAP protocol as\nspecified at http://jmap.io/\n\nAt the backend, it talks to IMAP and SMTP servers to allow placing a JMAP\ninterface on top of a legacy mail system.\n\nFor efficiency reasons, this initial implementation requires that all servers\nsupport the CONDSTORE extension, (RFC4551/RFC7162).\n\nA separate backend for Gmail is provided, because Gmail has native server-side\nthread support, meaning that threading does not need to be calculated locally.\n\nNOTE: this library does not ship with the cloned FastMail web interface which\nis running on https://proxy.jmap.io/.  The licencing situation for that code is\nnot yet resolved.\n",
+  "dockerfile": "FROM phusion/baseimage:0.9.0\nMAINTAINER Romain Pignolet <rpignolet@linagora.com>\n\nWORKDIR /root\n\nRUN apt-get update\nRUN apt-get -y install build-essential \\\n\tlibanyevent-httpd-perl \\\n\tlibdata-uuid-libuuid-perl \\\n\tlibdatetime-perl \\\n\tlibdbd-sqlite3-perl \\\n\tlibdbi-perl \\\n\tlibemail-address-perl \\\n\tlibemail-mime-perl \\\n\tlibhtml-parser-perl \\\n\tlibhtml-strip-perl \\\n\tlibhttp-tiny-perl \\\n\tlibhttp-date-perl \\\n\tlibimage-size-perl \\\n\tlibio-socket-ssl-perl \\\n\tlibjson-perl \\\n\tlibjson-xs-perl \\\n\tliblocale-gettext-perl \\\n\tlibswitch-perl \\\n\tlibexpat1-dev \\\n\tgit \\\n\tnginx\n\nRUN cpan; true\n\nRUN curl -L -O http://search.cpan.org/CPAN/authors/id/C/CI/CINDY/AnyEvent-HTTPD-SendMultiHeaderPatch-v0.1.2.tar.gz && \\\n\ttar xf AnyEvent-HTTPD-SendMultiHeaderPatch-v0.1.2.tar.gz && \\\n\tcd AnyEvent-HTTPD-SendMultiHeaderPatch-v0.1.2 && \\\n\tperl Makefile.PL && \\\n\tmake install\n\nRUN git clone https://github.com/brong/Net-CardDAVTalk.git && \\\n \tcd Net-CardDAVTalk && \\\n\tperl Makefile.PL && \\\n\tmake install\n\t\nRUN perl -MCPAN -e 'my $c = \"CPAN::HandleConfig\"; $c->load(doit => 1, autoconfig => 1); $c->edit(prerequisites_policy => \"follow\"); $c->edit(build_requires_install_policy => \"yes\"); $c->commit'\n\nRUN cpan Class::ReturnValue Class::Accessor Set::Infinite  \\\n\t\tDateTime::Set DateTime::Event::Recurrence DateTime::TimeZone DateTime::Event::ICal \\\n\t\tText::vFile::asData Test::LongString Test::Warn  \\\n\t\tData::ICal UNIVERSAL::require Mail::IMAPTalk XML::Parser  \\\n\t\tXML::SemanticDiff XML::Spice Email::Sender::Transport::SMTPS  \\\n\t\tNet::DAVTalk Net::CalDAVTalk AnyEvent::HTTPD::CookiePatch  \\\n\t\tAnyEvent::IMAP Cookie::Baker Date::Parse HTML::GenerateUtil  \\\n\t\tEmail::Sender:Simple Moose IO:All AnyEvent:HTTP Net::Server::PreFork \\\n\t\tList::Pairwise IO::LockedFile Template EV Net::DNS || true\n\t\nRUN mkdir -p /home/jmap/data\n\nCOPY . /home/jmap/jmap-perl\n\nWORKDIR /home/jmap/jmap-perl\n\nRUN rm /etc/nginx/sites-enabled/default\n\nCOPY docker/nginx.conf /etc/nginx/sites-enabled/\n\nCOPY docker/entrypoint.sh /root/\n\nEXPOSE 80\n\nENTRYPOINT [\"sh\", \"/root/entrypoint.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update",
+      "apt-get -y install build-essential \tlibanyevent-httpd-perl \tlibdata-uuid-libuuid-perl \tlibdatetime-perl \tlibdbd-sqlite3-perl \tlibdbi-perl \tlibemail-address-perl \tlibemail-mime-perl \tlibhtml-parser-perl \tlibhtml-strip-perl \tlibhttp-tiny-perl \tlibhttp-date-perl \tlibimage-size-perl \tlibio-socket-ssl-perl \tlibjson-perl \tlibjson-xs-perl \tliblocale-gettext-perl \tlibswitch-perl \tlibexpat1-dev \tgit \tnginx",
+      "cpan; true",
+      "curl -L -O http://search.cpan.org/CPAN/authors/id/C/CI/CINDY/AnyEvent-HTTPD-SendMultiHeaderPatch-v0.1.2.tar.gz && \ttar xf AnyEvent-HTTPD-SendMultiHeaderPatch-v0.1.2.tar.gz && \tcd AnyEvent-HTTPD-SendMultiHeaderPatch-v0.1.2 && \tperl Makefile.PL && \tmake install",
+      "git clone https://github.com/brong/Net-CardDAVTalk.git &&  \tcd Net-CardDAVTalk && \tperl Makefile.PL && \tmake install",
+      "perl -MCPAN -e 'my $c = \"CPAN::HandleConfig\"; $c->load(doit => 1, autoconfig => 1); $c->edit(prerequisites_policy => \"follow\"); $c->edit(build_requires_install_policy => \"yes\"); $c->commit'",
+      "cpan Class::ReturnValue Class::Accessor Set::Infinite  \t\tDateTime::Set DateTime::Event::Recurrence DateTime::TimeZone DateTime::Event::ICal \t\tText::vFile::asData Test::LongString Test::Warn  \t\tData::ICal UNIVERSAL::require Mail::IMAPTalk XML::Parser  \t\tXML::SemanticDiff XML::Spice Email::Sender::Transport::SMTPS  \t\tNet::DAVTalk Net::CalDAVTalk AnyEvent::HTTPD::CookiePatch  \t\tAnyEvent::IMAP Cookie::Baker Date::Parse HTML::GenerateUtil  \t\tEmail::Sender:Simple Moose IO:All AnyEvent:HTTP Net::Server::PreFork \t\tList::Pairwise IO::LockedFile Template EV Net::DNS || true",
+      "mkdir -p /home/jmap/data",
+      "rm /etc/nginx/sites-enabled/default"
+    ],
+    "workdir": [
+      "/root",
+      "/home/jmap/jmap-perl"
+    ],
+    "from": "phusion/baseimage:0.9.0",
+    "maintainer": "Romain Pignolet <rpignolet@linagora.com>",
+    "copy": "docker/entrypoint.sh /root/",
+    "entrypoint": "[\"sh\", \"/root/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/rpignolet/jmap-perl.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/rpignolet/jmap-perl",
+  "docker_repository": "rpignolet/jmap-perl",
+  "docker_image": "rpignolet/jmap-perl",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "rpignolet/jmap-perl",
+  "revision": "v1",
+  "uris": [
+    "https://hub.docker.com/r/rpignolet/jmap-perl",
+    "https://hub.docker.com/v2/repositories/rpignolet/jmap-perl",
+    "https://github.com/rpignolet/jmap-perl.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Perl",
+    "Type/Middleware/Proxy"
+  ],
+  "info_url": "https://hub.docker.com/r/rpignolet/jmap-perl",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

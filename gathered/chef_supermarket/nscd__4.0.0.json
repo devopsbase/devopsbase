@@ -1,0 +1,102 @@
+{
+  "name": "nscd Chef cookbook",
+  "chef_cookbook_name": "nscd",
+  "revision": "4.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/nscd",
+    "https://supermarket.chef.io/cookbooks/nscd/download",
+    "https://supermarket.chef.io/cookbooks/nscd/versions/4.0.0",
+    "https://supermarket.chef.io/cookbooks/nscd/versions/4.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/nscd/versions/4.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/nscd",
+    "https://supermarket.chef.io/api/v1/cookbooks/nscd/versions/4.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/nscd",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/nscd/versions/4.0.0/download",
+  "deprecated": false,
+  "created": "2009-10-28T19:17:07.000Z",
+  "updated": "2016-06-10T22:06:13.396Z",
+  "description": "Installs and configures nscd",
+  "maintainer": {
+    "name": "chef",
+    "email": "cookbooks@chef.io"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 9,
+  "downloads_count": 7317115,
+  "downloads_count_revision": 2767,
+  "repository_url": "https://github.com/opscode-cookbooks/nscd",
+  "issues_url": "https://github.com/opscode-cookbooks/nscd/issues",
+  "chef_source_url": "https://github.com/opscode-cookbooks/nscd",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# nscd Cookbook\n\n[![Build Status](https://travis-ci.org/chef-cookbooks/nscd.svg?branch=master)](https://travis-ci.org/chef-cookbooks/nscd) [![Cookbook Version](https://img.shields.io/cookbook/v/nscd.svg)](https://supermarket.chef.io/cookbooks/nscd)\n\nInstalls and configures name service cache daemon (nscd). Provides a custom resource for clearing nscd database caches.\n\n## Requirements\n\n### Platforms\n\n- Debian 7+\n- Ubuntu 12.04+\n- RHEL/CentOS 5+\n- Fedora\n- SmartOS\n\n### Chef\n\n- Chef 12+\n\n### Cookbooks\n\n- compat_resource\n\n## Attributes\n\n- `default['nscd']['package']` - nscd package name, defaults to `nscd`. Other variants include: `unscd`, `gnscd`\n- `default['nscd']['version']` - nscd version, defaults to `nil`. If set to `nil`, the latest will be installed.\n\nThe following attributes affect configuration of `/etc/nscd.conf`.\n\n- `default['nscd']['logfile']`. Specifies name of the file to which debug info should be written. Default `/var/log/nscd`\n- `default['nscd']['threads']`. This is the number of threads that are started to wait for requests. At least five threads will always be created. Default `4`\n- `default['nscd']['max_threads']`. Specifies the maximum number of threads. Default `32`\n- `default['nscd']['server_user']`. If this option is set, `nscd` will run as this user and not as `root`. If a separate cache for every user is used (`-S` parameter), this option is ignored. Default `nscd`\n- `default['nscd']['stat_user']`. Specifies the user who is allowed to request statistics. Default `root`\n- `default['nscd']['debug_level']`. Sets the desired debug level. Default `0`\n- `default['nscd']['reload_count']`. Limit on the number of times a cached entry gets reloaded without being used before it gets removed. Default `5`\n- `default['nscd']['paranoia']`. Enabling paranoia mode causes `nscd` to restart itself periodically. Default `no`\n- `default['nscd']['restart_interval']`. Sets the restart interval to time seconds if periodic restart is enabled by enabling `paranoia` mode. Default `3600`\n- `default['nscd']['databases']`. List of databases to configure. Default `%[passwd group hosts services netgroup`]\n\nEach database has attributes, default depends on `SERVICE`, see attribute file.\n\n- `default['nscd'][SERVICE]['enable_cache']`. Enables or disables the specified `SERVICE` cache.\n- `default['nscd'][SERVICE]['positive_time_to_live']`. Sets the TTL (time-to-live) for positive entries (successful queries) in the specified cache for service. Value is in seconds. Larger values increase cache hit rates and reduce mean response times, but increase problems with cache coherence.\n- `default['nscd'][SERVICE]['negative_time_to_live']`. Sets the TTL (time-to-live) for negative entries (unsuccessful queries) in the specified cache for service. Value is in seconds. Can result in significant performance improvements if there are several files owned by UIDs (user IDs) not in system databases (for example untarring the Linux kernel sources as root); should be kept small to reduce cache coherency problems.\n- `default['nscd'][SERVICE]['suggested_size']`. This is the internal hash table size, value should remain a prime number for optimum efficiency.\n- `default['nscd'][SERVICE]['check_files']`. Enables or disables checking the file belonging to the specified service for changes. The files are `/etc/passwd`, `/etc/group`, `/etc/hosts`, `/etc/services` and `/etc/netgroup`.\n- `default['nscd'][SERVICE]['persistent']`. Keep the content of the cache for service over server restarts; useful when `paranoia` mode is set.\n- `default['nscd'][SERVICE]['shared']`. The memory mapping of the `nscd` databases for service is shared with the clients so that they can directly search in them instead of having to ask the daemon over the socket each time a lookup is performed.\n- `default['nscd'][SERVICE]['max_db_size']`. The maximum allowable size, in bytes, of the database files for the service.\n- `default['nscd'][SERVICE]['auto_propagate']`. When set to `no` for `passwd` or `group` service, then the `.byname` requests are not added to `passwd.byuid` or `group.bygid` cache. This can help with tables containing multiple records for the same ID. This option is valid only for services `passwd` and `group`.\n\n## Recipes\n\n### default\n\nInstalls nscd, manages the nscd service and makes available commands to clear the nscd databases (passwd and group) so they can be notified in other recipes (such as when managing openldap).\n\n## Custom Resources\n\nclear_cache The clear_cache custom resource provides a simple way to clear the cache of 1 or more nscd databases from other recipes.\n\n### Actions\n\n- :clear: clears the nscd database cache\n\n### Properties\n\n- databases: Array of nscd databases (defaults to passwd group hosts services, and netgroup)\n\n### Examples\n\nClearing caches of passwd, and group databases\n\n```ruby\nnscd_clear_cache 'clear-nscd-caches' do\n  databases %w(passwd group)\nend\n```\n\nClearing caches of passwd, and group databases via notification so the databases are only cleared when another change is made.\n\n```ruby\nnscd_clear_cache 'clear-nscd-caches' do\n  databases %w(passwd group)\n  action :nothing\nend\n\ntemplate '/etc/nsswitch.conf' do\n  notifies :run, 'nscd_clear_cache[clear-nscd-caches]', :immediately\nend\n```\n\n## Usage\n\nIf you're using nscd, add this recipe. If you need to clear database cache within other recipes using the `nscd_clear_cache` custom resource.\n\nNote: Version 2.0 of this cookbook replaces notifying execute resource for clearing caches with the `nscd_clear_cache` custom resource.\n\n## License & Authors\n\n```\nAuthor:: Joshua Timberman (<joshua@chef.io>)\n\nCopyright:: 2009-2016, Chef Software, Inc\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "oracle",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/compat_resource",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "nscd::default": "Installs and configures nscd"
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/flem/httpd",
+    "repository_url": "https://hub.docker.com/v2/repositories/flem/httpd",
+    "tags_url": "https://hub.docker.com/v2/repositories/flem/httpd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/flem/httpd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/flem/httpd/autobuild",
+    "user": "flem",
+    "name": "httpd",
+    "namespace": "flem",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 41,
+    "last_updated": "2016-03-22T23:31:13.305145Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 69435129,
+        "id": 2334161,
+        "repository": 582844,
+        "creator": 641900,
+        "last_updater": 641900,
+        "last_updated": "2016-03-22T23:31:10.632146Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "francklemoine/httpd"
+  },
+  "name": "flem/httpd Docker container",
+  "description": "Docker image with some httpd modules",
+  "readme": "# httpd\nDocker image with some httpd modules :\n\n  - proxy_module\n  - proxy_connect_module\n  - proxy_http_module\n  - proxy_fcgi_module\n  - vhost_alias_module\n  - ssl_module\n  - socache_shmcb_module\n  - rewrite_module\n\nAdd your Apache configuration files according to needs into :\n\n  - $HTTPD_PREFIX/conf/extra\n  - $HTTPD_PREFIX/conf-enabled\n\n## Usage\n\n```\ndocker run -d \\\n           --name myHttpdContainer \\\n           -e SERVERNAME=foo \\\n           -e SERVERADMIN=admin@foo \\\n           -p 80:80 \\\n           -p 443:443 \\\n           --volumes-from otherContainer \\\n           flem/httpd\n```\n\n\n```\ndocker cp httpd-vhosts.conf myHttpdContainer:/usr/local/apache2/conf/extra/\ndocker cp 020-httpd-ssl-dokuwiki.conf myHttpdContainer:/usr/local/apache2/conf-enabled/\ndocker stop myHttpdContainer\ndocker start myHttpdContainer\n```\n",
+  "dockerfile": "FROM httpd:2.4.18\nMAINTAINER Franck Lemoine <franck.lemoine@flem.fr>\n\nENV HTTPD_PREFIX /usr/local/apache2\nENV HTTPD_LOGDIR /var/log/httpd\nENV SSL_PREFIX /etc/apache2/ssl\n\nRUN set -x \\\n\t&& sed -ri ' \\\n\t   s!^(\\s*User\\s+)\\S+!\\1www-data!g; \\\n\t   s!^(\\s*Group\\s+)\\S+!\\1www-data!g; \\\n\t   s!^#\\s*(LoadModule proxy_module modules/mod_proxy\\.so)!\\1!g; \\\n\t   s!^#\\s*(LoadModule proxy_connect_module modules/mod_proxy_connect\\.so)!\\1!g; \\\n\t   s!^#\\s*(LoadModule proxy_http_module modules/mod_proxy_http\\.so)!\\1!g; \\\n\t   s!^#\\s*(LoadModule proxy_fcgi_module modules/mod_proxy_fcgi\\.so)!\\1!g; \\\n\t   s!^#\\s*(LoadModule vhost_alias_module modules/mod_vhost_alias\\.so)!\\1!g; \\\n\t   s!^#\\s*(LoadModule ssl_module modules/mod_ssl\\.so)!\\1!g; \\\n\t   s!^#\\s*(LoadModule socache_shmcb_module modules/mod_socache_shmcb\\.so)!\\1!g; \\\n\t   s!^#\\s*(LoadModule rewrite_module modules/mod_rewrite\\.so)!\\1!g; \\\n\t   s!^#\\s*(Include conf/extra/httpd-ssl.conf)!\\1!g; \\\n\t   s!^#\\s*(Include conf/extra/httpd-default.conf)!\\1!g; \\\n\t   s!^#\\s*(Include conf/extra/httpd-vhosts.conf)!\\1!g; \\\n\t   ' $HTTPD_PREFIX/conf/httpd.conf \\\n\t&& sed -ri \" \\\n\t   s#^(\\s*ErrorLog\\s+)\\S+#\\1$HTTPD_LOGDIR/error_log#g; \\\n\t   s#^(\\s*CustomLog\\s+)\\S+#\\1$HTTPD_LOGDIR/access_log#g; \\\n\t   \" $HTTPD_PREFIX/conf/httpd.conf \\\n\t&& sed -ri ' \\\n\t   $aIncludeOptional conf-enabled/*.conf \\\n\t   ' $HTTPD_PREFIX/conf/httpd.conf \\\n\t&& sed -ri ' \\\n\t   s!^(\\s*ServerTokens\\s+)\\S+!\\1Prod!g; \\\n\t   ' $HTTPD_PREFIX/conf/extra/httpd-default.conf \\\n\t&& sed -ri ' \\\n\t   /^<VirtualHost/,/<\\/VirtualHost/{s/(.+)/#\\1/g}; \\\n\t   ' $HTTPD_PREFIX/conf/extra/httpd-ssl.conf \\\n\t&& sed -ri ' \\\n\t   /^<VirtualHost/,/<\\/VirtualHost/{s/(.+)/#\\1/g}; \\\n\t   ' $HTTPD_PREFIX/conf/extra/httpd-vhosts.conf \\\n\t&& mkdir -p $HTTPD_PREFIX/conf-enabled \\\n\t&& mkdir -p $SSL_PREFIX \\\n\t&& chown root:root $SSL_PREFIX \\\n\t&& chmod 755 \"$SSL_PREFIX\" \\\n\t&& mkdir -p \"$HTTPD_LOGDIR\" \\\n\t&& chown root:root \"$HTTPD_LOGDIR\" \\\n\t&& chmod 755 \"$HTTPD_LOGDIR\" \\\n\t&& rm -rf /var/lib/apt/lists/* \\\n\t&& rm -rf /tmp/*\n\nRUN chown root:www-data $HTTPD_PREFIX/conf-enabled\n\nCOPY httpd-foreground /usr/local/bin/\nRUN chmod 755 /usr/local/bin/httpd-foreground\n\nCOPY docker-entrypoint.sh /\nRUN chmod 755 /docker-entrypoint.sh\n\nVOLUME [\"$HTTPD_LOGDIR\"]\n\nEXPOSE 80 443\n\nENTRYPOINT [\"/docker-entrypoint.sh\"]\nCMD [\"httpd-foreground\"]\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"$HTTPD_LOGDIR\"]"
+    ],
+    "run": [
+      "set -x \t&& sed -ri ' \t   s!^(\\s*User\\s+)\\S+!\\1www-data!g; \t   s!^(\\s*Group\\s+)\\S+!\\1www-data!g; \t   s!^#\\s*(LoadModule proxy_module modules/mod_proxy\\.so)!\\1!g; \t   s!^#\\s*(LoadModule proxy_connect_module modules/mod_proxy_connect\\.so)!\\1!g; \t   s!^#\\s*(LoadModule proxy_http_module modules/mod_proxy_http\\.so)!\\1!g; \t   s!^#\\s*(LoadModule proxy_fcgi_module modules/mod_proxy_fcgi\\.so)!\\1!g; \t   s!^#\\s*(LoadModule vhost_alias_module modules/mod_vhost_alias\\.so)!\\1!g; \t   s!^#\\s*(LoadModule ssl_module modules/mod_ssl\\.so)!\\1!g; \t   s!^#\\s*(LoadModule socache_shmcb_module modules/mod_socache_shmcb\\.so)!\\1!g; \t   s!^#\\s*(LoadModule rewrite_module modules/mod_rewrite\\.so)!\\1!g; \t   s!^#\\s*(Include conf/extra/httpd-ssl.conf)!\\1!g; \t   s!^#\\s*(Include conf/extra/httpd-default.conf)!\\1!g; \t   s!^#\\s*(Include conf/extra/httpd-vhosts.conf)!\\1!g; \t   ' $HTTPD_PREFIX/conf/httpd.conf \t&& sed -ri \" \t   s#^(\\s*ErrorLog\\s+)\\S+#\\1$HTTPD_LOGDIR/error_log#g; \t   s#^(\\s*CustomLog\\s+)\\S+#\\1$HTTPD_LOGDIR/access_log#g; \t   \" $HTTPD_PREFIX/conf/httpd.conf \t&& sed -ri ' \t   $aIncludeOptional conf-enabled/*.conf \t   ' $HTTPD_PREFIX/conf/httpd.conf \t&& sed -ri ' \t   s!^(\\s*ServerTokens\\s+)\\S+!\\1Prod!g; \t   ' $HTTPD_PREFIX/conf/extra/httpd-default.conf \t&& sed -ri ' \t   /^<VirtualHost/,/<\\/VirtualHost/{s/(.+)/#\\1/g}; \t   ' $HTTPD_PREFIX/conf/extra/httpd-ssl.conf \t&& sed -ri ' \t   /^<VirtualHost/,/<\\/VirtualHost/{s/(.+)/#\\1/g}; \t   ' $HTTPD_PREFIX/conf/extra/httpd-vhosts.conf \t&& mkdir -p $HTTPD_PREFIX/conf-enabled \t&& mkdir -p $SSL_PREFIX \t&& chown root:root $SSL_PREFIX \t&& chmod 755 \"$SSL_PREFIX\" \t&& mkdir -p \"$HTTPD_LOGDIR\" \t&& chown root:root \"$HTTPD_LOGDIR\" \t&& chmod 755 \"$HTTPD_LOGDIR\" \t&& rm -rf /var/lib/apt/lists/* \t&& rm -rf /tmp/*",
+      "chown root:www-data $HTTPD_PREFIX/conf-enabled",
+      "chmod 755 /usr/local/bin/httpd-foreground",
+      "chmod 755 /docker-entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "httpd:2.4.18",
+    "maintainer": "Franck Lemoine <franck.lemoine@flem.fr>",
+    "env": {
+      "HTTPD_PREFIX": "/usr/local/apache2",
+      "HTTPD_LOGDIR": "/var/log/httpd",
+      "SSL_PREFIX": "/etc/apache2/ssl"
+    },
+    "copy": "docker-entrypoint.sh /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"httpd-foreground\"]"
+  },
+  "source_repository_url": "https://github.com/francklemoine/httpd.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/francklemoine/httpd",
+  "docker_repository": "flem/httpd",
+  "docker_image": "flem/httpd",
+  "parameters_schema": {
+    "HTTPD_PREFIX": {
+      "default": "/usr/local/apache2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HTTPD_LOGDIR": {
+      "default": "/var/log/httpd",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_PREFIX": {
+      "default": "/etc/apache2/ssl",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "flem/httpd",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/flem/httpd",
+    "https://hub.docker.com/v2/repositories/flem/httpd",
+    "https://github.com/francklemoine/httpd.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image"
+  ],
+  "info_url": "https://hub.docker.com/r/flem/httpd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

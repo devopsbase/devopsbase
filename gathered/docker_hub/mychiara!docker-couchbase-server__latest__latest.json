@@ -1,0 +1,234 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mychiara/docker-couchbase-server",
+    "repository_url": "https://hub.docker.com/v2/repositories/mychiara/docker-couchbase-server",
+    "tags_url": "https://hub.docker.com/v2/repositories/mychiara/docker-couchbase-server/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mychiara/docker-couchbase-server/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mychiara/docker-couchbase-server/autobuild",
+    "user": "mychiara",
+    "name": "docker-couchbase-server",
+    "namespace": "mychiara",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 112,
+    "last_updated": "2016-09-05T10:48:41.484063Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 188487036,
+        "id": 1395984,
+        "repository": 413025,
+        "creator": 180503,
+        "last_updater": 180503,
+        "last_updated": "2016-09-05T10:48:41.130106Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.0.6",
+        "full_size": 188487098,
+        "id": 4673494,
+        "repository": 413025,
+        "creator": 180503,
+        "last_updater": 180503,
+        "last_updated": "2016-09-05T10:45:11.038928Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.0.5",
+        "full_size": 188487861,
+        "id": 4579601,
+        "repository": 413025,
+        "creator": 180503,
+        "last_updater": 180503,
+        "last_updated": "2016-08-30T14:04:25.896486Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.0.4",
+        "full_size": 188486567,
+        "id": 4554850,
+        "repository": 413025,
+        "creator": 180503,
+        "last_updater": 180503,
+        "last_updated": "2016-08-29T10:20:12.875543Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "4.0-community",
+        "full_size": 188125526,
+        "id": 2304622,
+        "repository": 413025,
+        "creator": 180503,
+        "last_updater": 180503,
+        "last_updated": "2016-03-14T21:56:58.326281Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "0.0.2",
+        "full_size": 188466522,
+        "id": 1396504,
+        "repository": 413025,
+        "creator": 180503,
+        "last_updater": 180503,
+        "last_updated": "2015-11-20T23:30:54.019993Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "mychiara/docker-couchbase-server"
+  },
+  "name": "mychiara/docker-couchbase-server Docker container",
+  "description": "Creates a couchbase server container with default administrator and a default bucket",
+  "readme": "# Couchbase server \nThis is a docker image that installs the couchbase server. \n\nIt's basically a fork from the official [couchbase/server image](https://hub.docker.com/r/couchbase/server/).\nThe server is installed via dpkg and gets downloaded via the package that the guys over at couchbase have prepared for us.\nCurrently I am using the 4.1 developer preview.\n\n## Major differences\nThe major differences to the official image are:\n\n- uses [mychiara/base image](https://github.com/mychiara/base) which in turns is derived from phusion/baseimage\n- deinstalls \"curl\" from the base image, because it uses the version shipping with the couchbase server\n\n\n## Features\n\nThe major feature I was working on for a while is that the container has a default user and a default bucket set, so one can just start without having to do lots of configuration.\n\nThe defaults username is ```desmond```. (I just recently finished watching LOST for the second time and I like him a lot).\n\nThe default password is ```secret_password``` (Must be changed).\n\nThe default bucket is called ```sync_gateway``` .\n\n## Bugs and notices\n\nWhen the container is building there are some messages popping up. Like the following:\n\n- \"Disable huge transparent pages\"\n- \"ulimit operation not allowed\" (I am not quite sure about that one at the time)\n- TERM something something, I suppose it has to do with the base image, that sets TERM to dumb\n\nAnyways the container is working!\n\n## License\nCopyright (c) mychiara | svs under the GPLv2 license.\n",
+  "dockerfile": "#!/usr/bin/env docker\n\nFROM mychiara/base:1.0.1\nMAINTAINER Andy Ruck mychiara+docker at gmail com\n\n# remove curl because there seem to be conflicts because cb-server ships with curl\nRUN apt-get -q update && DEBIAN_FRONTEND=noninteractive && \\\n    apt-get remove -yq curl && \\\n    apt-get install -yq --no-install-recommends \\\n        python-httplib2 \\\n        inotify-tools && \\\n\n    apt-get autoclean && apt-get -y autoremove && \\\n    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nRUN groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M\n\nENV CB_VERSION=4.1.0 \\\n    CB_RELEASE_URL=http://packages.couchbase.com/releases\nENV CB_PACKAGE=couchbase-server-community_$CB_VERSION-ubuntu14.04_amd64.deb \\\n    #CB_SHA256=950bf7eeebc139c1602d322d675e6d98 \\\n    PATH=$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install \\\n    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/couchbase/lib \\\n    CB_USER=desmond \\\n    CB_PASSWORD=secret_password \\\n    CB_RAMSIZE=1024 \\\n    CB_BUCKET=sync_gateway\n\n# Install couchbase\nRUN wget -N -q $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE && \\\n    dpkg -i ./$CB_PACKAGE && rm -f ./$CB_PACKAGE\n\n# Add runit script for couchbase-server\nCOPY scripts/run /etc/service/couchbase-server/run\n\nCOPY /scripts /scripts\nRUN chmod +x /scripts/first_run.sh /etc/service/couchbase-server/run && \\\n        touch /firstrun\n\nCMD [\"/sbin/my_init\"]\n\nEXPOSE 8091 8092 8093 11207 11210 11211 18091 18092\nVOLUME /opt/couchbase/var\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8091
+    ],
+    "volume": [
+      "/opt/couchbase/var"
+    ],
+    "run": [
+      "apt-get -q update && DEBIAN_FRONTEND=noninteractive &&     apt-get remove -yq curl &&     apt-get install -yq --no-install-recommends         python-httplib2         inotify-tools && ",
+      "groupadd -g 1000 couchbase && useradd couchbase -u 1000 -g couchbase -M",
+      "wget -N -q $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE &&     dpkg -i ./$CB_PACKAGE && rm -f ./$CB_PACKAGE",
+      "chmod +x /scripts/first_run.sh /etc/service/couchbase-server/run &&         touch /firstrun"
+    ],
+    "workdir": [],
+    "from": "mychiara/base:1.0.1",
+    "maintainer": "Andy Ruck mychiara+docker at gmail com",
+    "env": {
+      "CB_VERSION": "4.1.0",
+      "": "",
+      "CB_RELEASE_URL": "http://packages.couchbase.com/releases",
+      "CB_PACKAGE": "couchbase-server-community_$CB_VERSION-ubuntu14.04_amd64.deb",
+      "#CB_SHA256": "950bf7eeebc139c1602d322d675e6d98",
+      "PATH": "$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install",
+      "LD_LIBRARY_PATH": "$LD_LIBRARY_PATH:/opt/couchbase/lib",
+      "CB_USER": "desmond",
+      "CB_PASSWORD": "secret_password",
+      "CB_RAMSIZE": "1024",
+      "CB_BUCKET": "sync_gateway"
+    },
+    "copy": "/scripts /scripts",
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/mychiara/docker-couchbase-server.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mychiara/docker-couchbase-server",
+  "docker_repository": "mychiara/docker-couchbase-server",
+  "docker_image": "mychiara/docker-couchbase-server",
+  "parameters_schema": {
+    "CB_VERSION": {
+      "default": "4.1.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CB_RELEASE_URL": {
+      "default": "http://packages.couchbase.com/releases",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CB_PACKAGE": {
+      "default": "couchbase-server-community_$CB_VERSION-ubuntu14.04_amd64.deb",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "#CB_SHA256": {
+      "default": "950bf7eeebc139c1602d322d675e6d98",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LD_LIBRARY_PATH": {
+      "default": "$LD_LIBRARY_PATH:/opt/couchbase/lib",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CB_USER": {
+      "default": "desmond",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CB_PASSWORD": {
+      "default": "secret_password",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CB_RAMSIZE": {
+      "default": "1024",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CB_BUCKET": {
+      "default": "sync_gateway",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8091
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mychiara/docker-couchbase-server",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/mychiara/docker-couchbase-server",
+    "https://hub.docker.com/v2/repositories/mychiara/docker-couchbase-server",
+    "https://github.com/mychiara/docker-couchbase-server.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Document-oriented/Couchbase",
+    "Type/Middleware/Data Store/Document-oriented/HBase"
+  ],
+  "info_url": "https://hub.docker.com/r/mychiara/docker-couchbase-server",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

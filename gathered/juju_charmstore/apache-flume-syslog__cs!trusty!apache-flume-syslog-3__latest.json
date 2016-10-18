@@ -1,0 +1,106 @@
+{
+  "name": "apache-flume-syslog Juju charm",
+  "juju_charm_name": "apache-flume-syslog",
+  "revision": "cs:trusty/apache-flume-syslog-3",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/apache-flume-syslog",
+    "https://jujucharms.com/apache-flume-syslog/trusty",
+    "https://jujucharms.com/apache-flume-syslog/trusty/3",
+    "https://api.jujucharms.com/v5/apache-flume-syslog",
+    "https://api.jujucharms.com/v5/trusty/apache-flume-syslog",
+    "https://api.jujucharms.com/v5/trusty/apache-flume-syslog-3"
+  ],
+  "labels": [
+    "Juju charm",
+    "applications",
+    "bigdata",
+    "apache",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Devopsware/Logging",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://jujucharms.com/apache-flume-syslog",
+  "package_url": "https://api.jujucharms.com/v5/trusty/apache-flume-syslog-3/archive",
+  "created": "2015-10-07T21:01:53.304Z",
+  "updated": "2015-10-07T21:01:53.304Z",
+  "description": "Ingest syslog events with Apache Flume\n\nUses a Syslog source, memory channel, and Avro sink in Apache Flume\nto ingest log data.\n",
+  "maintainer": {
+    "name": "bigdata-charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "bigdata-charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/flume-agent",
+      "self_resolve": true,
+      "juju_interface": "flume-agent",
+      "juju_name": "flume-agent",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "channel_capacity": {
+      "type": "string",
+      "description": "The maximum number of events stored in the channel.\n",
+      "default": "1000",
+      "mapping": "charm_option"
+    },
+    "channel_transaction_capacity": {
+      "type": "string",
+      "description": "The maximum number of events the channel will take from a source or\ngive to a sink per transaction.\n",
+      "default": "100",
+      "mapping": "charm_option"
+    },
+    "event_dir": {
+      "type": "string",
+      "description": "The HDFS subdirectory under /user/flume where events will be stored.\n",
+      "default": "flume-syslog",
+      "mapping": "charm_option"
+    },
+    "resources_mirror": {
+      "type": "string",
+      "description": "URL from which to fetch resources (e.g., Hadoop binaries) instead\nof Launchpad.\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "source_port": {
+      "type": "string",
+      "description": "Port on which the agent source is listening. If relating to the\n'rsyslog-forwarder-ha' charm, this must be '514'.\n",
+      "default": "514",
+      "mapping": "charm_option"
+    },
+    "source_type": {
+      "type": "string",
+      "description": "Agent source type. Can be 'syslogudp' or 'syslogtcp'. If\nrelating to the 'rsyslog-forwarder-ha' charm, this must be 'syslogudp'.\n",
+      "default": "syslogudp",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/syslog",
+      "juju_interface": "syslog",
+      "juju_name": "syslog",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "## Overview\n\nFlume is a distributed, reliable, and available service for efficiently\ncollecting, aggregating, and moving large amounts of log data. It has a simple\nand flexible architecture based on streaming data flows. It is robust and fault\ntolerant with tunable reliability mechanisms and many failover and recovery\nmechanisms. It uses a simple extensible data model that allows for online\nanalytic application. Learn more at [flume.apache.org](http://flume.apache.org).\n\nThis charm provides a Flume agent designed to receive remote syslog events and\nsend them to the `apache-flume-hdfs` agent for storage into the shared\nfilesystem (HDFS) of a connected Hadoop cluster. Think of this charm as a\nreplacement for `rsyslog`, sending syslog events to HDFS instead of writing\nthem to a local filesystem.\n\n\n## Usage\n\nThis charm leverages our pluggable Hadoop model with the `hadoop-plugin`\ninterface. This means that you will need to deploy a base Apache Hadoop cluster\nto run Flume. The suggested deployment method is to use the\n[apache-ingestion-flume](https://jujucharms.com/u/bigdata-dev/apache-ingestion-flume/)\nbundle. This will deploy the Apache Hadoop platform with a single Apache Flume\nunit that communicates with the cluster by relating to the\n`apache-hadoop-plugin` subordinate charm:\n\n    juju quickstart u/bigdata-dev/apache-ingestion-flume\n\nAlternatively, you may manually deploy the recommended environment as follows:\n\n    juju deploy apache-hadoop-hdfs-master hdfs-master\n    juju deploy apache-hadoop-yarn-master yarn-master\n    juju deploy apache-hadoop-compute-slave compute-slave\n    juju deploy apache-hadoop-plugin plugin\n    juju deploy apache-flume-hdfs flume-hdfs\n\n    juju add-relation yarn-master hdfs-master\n    juju add-relation compute-slave yarn-master\n    juju add-relation compute-slave hdfs-master\n    juju add-relation plugin yarn-master\n    juju add-relation plugin hdfs-master\n    juju add-relation flume-hdfs plugin\n\nOnce the bundle has been deployed, add the `apache-flume-syslog` charm and\nrelate it to the `flume-hdfs` agent:\n\n    juju deploy apache-flume-syslog flume-syslog\n    juju add-relation flume-syslog flume-hdfs\n\nYou are now ready to ingest remote syslog events! Note the deployment at this\nstage isn't very useful. You'll need to relate this charm to any other service\nthat is configured to send data via the `syslog` interface.\n\nAs an example, let's ingest our `hdfs-master` syslog events into HDFS. Deploy\nthe `rsyslog-forwarder-ha` subordinate charm, relate it to `hdfs-master`, and\nthen link the `syslog` interfaces:\n\n    juju deploy rsyslog-forwarder-ha\n    juju add-relation rsyslog-forwarder-ha hdfs-master\n    juju add-relation rsyslog-forwarder-ha flume-syslog\n\nAny syslog data generated on the `hdfs-master` unit will now be ingested into\nHDFS via the `flume-syslog` and `flume-hdfs` charms. These events will be stored\nby year-month-day/hour here: `/user/flume/flume-syslog/%y-%m-%d/%H`.\n\n\n## Test the deployment\n\nTo verify this charm is working as intended, trigger a syslog event on the\nmonitored unit (`hdfs-master` in our deployment scenario):\n\n    juju ssh hdfs-master\n    exit\n\nNow SSH to the `flume-hdfs` unit, locate the event, and cat it:\n\n    juju ssh flume-hdfs/0\n    hdfs dfs -ls /user/flume/flume-syslog  # <-- find a date\n    hdfs dfs -ls /user/flume/flume-syslog/yy-mm-dd  # <-- find an hour\n    hdfs dfs -ls /user/flume/flume-syslog/yy-mm-dd/HH  # <-- find an event\n    hdfs dfs -cat /user/flume/flume-syslog/yy-mm-dd/HH/FlumeData.<id>\n\nYou should be able to find a timestamped message about SSH'ing into the\n`hdfs-master` unit that corresponds to the trigger you issued above. Note that\nthis deployment isn't limited to ssh-related events. You'll get every syslog\nevent from the `hdfs-master` unit. Happy logging!\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Help\n\n- [Apache Flume home page](http://flume.apache.org/)\n- [Apache Flume bug tracker](https://issues.apache.org/jira/browse/flume)\n- [Apache Flume mailing lists](https://flume.apache.org/mailinglists.html)\n- `#juju` on `irc.freenode.net`\n",
+  "readme": "## Overview\n\nFlume is a distributed, reliable, and available service for efficiently\ncollecting, aggregating, and moving large amounts of log data. It has a simple\nand flexible architecture based on streaming data flows. It is robust and fault\ntolerant with tunable reliability mechanisms and many failover and recovery\nmechanisms. It uses a simple extensible data model that allows for online\nanalytic application. Learn more at [flume.apache.org](http://flume.apache.org).\n\nThis charm provides a Flume agent designed to receive remote syslog events and\nsend them to the `apache-flume-hdfs` agent for storage into the shared\nfilesystem (HDFS) of a connected Hadoop cluster. Think of this charm as a\nreplacement for `rsyslog`, sending syslog events to HDFS instead of writing\nthem to a local filesystem.\n\n\n## Usage\n\nThis charm leverages our pluggable Hadoop model with the `hadoop-plugin`\ninterface. This means that you will need to deploy a base Apache Hadoop cluster\nto run Flume. The suggested deployment method is to use the\n[apache-ingestion-flume](https://jujucharms.com/u/bigdata-dev/apache-ingestion-flume/)\nbundle. This will deploy the Apache Hadoop platform with a single Apache Flume\nunit that communicates with the cluster by relating to the\n`apache-hadoop-plugin` subordinate charm:\n\n    juju quickstart u/bigdata-dev/apache-ingestion-flume\n\nAlternatively, you may manually deploy the recommended environment as follows:\n\n    juju deploy apache-hadoop-hdfs-master hdfs-master\n    juju deploy apache-hadoop-yarn-master yarn-master\n    juju deploy apache-hadoop-compute-slave compute-slave\n    juju deploy apache-hadoop-plugin plugin\n    juju deploy apache-flume-hdfs flume-hdfs\n\n    juju add-relation yarn-master hdfs-master\n    juju add-relation compute-slave yarn-master\n    juju add-relation compute-slave hdfs-master\n    juju add-relation plugin yarn-master\n    juju add-relation plugin hdfs-master\n    juju add-relation flume-hdfs plugin\n\nOnce the bundle has been deployed, add the `apache-flume-syslog` charm and\nrelate it to the `flume-hdfs` agent:\n\n    juju deploy apache-flume-syslog flume-syslog\n    juju add-relation flume-syslog flume-hdfs\n\nYou are now ready to ingest remote syslog events! Note the deployment at this\nstage isn't very useful. You'll need to relate this charm to any other service\nthat is configured to send data via the `syslog` interface.\n\nAs an example, let's ingest our `hdfs-master` syslog events into HDFS. Deploy\nthe `rsyslog-forwarder-ha` subordinate charm, relate it to `hdfs-master`, and\nthen link the `syslog` interfaces:\n\n    juju deploy rsyslog-forwarder-ha\n    juju add-relation rsyslog-forwarder-ha hdfs-master\n    juju add-relation rsyslog-forwarder-ha flume-syslog\n\nAny syslog data generated on the `hdfs-master` unit will now be ingested into\nHDFS via the `flume-syslog` and `flume-hdfs` charms. These events will be stored\nby year-month-day/hour here: `/user/flume/flume-syslog/%y-%m-%d/%H`.\n\n\n## Test the deployment\n\nTo verify this charm is working as intended, trigger a syslog event on the\nmonitored unit (`hdfs-master` in our deployment scenario):\n\n    juju ssh hdfs-master\n    exit\n\nNow SSH to the `flume-hdfs` unit, locate the event, and cat it:\n\n    juju ssh flume-hdfs/0\n    hdfs dfs -ls /user/flume/flume-syslog  # <-- find a date\n    hdfs dfs -ls /user/flume/flume-syslog/yy-mm-dd  # <-- find an hour\n    hdfs dfs -ls /user/flume/flume-syslog/yy-mm-dd/HH  # <-- find an event\n    hdfs dfs -cat /user/flume/flume-syslog/yy-mm-dd/HH/FlumeData.<id>\n\nYou should be able to find a timestamped message about SSH'ing into the\n`hdfs-master` unit that corresponds to the trigger you issued above. Note that\nthis deployment isn't limited to ssh-related events. You'll get every syslog\nevent from the `hdfs-master` unit. Happy logging!\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Help\n\n- [Apache Flume home page](http://flume.apache.org/)\n- [Apache Flume bug tracker](https://issues.apache.org/jira/browse/flume)\n- [Apache Flume mailing lists](https://flume.apache.org/mailinglists.html)\n- `#juju` on `irc.freenode.net`\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

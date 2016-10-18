@@ -1,0 +1,128 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/solsson/httpd-openidc",
+    "repository_url": "https://hub.docker.com/v2/repositories/solsson/httpd-openidc",
+    "tags_url": "https://hub.docker.com/v2/repositories/solsson/httpd-openidc/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/solsson/httpd-openidc/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/solsson/httpd-openidc/autobuild",
+    "user": "solsson",
+    "name": "httpd-openidc",
+    "namespace": "solsson",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 26,
+    "last_updated": "2016-10-02T13:19:01.822837Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 75786319,
+        "id": 5189647,
+        "repository": 953211,
+        "creator": 359316,
+        "last_updater": 359316,
+        "last_updated": "2016-10-02T13:19:00.372192Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "solsson/openidc-keycloak-test"
+  },
+  "name": "solsson/httpd-openidc Docker container",
+  "description": "mod_auth_openidc on official httpd image, verified with Keycloak using docker-compose",
+  "readme": "# openidc-keycloak-test\n\nDemonstrates [Keycloak](http://keycloak.jboss.org/) and [mod_auth_openidc](https://github.com/pingidentity/mod_auth_openidc/) working together. See also https://github.com/pingidentity/mod_auth_openidc/wiki/Keycloak.\n\nRequirements:\n * Docker Compose >=1.7.0\n\nSee [docker-compose.yml](https://github.com/Reposoft/openidc-keycloak-test/blob/master/build-contracts/docker-compose.yml) in the [openidc1](https://github.com/Reposoft/openidc-keycloak-test/tree/master/build-contracts) folder.\n\nMight be run like this:\n```\ndocker-compose up --build -d postgres keycloak openidc\ndocker-compose up --build keycloak-setup #TODO\ndocker-compose up --build -d testclient\ndocker-compose logs -f\n```\n\nUntil setup is fully automated see echo:s in [testclient1/keycloak-setup/import.sh](https://github.com/Reposoft/openidc-keycloak-test/blob/keycloak-setup-import/build-contracts/keycloak-setup/import.sh).\n\nIf you can access `ports` locally, access the example site at http://openidc/, with something like this in `/etc/hosts` (IP being you docker machine's):\n```\n192.168.99.100 keycloak\n192.168.99.100 openidc\n```\n",
+  "dockerfile": "\n# https://github.com/docker-library/repo-info/blob/master/repos/httpd/tag-details.md\nFROM httpd@sha256:aa0711c4fc25264ce59b5f9315b555ba1252ad0fbd0e290634b693df2045a072\n\nENV CJOSE_VERSION 0.4.1\nENV CJOSE_DEB_URL https://mod-auth-openidc.org/download/libcjose_${CJOSE_VERSION}-1_amd64.deb\nENV CJOSE_DEB_SHA1 8689d052e0ff1ee2dbbbc6648f64e81dc8f23530\n\nENV OPENIDC_VERSION 2.0.0\nENV OPENIDC_VERSION_TGZ_URL https://mod-auth-openidc.org/download/mod_auth_openidc-$OPENIDC_VERSION.tar.gz\nENV OPENIDC_VERSION_TGZ_SHA1 86c6ba2c0e47227cd446ecabf0c408ee812558a9\n\nRUN depsRuntime=' \\\n\t\tlibcurl3 ca-certificates \\\n\t\tlibpcre3 \\\n\t\tlibjansson4 \\\n\t\tlibhiredis0.10 \\\n\t' \\\n  && depsBuild=' \\\n\t\tcurl \\\n\t\tgcc \\\n\t\tmake \\\n\t\tlibpcre3-dev \\\n\t\tlibssl-dev \\\n\t\tlibcurl4-openssl-dev \\\n\t\tlibjansson-dev \\\n\t\tpkg-config \\\n\t\tdh-autoreconf \\\n\t\tlibhiredis-dev \\\n\t' \\\n\tset -x \\\n\t&& apt-get update \\\n\t&& apt-get install -y --no-install-recommends $depsRuntime \\\n\t&& apt-get install -y --no-install-recommends $depsBuild \\\n\t&& rm -r /var/lib/apt/lists/* \\\n\t&& curl -SL \"$CJOSE_DEB_URL\" -o libcjose.deb \\\n\t&& echo \"$CJOSE_DEB_SHA1 libcjose.deb\" | sha1sum -c - \\\n\t&& dpkg -i libcjose.deb \\\n\t&& rm libcjose.deb \\\n\t&& curl -SL \"$OPENIDC_VERSION_TGZ_URL\" -o mod_auth_openidc-$OPENIDC_VERSION.tar.gz \\\n\t&& echo \"$OPENIDC_VERSION_TGZ_SHA1 mod_auth_openidc-$OPENIDC_VERSION.tar.gz\" | sha1sum -c - \\\n\t&& mkdir -p src/mod_auth_openidc \\\n\t&& tar -xvf mod_auth_openidc-$OPENIDC_VERSION.tar.gz -C src/mod_auth_openidc --strip-components=1 \\\n\t&& rm mod_auth_openidc-$OPENIDC_VERSION.tar.gz* \\\n\t&& cd src/mod_auth_openidc \\\n\t&& ./autogen.sh \\\n\t&& ./configure --with-apxs2=/usr/local/apache2/bin/apxs \\\n\t&& make -j\"$(nproc)\" \\\n\t&& make install \\\n\t&& /sbin/ldconfig \\\n\t&& cd ../../ \\\n\t&& rm -r src/mod_auth_openidc \\\n\t&& apt-get purge -y --auto-remove $depsBuild\n\nRUN sed -i 's|LoadModule rewrite_module modules/mod_rewrite.so|LoadModule rewrite_module modules/mod_rewrite.so\\nLoadModule auth_openidc_module modules/mod_auth_openidc.so|' conf/httpd.conf\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "depsRuntime=' \t\tlibcurl3 ca-certificates \t\tlibpcre3 \t\tlibjansson4 \t\tlibhiredis0.10 \t'   && depsBuild=' \t\tcurl \t\tgcc \t\tmake \t\tlibpcre3-dev \t\tlibssl-dev \t\tlibcurl4-openssl-dev \t\tlibjansson-dev \t\tpkg-config \t\tdh-autoreconf \t\tlibhiredis-dev \t' \tset -x \t&& apt-get update \t&& apt-get install -y --no-install-recommends $depsRuntime \t&& apt-get install -y --no-install-recommends $depsBuild \t&& rm -r /var/lib/apt/lists/* \t&& curl -SL \"$CJOSE_DEB_URL\" -o libcjose.deb \t&& echo \"$CJOSE_DEB_SHA1 libcjose.deb\" | sha1sum -c - \t&& dpkg -i libcjose.deb \t&& rm libcjose.deb \t&& curl -SL \"$OPENIDC_VERSION_TGZ_URL\" -o mod_auth_openidc-$OPENIDC_VERSION.tar.gz \t&& echo \"$OPENIDC_VERSION_TGZ_SHA1 mod_auth_openidc-$OPENIDC_VERSION.tar.gz\" | sha1sum -c - \t&& mkdir -p src/mod_auth_openidc \t&& tar -xvf mod_auth_openidc-$OPENIDC_VERSION.tar.gz -C src/mod_auth_openidc --strip-components=1 \t&& rm mod_auth_openidc-$OPENIDC_VERSION.tar.gz* \t&& cd src/mod_auth_openidc \t&& ./autogen.sh \t&& ./configure --with-apxs2=/usr/local/apache2/bin/apxs \t&& make -j\"$(nproc)\" \t&& make install \t&& /sbin/ldconfig \t&& cd ../../ \t&& rm -r src/mod_auth_openidc \t&& apt-get purge -y --auto-remove $depsBuild",
+      "sed -i 's|LoadModule rewrite_module modules/mod_rewrite.so|LoadModule rewrite_module modules/mod_rewrite.so\\nLoadModule auth_openidc_module modules/mod_auth_openidc.so|' conf/httpd.conf"
+    ],
+    "workdir": [],
+    "from": "httpd@sha256:aa0711c4fc25264ce59b5f9315b555ba1252ad0fbd0e290634b693df2045a072",
+    "env": {
+      "CJOSE_VERSION": "0.4.1",
+      "CJOSE_DEB_URL": "https://mod-auth-openidc.org/download/libcjose_${CJOSE_VERSION}-1_amd64.deb",
+      "CJOSE_DEB_SHA1": "8689d052e0ff1ee2dbbbc6648f64e81dc8f23530",
+      "OPENIDC_VERSION": "2.0.0",
+      "OPENIDC_VERSION_TGZ_URL": "https://mod-auth-openidc.org/download/mod_auth_openidc-$OPENIDC_VERSION.tar.gz",
+      "OPENIDC_VERSION_TGZ_SHA1": "86c6ba2c0e47227cd446ecabf0c408ee812558a9"
+    }
+  },
+  "source_repository_url": "https://github.com/solsson/openidc-keycloak-test.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/solsson/openidc-keycloak-test",
+  "docker_repository": "solsson/httpd-openidc",
+  "docker_image": "solsson/httpd-openidc",
+  "parameters_schema": {
+    "CJOSE_VERSION": {
+      "default": "0.4.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CJOSE_DEB_URL": {
+      "default": "https://mod-auth-openidc.org/download/libcjose_${CJOSE_VERSION}-1_amd64.deb",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CJOSE_DEB_SHA1": {
+      "default": "8689d052e0ff1ee2dbbbc6648f64e81dc8f23530",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OPENIDC_VERSION": {
+      "default": "2.0.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OPENIDC_VERSION_TGZ_URL": {
+      "default": "https://mod-auth-openidc.org/download/mod_auth_openidc-$OPENIDC_VERSION.tar.gz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OPENIDC_VERSION_TGZ_SHA1": {
+      "default": "86c6ba2c0e47227cd446ecabf0c408ee812558a9",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "solsson/httpd-openidc",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/solsson/httpd-openidc",
+    "https://hub.docker.com/v2/repositories/solsson/httpd-openidc",
+    "https://github.com/solsson/openidc-keycloak-test.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/solsson/httpd-openidc",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,142 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jacksoncage/mongo",
+    "repository_url": "https://hub.docker.com/v2/repositories/jacksoncage/mongo",
+    "tags_url": "https://hub.docker.com/v2/repositories/jacksoncage/mongo/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jacksoncage/mongo/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jacksoncage/mongo/autobuild",
+    "user": "jacksoncage",
+    "name": "mongo",
+    "namespace": "jacksoncage",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 6,
+    "pull_count": 6474,
+    "last_updated": "2015-11-06T14:50:22.942097Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 236455726,
+        "id": 21593,
+        "repository": 17853,
+        "creator": 1755,
+        "last_updater": 1755,
+        "last_updated": "2015-11-06T14:50:28.030956Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "jacksoncage/mongo-docker"
+  },
+  "name": "jacksoncage/mongo Docker container",
+  "description": "Instant MongoDB sharded cluster",
+  "readme": "# Instant MongoDB sharded cluster\r\nThis repository provides a Vagrantfile, Dockerfile and a bootstrap script to create MongoDB Cluster using a virtual machine built on Virtualbox software hypervisor. After setup is complete shared MongoDB sharded cluster on a single virtual machine running on your local machine.\r\n\r\nMongoDB cluster consisted of the following docker containers\r\n\r\n - **mongos1-3r1-3**: Mongod server with three replica sets distributes on six mongo containers. \r\n - **configservers1-3**: Stores metadata for sharded cluster distributed on three mongo containers.\r\n - **mongos1**:\tMongo routing service installed on one mongo container.\r\n - **skydock**:\tUsed for service discovery and inserts internal docker images records into skydns.\r\n - **skydns**: Used as internal DNS for containers.\r\n\r\nThere unfortunately some hard-coded timeouts due to timing issues with MongoDB. \r\n\r\n## Installation:\r\n\r\n### Linux\r\nInstall Virtualbox based off the [installation instructions](https://www.virtualbox.org/wiki/Linux_Downloads).\r\n\r\n### MacOS\r\n\r\n#### Install Homebrew\r\nFirst, install [Homebrew](http://brew.sh/).\r\n\r\n\truby -e \"$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)\"\r\n\r\n#### Install Virtualbox and Vagrant\r\nInstall VirtualBox and Vagrant using [Brew Cask](https://github.com/phinze/homebrew-cask).\r\n\r\n\tbrew tap phinze/homebrew-cask\r\n\tbrew install brew-cask\r\n\tbrew cask install virtualbox\r\n\tbrew cask install vagrant\r\n\r\n## Check out the repository\r\n\r\n\tgit clone git@github.com:jacksoncage/mongo-docker.git\r\n\tcd mongo-docker\r\n\tvagrant up\r\n\r\n## Setup Cluster\r\nThis will pull all the images from [Docker index](https://index.docker.io/u/jacksoncage/mongo/) and setup Mongodb sharded cluster.\r\n\r\n\tvagrant ssh\r\n\t./docker/start_cluster.sh\"\r\n\r\nYou should now be able connect to mongos1 and the new sharded cluster:\r\n\r\n\tMongoDB Cluster is now ready to use\r\n\tConnect to cluster by:\r\n\t$ mongo --port 49550\r\n\r\n\r\n## Kill/restart cluster\r\nTo re-initiate cluster run `start_cluster.sh` again. To rebuild vagrant `vagrant destroy` and then `vagrant up` \r\n\r\n\r\n## Persistent storage\r\nData is stored at `./docker_mongodb_cluster/mongodata/` and are excluded from version control. Data will be persistent even for a `vagrant destroy` as it's mounted into vagrant and then needed container as well. To remove all data `rm -rf ./docker_mongodb_cluster/mongodata/*`\r\n\r\n\r\n## Built upon\r\n - [MongoDB Sharded Cluster by Sebastian Voss](https://github.com/sebastianvoss/docker)\r\n - [MongoDB](http://www.mongodb.org/)\r\n - [Skydock](https://github.com/crosbymichael/skydock)\r\n - [Skydns](https://github.com/skynetservices/skydns)\r\n - [Docker](https://github.com/dotcloud/docker/)",
+  "dockerfile": "FROM        ubuntu:14.04.1\nMAINTAINER  Love Nyberg \"love@bloglovin.com\"\nENV REFRESHED_AT 2014-10-18\n\n# Add 10gen official apt source to the sources list\nRUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10\nRUN echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | tee /etc/apt/sources.list.d/mongodb.list\n\n# Install MongoDB\nRUN apt-get update -qq && \\\n  apt-get upgrade -yqq && \\\n  apt-get -yqq install mongodb-org && \\\n  apt-get -yqq clean\n\n# Create the MongoDB data directory\nRUN mkdir -p /data/db\n\nEXPOSE 27017\n\nADD js/initiate.js /initiate.js\nADD js/setupReplicaSet1.js /setupReplicaSet1.js\nADD js/setupReplicaSet2.js /setupReplicaSet2.js\nADD js/setupReplicaSet3.js /setupReplicaSet3.js\nADD js/addShard.js /addShard.js\nADD js/addDBs.js /addDBs.js\nADD js/enabelSharding.js /enabelSharding.js\nADD js/addIndexes.js /addIndexes.js\nADD start.sh /start.sh\n\nCMD [\"/start.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "js/initiate.js",
+        "dest": "/initiate.js"
+      },
+      {
+        "source": "js/setupReplicaSet1.js",
+        "dest": "/setupReplicaSet1.js"
+      },
+      {
+        "source": "js/setupReplicaSet2.js",
+        "dest": "/setupReplicaSet2.js"
+      },
+      {
+        "source": "js/setupReplicaSet3.js",
+        "dest": "/setupReplicaSet3.js"
+      },
+      {
+        "source": "js/addShard.js",
+        "dest": "/addShard.js"
+      },
+      {
+        "source": "js/addDBs.js",
+        "dest": "/addDBs.js"
+      },
+      {
+        "source": "js/enabelSharding.js",
+        "dest": "/enabelSharding.js"
+      },
+      {
+        "source": "js/addIndexes.js",
+        "dest": "/addIndexes.js"
+      },
+      {
+        "source": "start.sh",
+        "dest": "/start.sh"
+      }
+    ],
+    "expose": [
+      27017
+    ],
+    "volume": [],
+    "run": [
+      "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10",
+      "echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | tee /etc/apt/sources.list.d/mongodb.list",
+      "apt-get update -qq &&   apt-get upgrade -yqq &&   apt-get -yqq install mongodb-org &&   apt-get -yqq clean",
+      "mkdir -p /data/db"
+    ],
+    "workdir": [],
+    "from": "       ubuntu:14.04.1",
+    "maintainer": " Love Nyberg \"love@bloglovin.com\"",
+    "env": {
+      "REFRESHED_AT": "2014-10-18"
+    },
+    "cmd": "[\"/start.sh\"]"
+  },
+  "source_repository_url": "git://github.com/jacksoncage/mongo-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/jacksoncage/mongo-docker",
+  "docker_repository": "jacksoncage/mongo",
+  "docker_image": "jacksoncage/mongo",
+  "parameters_schema": {
+    "REFRESHED_AT": {
+      "default": "2014-10-18",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        27017
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jacksoncage/mongo",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jacksoncage/mongo",
+    "https://hub.docker.com/v2/repositories/jacksoncage/mongo",
+    "git://github.com/jacksoncage/mongo-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Build/Java/Ant",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB"
+  ],
+  "info_url": "https://hub.docker.com/r/jacksoncage/mongo",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

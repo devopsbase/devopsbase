@@ -1,0 +1,96 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/diegomarangoni/mariadb-galera",
+    "repository_url": "https://hub.docker.com/v2/repositories/diegomarangoni/mariadb-galera",
+    "tags_url": "https://hub.docker.com/v2/repositories/diegomarangoni/mariadb-galera/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/diegomarangoni/mariadb-galera/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/diegomarangoni/mariadb-galera/autobuild",
+    "user": "diegomarangoni",
+    "name": "mariadb-galera",
+    "namespace": "diegomarangoni",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 9,
+    "pull_count": 22336,
+    "last_updated": "2015-09-27T05:06:08.865206Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 111558366,
+        "id": 532858,
+        "repository": 249351,
+        "creator": 67449,
+        "last_updater": 67449,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "diegomarangoni/docker-mariadb-galera"
+  },
+  "name": "diegomarangoni/mariadb-galera Docker container",
+  "description": "Creates a MariaDB Galera Cluster",
+  "readme": "# Supported tags and respective `Dockerfile` links\n\n-   [`latest` (*latest/Dockerfile*)](https://github.com/diegomarangoni/docker-mariadb-galera/blob/master/Dockerfile)\n\n# How to use this image.\n\nWhen you run the image without giving any command, the entrypoint will listen at port 13306 waiting for a command.\nTo send a command, jun run:\n\n    echo \"command here\" | nc ip_of_container port\n\nSo, basically, you can get a cluster running by following the steps:\n\n- start each container with:\n\n```\ndocker run \\\n    -v /path/to/my.cnf:/etc/mysql/my.cnf \\\n    -v /path/to/mariadb:/var/lib/mysql \\\n    -v /path/to/certs/:/etc/ssl/mysql:ro \\\n    -e MYSQL_ALLOW_EMPTY_PASSWORD=true \\\n    diegomarangoni/mariadb-galera\n```\n\n- concat all containers IP into a `gcomm://` string, like:\n\n```\ngcomm://10.0.0.1,10.0.0.2,10.0.0.3\n```\n\n- start first container as new cluster:\n\n```\necho \"mysqld --wsrep-new-cluster --wsrep-cluster-address=gcomm://10.0.0.1,10.0.0.2,10.0.0.3\" | nc 10.0.0.1 13306\n```\n\n- on all the subsequent containers, one at a time, starts it as part of existing cluster:\n\n```\necho \"mysqld --wsrep-cluster-address=gcomm://10.0.0.1,10.0.0.2,10.0.0.3\" | nc 10.0.0.2 13306\necho \"mysqld --wsrep-cluster-address=gcomm://10.0.0.1,10.0.0.2,10.0.0.3\" | nc 10.0.0.3 13306\n```\n\nThat's it, now you should have a running MariaDB cluster.\n\n## SSL certificates\n\nYou can generate self-signed certificate, mount the directory inside the container and set the appropriate `[sst]` settings at `/etc/mysql/my.cnf`.\n\n## Example `my.cnf` file:\n\n```\n[mysqld]\ndatadir=/var/lib/mysql\nsocket=/var/run/mysqld/mysqld.sock\nuser=mysql\nbinlog-format=ROW\ndefault-storage-engine=InnoDB\ninnodb-autoinc-lock-mode=2\ninnodb-flush-log-at-trx-commit=0\ninnodb-buffer-pool-size=122M\ninnodb-doublewrite=1\ninnodb-flush-method=O_DIRECT\nwsrep-provider=/usr/lib/galera/libgalera_smm.so\nwsrep-cluster-name=my_super_cluster\nwsrep-sst-method=rsync\nquery-cache-size=524288\nlog-error=/dev/stderr\n\n[mysql_safe]\nlog-error=/dev/stderr\npid-file=/var/run/mysqld/mysqld.pid\n\n[sst]\ntca=/etc/ssl/mysql/ca.pem\ntcert=/etc/ssl/mysql/server-cert.pem\ntkey=/etc/ssl/mysql/server-key.pem\n```\n",
+  "dockerfile": "FROM debian:jessie\n\nMAINTAINER \"Diego Marangoni\" <https://github.com/diegomarangoni>\n\nRUN groupadd -r mysql && useradd -r -g mysql mysql \\\n    && apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xcbcb082a1bb943db \\\n    && echo 'deb http://sfo1.mirrors.digitalocean.com/mariadb/repo/10.0/debian jessie main' > /etc/apt/sources.list.d/mariadb.list \\\n    && { \\\n            echo 'Package: *'; \\\n            echo 'Pin: release o=MariaDB'; \\\n            echo 'Pin-Priority: 999'; \\\n        } > /etc/apt/preferences.d/mariadb \\\n    && apt-get update \\\n    && DEBIAN_FRONTEND=noninteractive \\\n        apt-get install -y --no-install-recommends mariadb-galera-server xtrabackup netcat-openbsd socat pv \\\n    && rm -rf /var/lib/apt/lists/* \\\n    && rm -rf /var/lib/mysql && mkdir -p /var/lib/mysql \\\n    && sed -Ei 's/^(bind-address)/#&/' /etc/mysql/my.cnf\n\nVOLUME /var/lib/mysql\n\nCOPY docker-entrypoint.sh /entrypoint.sh\nENTRYPOINT [\"/entrypoint.sh\"]\n\nEXPOSE 3306 4567 4568 4444 13306\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      "/var/lib/mysql"
+    ],
+    "run": [
+      "groupadd -r mysql && useradd -r -g mysql mysql     && apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xcbcb082a1bb943db     && echo 'deb http://sfo1.mirrors.digitalocean.com/mariadb/repo/10.0/debian jessie main' > /etc/apt/sources.list.d/mariadb.list     && {             echo 'Package: *';             echo 'Pin: release o=MariaDB';             echo 'Pin-Priority: 999';         } > /etc/apt/preferences.d/mariadb     && apt-get update     && DEBIAN_FRONTEND=noninteractive         apt-get install -y --no-install-recommends mariadb-galera-server xtrabackup netcat-openbsd socat pv     && rm -rf /var/lib/apt/lists/*     && rm -rf /var/lib/mysql && mkdir -p /var/lib/mysql     && sed -Ei 's/^(bind-address)/#&/' /etc/mysql/my.cnf"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "\"Diego Marangoni\" <https://github.com/diegomarangoni>",
+    "copy": "docker-entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/diegomarangoni/docker-mariadb-galera.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/diegomarangoni/docker-mariadb-galera",
+  "docker_repository": "diegomarangoni/mariadb-galera",
+  "docker_image": "diegomarangoni/mariadb-galera",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "diegomarangoni/mariadb-galera",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/diegomarangoni/mariadb-galera",
+    "https://hub.docker.com/v2/repositories/diegomarangoni/mariadb-galera",
+    "https://github.com/diegomarangoni/docker-mariadb-galera.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/diegomarangoni/mariadb-galera",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

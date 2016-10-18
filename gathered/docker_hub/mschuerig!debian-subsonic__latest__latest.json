@@ -1,0 +1,121 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mschuerig/debian-subsonic",
+    "repository_url": "https://hub.docker.com/v2/repositories/mschuerig/debian-subsonic",
+    "tags_url": "https://hub.docker.com/v2/repositories/mschuerig/debian-subsonic/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mschuerig/debian-subsonic/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mschuerig/debian-subsonic/autobuild",
+    "user": "mschuerig",
+    "name": "debian-subsonic",
+    "namespace": "mschuerig",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 5,
+    "pull_count": 16545,
+    "last_updated": "2016-09-23T21:15:33.427555Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 267189076,
+        "id": 14206,
+        "repository": 11869,
+        "creator": 14464,
+        "last_updater": 14464,
+        "last_updated": "2016-09-23T21:15:32.602013Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "mschuerig/docker-subsonic"
+  },
+  "name": "mschuerig/debian-subsonic Docker container",
+  "description": "Moved to mschuerig/subsonic-docker-image",
+  "readme": "\nThis repository contains configuration files for building a \nDocker (http://docker.io) image for the Subsonic media streamer.\n\n## Noteworthy\n\n* Subsonic 6.0 (http://www.subsonic.org)\n* Debian/jessie\n* Runs as user subsonic (UID 10000)\n\n## Build your own image\n\n```shell\n$ docker build -t <your-name>/debian-subsonic debian-subsonic\n```\n\n## Get a pre-built image\n\nA current image is available as a trusted build from the Docker index:\n\n```shell\n$ docker pull  mschuerig/debian-subsonic\n```\n\nThe repository page is at\nhttps://index.docker.io/u/mschuerig/debian-subsonic/\n\n\n## Run a container with this image\n\n```shell\n$ docker run \\\n  --detach \\\n  --publish 4040:4040 \\\n  --volume \"/wherever/your/music/is:/var/music:ro\" \\\n  <your-name>/debian-subsonic\n\n```\n\n## Pitfalls\n\nThe host music directory mounted into the container at /var/music must be\nreadable by user subsonic (UID 10000).\n\nIf you use a volume for the container's /var/subsonic, the host directory\nmounted there must have read-write-execute permissions for user\nsubsonic (UID 10000).\n",
+  "dockerfile": "FROM debian:jessie\n\nMAINTAINER michael@schuerig.de\n\nENV DEBIAN_FRONTEND noninteractive\n\n# Create a new user account with UID/GID at least 10000.\n# This makes it easier to keep host and docker accounts apart.\nRUN useradd --home /var/subsonic -M subsonic -K UID_MIN=10000 -K GID_MIN=10000 && \\\n    mkdir -p /var/subsonic && chown subsonic /var/subsonic && chmod 0770 /var/subsonic\n\nRUN echo \"en_US.UTF-8 UTF-8\" > /etc/locale.gen && \\\n    apt-get update && \\\n    apt-get dist-upgrade --yes --no-install-recommends --no-install-suggests && \\\n    apt-get install --yes --no-install-recommends --no-install-suggests openjdk-7-jre-headless locales && \\\n    apt-get clean\n\nENV SUBSONIC_VERSION 6.0\n\nADD http://downloads.sourceforge.net/project/subsonic/subsonic/$SUBSONIC_VERSION/subsonic-$SUBSONIC_VERSION.deb?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fsubsonic%2Ffiles%2Fsubsonic%2F$SUBSONIC_VERSION%2F&ts=1421842428&use_mirror=optimate /tmp/subsonic-$SUBSONIC_VERSION.deb\nRUN dpkg -i /tmp/subsonic-$SUBSONIC_VERSION.deb && rm -f /tmp/*.deb\n\n# Create hardlinks to the transcoding binaries.\n# This way we can mount a volume over /var/subsonic.\n# Apparently, Subsonic does not accept paths in the Transcoding settings.\n# If you mount a volume over /var/subsonic, create symlinks\n# <host-dir>/var/subsonic/transcode/ffmpeg -> /usr/local/bin/ffmpeg\n# <host-dir>/var/subsonic/transcode/lame -> /usr/local/bin/lame\nRUN ln /var/subsonic/transcode/ffmpeg /var/subsonic/transcode/lame /usr/local/bin\n\nVOLUME /var/subsonic\n\nCOPY startup.sh /startup.sh\n\nEXPOSE 4040\n\nUSER subsonic\n\nCMD []\nENTRYPOINT [\"/startup.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "http://downloads.sourceforge.net/project/subsonic/subsonic/$SUBSONIC_VERSION/subsonic-$SUBSONIC_VERSION.deb?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fsubsonic%2Ffiles%2Fsubsonic%2F$SUBSONIC_VERSION%2F&ts=1421842428&use_mirror=optimate",
+        "dest": "/tmp/subsonic-$SUBSONIC_VERSION.deb"
+      }
+    ],
+    "expose": [
+      4040
+    ],
+    "volume": [
+      "/var/subsonic"
+    ],
+    "run": [
+      "useradd --home /var/subsonic -M subsonic -K UID_MIN=10000 -K GID_MIN=10000 &&     mkdir -p /var/subsonic && chown subsonic /var/subsonic && chmod 0770 /var/subsonic",
+      "echo \"en_US.UTF-8 UTF-8\" > /etc/locale.gen &&     apt-get update &&     apt-get dist-upgrade --yes --no-install-recommends --no-install-suggests &&     apt-get install --yes --no-install-recommends --no-install-suggests openjdk-7-jre-headless locales &&     apt-get clean",
+      "dpkg -i /tmp/subsonic-$SUBSONIC_VERSION.deb && rm -f /tmp/*.deb",
+      "ln /var/subsonic/transcode/ffmpeg /var/subsonic/transcode/lame /usr/local/bin"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "michael@schuerig.de",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "SUBSONIC_VERSION": "6.0"
+    },
+    "copy": "startup.sh /startup.sh",
+    "user": "subsonic",
+    "cmd": "[]",
+    "entrypoint": "[\"/startup.sh\"]"
+  },
+  "source_repository_url": "git://github.com/mschuerig/docker-subsonic.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mschuerig/docker-subsonic",
+  "docker_repository": "mschuerig/debian-subsonic",
+  "docker_image": "mschuerig/debian-subsonic",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SUBSONIC_VERSION": {
+      "default": "6.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        4040
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mschuerig/debian-subsonic",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/mschuerig/debian-subsonic",
+    "https://hub.docker.com/v2/repositories/mschuerig/debian-subsonic",
+    "git://github.com/mschuerig/docker-subsonic.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Infrastructure/Operating System/Linux/Debian"
+  ],
+  "info_url": "https://hub.docker.com/r/mschuerig/debian-subsonic",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

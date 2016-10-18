@@ -1,0 +1,122 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dockersolutions/jenkins",
+    "repository_url": "https://hub.docker.com/v2/repositories/dockersolutions/jenkins",
+    "tags_url": "https://hub.docker.com/v2/repositories/dockersolutions/jenkins/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dockersolutions/jenkins/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dockersolutions/jenkins/autobuild",
+    "user": "dockersolutions",
+    "name": "jenkins",
+    "namespace": "dockersolutions",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 457,
+    "last_updated": "2016-09-23T21:20:44.129867Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 306485189,
+        "id": 219352,
+        "repository": 219087,
+        "creator": 318322,
+        "last_updater": 318322,
+        "last_updated": "2016-09-23T21:20:43.612805Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "docker/solutions-jenkins"
+  },
+  "name": "dockersolutions/jenkins Docker container",
+  "description": "Jenkins image used for SE demos",
+  "readme": "dockersolutions/jenkins\n=======================\n\ndocker image for jenkins\n\nTo pull this image:\n`docker pull dockersolutions/jenkins`\n\n## Example usage\n\n```\ndocker run -d --restart=always -p 8080:8080 --name jenkins \\\n  -e DTR_URL=<dtr-fqdn> \\\n  -e DEMO_MASTER=<demo-master-ip-or-host> \\\n  -e DOMAIN_NAME=<domain-name> \\\n  -e GITHUB_USERNAME=<github-username> \\\n  -v ucp-node-certs:/etc/docker:ro \\\n  -v jenkins-data:/var/lib/jenkins \\\n  dockersolutions/jenkins\n```\n\nJenkins runs as the user `jenkins` in the container.  The jenkins user uid & gid are `510` in case a volume is used for the data in `/var/lib/jenkins`.\n\n## Jenkins User accounts\n\n* Purpose: This account is the main Jenkins account to be used interactively\n * Username: `demo`\n * Password: `docker123`\n\n* Purpose: This account should be used to trigger GitHub Webhook for the `Jenkins (GitHub plugin)` service.\n * Username: `github`\n * Password: `roflmywaffles`\n * Example webhook: `https://github:roflmywaffles@jenkins.<your-domain-name>/github-webhook/`\n\n## Interactive Updates\n\n```\ndocker run -it --rm -p 8080:8080 --name jenkins -u root \\\n  -v $(pwd)/jenkins/jobs:/var/lib/jenkins/jobs \\\n  -v $(pwd)/jenkins/users:/var/lib/jenkins/users \\\n  --entrypoint java \\\n  dockersolutions/jenkins \\\n  -jar /usr/share/jenkins/jenkins.war\n```\n",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER Matt Bentley <mbentley@mbentley.net>\n\n# install all dependencies\nRUN (apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget openjdk-7-jre-headless git-core jq mercurial sudo &&\\\n  DEBIAN_FRONTEND=noninteractive apt-get install -y daemon psmisc net-tools &&\\\n  rm -rf /var/lib/apt/lists/*)\n\n# install jenkins 1.653\nRUN (wget \"http://pkg.jenkins-ci.org/debian/binary/jenkins_1.653_all.deb\" -O /tmp/jenkins_1.653_all.deb &&\\\n  dpkg -i /tmp/jenkins_1.653_all.deb &&\\\n  rm /tmp/jenkins_1.653_all.deb)\n\n# install the docker cs engine binary and docker-compose\nRUN (wget -O usr/local/bin/docker \"https://packages.docker.com/1.11/builds/linux/amd64/docker-1.11.2-cs3\" &&\\\n  wget -O usr/local/bin/docker-compose \"https://github.com/docker/compose/releases/download/1.7.1/docker-compose-Linux-x86_64\" &&\\\n  chmod +x /usr/local/bin/docker /usr/local/bin/docker-compose &&\\\n  mkdir -p /var/lib/jenkins/plugins)\n\nENV JENKINS_HOME /var/lib/jenkins\nADD ./jenkins/ /var/lib/jenkins/\nADD entrypoint.sh /usr/local/bin/entrypoint.sh\n\n# create jenkins user\nRUN (userdel jenkins &&\\\n  groupadd -g 510 jenkins &&\\\n  groupadd -g 998 docker &&\\\n  useradd -u 510 -g 510 -G docker -d /var/lib/jenkins jenkins &&\\\n  chown -R jenkins:jenkins /var/lib/jenkins)\n\n# grant sudo access to jenkins user\nRUN (echo 'jenkins            ALL = (ALL) NOPASSWD: ALL' > /etc/sudoers.d/jenkinsnosudo &&\\\n  chmod 0440 /etc/sudoers.d/jenkinsnosudo)\n\nUSER jenkins\nVOLUME /var/lib/jenkins\nEXPOSE 8080\nENTRYPOINT [\"/usr/local/bin/entrypoint.sh\"]\nCMD [\"java\",\"-jar\",\"/usr/share/jenkins/jenkins.war\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./jenkins/",
+        "dest": "/var/lib/jenkins/"
+      },
+      {
+        "source": "entrypoint.sh",
+        "dest": "/usr/local/bin/entrypoint.sh"
+      }
+    ],
+    "expose": [
+      8080
+    ],
+    "volume": [
+      "/var/lib/jenkins"
+    ],
+    "run": [
+      "(apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget openjdk-7-jre-headless git-core jq mercurial sudo &&  DEBIAN_FRONTEND=noninteractive apt-get install -y daemon psmisc net-tools &&  rm -rf /var/lib/apt/lists/*)",
+      "(wget \"http://pkg.jenkins-ci.org/debian/binary/jenkins_1.653_all.deb\" -O /tmp/jenkins_1.653_all.deb &&  dpkg -i /tmp/jenkins_1.653_all.deb &&  rm /tmp/jenkins_1.653_all.deb)",
+      "(wget -O usr/local/bin/docker \"https://packages.docker.com/1.11/builds/linux/amd64/docker-1.11.2-cs3\" &&  wget -O usr/local/bin/docker-compose \"https://github.com/docker/compose/releases/download/1.7.1/docker-compose-Linux-x86_64\" &&  chmod +x /usr/local/bin/docker /usr/local/bin/docker-compose &&  mkdir -p /var/lib/jenkins/plugins)",
+      "(userdel jenkins &&  groupadd -g 510 jenkins &&  groupadd -g 998 docker &&  useradd -u 510 -g 510 -G docker -d /var/lib/jenkins jenkins &&  chown -R jenkins:jenkins /var/lib/jenkins)",
+      "(echo 'jenkins            ALL = (ALL) NOPASSWD: ALL' > /etc/sudoers.d/jenkinsnosudo &&  chmod 0440 /etc/sudoers.d/jenkinsnosudo)"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "Matt Bentley <mbentley@mbentley.net>",
+    "env": {
+      "JENKINS_HOME": "/var/lib/jenkins"
+    },
+    "user": "jenkins",
+    "entrypoint": "[\"/usr/local/bin/entrypoint.sh\"]",
+    "cmd": "[\"java\",\"-jar\",\"/usr/share/jenkins/jenkins.war\"]"
+  },
+  "source_repository_url": "git@github.com:docker/solutions-jenkins.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/docker/solutions-jenkins",
+  "docker_repository": "dockersolutions/jenkins",
+  "docker_image": "dockersolutions/jenkins",
+  "parameters_schema": {
+    "JENKINS_HOME": {
+      "default": "/var/lib/jenkins",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dockersolutions/jenkins",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/dockersolutions/jenkins",
+    "https://hub.docker.com/v2/repositories/dockersolutions/jenkins",
+    "git@github.com:docker/solutions-jenkins.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Integration/Jenkins",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/dockersolutions/jenkins",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

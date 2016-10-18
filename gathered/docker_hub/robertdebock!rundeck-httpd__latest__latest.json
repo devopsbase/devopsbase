@@ -1,0 +1,150 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/robertdebock/rundeck-httpd",
+    "repository_url": "https://hub.docker.com/v2/repositories/robertdebock/rundeck-httpd",
+    "tags_url": "https://hub.docker.com/v2/repositories/robertdebock/rundeck-httpd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/robertdebock/rundeck-httpd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/robertdebock/rundeck-httpd/autobuild",
+    "user": "robertdebock",
+    "name": "rundeck-httpd",
+    "namespace": "robertdebock",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 28,
+    "last_updated": "2016-09-19T09:14:23.566771Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 84154007,
+        "id": 4671503,
+        "repository": 897343,
+        "creator": 233185,
+        "last_updater": 233185,
+        "last_updated": "2016-09-19T09:14:23.024167Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "robertdebock/rundeck"
+  },
+  "name": "robertdebock/rundeck-httpd Docker container",
+  "description": "A container which acts as a frontend for Rundeck.",
+  "readme": "[![](https://images.microbadger.com/badges/image/robertdebock/rundeck-httpd.svg)](http://microbadger.com/images/robertdebock/rundeck-httpd \"Get your own image badge on microbadger.com\")\n\n# About this container.\n\nA docker container to serve as a proxy in front of RUNDECK. This container\nfeatures:\n- (Self signed) SSL certificate.\n- http to https redirect.\n- Reversed proxy to RUNDECK.\n\nThis container works well with docker-compose: https://github.com/robertdebock/docker-compose-rundeck\n\n# Running this container.\n\nTo run this application, use:\n\n    docker run \\\n    -p 8080:80 \\\n    -p 8443:443 \\\n    -e SSL_COUNTRY=NL \\\n    -e SSL_STATE=UTRECHT \\\n    -e SSL_LOCATION=Breukelen \\\n    -e SSL_ORGANIZATION=\"Me in IT Consultancy\" \\\n    -e SSL_ORGANIZATIONAL_UNIT=\"IT Department\" \\\n    -e SSL_COMMONNAME=rundeck.meinit.nl \\\n    -d \\\n    robertdebock/docker-rundeck-httpd\n    \n# Usage explained.\nThis are the meaning of the different options:\n\n|option|default value|usage|\n|---|---|---|\n|-p|-|Any (TCP) port, you may want to map an external port to this local port using: \"external:internal\". (i.e. \"8080:80\")|\n|-e SSL_COUNTRY|NL|A country to be used in the certificate.|\n|-e SSL_STATE|UTRECHT|A state to be used in the certificate.|\n|-e SSL_LOCATION|Breukelen|A location to be used in the certificate.|\n|-e SSL_ORGANIZATION|Me in IT Consultancy|An organization to be used in the certificate.|\n|-e SSL_ORGANIZATIONAL_UNIT|IT Department|An organizational unix to be used in the certificate.|\n|-e SSL_COMMONNAME|rundeck.meinit.nl|A state to be used in the certificate.|\n|-d|n.a.|Detach to the background.|\n|robertdebock/docker-rundeck-httpd|n.a.|Refers to this container.|\n",
+  "dockerfile": "FROM httpd\n\nCOPY rundeck.conf /usr/local/apache2/conf/extra/rundeck.conf\nCOPY generate-ssl-certificate.sh /root/generate-ssl-certificate.sh\nCOPY httpd-ssl.conf /usr/local/apache2/conf/extra/httpd-ssl.conf\nCOPY httptohttps.conf /usr/local/apache2/conf/extra/httptohttps.conf \n\nENV SERVERNAME rundeck.meinit.nl:443\nENV SERVERADMIN robert@meinit.nl\nENV SSL_COUNTRY NL\nENV SSL_STATE UTRECHT\nENV SSL_LOCATION Breukelen\nENV SSL_ORGANIZATION Me in IT Consultancy\nENV SSL_ORGANIZATIONAL_UNIT IT Department\nENV SSL_COMMONNAME rundeck.meinit.nl\n\nRUN echo \"ServerName localhost\" >> /usr/local/apache2/conf/httpd.conf\nRUN echo \"Include conf/extra/httpd-ssl.conf\" >> /usr/local/apache2/conf/httpd.conf\nRUN echo \"Include conf/extra/rundeck.conf\" >> /usr/local/apache2/conf/httpd.conf\nRUN echo \"Include conf/extra/httptohttps.conf\" >> /usr/local/apache2/conf/httpd.conf\nRUN sed -i \"s/ServerName .*/ServerName ${SERVERNAME}/\" /usr/local/apache2/conf/extra/httpd-ssl.conf\nRUN sed -i \"s/ServerAdmin .*/ServerAdmin ${SERVERADMIN}/\" /usr/local/apache2/conf/extra/httpd-ssl.conf\nRUN apt-get update && \\\n    apt-get install -y libapache2-mod-proxy-html openssl && \\\n    apt-get clean -y && \\\n    rm -rf /var/lib/apt/lists/*\n\nCMD /bin/sh /root/generate-ssl-certificate.sh && httpd-foreground\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "echo \"ServerName localhost\" >> /usr/local/apache2/conf/httpd.conf",
+      "echo \"Include conf/extra/httpd-ssl.conf\" >> /usr/local/apache2/conf/httpd.conf",
+      "echo \"Include conf/extra/rundeck.conf\" >> /usr/local/apache2/conf/httpd.conf",
+      "echo \"Include conf/extra/httptohttps.conf\" >> /usr/local/apache2/conf/httpd.conf",
+      "sed -i \"s/ServerName .*/ServerName ${SERVERNAME}/\" /usr/local/apache2/conf/extra/httpd-ssl.conf",
+      "sed -i \"s/ServerAdmin .*/ServerAdmin ${SERVERADMIN}/\" /usr/local/apache2/conf/extra/httpd-ssl.conf",
+      "apt-get update &&     apt-get install -y libapache2-mod-proxy-html openssl &&     apt-get clean -y &&     rm -rf /var/lib/apt/lists/*"
+    ],
+    "workdir": [],
+    "from": "httpd",
+    "copy": "httptohttps.conf /usr/local/apache2/conf/extra/httptohttps.conf ",
+    "env": {
+      "SERVERNAME": "rundeck.meinit.nl:443",
+      "SERVERADMIN": "robert@meinit.nl",
+      "SSL_COUNTRY": "NL",
+      "SSL_STATE": "UTRECHT",
+      "SSL_LOCATION": "Breukelen",
+      "SSL_ORGANIZATION": "Me",
+      "in": "IT",
+      "SSL_ORGANIZATIONAL_UNIT": "IT",
+      "SSL_COMMONNAME": "rundeck.meinit.nl"
+    },
+    "cmd": "/bin/sh /root/generate-ssl-certificate.sh && httpd-foreground"
+  },
+  "source_repository_url": "https://github.com/robertdebock/rundeck.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/robertdebock/rundeck",
+  "docker_repository": "robertdebock/rundeck-httpd",
+  "docker_image": "robertdebock/rundeck-httpd",
+  "parameters_schema": {
+    "SERVERNAME": {
+      "default": "rundeck.meinit.nl:443",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SERVERADMIN": {
+      "default": "robert@meinit.nl",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_COUNTRY": {
+      "default": "NL",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_STATE": {
+      "default": "UTRECHT",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_LOCATION": {
+      "default": "Breukelen",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_ORGANIZATION": {
+      "default": "Me",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "in": {
+      "default": "IT",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_ORGANIZATIONAL_UNIT": {
+      "default": "IT",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_COMMONNAME": {
+      "default": "rundeck.meinit.nl",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "robertdebock/rundeck-httpd",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/robertdebock/rundeck-httpd",
+    "https://hub.docker.com/v2/repositories/robertdebock/rundeck-httpd",
+    "https://github.com/robertdebock/rundeck.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/robertdebock/rundeck-httpd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,168 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/stephenreed/jenkins-java8-maven-git",
+    "repository_url": "https://hub.docker.com/v2/repositories/stephenreed/jenkins-java8-maven-git",
+    "tags_url": "https://hub.docker.com/v2/repositories/stephenreed/jenkins-java8-maven-git/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/stephenreed/jenkins-java8-maven-git/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/stephenreed/jenkins-java8-maven-git/autobuild",
+    "user": "stephenreed",
+    "name": "jenkins-java8-maven-git",
+    "namespace": "stephenreed",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 44,
+    "pull_count": 5637,
+    "last_updated": "2016-10-13T21:50:35.880578Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 560933597,
+        "id": 24716,
+        "repository": 42399,
+        "creator": 73477,
+        "last_updater": 73477,
+        "last_updated": "2016-10-13T21:50:35.488853Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "StephenLReed/docker-java8-jenkins-maven-git-nano"
+  },
+  "name": "stephenreed/jenkins-java8-maven-git Docker container",
+  "description": "Automated build that provides a continuous integration container from Ubuntu 14.04 LTS, plus Oracle Java 8, Jenkins 1.574, Maven 3.2.2, Git and Nano.",
+  "readme": "docker-java8-jenkins-maven-git-nano\n===================================\n\nThis repository provides the Dockerfile that builds a continuous integration container from Ubuntu 14.04 LTS, plus Oracle Java 8, Jenkins 1.574, Maven 3, Git and Nano.\n\nSets up a container with jenkins installed listening on port 8080.\n\nUsage\n\nTo run the container with the same time zone as the host, do the following:\n\n    sudo docker run -t -i -p 8080:8080 -v /etc/localtime:/etc/localtime:ro -P stephenreed/java8-jenkins-maven-git-nano\n\nTo start Jenkins from the container's command prompt . . .\n\n    java -jar opt/jenkins.war\n\nYou can configure Jenkins continuous integration jobs at http://127.0.0.1:8080 .  The Jenkins GitHub plugin needs to be installed by you if you use GitHub.\n\nMore information on Jenkins state persistence can be found at https://registry.hub.docker.com/u/aespinosa/jenkins/ .\n",
+  "dockerfile": "# Ubuntu 14.04 LTS\n# Oracle Java 1.8.0_11 64 bit\n# Maven 3.2.2\n# Jenkins 1.574\n# git 1.9.1\n# Nano 2.2.6-1ubuntu1\n\n# extend the most recent long term support Ubuntu version\nFROM ubuntu:14.04\n\nMAINTAINER Stephen L. Reed (http://texai.org, stephenreed@yahoo.com)\n\n# this is a non-interactive automated build - avoid some warning messages\nENV DEBIAN_FRONTEND noninteractive\n\n# update dpkg repositories\nRUN apt-get update \n\n# install wget\nRUN apt-get install -y wget\n\n# get maven 3.2.2\nRUN wget --no-verbose -O /tmp/apache-maven-3.2.2.tar.gz http://archive.apache.org/dist/maven/maven-3/3.2.2/binaries/apache-maven-3.2.2-bin.tar.gz\n\n# verify checksum\nRUN echo \"87e5cc81bc4ab9b83986b3e77e6b3095 /tmp/apache-maven-3.2.2.tar.gz\" | md5sum -c\n\n# install maven\nRUN tar xzf /tmp/apache-maven-3.2.2.tar.gz -C /opt/\nRUN ln -s /opt/apache-maven-3.2.2 /opt/maven\nRUN ln -s /opt/maven/bin/mvn /usr/local/bin\nRUN rm -f /tmp/apache-maven-3.2.2.tar.gz\nENV MAVEN_HOME /opt/maven\n\n# install git\nRUN apt-get install -y git\n\n# install nano\nRUN apt-get install -y nano\n\n# remove download archive files\nRUN apt-get clean\n\n# set shell variables for java installation\nENV java_version 1.8.0_11\nENV filename jdk-8u11-linux-x64.tar.gz\nENV downloadlink http://download.oracle.com/otn-pub/java/jdk/8u11-b12/$filename\n\n# download java, accepting the license agreement\nRUN wget --no-cookies --header \"Cookie: oraclelicense=accept-securebackup-cookie\" -O /tmp/$filename $downloadlink \n\n# unpack java\nRUN mkdir /opt/java-oracle && tar -zxf /tmp/$filename -C /opt/java-oracle/\nENV JAVA_HOME /opt/java-oracle/jdk$java_version\nENV PATH $JAVA_HOME/bin:$PATH\n\n# configure symbolic links for the java and javac executables\nRUN update-alternatives --install /usr/bin/java java $JAVA_HOME/bin/java 20000 && update-alternatives --install /usr/bin/javac javac $JAVA_HOME/bin/javac 20000\n\n# copy jenkins war file to the container\nADD http://mirrors.jenkins-ci.org/war/1.574/jenkins.war /opt/jenkins.war\nRUN chmod 644 /opt/jenkins.war\nENV JENKINS_HOME /jenkins\n\n# configure the container to run jenkins, mapping container port 8080 to that host port\nENTRYPOINT [\"java\", \"-jar\", \"/opt/jenkins.war\"]\nEXPOSE 8080\n\nCMD [\"\"]\n\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "http://mirrors.jenkins-ci.org/war/1.574/jenkins.war",
+        "dest": "/opt/jenkins.war"
+      }
+    ],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update ",
+      "apt-get install -y wget",
+      "wget --no-verbose -O /tmp/apache-maven-3.2.2.tar.gz http://archive.apache.org/dist/maven/maven-3/3.2.2/binaries/apache-maven-3.2.2-bin.tar.gz",
+      "echo \"87e5cc81bc4ab9b83986b3e77e6b3095 /tmp/apache-maven-3.2.2.tar.gz\" | md5sum -c",
+      "tar xzf /tmp/apache-maven-3.2.2.tar.gz -C /opt/",
+      "ln -s /opt/apache-maven-3.2.2 /opt/maven",
+      "ln -s /opt/maven/bin/mvn /usr/local/bin",
+      "rm -f /tmp/apache-maven-3.2.2.tar.gz",
+      "apt-get install -y git",
+      "apt-get install -y nano",
+      "apt-get clean",
+      "wget --no-cookies --header \"Cookie: oraclelicense=accept-securebackup-cookie\" -O /tmp/$filename $downloadlink ",
+      "mkdir /opt/java-oracle && tar -zxf /tmp/$filename -C /opt/java-oracle/",
+      "update-alternatives --install /usr/bin/java java $JAVA_HOME/bin/java 20000 && update-alternatives --install /usr/bin/javac javac $JAVA_HOME/bin/javac 20000",
+      "chmod 644 /opt/jenkins.war"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "Stephen L. Reed (http://texai.org, stephenreed@yahoo.com)",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "MAVEN_HOME": "/opt/maven",
+      "java_version": "1.8.0_11",
+      "filename": "jdk-8u11-linux-x64.tar.gz",
+      "downloadlink": "http://download.oracle.com/otn-pub/java/jdk/8u11-b12/$filename",
+      "JAVA_HOME": "/opt/java-oracle/jdk$java_version",
+      "PATH": "$JAVA_HOME/bin:$PATH",
+      "JENKINS_HOME": "/jenkins"
+    },
+    "entrypoint": "[\"java\", \"-jar\", \"/opt/jenkins.war\"]",
+    "cmd": "[\"\"]"
+  },
+  "source_repository_url": "https://github.com/StephenLReed/docker-java8-jenkins-maven-git-nano.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/StephenLReed/docker-java8-jenkins-maven-git-nano",
+  "docker_repository": "stephenreed/jenkins-java8-maven-git",
+  "docker_image": "stephenreed/jenkins-java8-maven-git",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_HOME": {
+      "default": "/opt/maven",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "java_version": {
+      "default": "1.8.0_11",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "filename": {
+      "default": "jdk-8u11-linux-x64.tar.gz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "downloadlink": {
+      "default": "http://download.oracle.com/otn-pub/java/jdk/8u11-b12/$filename",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_HOME": {
+      "default": "/opt/java-oracle/jdk$java_version",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$JAVA_HOME/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_HOME": {
+      "default": "/jenkins",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "stephenreed/jenkins-java8-maven-git",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/stephenreed/jenkins-java8-maven-git",
+    "https://hub.docker.com/v2/repositories/stephenreed/jenkins-java8-maven-git",
+    "https://github.com/StephenLReed/docker-java8-jenkins-maven-git-nano.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Build/Java/Maven",
+    "Type/Devopsware/Version Control/Git",
+    "Type/Devopsware/Integration/Jenkins",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu"
+  ],
+  "info_url": "https://hub.docker.com/r/stephenreed/jenkins-java8-maven-git",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

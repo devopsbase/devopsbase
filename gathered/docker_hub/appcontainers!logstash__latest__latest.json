@@ -1,0 +1,151 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/appcontainers/logstash",
+    "repository_url": "https://hub.docker.com/v2/repositories/appcontainers/logstash",
+    "tags_url": "https://hub.docker.com/v2/repositories/appcontainers/logstash/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/appcontainers/logstash/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/appcontainers/logstash/autobuild",
+    "user": "appcontainers",
+    "name": "logstash",
+    "namespace": "appcontainers",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 3051,
+    "last_updated": "2015-11-13T02:43:59.401418Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 413349747,
+        "id": 63497,
+        "repository": 61423,
+        "creator": 79833,
+        "last_updater": 79833,
+        "last_updated": "2015-11-13T02:44:07.382911Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "appcontainers/logstash"
+  },
+  "name": "appcontainers/logstash Docker container",
+  "description": "Logstash Container build.",
+  "readme": ">ElasticSearch, Logstash, Kibana Container Build\r\n\r\n*Built from appcontainers/centos65*\r\n\r\n**Build container using default values.**\r\n    \r\n    docker build -t appcontainers/logstash .\r\n\r\n\r\n**Running the container**\r\n\r\nThe container is built to allow several configurable variables to be passed in at runtime. The values are as follows:\r\n\r\n- FQDN - This is the fully qualified domain name such as example.com. This should be passed without any prefix such as www.\r\n\r\n**Run the container using default values**\r\n\r\n    docker run -d -it --name logstash -h logstash -p 81:80 -p 9200:9200 -p 9300:9300 -p 5000:5000 appcontainers/logstash\r\n\r\n*This will assume the following*\r\n\r\n- FQDN  = kibana.local\r\n\r\n**Run the container substituting the $varables with your own custom values**\r\n\r\n    docker run -d -i -t \\\r\n    --name logstash \\\r\n    -h logstash \\\r\n    -p 81:80 \\\r\n    -p 9200:9200 \\\r\n    -p 9300:9300 \\\r\n    -p 5000:5000 \\\r\n    -e FQDN='testapp.com' \\\r\n    appcontainers/logstash\r\n\r\n**Navigate to the IP address of the server on the port specified (81 default) to access the main Kibana Dashboard**\r\n\r\n**Important Note: This container uses a certificate to communicate with all configured logstash-forwarders. Backup up the generated certifciate, as a new certificate will be generated if the container is rebuilt (not re-ran). The certificate can be found in /etc/pki/tls/certs and /etc/pki/tls/private for the key**",
+  "dockerfile": "############################################################\n# Dockerfile to build a ELK stack server\n# Based on darkside/centos65:base\n############################################################\n\n# Set the base image to Centos65 Base\nFROM appcontainers/centos65\n\n# File Author / Maintainer\nMAINTAINER Rich Nason rnason@appcontainers.com\n\n#*************************\n#*       Versions        *\n#*************************\nENV LSVER logstash-1.4.2\nENV ESVER elasticsearch-1.1.1\nENV KVER kibana-3.0.1\n\n\n#**********************************\n#* Override Enabled ENV Variables *\n#**********************************\nENV FQDN kibana.local\n\n\n#**************************\n#*   Add Required Files   *\n#**************************\nADD runconfig.sh /tmp/\nADD elasticsearch.repo /etc/yum.repos.d/\n\n# Add GPG Keys for RPM installs\nRUN rpm --import http://packages.elasticsearch.org/GPG-KEY-elasticsearch\n\n# Download Kibana version specified in the Versions section.\nRUN cd /tmp/ && \\\nwget https://download.elasticsearch.org/kibana/kibana/$KVER.tar.gz\n\n\n#*************************\n#*  Update and Pre-Reqs  *\n#*************************\nRUN yum clean all && \\\nyum -y update && \\\nyum -y install java-1.7.0-openjdk.x86_64 java-1.7.0-openjdk-devel.x86_64 nginx httpd-tools redis $ESVER $LSVER\n\n\n#*************************\n#*  Application Install  *\n#*************************\n# Unpack Kibana\nRUN cd /tmp/ && \\\nmkdir -p /var/www/html/ && \\\ntar -xzvf kibana-3.0.1.tar.gz -C /var/www/html/\n\n# Create some Symlink magic.\nRUN cd /var/www/html/ && \\\nln -s kibana-3.0.1 kibana3\n\n# Add Dashboards\nADD /Dashboards/ /var/www/html/kibana3/app/dashboards/\n\n# Redis\n#*********\n# Change redis listening address\nRUN sed -ie 's/bind\\ 127\\.0\\.0\\.1/bind\\ 0\\.0\\.0\\.0/g' /etc/redis.conf\n\n\n# ElasticSearch Config\n#*********************\n\n\n# Logstash Config\n#****************\n# Generate Certificate to allow log forwarders to use to send log data\nRUN cd /etc/pki/tls && \\\nopenssl req -x509 -batch -nodes -days 3650 -newkey rsa:2048 -keyout private/logstash-forwarder.key -out certs/logstash-forwarder.crt\n\n# Add the preconstructed logstash configs to the logstash run directory\nADD /Configs/ /etc/logstash/conf.d/\n\n\n# Kibana Config\n#***************\n# Copy the sample nginx config file from the kibana github\nRUN cd /etc/nginx/conf.d/ && \\\nwget https://github.com/elasticsearch/kibana/raw/master/sample/nginx.conf\n\n\n#************************\n#* Post Deploy Clean Up *\n#************************\nRUN mkdir /tmp/installers && mv /tmp/*.tar.gz /tmp/installers/\n\n\n#**************************\n#*  Config Startup Items  *\n#**************************\nRUN chmod +x /tmp/runconfig.sh && \\\necho \"/tmp/./runconfig.sh\" >> ~/.bashrc && \\\necho \"service redis start\" >> ~/.bashrc && \\\necho \"service elasticsearch start\" >> ~/.bashrc && \\\necho \"service logstash start\" >> ~/.bashrc && \\\necho \"service nginx start\" >> ~/.bashrc\n\n\n#****************************\n#* Expose Applicatoin Ports *\n#****************************\n# Expose ports to other containers only\nEXPOSE 80\nEXPOSE 443\nEXPOSE 5000\nEXPOSE 9200\nEXPOSE 9300\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "runconfig.sh",
+        "dest": "/tmp/"
+      },
+      {
+        "source": "elasticsearch.repo",
+        "dest": "/etc/yum.repos.d/"
+      },
+      {
+        "source": "/Dashboards/",
+        "dest": "/var/www/html/kibana3/app/dashboards/"
+      },
+      {
+        "source": "/Configs/",
+        "dest": "/etc/logstash/conf.d/"
+      }
+    ],
+    "expose": [
+      80,
+      443,
+      5000,
+      9200,
+      9300
+    ],
+    "volume": [],
+    "run": [
+      "rpm --import http://packages.elasticsearch.org/GPG-KEY-elasticsearch",
+      "cd /tmp/ && wget https://download.elasticsearch.org/kibana/kibana/$KVER.tar.gz",
+      "yum clean all && yum -y update && yum -y install java-1.7.0-openjdk.x86_64 java-1.7.0-openjdk-devel.x86_64 nginx httpd-tools redis $ESVER $LSVER",
+      "cd /tmp/ && mkdir -p /var/www/html/ && tar -xzvf kibana-3.0.1.tar.gz -C /var/www/html/",
+      "cd /var/www/html/ && ln -s kibana-3.0.1 kibana3",
+      "sed -ie 's/bind\\ 127\\.0\\.0\\.1/bind\\ 0\\.0\\.0\\.0/g' /etc/redis.conf",
+      "cd /etc/pki/tls && openssl req -x509 -batch -nodes -days 3650 -newkey rsa:2048 -keyout private/logstash-forwarder.key -out certs/logstash-forwarder.crt",
+      "cd /etc/nginx/conf.d/ && wget https://github.com/elasticsearch/kibana/raw/master/sample/nginx.conf",
+      "mkdir /tmp/installers && mv /tmp/*.tar.gz /tmp/installers/",
+      "chmod +x /tmp/runconfig.sh && echo \"/tmp/./runconfig.sh\" >> ~/.bashrc && echo \"service redis start\" >> ~/.bashrc && echo \"service elasticsearch start\" >> ~/.bashrc && echo \"service logstash start\" >> ~/.bashrc && echo \"service nginx start\" >> ~/.bashrc"
+    ],
+    "workdir": [],
+    "from": "appcontainers/centos65",
+    "maintainer": "Rich Nason rnason@appcontainers.com",
+    "env": {
+      "LSVER": "logstash-1.4.2",
+      "ESVER": "elasticsearch-1.1.1",
+      "KVER": "kibana-3.0.1",
+      "FQDN": "kibana.local"
+    }
+  },
+  "source_repository_url": "git@bitbucket.org:appcontainers/logstash.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/appcontainers/logstash",
+  "docker_repository": "appcontainers/logstash",
+  "docker_image": "appcontainers/logstash",
+  "parameters_schema": {
+    "LSVER": {
+      "default": "logstash-1.4.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ESVER": {
+      "default": "elasticsearch-1.1.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KVER": {
+      "default": "kibana-3.0.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FQDN": {
+      "default": "kibana.local",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80,
+        443,
+        5000,
+        9200,
+        9300
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "appcontainers/logstash",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/appcontainers/logstash",
+    "https://hub.docker.com/v2/repositories/appcontainers/logstash",
+    "git@bitbucket.org:appcontainers/logstash.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Build",
+    "Type/Devopsware/Logging/Logstash"
+  ],
+  "info_url": "https://hub.docker.com/r/appcontainers/logstash",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

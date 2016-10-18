@@ -1,0 +1,170 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/skio/ruby",
+    "repository_url": "https://hub.docker.com/v2/repositories/skio/ruby",
+    "tags_url": "https://hub.docker.com/v2/repositories/skio/ruby/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/skio/ruby/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/skio/ruby/autobuild",
+    "user": "skio",
+    "name": "ruby",
+    "namespace": "skio",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 231,
+    "last_updated": "2016-10-13T21:28:25.840985Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 167740215,
+        "id": 3203311,
+        "repository": 712608,
+        "creator": 147035,
+        "last_updater": 147035,
+        "last_updated": "2016-10-13T21:28:25.516341Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.3.1",
+        "full_size": 162860833,
+        "id": 3203307,
+        "repository": 712608,
+        "creator": 147035,
+        "last_updater": 147035,
+        "last_updated": "2016-06-12T06:07:22.357609Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "SkioDev/ruby-base"
+  },
+  "name": "skio/ruby Docker container",
+  "description": "Ruby base image based on Ubuntu 16.04 LTS",
+  "readme": "# ruby-base\nDockerfile for ruby base image\n\n\n## How to update\nTo update to version X.X.X:\n- Change the RUBY_VERSION environment variable in the Dockerfile to X.X.X\n- Change the RUBY_BASE_VERSION environment variable in the Dockerfile to X.X\n- Visit https://www.ruby-lang.org/en/downloads/ to get the sha256 hash for the\n  version you are trying to build and update the RUBY_SHA256 environment\n  variable in the Dockerfile to that value\n- Run `docker build -t skio/ruby .` and make sure that the image builds\n- Make sure you're on the master branch and run\n  `git commit -m \"Update to Ruby version X.X.X\"\n- Run `git push -u` to update the latest tag\n- Create a new branch `git checkout -b X.X.X`\n- Run `git push -u` to add the version tag",
+  "dockerfile": "FROM ubuntu:xenial\n\nMAINTAINER Cameron Mullen <cam@skio.io>\n\nENV RUBY_VERSION=2.3.1 \\\n    RUBY_BASE_VERSION=2.3 \\\n    RUBY_SHA256=b87c738cb2032bf4920fef8e3864dc5cf8eae9d89d8d523ce0236945c5797dcd\n\n# Install base utilities\nRUN \\\n  apt-get update && \\\n  apt-get upgrade -y && \\\n  apt-get install -y --no-install-recommends \\\n    wget \\\n    ca-certificates \\\n    tar \\\n    patch \\\n    bzip2 \\\n    gawk \\\n    g++ \\\n    gcc \\\n    make \\\n    libc6-dev \\\n    patch \\\n    libreadline6-dev \\\n    zlib1g-dev \\\n    libssl-dev \\\n    libyaml-dev \\\n    libsqlite3-dev \\\n    sqlite3 \\\n    autoconf \\\n    libgmp-dev \\\n    libgdbm-dev \\\n    libncurses5-dev \\\n    automake \\\n    libtool \\\n    bison \\\n    pkg-config \\\n    libffi-dev && \\\n  rm -rf /var/lib/apt/lists/*\n\n\n# Installing Ruby\nRUN \\\n  mkdir -p /usr/local/etc && \\\n  { echo 'install: --no-document'; echo 'update: --no-document'; } >> /usr/local/etc/gemrc && \\\n  wget -O ruby.tar.gz  https://cache.ruby-lang.org/pub/ruby/${RUBY_BASE_VERSION}/ruby-${RUBY_VERSION}.tar.gz && \\\n  echo \"$RUBY_SHA256 *ruby.tar.gz\" | sha256sum -c - && \\\n  mkdir -p /usr/src/ruby && \\\n  tar -xzf ruby.tar.gz -C /usr/src/ruby --strip-components=1 && \\\n  rm ruby.tar.gz && \\\n  cd /usr/src/ruby && \\\n  { echo '#define ENABLE_PATH_CHECK 0'; echo; cat file.c; } > file.c.new && mv file.c.new file.c && \\\n  autoconf && \\\n  ./configure --disable-install-doc && \\\n  make -j\"$(nproc)\" && \\\n  make install && \\\n  gem update --system $RUBYGEMS_VERSION && \\\n  rm -r /usr/src/ruby\n\nRUN gem install bundler\n\nENV GEM_HOME=/usr/local/bundle\n\nENV BUNDLE_PATH=\"$GEM_HOME\" \\\n    BUNDLE_BIN=\"$GEM_HOME/bin\" \\\n    BUNDLE_SILENCE_ROOT_WARNING=1 \\\n    BUNDLE_APP_CONFIG=\"$GEM_HOME\"\n\nENV PATH=$PATH:$BUNDLE_BIN\n\nRUN \\\n  mkdir -p \"$GEM_HOME\" \"$BUNDLE_BIN\" && \\\n  chmod 777 \"$GEM_HOME\" \"$BUNDLE_BIN\"\n\nCMD [\"irb\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "  apt-get update &&   apt-get upgrade -y &&   apt-get install -y --no-install-recommends     wget     ca-certificates     tar     patch     bzip2     gawk     g++     gcc     make     libc6-dev     patch     libreadline6-dev     zlib1g-dev     libssl-dev     libyaml-dev     libsqlite3-dev     sqlite3     autoconf     libgmp-dev     libgdbm-dev     libncurses5-dev     automake     libtool     bison     pkg-config     libffi-dev &&   rm -rf /var/lib/apt/lists/*",
+      "  mkdir -p /usr/local/etc &&   { echo 'install: --no-document'; echo 'update: --no-document'; } >> /usr/local/etc/gemrc &&   wget -O ruby.tar.gz  https://cache.ruby-lang.org/pub/ruby/${RUBY_BASE_VERSION}/ruby-${RUBY_VERSION}.tar.gz &&   echo \"$RUBY_SHA256 *ruby.tar.gz\" | sha256sum -c - &&   mkdir -p /usr/src/ruby &&   tar -xzf ruby.tar.gz -C /usr/src/ruby --strip-components=1 &&   rm ruby.tar.gz &&   cd /usr/src/ruby &&   { echo '#define ENABLE_PATH_CHECK 0'; echo; cat file.c; } > file.c.new && mv file.c.new file.c &&   autoconf &&   ./configure --disable-install-doc &&   make -j\"$(nproc)\" &&   make install &&   gem update --system $RUBYGEMS_VERSION &&   rm -r /usr/src/ruby",
+      "gem install bundler",
+      "  mkdir -p \"$GEM_HOME\" \"$BUNDLE_BIN\" &&   chmod 777 \"$GEM_HOME\" \"$BUNDLE_BIN\""
+    ],
+    "workdir": [],
+    "from": "ubuntu:xenial",
+    "maintainer": "Cameron Mullen <cam@skio.io>",
+    "env": {
+      "RUBY_VERSION": "2.3.1",
+      "": "",
+      "RUBY_BASE_VERSION": "2.3",
+      "RUBY_SHA256": "b87c738cb2032bf4920fef8e3864dc5cf8eae9d89d8d523ce0236945c5797dcd",
+      "GEM_HOME": "/usr/local/bundle",
+      "BUNDLE_PATH": "\"$GEM_HOME\"",
+      "BUNDLE_BIN": "\"$GEM_HOME/bin\"",
+      "BUNDLE_SILENCE_ROOT_WARNING": "1",
+      "BUNDLE_APP_CONFIG": "\"$GEM_HOME\"",
+      "PATH": "$PATH:$BUNDLE_BIN"
+    },
+    "cmd": "[\"irb\"]"
+  },
+  "source_repository_url": "https://github.com/SkioDev/ruby-base.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/SkioDev/ruby-base",
+  "docker_repository": "skio/ruby",
+  "docker_image": "skio/ruby",
+  "parameters_schema": {
+    "RUBY_VERSION": {
+      "default": "2.3.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RUBY_BASE_VERSION": {
+      "default": "2.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RUBY_SHA256": {
+      "default": "b87c738cb2032bf4920fef8e3864dc5cf8eae9d89d8d523ce0236945c5797dcd",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GEM_HOME": {
+      "default": "/usr/local/bundle",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_PATH": {
+      "default": "\"$GEM_HOME\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_BIN": {
+      "default": "\"$GEM_HOME/bin\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_SILENCE_ROOT_WARNING": {
+      "default": "1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_APP_CONFIG": {
+      "default": "\"$GEM_HOME\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:$BUNDLE_BIN",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "skio/ruby",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/skio/ruby",
+    "https://hub.docker.com/v2/repositories/skio/ruby",
+    "https://github.com/SkioDev/ruby-base.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu"
+  ],
+  "info_url": "https://hub.docker.com/r/skio/ruby",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

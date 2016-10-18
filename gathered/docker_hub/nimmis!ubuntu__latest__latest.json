@@ -1,0 +1,161 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/nimmis/ubuntu",
+    "repository_url": "https://hub.docker.com/v2/repositories/nimmis/ubuntu",
+    "tags_url": "https://hub.docker.com/v2/repositories/nimmis/ubuntu/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/nimmis/ubuntu/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/nimmis/ubuntu/autobuild",
+    "user": "nimmis",
+    "name": "ubuntu",
+    "namespace": "nimmis",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 5,
+    "pull_count": 13485,
+    "last_updated": "2016-10-13T21:44:37.096090Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 136077596,
+        "id": 81477,
+        "repository": 104922,
+        "creator": 162525,
+        "last_updater": 162525,
+        "last_updated": "2016-10-13T21:44:36.783636Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "12.04",
+        "full_size": 93893920,
+        "id": 81426,
+        "repository": 104922,
+        "creator": 162525,
+        "last_updater": 162525,
+        "last_updated": "2016-10-13T21:39:02.784976Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "16.04",
+        "full_size": 136077871,
+        "id": 2752882,
+        "repository": 104922,
+        "creator": 162525,
+        "last_updater": 162525,
+        "last_updated": "2016-10-13T21:35:04.183912Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "14.04",
+        "full_size": 123276565,
+        "id": 81446,
+        "repository": 104922,
+        "creator": 162525,
+        "last_updater": 162525,
+        "last_updated": "2016-10-13T21:30:15.339860Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "beta",
+        "full_size": 146988975,
+        "id": 2000503,
+        "repository": 104922,
+        "creator": 162525,
+        "last_updater": 162525,
+        "last_updated": "2016-04-14T01:22:14.096919Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "nimmis/docker-ubuntu"
+  },
+  "name": "nimmis/ubuntu Docker container",
+  "description": "This is a docker images different LTS version of Ubuntu with a working init process and syslog ",
+  "readme": "## Ubuntu LTS version with some extra commands\n [![Docker Hub; nimmis/ubuntu](https://img.shields.io/badge/dockerhub-nimmis%2Fubuntu-green.svg)](https://registry.hub.docker.com/u/nimmis/ubuntu)\n\nThis is a docker images with different LTS version of Ubuntu with a working init process and syslog\n\nNow with 16.04 as latest\n\n### Why use this image\n\nThe unix process ID 1 is the process to receive the SIGTERM signal when you execute a \n\n\tdocker stop <container ID>\n\nif the container has the command `CMD [\"bash\"]` then bash process will get the SIGTERM signal and terminate.\nAll other processes running on the system will just stop without the possibility to shutdown correclty\n\n### my_init init script\n\nIn this container i have a scipt that handles the init process an uses the [supervisor system](http://supervisord.org/index.html) to start\nthe daemons to run and also catch signals (SIGTERM) to shutdown all processes started by supervisord. This is a modified version of\nan init script made by Phusion. I've modified it to use supervisor in stead of runit. There are also two directories to run scripts\nbefore any daemon is started.\n\n#### Run script once /etc/my_runonce\n\nAll executable in this directory is run at start, after completion the script is removed from the directory\n\n#### Run script every start /etc/my_runalways\n\nAll executable in this directory is run at every start of the container, ie, at `docker run` and `docker start`\n\n#### Permanent output to docker log when starting container\n\nEach time the container is started the content of the file /tmp/startup.log is displayed so if your startup scripts generate \nvital information to be shown please add that information to that file. This information can be retrieved anytime by\nexecuting `docker logs <container id>`\n\n### cron daemon\n\nIn many cases there are som need of things happening att given intervalls, default no cron processs is started\nin the standard ubuntu image. In this image cron is running together with logrotate to stop the logdfiles to be\nto big on log running containers.\n\n### syslog-ng\n\nNo all services works without a syslog daemon, if you don't have one running those messages is lost in space,\nall messages sent via the syslog daemon is saved in /var/log/syslog\n\n### Docker fixes \n\nAlso there are fixed (besideds the init process) assosiated with running ubuntu inside a docker container.\n\n### New commands autostarted by supervisord\n\nTo add other processes to run automaticly, add a file ending with .conf  in /etc/supervisor/conf.d/ \nwith a layout like this (/etc/supervisor/conf.d/myprogram.conf) \n\n\t[program:myprogram]\n\tcommand=/usr/bin/myprogram\n\n`myprogram` is the name of this process when working with supervisctl.\n\nOutput logs std and error is found in /var/log/supervisor/ and the files begins with the <defined name><-stdout|-stderr>superervisor*.log\n\nFor more settings please consult the [manual FOR supervisor](http://supervisord.org/configuration.html#program-x-section-settings)\n\n#### starting commands from /etc/init.d/ or commands that detach with my_service\n\nThe supervisor process assumes that a command that ends has stopped so if the command detach it will try to restart it. To work around this\nproblem I have written an extra command to be used for these commands. First you have to make a normal start/stop command and place it in\nthe /etc/init.d that starts the program with\n\n\t/etc/init.d/command start or\n\tservice command start\n\nand stops with\n\n        /etc/init.d/command stop or\n        service command stop\n\nConfigure the configure-file (/etc/supervisor/conf.d/myprogram.conf)\n\n\t[program:myprogram]\n\tcommand=/my_service myprogram\n\nThere is an optional parameter, to run a script after a service has start, e.g to run the script /usr/local/bin/postproc.sh av myprogram is started\n\n        [program:myprogram]\n        command=/my_service myprogram /usr/local/bin/postproc.sh\n\n### Output information to docker logs\n\nThe console output is owned by the my_init process so any output from commands woun't show in the docker log. To send a text from any command, either\nat startup och during run, append the output to the file /var/log/startup.log, e.g sending specific text to log\n\n\techo \"Application is finished\" >> /var/log/startup.log\n\nor output from script\n\n\t/usr/local/bin/myscript >> /var/log/startlog.log\n\n\n\t> docker run -d --name ubuntu nimmis/ubuntu\n\t> docker logs ubuntu\n\t*** open logfile\n\t*** Run files in /etc/my_runonce/\n\t*** Run files in /etc/my_runalways/\n\t*** Running /etc/rc.local...\n\t*** Booting supervisor daemon...\n\t*** Supervisor started as PID 9\n\t2015-08-04 11:34:06,763 CRIT Set uid to user 0\n\t*** Started processes via Supervisor......\n\tcrond                            RUNNING    pid 13, uptime 0:00:04\n\tsyslog-ng                        RUNNING    pid 12, uptime 0:00:04\n\n\t> docker exec ubuntu sh -c 'echo \"Testmessage to log\" >> /var/log/startup.log'\n\t> docker logs ubuntu\n        *** open logfile\n        *** Run files in /etc/my_runonce/\n        *** Run files in /etc/my_runalways/\n        *** Running /etc/rc.local...\n        *** Booting supervisor daemon...\n        *** Supervisor started as PID 9\n        2015-08-04 11:34:06,763 CRIT Set uid to user 0\n        *** Started processes via Supervisor......\n        crond                            RUNNING    pid 13, uptime 0:00:04\n        syslog-ng                        RUNNING    pid 12, uptime 0:00:04\n\n\t*** Log: Testmessage to log\n        >\n### Added som normaly used commands\n\nThere are a number of commands that most uses and adds to their build, in this build I've added som commonly used packages\n\nExtra included packages are\n\n- wget\n- curl\n- zip/unzip\n- git\n- vim\n- nano\n- psmisc\n- less\n- patch\n- software-properties-common\n\n### Installation\n\nThis continer should normaly run as a daemon i.e with the `-d` flag attached\n\n\tdocker run -d nimmis/ubuntu\n\nbut if you want to check if all services has been started correctly you can start with the following command\n\n\tdocker run -ti nimmis/ubuntu\n\nthe output, if working correctly should be\n\n\tdocker run -ti nimmis/ubuntu14\n\t*** open logfile\n\t*** Run files in /etc/my_runonce/\n\t*** Run files in /etc/my_runalways/\n\t*** Running /etc/rc.local...\n\t*** Booting supervisor daemon...\n\t*** Supervisor started as PID 11\n\t2015-01-02 10:45:43,750 CRIT Set uid to user 0\n\t*** Started processes via Supervisor......\n\tcrond                            RUNNING    pid 15, uptime 0:00:02\n\tsyslog-ng                        RUNNING    pid 14, uptime 0:00:02\n\npressing a CTRL-C in that window  or running `docker stop <container ID>` will generate the following output\n\n\t*** Shutting down supervisor daemon (PID 11)...\n\t*** Killing all processes...\n\nyou can the restart that container with \n\n\tdocker start <container ID>\n\nAccessing the container with a bash shell can be done with\n\n\tdocker exec -ti <container ID> /bin/bash\n\n### Commands and Environment variables\n\nThis is the commands and environment variables  used inside nimmis based containers\nfor extra functionality\n\n## set_tz\n\nIn the default configuration is set to UTC time, if you need it\nto use the corret time you can change to timezone for the container \nwith this command, syntax is\n\n\tset_tz <timezone>\n\nTo get list of available timezones do\n\n\tset_tz list\n\n\n### set timezone on startup\n\nAdd the environment variable TIMEZONE to the desired timezone, i.e to set timezone to \nCET Stockhome\n\n\tdocker run -d -e TIMEZONE=Europa/Stockholm nimmis/ubuntu\n\n### set timezone in running container\n\nExecute the command on the container as\n\n\tdocker exec -ti <docker ID> set_tz Europa/Stockholm\n\n### get list of timezones before starting container\n\nExecute the following command, it will list available timezones and then\nremove the container\n\n\tdocker run --rm nimmis/ubuntu set_tz list\n### TAGs\n\nThis image only contains the 3 latest LTS versions of Ubuntu 12.04,14.04 and 16.04, the versions are\nnimmis/ubuntu:<tag> where tag is\n\n- latest -  this gives the latest LTS version (16.04)\n- 12.04  -  this gives the 12.04 LTS version\n- 14.04  -  this gives the 14.04 LTS version\n- 16.04  -  this gives the 16.04 LTS version\n\n",
+  "dockerfile": "FROM ubuntu:12.04\n\nMAINTAINER nimmis <kjell.havneskold@gmail.com>\n\n# disable interactive functions\nENV DEBIAN_FRONTEND noninteractive\n\nRUN apt-get update && apt-get install  -y --no-install-recommends git ca-certificates && \\\n    # Create autorun directories\n    mkdir /etc/my_runonce && mkdir /etc/my_runalways && \\\n    # moved all configuration to separate git repository\n    git clone https://github.com/nimmis/docker-utils.git && \\\n    # run os fixes for Ubuntu\n    docker-utils/ubuntu/root/fix.sh && \\\n    # copy configuration files and commands to disk\n    cp -p docker-utils/ubuntu/bin/* /usr/local/bin/ && \\\n    cp -p docker-utils/ubuntu/my_runonce/* /etc/my_runonce/ && \\\n    cp -p docker-utils/ubuntu/root/my* / && \\\n    cp -pR docker-utils/ubuntu/supervisor /etc/ && \\\n    # add missing direcotry for syslog-ng\n    mkdir /var/lib/syslog-ng && \\\n    # remove repository from image\n    rm -Rf docker-utils && \\\n    # remove extra space from git command\n    apt-get remove -y git && \\\n    apt-get autoremove -y && \\\n    # remove apt cache from image\n    apt-get clean all\n\n# Set environment variables.\nENV HOME /root\n\n# Define working directory.\nWORKDIR /root\n\n# Define default command.\nCMD [\"/my_init\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install  -y --no-install-recommends git ca-certificates &&     # Create autorun directories"
+    ],
+    "workdir": [
+      "/root"
+    ],
+    "from": "ubuntu:12.04",
+    "maintainer": "nimmis <kjell.havneskold@gmail.com>",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "HOME": "/root"
+    },
+    "cmd": "[\"/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/nimmis/docker-ubuntu.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/nimmis/docker-ubuntu",
+  "docker_repository": "nimmis/ubuntu",
+  "docker_image": "nimmis/ubuntu",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "nimmis/ubuntu",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/nimmis/ubuntu",
+    "https://hub.docker.com/v2/repositories/nimmis/ubuntu",
+    "https://github.com/nimmis/docker-ubuntu.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Logging",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu"
+  ],
+  "info_url": "https://hub.docker.com/r/nimmis/ubuntu",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

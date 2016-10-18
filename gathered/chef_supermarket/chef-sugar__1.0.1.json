@@ -1,0 +1,44 @@
+{
+  "name": "chef-sugar Chef cookbook",
+  "chef_cookbook_name": "chef-sugar",
+  "revision": "1.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/chef-sugar",
+    "https://supermarket.chef.io/cookbooks/chef-sugar/download",
+    "https://supermarket.chef.io/cookbooks/chef-sugar/versions/1.0.1",
+    "https://supermarket.chef.io/cookbooks/chef-sugar/versions/1.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/chef-sugar/versions/1.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/chef-sugar",
+    "https://supermarket.chef.io/api/v1/cookbooks/chef-sugar/versions/1.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Type/Middleware/Runtime/Ruby",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/chef-sugar",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/chef-sugar/versions/1.0.1/download",
+  "deprecated": false,
+  "created": "2013-10-15T05:26:55.000Z",
+  "updated": "2016-07-18T14:54:47.270Z",
+  "description": "Installs chef-sugar. Please see the chef-sugar Ruby gem for more information.",
+  "maintainer": {
+    "name": "sethvargo",
+    "email": "sethvargo@gmail.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 38,
+  "downloads_count": 36536172,
+  "downloads_count_revision": 1202960,
+  "repository_url": "https://github.com/sethvargo/chef-sugar",
+  "issues_url": "https://github.com/sethvargo/chef-sugar/issues",
+  "chef_source_url": "https://github.com/sethvargo/chef-sugar",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Chef::Sugar\n================\n[![Build Status](https://secure.travis-ci.org/sethvargo/chef-sugar.png?branch=master)](http://travis-ci.org/sethvargo/chef-sugar)\n[![Gem Version](https://badge.fury.io/rb/chef-sugar.png)](http://badge.fury.io/rb/chef-sugar)\n[![Dependency Status](https://gemnasium.com/sethvargo/chef-sugar.png)](https://gemnasium.com/sethvargo/chef-sugar)\n[![Code Climate](https://codeclimate.com/github/sethvargo/chef-sugar.png)](https://codeclimate.com/github/sethvargo/chef-sugar)\n\nChef Sugar is a Gem & Chef Recipe that includes series of helpful sugar of the Chef core and other resources to make a cleaner, more lean recipd DSL, enforce DRY principles, and make writing Chef recipes an awesome experience!\n\n\nInstallation\n------------\nIf you want to development/hack on chef-sugar, please see the Contributing.md.\n\nIf you are using Berkshelf, add `chef-sugar` to your `Berksfile`:\n\n```ruby\ncookbook 'chef-sugar'\n```\n\nOtherwise, you can use `knife` or download the tarball directly from the community site:\n\n```ruby\nknife cookbook site install chef-sugar\n```\n\n\nUsage\n-----\nIn order to use Chef Sugar in your Chef Recipes, you'll first need to include it:\n\n```ruby\ninclude_recipe 'chef-sugar::default'\n```\n\nAlternatively you can put it in a base role or recipe and it will be included subsequently.\n\nRequiring the Chef Sugar Gem will automatically extend the Recipe DSL, `Chef::Resource`, and `Chef::Provider` with helpful convienence methods.\n\n### Module Method\nIf you are working outside of the Recipe DSL, you can use the module methods instead of the Recipe DSL. In general, the module methods have the same name as their Recipe-DSL counterparts, but require the node object as a parameter. For example:\n\nIn a Recipe:\n```ruby\n# cookbook/recipes/default.rb\ndo_something if windows?\n```\n\nIn a Library as a singleton:\n\n```ruby\n# cookbook/libraries/default.rb\ndef only_on_windows(&block)\n  yield if Chef::Sugar::PlatformFamily.windows?(@node)\nend\n```\n\nIn a Library as a Mixin:\n\n```ruby\n# cookbook/libraries/default.rb\ninclude Chef::Sugar::PlatformFamily\n\ndef only_on_windows(&block)\n  yield if windows?(@node)\nend\n```\n\n\nAPI\n---\n**Note:** For the most extensive API documentation, please see the YARD documentation.\n\n### Architecture\n**Note:** Some of the architecture commands begin with an underscore (`_`) because Ruby does not permit methods to start with a numeric.\n\n- `_64_bit?`\n- `_32_bit?`\n\n#### Examples\n```ruby\nexecute 'build[my binary]' do\n  command '...'\n  not_if  { _64_bit? }\nend\n```\n\n### Cloud\n- `azure?`\n- `cloud?`\n- `ec2?`\n- `eucalyptus?`\n- `gce?`\n- `linode?`\n- `openstack?`\n- `rackspace?`\n\n#### Examples\n```ruby\ntemplate '/tmp/config' do\n  variables(\n    # See also: best_ip_for\n    ipaddress: cloud? ? node['local_ipv4'] : node['public_ipv4']\n  )\nend\n```\n\n### IP\n- `best_ip_for` - determine the best IP address for the given \"other\" node, preferring local IP addresses over public ones.\n\n#### Examples\n```ruby\nredis = search('node', 'role:redis').first\n\ntemplate '/tmp/config' do\n  variables(\n    ipaddress: best_ip_for(redis)\n  )\nend\n```\n\n### Node\n- `in?` - determine if the node is in the given Chef environment.\n- `includes_recipe?`\n\n#### Examples\n```ruby\ncredentials = if in?('production')\n                Chef::EncryptedDataBag.new('...')\n              else\n                data_bag('...')\n              end\n```\n\n```ruby\nif includes_recipe?('apache2::default')\n  apache_module 'my_module' do\n    # ...\n  end\nend\n```\n\n### Platform\n- `amazon_linux?`\n- `centos?`\n- `linux_mint?`\n- `oracle_linux?`\n- `redhat_enterprise_linux?`\n- `scientific_linux?`\n- `ubuntu?`\n\nThere are also a series of dynamically defined matchers that map named operating system release versions and comparison operators in the form \"#{platform}\\_#{operator}\\_#{name}?\". For example:\n\n- `debian_after_squeeze?`\n- `linuxmint_after_or_at_olivia?`\n- `mac_os_x_lion?`\n- `ubuntu_before_lucid?`\n- `ubuntu_before_or_at_maverick?`\n\nTo get a full list, run the following in IRB:\n\n```ruby\nrequire 'chef/sugar'\nputs Chef::Sugar::Platform.instance_methods\n```\n\n#### Examples\n```ruby\nif ubuntu?\n  execute 'apt-get update'\nend\n```\n\n### Platform Family\n- `arch_linux?`\n- `debian?`\n- `fedora?`\n- `freebsd?`\n- `gentoo?`\n- `linux?`\n- `mac_os_x?`\n- `openbsd?`\n- `rhel?`\n- `slackware?`\n- `suse?`\n- `windows?`\n\n#### Examples\n```ruby\nnode['attribute'] = if windows?\n                      'C:\\Foo\\BarDrive'\n                    else\n                      '/foo/bar_drive'\n                    end\n```\n\n### Ruby\n**Note:** The applies to the the Ruby found at `node['languages']['ruby']`.\n\n- `ruby_20?`\n- `ruby_19?`\n\n#### Examples\n```ruby\nlog 'This has been known to fail on Ruby 2.0' if ruby_20?\n```\n\n### Shell\n- `which`\n- `dev_null`\n- `installed?`\n- `installed_at_version?`\n- `version_for`\n\n#### Examples\n```ruby\nlog \"Using `mongo` at `#{which('mongo')}`\"\n\nif installed?('apt')\n  execute 'apt-get update'\nend\n\nexecute 'install[thing]' do\n  command \"... 2>&1 #{dev_null}\"\n  not_if  { installed_at_version?('thing', node['thing']['version']) }\nend\n\nlog \"Skipping git install, version is at #{version_for('mongo', '-v')}\"\n```\n\n### Vagrant\n- `vagrant?`\n\n#### Examples\n```ruby\nhttp_request 'http://...' do\n  not_if { vagrant? }\nend\n```\n\n### Filters\n- `compile_time` - accepts a block of resources to run at compile time\n- `before` - insert resource in the collection before the given resource\n- `after` - insert resource in the collection after the given resource\n\n#### Examples\n```ruby\ncompile_time do\n  package 'apache2'\nend\n\n# This is equivalent to\npackage 'apache2' do\n  'apache2'\nend.run_action(:install)\n```\n\n```ruby\nbefore 'service[apache2]' do\n  log 'I am before the apache 2 service fires!'\nend\n```\n\n```ruby\nafter 'service[apache2]' do\n  log 'I am after the apache 2 service fires!'\nend\n```\n\n\nLicense & Authors\n-----------------\n- Author: Seth Vargo (sethvargo@gmail.com)\n\n```text\nCopyright 2013 Seth Vargo\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n"
+}

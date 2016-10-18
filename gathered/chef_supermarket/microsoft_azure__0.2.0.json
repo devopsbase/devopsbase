@@ -1,0 +1,45 @@
+{
+  "name": "microsoft_azure Chef cookbook",
+  "chef_cookbook_name": "microsoft_azure",
+  "revision": "0.2.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/microsoft_azure",
+    "https://supermarket.chef.io/cookbooks/microsoft_azure/download",
+    "https://supermarket.chef.io/cookbooks/microsoft_azure/versions/0.2.0",
+    "https://supermarket.chef.io/cookbooks/microsoft_azure/versions/0.2.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/microsoft_azure/versions/0.2.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/microsoft_azure",
+    "https://supermarket.chef.io/api/v1/cookbooks/microsoft_azure/versions/0.2.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Operating Systems & Virtualization",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Provider/Microsoft/Azure",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/microsoft_azure",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/microsoft_azure/versions/0.2.0/download",
+  "deprecated": false,
+  "created": "2014-04-13T16:53:53.000Z",
+  "updated": "2016-01-11T23:45:33.905Z",
+  "description": "LWRPs for managing Azure resources",
+  "maintainer": {
+    "name": "adamedoc",
+    "email": "jemendoz@microsoft.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 10,
+  "downloads_count": 1254875,
+  "downloads_count_revision": 1254553,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Microsoft Azure Cookbook\n========================\n\nDescription\n===========\n\nThis cookbook provides resources and providers to create an manage\nMicrosoft Azure components. Currently supported resources are:\n\n* Storage Accounts ('microsoft_azure_storage_account')\n* Blob Storage Containers ('microsoft_azure_storage_container')\n* SQL Azure Servers ('microsoft_azure_sql_db_server')\n\n**Note** This cookbook uses the `azure` RubyGem to interact with the\n  Azure API. This gem requires `nokogiri` which requires compiling\n  native extensions, which means build tools are required.\n\nRequirements\n============\n\nRequires Chef 0.7.10 or higher for Lightweight Resource and Provider\nsupport. Chef 0.8+ is recommended. While this cookbook can be used in\n`chef-solo` mode, to gain the most flexibility, we recommend using\n`chef-client` with a Chef Server.\n\nA Microsoft Azure account is required. The Management Certificate and\nSubscriptoin ID are used to authenticate with Azure.\n\nAzure Credentials\n===============\n\nIn order to manage Azure components, authentication credentials need\nto be available to the node. There are a number of ways to handle\nthis, such as node attributes or roles. We recommend storing these in\na databag (Chef 0.8+), and loading them in the recipe where the\nresources are needed.\n\nDataBag recommendation:\n\n    % knife data bag show microsoft_azure main\n    {\n      \"id\": \"main\",\n      \"management_certificate\": \"YOUR PEM FILE CONTENTS\",\n      \"subscription_id\": \"YOUR SUBSCRIPTION ID\"\n    }\n\nThis can be loaded in a recipe with:\n\n    microsoft_azure = data_bag_item(\"microsoft_azure\", \"main\")\n\nAnd to access the values:\n\n    microsoft_azure['management_certificate']\n    microsoft_azure['subscription_id']\n\nWe'll look at specific usage below.\n\nRecipes\n=======\n\ndefault.rb\n----------\n\nThe default recipe installs the `azure` RubyGem, which this cookbook\nrequires in order to work with the Azure API. Make sure that the\nmicrosoft_azure recipe is in the node or role `run_list` before any\nresources from this cookbook are used.\n\n    \"run_list\": [\n      \"recipe[microsoft_azure]\"\n    ]\n\nThe `gem_package` is created as a Ruby Object and thus installed\nduring the Compile Phase of the Chef run.\n\nResources and Providers\n=======================\n\nThis cookbook provides three resources and corresponding providers.\n\n## storage_account.rb\n\n\nManage Azure Storage Accounts with this resource.\n\nActions:\n\n* `create` - create a new storage account\n* `delete` - delete the specified storage account\n\nAttribute Parameters:\n\n* `management_certificate` - PEM file contents of Azure management\n  certificate, required.\n* `subscription_id` - ID of Azure subscription, required.\n* `management_endpoint` - Endpoint for Azure API, defaults to\n  `management.core.windows.net`.\n* `location` - Azure location to create storate account. Either\n  location or affinity group are required.\n* `affinity_group_name` - Affinity group to create account in. Either\n  location or affinity group are required.\n* `geo_replication_enabled` - True or false, defaults to true.\n\n## storage_container.rb\n\nManage Azure Blob Containers with this resource\n\nActions:\n\n* `create` - create a new container\n* `delete` - delete the specified container\n\nAttribute Parameters:\n\n* `storage_account` - Account to create container in, required.\n* `access_key` - Access key for storage account, required.\n\n## sql_db_server.rb\n\nActions:\n\n* `create` - create a new server. Use the Azure location as the `name`\n  of the storage account. The server name is autogenerated.\n\nAttribute Parameters:\n\n* `management_certificate` - PEM file contents of Azure management\n  certificate, required.\n* `subscription_id` - ID of Azure subscription, required.\n* `management_endpoint` - Endpoint for Azure API, defaults to\n  `management.database.windows.net`.\n* `login` - Desired admin login for db server, required.\n* `password` - Desired admin password for db server, required.\n* `server_name` - This attribute is set by the provider, and can be\n  used by consuming recipies.\n\nUsage\n=====\n\nThe following examples assume that the recommended data bag item has\nbeen created and that the following has been included at the top of\nthe recipe where they are used.\n\n    include_recipe \"microsoft_azure\"\n    microsoft_azure = data_bag_item(\"microsoft_azure\", \"main\")\n\n## microsoft_azure_storage_account\n\nThis will create an account named `new-account` in the `West US`\nlocation.\n\n    microsoft_azure_storage_account 'new-account' do\n      management_certificate microsoft_azure['management_certificate']\n      subscription_id microsoft_azure['subscription_id']\n      location 'West US'\n      action :create\n    end\n\nThis will create an account named `new-account` in the existing\n`my-ag` affinity group.\n\n    microsoft_azure_storage_account 'new-account' do\n      management_certificate microsoft_azure['management_certificate']\n      subscription_id microsoft_azure['subscription_id']\n      affinity_group_name 'my-ag'\n      action :create\n    end\n\n## microsoft_azure_storage_container\n\nThis will create a container named `my-node` within the storage\naccount `my-account`.\n\n    microsoft_azure_storage_container 'my-node' do\n      storage_account 'my-account'\n      access_key microsoft_azure['access_key']\n      action :create\n    end\n\n## microsoft_azure_sql_db_server\n\nThis will create a db server in the location `West US` with the login\n`admin` and password `password`.\n\n    microsoft_azure_sql_db_server 'West US' do\n      management_certificate microsoft_azure['management_certificate']\n      subscription_id microsoft_azure['subscription_id']\n      login 'admin'\n      password 'password'\n      action :create\n    end\n\nHere is an example of how you might retrieve the generated server\nname.\n\n    file '/etc/db_server_info' do\n      content lazy { \n        db2 = resources(\"microsoft_azure_sql_db_server[West US]\")\n        \"Url: https://#{db2.server_name}.database.windows.net\"\n      }\n      mode 0600\n      action :create\n    end\n\n\nLicense and Author\n==================\n\n* Author:: Jeff Mendoza (<jemendoz@microsoft.com>)\n\nCopyright (c) Microsoft Open Technologies, Inc.\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "chef_recipes": {
+    "microsoft_azure": "Installs the azure gem during compile time"
+  }
+}

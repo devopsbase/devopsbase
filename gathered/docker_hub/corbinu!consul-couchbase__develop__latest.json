@@ -1,0 +1,143 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/corbinu/consul-couchbase",
+    "repository_url": "https://hub.docker.com/v2/repositories/corbinu/consul-couchbase",
+    "tags_url": "https://hub.docker.com/v2/repositories/corbinu/consul-couchbase/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/corbinu/consul-couchbase/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/corbinu/consul-couchbase/autobuild",
+    "user": "corbinu",
+    "name": "consul-couchbase",
+    "namespace": "corbinu",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 863,
+    "last_updated": "2016-09-23T23:51:42.269938Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "develop",
+        "full_size": 192062690,
+        "id": 397558,
+        "repository": 235299,
+        "creator": 13125,
+        "last_updater": 13125,
+        "last_updated": "2016-09-23T23:51:41.579104Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 152735914,
+        "id": 397557,
+        "repository": 235299,
+        "creator": 13125,
+        "last_updater": 13125,
+        "last_updated": "2016-05-26T22:57:51.301151Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      }
+    ],
+    "build_name": "corbinu/consul-couchbase"
+  },
+  "name": "corbinu/consul-couchbase Docker container",
+  "description": "",
+  "readme": "Consul Couchbase\n======================\nThis Docker container is setup to run Couchbase with Consul for service discovery and health monitoring.\n\nIt has also been optimized to run on Joyent's [Triton](https://www.joyent.com/blog/understanding-triton-containers), however it will always also support strait Docker and boot2docker.\n\nMuch thanks to [Casey Bisson](https://github.com/misterbisson) who created the original version.\n\n## Running\n\nIt can be run on its own simply via:\n\n```\ndocker run -d  -p 8400 -p 8500 -p 8600 --name consul progrium/consul -server -bootstrap -ui-dir /ui\ndocker run -d --name cb1 --link consul:consul -p 8091 corbinu/consul-couchbase\ndocker run -d --name cb2 --link consul:consul corbinu/consul-couchbase\n\ndocker exec -it cb1 couchbase-bootstrap bootstrap\n```\n\nConsul will UI will be available on port mapped to 8500\nCouchbase Dashboard will be on port mapped to 8091\n\n## Demos\n\nMore detailed demos on how to scale Consul, Couchbase, and other options please visit [corbinu/docker-demos](https://github.com/corbinu/docker-demos)\n\n\n## Consul notes\n\n[Bootstrapping](https://www.consul.io/docs/guides/bootstrapping.html), [Consul clusters](https://www.consul.io/intro/getting-started/join.html), and the details about [adding and removing nodes](https://www.consul.io/docs/guides/servers.html). The [CLI](https://www.consul.io/docs/commands/index.html) and [HTTP](https://www.consul.io/docs/agent/http.html) API are also documented.\n\n[Check for registered instances of a named service](https://www.consul.io/docs/agent/http/catalog.html#catalog_service)\n\n```bash\ncurl -v http://consul:8500/v1/catalog/service/couchbase | json -aH ServiceAddress\n```\n\n[Register an instance of a service](https://www.consul.io/docs/agent/http/catalog.html#catalog_register)\n\n```bash\nexport MYIP=$(ip addr show eth0 | grep -o '[0-9]\\{1,3\\}\\.[0-9]\\{1,3\\}\\.[0-9]\\{1,3\\}\\.[0-9]\\{1,3\\}')\ncurl http://consul:8500/v1/agent/service/register -d \"$(printf '{\"ID\": \"couchbase-%s\",\"Name\": \"couchbase\",\"Address\": \"%s\"}' $MYIP $MYIP)\"\n```",
+  "dockerfile": "#\n# Consul Couchbase\n#\nFROM \t\tcouchbase/server:enterprise-4.0.0-rc0\nMAINTAINER \tCorbin Uselton <corbinu@decimal.io>\n\n# installed Node.js, similar to https://github.com/joyent/docker-node/blob/428d5e69763aad1f2d8f17c883112850535e8290/0.12/Dockerfile\nRUN gpg --keyserver pool.sks-keyservers.net --recv-keys 7937DFD2AB06298B2293C3187D33FF9D0246406D 114F43EE0176B71C7BC219DD50A3051F888C628D\n\nRUN echo \"APT::Install-Recommends 0;\" >> /etc/apt/apt.conf.d/01norecommends \\\n    && echo \"APT::Install-Suggests 0;\" >> /etc/apt/apt.conf.d/01norecommends \\\n    && apt-get update \\\n    && apt-get install -y python-software-properties \\\n    && add-apt-repository -y ppa:costamagnagianfranco/ettercap-stable-backports \\\n    && apt-get update \\\n    && apt-get install -y --no-install-recommends curl \\\n    && apt-get remove -y python-software-properties \\\n    && apt-get autoremove -y\n\nRUN rm -rf /var/lib/apt/lists/*\n\nENV NODE_VERSION 0.12.7\nENV NPM_VERSION 2.13.3\n\nENV CB_USERNAME Administrator\nENV CB_PASSWORD password\n\nRUN curl -SLO \"http://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz\" \\\n\t&& curl -SLO \"http://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc\" \\\n\t&& gpg --verify SHASUMS256.txt.asc \\\n\t&& grep \" node-v$NODE_VERSION-linux-x64.tar.gz\\$\" SHASUMS256.txt.asc | sha256sum -c - \\\n\t&& tar -xzf \"node-v$NODE_VERSION-linux-x64.tar.gz\" -C /usr/local --strip-components=1 \\\n\t&& rm \"node-v$NODE_VERSION-linux-x64.tar.gz\" SHASUMS256.txt.asc \\\n\t&& npm install -g npm@\"$NPM_VERSION\" \\\n\t&& npm cache clear\n\nRUN npm install -g json\n\nCOPY bin/* /usr/local/bin/\n\nEXPOSE 8091 8092 11207 11210 11211 18091 18092\nVOLUME /opt/couchbase/var\n\nENTRYPOINT [\"consul-couchbase-start\"]\nCMD [\"couchbase-server\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8091
+    ],
+    "volume": [
+      "/opt/couchbase/var"
+    ],
+    "run": [
+      "gpg --keyserver pool.sks-keyservers.net --recv-keys 7937DFD2AB06298B2293C3187D33FF9D0246406D 114F43EE0176B71C7BC219DD50A3051F888C628D",
+      "echo \"APT::Install-Recommends 0;\" >> /etc/apt/apt.conf.d/01norecommends     && echo \"APT::Install-Suggests 0;\" >> /etc/apt/apt.conf.d/01norecommends     && apt-get update     && apt-get install -y python-software-properties     && add-apt-repository -y ppa:costamagnagianfranco/ettercap-stable-backports     && apt-get update     && apt-get install -y --no-install-recommends curl     && apt-get remove -y python-software-properties     && apt-get autoremove -y",
+      "rm -rf /var/lib/apt/lists/*",
+      "curl -SLO \"http://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz\" \t&& curl -SLO \"http://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc\" \t&& gpg --verify SHASUMS256.txt.asc \t&& grep \" node-v$NODE_VERSION-linux-x64.tar.gz\\$\" SHASUMS256.txt.asc | sha256sum -c - \t&& tar -xzf \"node-v$NODE_VERSION-linux-x64.tar.gz\" -C /usr/local --strip-components=1 \t&& rm \"node-v$NODE_VERSION-linux-x64.tar.gz\" SHASUMS256.txt.asc \t&& npm install -g npm@\"$NPM_VERSION\" \t&& npm cache clear",
+      "npm install -g json"
+    ],
+    "workdir": [],
+    "from": "\t\tcouchbase/server:enterprise-4.0.0-rc0",
+    "maintainer": "\tCorbin Uselton <corbinu@decimal.io>",
+    "env": {
+      "NODE_VERSION": "0.12.7",
+      "NPM_VERSION": "2.13.3",
+      "CB_USERNAME": "Administrator",
+      "CB_PASSWORD": "password"
+    },
+    "copy": "bin/* /usr/local/bin/",
+    "entrypoint": "[\"consul-couchbase-start\"]",
+    "cmd": "[\"couchbase-server\"]"
+  },
+  "source_repository_url": "https://github.com/corbinu/consul-couchbase.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/corbinu/consul-couchbase",
+  "docker_repository": "corbinu/consul-couchbase",
+  "docker_image": "corbinu/consul-couchbase",
+  "parameters_schema": {
+    "NODE_VERSION": {
+      "default": "0.12.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NPM_VERSION": {
+      "default": "2.13.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CB_USERNAME": {
+      "default": "Administrator",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CB_PASSWORD": {
+      "default": "password",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8091
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "corbinu/consul-couchbase",
+  "revision": "develop",
+  "uris": [
+    "https://hub.docker.com/r/corbinu/consul-couchbase",
+    "https://hub.docker.com/v2/repositories/corbinu/consul-couchbase",
+    "https://github.com/corbinu/consul-couchbase.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Orchestration/Consul",
+    "Type/Middleware/Data Store/Document-oriented/Couchbase",
+    "Type/Middleware/Data Store/Document-oriented/HBase"
+  ],
+  "info_url": "https://hub.docker.com/r/corbinu/consul-couchbase",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

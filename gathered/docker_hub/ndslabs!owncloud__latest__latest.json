@@ -1,0 +1,87 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/ndslabs/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/ndslabs/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/ndslabs/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/ndslabs/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/ndslabs/owncloud/autobuild",
+    "user": "ndslabs",
+    "name": "owncloud",
+    "namespace": "ndslabs",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 66,
+    "last_updated": "2016-09-24T04:54:34.950724Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 250993121,
+        "id": 4806868,
+        "repository": 912331,
+        "creator": 133342,
+        "last_updater": 133342,
+        "last_updated": "2016-09-24T04:54:34.587516Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "nds-org/ndslabs-owncloud"
+  },
+  "name": "ndslabs/owncloud Docker container",
+  "description": "NDS Labs Service: ownCloud",
+  "readme": "# ownCloud\n\nIn the [Cloud9 example](https://github.com/nds-org/developer-tutorial/tree/master/example-2-cloud9), we learned how to define persisted volumes in the NDS Labs service spec. Now let's try a realistic example using some services we would like to eventually see in NDS Labs: **owncloud** and **mysql**.\n\nIn this example we will introduce specifying dependencies between services, and how to define environment variables to handle custom configuration.\n\n## Docker Image\nSince this example uses official images, there is nothing to build.\n\nBut what if the image will not work with NDS Labs out of the box and requires slight customization?\n\nThere are 2 options readily available if we want to customize an existing Docker image. \n\n### Option 1: Create a Dockerfile from a Base Image\nCreate a Dockerfile that starts with `FROM owncloud:latest`. You can then make any additions or customizations that we would like, build a new image from this Dockerfile, and push it to Docker Hub.\n\nWe have provided an example of such a [Dockerfile](https://github.com/nds-org/developer-tutorial/blob/master/owncloud/Dockerfile).\n\nYou can build this image by running the following command:\n```bash\ndocker build -t owncloud .\n```\n\n### Option 2: Run, Modify, and Commit\nJump into a running container using `docker exec -it <container name or id> /bin/bash` to modify a running container in-place.\n\nYou can then use: \n* `docker diff <sourceContainer>` allows you to view the changes you've made to the container since it started running\n* `docker commit <sourceContainer> <targetImage>` will save the changes from this container into a new image\n\n### Pushing to Docker Hub\nIf you have created a [Docker Hub](hub.docker.com) account, you can push this image up there for NDS Labs to pull down.\n\n```bash\ndocker tag owncloud USERNAME/owncloud\ndocker login\ndocker push USERNAME/owncloud\n```\n\n**NOTE:** If you have already successfully executed `docker login` on this machine, you will not need to log in again.\n\n## NDS Labs Spec\nNow that we have a Docker image for our service, we need to tell NDS Labs how to run this image.\n\nFor this, we will need to wrap it in a [JSON service spec](https://opensource.ncsa.illinois.edu/confluence/display/NDS/NDS+Labs+Service+Specification).\n\nThe following spec defines how NDS Labs will use the \"owncloud\" image:\n```js\n{\n  \"key\": \"owncloud\",\n  \"label\": \"ownCloud\",\n  \"image\": \"USERNAME/owncloud:latest\",\n  \"description\": \"A self-hosted file sync and share server\",\n  \"access\": \"external\",\n  \"display\": \"stack\",\n  \"depends\": [\n    { \"key\": \"mysql\", \"required\": false }\n  ],\n  \"ports\": [\n    { \"port\": 80, \"protocol\": \"http\" }\n  ],\n  \"volumeMounts\": [\n    { \"name\": \"owncloud\", \"mountPath\": \"/var/www/owncloud\" }\n  ]\n}\n```\n\nNOTE: If you don't have a USERNAME from [Docker Hub](hub.docker.com), simply use **ndslabs** in place of **USERNAME** above to pull down and run our pre-built example image.\n\n### Dependencies\nYou might have noticed the **depends** section in the spec above: this defines a \"service dependency\".\n\nDependencies can be either **required** or optional.\n\nThe following spec defines how NDS Labs will use the optional \"mysql\" dependency:\n```js\n{\n    \"key\": \"mysql\",\n    \"label\": \"MySQL\",\n    \"image\": \"mysql:latest\",\n    \"description\": \"An open-source relational database management system\",\n    \"access\": \"internal\",\n    \"display\": \"standalone\",\n    \"config\": [\n      { \"name\": \"MYSQL_ROOT_PASSWORD\", \"value\": \"\",         \"label\": \"Root Password\", \"canOverride\": false, \"isPassword\": true  },\n      { \"name\": \"MYSQL_DATABASE\",      \"value\": \"owncloud\", \"label\": \"Database\",      \"canOverride\": false, \"isPassword\": false },\n      { \"name\": \"MYSQL_USER\",          \"value\": \"username\", \"label\": \"Username\",      \"canOverride\": true,  \"isPassword\": false },\n      { \"name\": \"MYSQL_PASSWORD\",      \"value\": \"\",         \"label\": \"Password\",      \"canOverride\": true,  \"isPassword\": true  }\n    ],\n    \"ports\": [\n        { \"port\": 3306, \"protocol\": \"tcp\" }\n    ],\n    \"volumeMounts\": [\n      { \"name\": \"mysql\", \"mountPath\": \"/var/lib/mysql\" }\n    ]\n}\n```\n\n### Environment Variables\nThe above spec includes another new section: **config**, which contains an array of configuration options. This allows you to specify environment variables, as well as their default values, that should be passed in when running the image.\n\nYou can specify the following to customize your configuration options:\n* name: the key of the environment variable to be created\n* value: the default value to associate with this environment variable\n* label: how should this environment varibale be displayed in the UI?\n* canOverride: should the user be allowed to input their own value for this field?\n* isPassword: should the UI treat this field as a password? \n  * This will allow the user to generate random values for this field\n\n### Loading ownCloud and MySQL into NDS Labs\nRun the following command from the system-shell to load this custom spec into NDS Labs:\n```bash\nndslabsctl add service -f mysql.json\nndslabsctl add service -f owncloud.json\n```\n\nYou will be prompted for the admin password (default: \"admin\") in order to add a service.\n\nReloading the UI will show your new service(s) listed and ready to add from the left-side pane.\n\n### Testing ownCloud\nNow that we have our owncloud spec loaded, let's try to create an instance of it in NDS Labs!\n\n0. If you're not already running your own instance of NDS Labs, check out our [Setup Documentation](https://github.com/nds-org/ndslabs/blob/master/docs/setup.md).\n1. Navigate your browser to `http://YOUR_IP:30000` (create a project if necessary) and log in. \n2. You should now see \"ownCloud\" listed with the other services on the left side of the page.\n3. Click the **+** button beside \"ownCloud\" and step through the wizard to configure ownCloud:\n  * Choose a name your stack appropriately and click **Next**.\n  * You will be given the option to select MySQL, but do not select it. Click **Next**.\n  * Choose a size to use for the volume that will attach to this service.\n    * If previous volumes matching this service exist, and are not currently attached to another service, the wizard will offer to reuse them.\n  * Confirm that your stack looks correct and click **Confirm**\n  * You will see your new \"ownCloud\" stack appear in the **Stacks** tab of the UI\n4. Click the name of the stack to expand the accordion and show a more fine-grained status.\n5. Click the \"Launch Stack\" button at the bottom-right of the pane.\n6. Wait for the stack to start.\n  * NOTE: this may take several minutes the first time, as Docker will pull the image before running it. \n7. Once the stack has started, navigate to its endpoint by click the link to the right of the service name.\n8. A new tab will open, where you will be taken to the ownCloud self-installation web interface.\n  * Enter the username and password that you would like to use for the ownCloud administrator.\n  * Once you have chosen your admin credentials, click **Finish Setup**.\n9. You should then be brought to your ownCloud instance's home page, where you will be able to upload new files and view existing files existing on the attached volume.\n10. Upload a test file somewhere into ownCloud using the **+** button at the top-left of the screen.\n\n### Testing ownCloud + MySQL\nWe've tested our ownCloud spec, but what about the MySQL integration?\n\n0. If you're not already running your own instance of NDS Labs, check out our [Setup Documentation](https://github.com/nds-org/ndslabs/blob/master/docs/setup.md).\n1. Navigate your browser to `http://YOUR_IP:30000` (create a project if necessary) and log in. \n2. You should now see \"ownCloud\" listed with the other services on the left side of the page.\n3. Click the **+** button beside \"ownCloud\" and step through the wizard to configure ownCloud:\n  * Choose a name your stack appropriately and click **Next**.\n  * Now, select MySQL as an optional service and click **Next**.\n  * The wizard will now prompt you to enter passwords necessary for MySQL, as specified by the \"Config\" in the spec above. Because we specified \"isPassword\" above, you can click the button on the right to generate a secure random password.\n    * Clicking **Advanced Configuration** will also allow you to set the database and username that MySQL will use, if want to change the default values.\n  * Choose a size to use for the volumes that will attach to these services.\n    * The numbers of the top-right of the colored panel will allow you to switch between the volume requirements for this stack, if more than one exist.\n    * You will be asked to create one volume each for ownCloud and MySQL.\n    * If previous volumes matching these services exist, and are not currently attached to another service, the wizard will offer to reuse them.\n  * Confirm that your stack looks correct and click **Confirm**.\n  * You will see your new \"ownCloud\" stack appear in the **Stacks** tab of the UI.\n4. Click the name of the stack to expand the accordion and show a more fine-grained status.\n  * You will see MySQL listed beneath the ownCloud in te Service List.\n5. Click the \"Launch Stack\" button at the bottom-right of the pane.\n6. Wait for the stack to start.\n  * NOTE: this may take several minutes the first time, as Docker will pull the image before running it. \n7. Once the stack has started, navigate to its endpoint by click the link to the right of the service name.\n8. A new tab will open, where you will be taken to the ownCloud self-installation web interface.\n  * Enter the username and password that you would like to use for the ownCloud administrator.\n  * During the setup, be sure to expand the \"Storage & database\".\n  * Choose **MySQL / MariaDB** to specify your MySQL instance details.\n  * You will be prompted to enter the database, username, and password that you specified while configuring MySQL, as well as the address of the running instance.\n    * Back at the NDS Labs interface, click the **Config** button to the right of the service name under your ownCloud stack. \n    * The database, username, and password are listed under \"Environment\".\n    * The address where ownCloud can reach MySQL is listed under \"Endpoints\" as the \"Internal Address\".\n    * NOTE: This MySQL instance is not exposed to the public internet, so there is no \"External Address\" listed.\n  * Once you have entered the details of the running MySQL instance, click **Finish Setup**.\n9. You should then be brought to your ownCloud instance's home page, where you will be able to upload new files and view existing files existing on the attached volume.\n10. Upload a test file somewhere into ownCloud using the **+** button at the top-left of the screen.\n11. To verify that MySQL is receiving updates from ownCloud, let's find a reference to the file you just uploaded in the MySQL database. \n  * Jump over to your terminal and execute `docker ps | grep mysql` to locate the running MySQL container and grab its container id.\n  * Execute `docker exec -it <container id> mysql -u owncloud -p` and enter the MySQL password for the \"owncloud\" user. This will drop you into the container at the mysql shell.\n    * Click the **Config** button to the right of the service name under your ownCloud stack and copy / paste the MySQL password into the prompt. \n  * Execute the following query to verify that your new file upload was persisted to MySQL `select path from owncloud.oc_filecache order by path;`.\n  * You should see all of your files, including the newly-uploaded file, ordered by file path and listed in the output.\n\n## Success!\nCongratulations! You made it through the entire tutorial.\n\nYou should now have everything you need to start authoring your own images and services specs to add to NDS Labs.\n",
+  "dockerfile": "FROM owncloud:9\n\nRUN apt-get update -y && apt-get install -y vim\n\nCOPY setup.php /tmp\n\nCOPY entrypoint.sh /entrypoint.sh\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update -y && apt-get install -y vim"
+    ],
+    "workdir": [],
+    "from": "owncloud:9",
+    "copy": "entrypoint.sh /entrypoint.sh"
+  },
+  "source_repository_url": "https://github.com/nds-org/ndslabs-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/nds-org/ndslabs-owncloud",
+  "docker_repository": "ndslabs/owncloud",
+  "docker_image": "ndslabs/owncloud",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "ndslabs/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/ndslabs/owncloud",
+    "https://hub.docker.com/v2/repositories/ndslabs/owncloud",
+    "https://github.com/nds-org/ndslabs-owncloud.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/ndslabs/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

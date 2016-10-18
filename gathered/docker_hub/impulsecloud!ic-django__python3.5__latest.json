@@ -1,0 +1,116 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/impulsecloud/ic-django",
+    "repository_url": "https://hub.docker.com/v2/repositories/impulsecloud/ic-django",
+    "tags_url": "https://hub.docker.com/v2/repositories/impulsecloud/ic-django/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/impulsecloud/ic-django/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/impulsecloud/ic-django/autobuild",
+    "user": "impulsecloud",
+    "name": "ic-django",
+    "namespace": "impulsecloud",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 3298,
+    "last_updated": "2016-10-04T05:36:50.546441Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "python3.5",
+        "full_size": 514499301,
+        "id": 3482440,
+        "repository": 236656,
+        "creator": 346995,
+        "last_updater": 346995,
+        "last_updated": "2016-10-04T05:36:49.133281Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 374720239,
+        "id": 404627,
+        "repository": 236656,
+        "creator": 346993,
+        "last_updater": 346995,
+        "last_updated": "2016-07-27T06:41:38.159895Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "impulse-cloud/docker-django-uwsgi-nginx"
+  },
+  "name": "impulsecloud/ic-django Docker container",
+  "description": "",
+  "readme": "Impulse Cloud Django Docker Image\n==================\n\nforked originally from mbentley/docker-django-uwsgi-nginx\n\ndocker image for django (uwsgi) & nginx\nbased off of ubuntu 14.04.2\n\nTo pull this image:\n`docker pull impulsecloud/ic-django`\n\nExample usage:\n`docker run -p 80 -d -e MODULE=myapp DJANGO_INIT_SCRIPT=/opt/django/app/init-docker.sh impulsecloud/ic-django`\n\nYou can mount the application volume to run a specific application.  The default volume inside in the container is `/opt/django/app`.  Here is an example:\n`docker run -p 80 -d -e MODULE=myapp -v /home/project/myapp:/opt/django/app impulsecloud/ic-django`\n\nEnvironment Variables\n---------------------\n\n**MODULE** - The Django module name\n\n**DJANGO_INIT_SCRIPT** - A script to run when starting up\n\n**PG_ISREADY_URI** - Run pg_isready with this URI before anything else. In other words, wait for the database to be ready and accepting connections.\n\n**SSH_KEY** - If you require a special ssh private key to access a git repository, add it here. It needs to be a base64 encoded version of id_rsa. For example to add your own private key, run `cat ~/.ssh/id_rsa | base64 -w0` to generate this value.\n\n**GIT_SSH_REPO** - A git ssh (not https!) repo url, eg. git@github.com:impulsecloud/gitrepo.git. Not required if you are manually mounting a project on /opt/django/app. Default: None\n\n**GIT_TREEISH** - A git treeish specification of which files to fetch inside the repo. Examples are: `HEAD`, `HEAD:/mysubdir/`, `dev_branch:/project2`, `v1.5.3`, `master`. Default: HEAD\n\nTypically you will then have your own convention for environment variables used in Django's settings.py such as the DB_URI and DEBUG mode.\n",
+  "dockerfile": "FROM impulsecloud/ic-ubuntu:python3.5\n\n# Forked from https://github.com/mbentley/docker-django-uwsgi-nginx\nMAINTAINER Johann du Toit <johann@impulsecloud.com.au>\n\nRUN apt-get update && apt-get install -y \\\n  nginx \\\n  supervisor && \\\n  pip3 install uwsgi && \\\n  pip3 install lxml && \\\n  pip3 install cryptography && \\\n  pip3 install Pillow && \\\n  pip3 install SQLAlchemy && \\\n  pip3 install psycopg2 && \\\n  pip3 install pycrypto && \\\n  apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nADD . /opt/django/\n\nRUN pip3 install --exists-action=s -r /opt/django/requirements.txt\n\nRUN echo \"daemon off;\" >> /etc/nginx/nginx.conf; \\\n    rm /etc/nginx/sites-enabled/default; \\\n    ln -s /opt/django/django.conf /etc/nginx/sites-enabled/; \\\n    ln -s /opt/django/status.conf /etc/nginx/sites-enabled/; \\\n    ln -s /opt/django/supervisord.conf /etc/supervisor/conf.d/; \\\n    sed -i \"s#/var/log/nginx/access.log#/dev/stdout#g\" /etc/nginx/nginx.conf; \\\n    sed -i \"s#/var/log/nginx/error.log#/dev/stdout#g\" /etc/nginx/nginx.conf\n\nVOLUME [\"/opt/django/app\"]\nEXPOSE 80\nCMD [\"/opt/django/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": ".",
+        "dest": "/opt/django/"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/opt/django/app\"]"
+    ],
+    "run": [
+      "apt-get update && apt-get install -y   nginx   supervisor &&   pip3 install uwsgi &&   pip3 install lxml &&   pip3 install cryptography &&   pip3 install Pillow &&   pip3 install SQLAlchemy &&   pip3 install psycopg2 &&   pip3 install pycrypto &&   apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "pip3 install --exists-action=s -r /opt/django/requirements.txt",
+      "echo \"daemon off;\" >> /etc/nginx/nginx.conf;     rm /etc/nginx/sites-enabled/default;     ln -s /opt/django/django.conf /etc/nginx/sites-enabled/;     ln -s /opt/django/status.conf /etc/nginx/sites-enabled/;     ln -s /opt/django/supervisord.conf /etc/supervisor/conf.d/;     sed -i \"s#/var/log/nginx/access.log#/dev/stdout#g\" /etc/nginx/nginx.conf;     sed -i \"s#/var/log/nginx/error.log#/dev/stdout#g\" /etc/nginx/nginx.conf"
+    ],
+    "workdir": [],
+    "from": "impulsecloud/ic-ubuntu:python3.5",
+    "maintainer": "Johann du Toit <johann@impulsecloud.com.au>",
+    "cmd": "[\"/opt/django/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/impulse-cloud/docker-django-uwsgi-nginx.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/impulse-cloud/docker-django-uwsgi-nginx",
+  "docker_repository": "impulsecloud/ic-django",
+  "docker_image": "impulsecloud/ic-django",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "impulsecloud/ic-django",
+  "revision": "python3.5",
+  "uris": [
+    "https://hub.docker.com/r/impulsecloud/ic-django",
+    "https://hub.docker.com/v2/repositories/impulsecloud/ic-django",
+    "https://github.com/impulse-cloud/docker-django-uwsgi-nginx.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python"
+  ],
+  "info_url": "https://hub.docker.com/r/impulsecloud/ic-django",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

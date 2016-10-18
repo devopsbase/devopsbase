@@ -1,0 +1,161 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jimyryan/wordpress-app",
+    "repository_url": "https://hub.docker.com/v2/repositories/jimyryan/wordpress-app",
+    "tags_url": "https://hub.docker.com/v2/repositories/jimyryan/wordpress-app/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jimyryan/wordpress-app/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jimyryan/wordpress-app/autobuild",
+    "user": "jimyryan",
+    "name": "wordpress-app",
+    "namespace": "jimyryan",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 395,
+    "last_updated": "2016-04-29T13:12:50.426622Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 212495263,
+        "id": 2367140,
+        "repository": 588459,
+        "creator": 345050,
+        "last_updater": 345050,
+        "last_updated": "2016-04-29T13:12:29.615338Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "JimyRyan/wordpress-app"
+  },
+  "name": "jimyryan/wordpress-app Docker container",
+  "description": "Docker image of wordpress with PHP 7 FPM mode",
+  "readme": "# WordPress Docker version \nbuild on PHP 7 (FPM mode), Nginx and MariaDB\n\n# Requirements\nYou need the 3 containers bellow : \n- jimyryan/wordpress-app\n- jimyryan/wordpress-db\n- jimyryan/wordpress-web\n\n# Stacks file for Docker Cloud\n\n```YAML\napp:\n  image: 'jimyryan/wordpress-app:latest'\n  autoredeploy: true\n  links:\n    - 'db:mysql'\n  restart: on-failure\n  volumes:\n    - '/var/data/wordpress:/var/www/html'\ndb:\n  image: 'jimyryan/wordpress-db:latest'\n  autoredeploy: true\n  environment:\n    - MYSQL_ROOT_PASSWORD=__SET_YOUR_MYSQL_PASSWORD__\n  restart: on-failure\n  volumes:\n    - '/var/data/mysql:/var/lib/mysql'\nweb:\n  image: 'jimyryan/wordpress-web:latest'\n  autoredeploy: true\n  links:\n    - app\n  ports:\n    - '80:80'\n    - '443:443'\n  restart: on-failure\n  volumes:\n    - '/var/data/wordpress:/var/www/html'\n    - '/var/data/_log/nginx:/var/log/nginx'\n```",
+  "dockerfile": "# Debian\nFROM php:fpm \nMAINTAINER JimyRyan\n\n#################################################################################\n#################################################################################\n#                                                                               #\n#                [START :: TIMEZONE, LOCALE & UPDATE / UPGRADE]                 #\n#                                                                               #\n#################################################################################\n\nRUN apt-get update -y \\\n    && apt-get install -y locales\n\n# Set locale and timezone \nENV LANGUAGE fr_FR.UTF-8\nENV LANG fr_FR.UTF-8\nENV LC_ALL fr_FR.UTF-8\nENV TZ Europe/Paris\n\n# Change locale and timezone \nRUN set -x \\\n    && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \\\n    && sed -i -e 's/# '$LANG' UTF-8/'$LANG' UTF-8/' /etc/locale.gen \\\n    && locale-gen \\\n    && update-locale LANG=$LANG \\\n    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \\\n    && echo $TZ > /etc/timezone\n\n# Update distribution\nRUN apt-get update \\\n    && apt-get upgrade -y\n\n#################################################################################\n#                                                                               #\n#                   [END :: TIMEZONE, LOCALE & UPDATE / UPGRADE]                #\n#                                                                               #\n#################################################################################\n#################################################################################\n\n# install the PHP extensions we need\nRUN apt-get install -y libpng12-dev libjpeg-dev \\\n\t&& docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \\\n\t&& docker-php-ext-install gd mysqli opcache \n\n# set recommended PHP.ini settings\n# see https://secure.php.net/manual/en/opcache.installation.php\nRUN { \\\n\t\techo 'opcache.memory_consumption=128'; \\\n\t\techo 'opcache.interned_strings_buffer=8'; \\\n\t\techo 'opcache.max_accelerated_files=4000'; \\\n\t\techo 'opcache.revalidate_freq=60'; \\\n\t\techo 'opcache.fast_shutdown=1'; \\\n\t\techo 'opcache.enable_cli=1'; \\\n\t} > /usr/local/etc/php/conf.d/opcache-recommended.ini\n\nVOLUME /var/www/html\n\nENV WORDPRESS_VERSION 4.4.2\nENV WORDPRESS_SHA1 7444099fec298b599eb026e83227462bcdf312a6\n\n# upstream tarballs include ./wordpress/ so this gives us /usr/src/wordpress\nRUN curl -o wordpress.tar.gz -SL https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz \\\n\t&& echo \"$WORDPRESS_SHA1 *wordpress.tar.gz\" | sha1sum -c - \\\n\t&& tar -xzf wordpress.tar.gz -C /usr/src/ \\\n\t&& rm wordpress.tar.gz \\\n\t&& chown -R www-data:www-data /usr/src/wordpress\n\nCOPY ./data/docker-entrypoint.sh /entrypoint.sh\nRUN chmod +x /entrypoint.sh\n\n\n#################################################################################\n#################################################################################\n#                                                                               #\n#                           [START :: CUSTOM BUILD]                             #\n#                                                                               #\n#################################################################################\n#\n# Note : remove the \"rm -rf /var/lib/apt/lists/*\" command from the default Dockerfile.\n#\n\n# Wordpress config\nENV WORDPRESS_SECURE true\nENV WORDPRESS_MAIN_DOMAIN www.example.com\nENV WORDPRESS_STATIC_DOMAIN static.cdn.com\n\n# Install php extensions and dependencies\nRUN set -x \\\n    && buildDeps=\" \\\n        # For mcrypt\n\t\tlibmcrypt-dev \\\t\n        # For Tidy\n        libtidy-dev \\\n\t\"; \\\n    buildExt=\" \\\n        mcrypt \\\n        mbstring \\\n        tidy \\\n    \"; \\\n\tapt-get install -y $buildDeps --no-install-recommends \\\n    && docker-php-ext-install -j$(nproc) $buildExt\n\n# Set the php timezone\nRUN echo 'date.timezone='$TZ > /usr/local/etc/php/conf.d/date.ini\n\n# Copy php config files\nCOPY ./data/etc/php/conf.d/*.ini /usr/local/etc/php/conf.d/\nRUN chmod 644 /usr/local/etc/php/conf.d/*\n\n# Copy apply security script\nCOPY ./data/apply-security.sh /apply-security_entrypoint-launcher.sh\nRUN chmod +x /apply-security_entrypoint-launcher.sh\n\n# Add default robots.txt\nCOPY ./data/var/www/html/robots.txt /tmp/\n\n# Add wp-myconfig.php\nCOPY ./data/var/www/html/wordpress/wp-myconfig.php /tmp/wp-myconfig.php\n\nVOLUME /var/log/php\n\n# Remove the apt list\nRUN rm -rf /var/lib/apt/lists/* \n\n#################################################################################\n#                                                                               #\n#                               [END :: CUSTOM BUILD]                           #\n#                                                                               #\n#################################################################################\n#################################################################################\n\n\n# grr, ENTRYPOINT resets CMD now\nENTRYPOINT [\"/apply-security_entrypoint-launcher.sh\"]\nCMD [\"php-fpm\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "/var/www/html",
+      "/var/log/php"
+    ],
+    "run": [
+      "apt-get update -y     && apt-get install -y locales",
+      "set -x     && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen     && sed -i -e 's/# '$LANG' UTF-8/'$LANG' UTF-8/' /etc/locale.gen     && locale-gen     && update-locale LANG=$LANG     && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime     && echo $TZ > /etc/timezone",
+      "apt-get update     && apt-get upgrade -y",
+      "apt-get install -y libpng12-dev libjpeg-dev \t&& docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \t&& docker-php-ext-install gd mysqli opcache ",
+      "{ \t\techo 'opcache.memory_consumption=128'; \t\techo 'opcache.interned_strings_buffer=8'; \t\techo 'opcache.max_accelerated_files=4000'; \t\techo 'opcache.revalidate_freq=60'; \t\techo 'opcache.fast_shutdown=1'; \t\techo 'opcache.enable_cli=1'; \t} > /usr/local/etc/php/conf.d/opcache-recommended.ini",
+      "curl -o wordpress.tar.gz -SL https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz \t&& echo \"$WORDPRESS_SHA1 *wordpress.tar.gz\" | sha1sum -c - \t&& tar -xzf wordpress.tar.gz -C /usr/src/ \t&& rm wordpress.tar.gz \t&& chown -R www-data:www-data /usr/src/wordpress",
+      "chmod +x /entrypoint.sh",
+      "set -x     && buildDeps=\"         # For mcrypt",
+      "echo 'date.timezone='$TZ > /usr/local/etc/php/conf.d/date.ini",
+      "chmod 644 /usr/local/etc/php/conf.d/*",
+      "chmod +x /apply-security_entrypoint-launcher.sh",
+      "rm -rf /var/lib/apt/lists/* "
+    ],
+    "workdir": [],
+    "from": "php:fpm ",
+    "maintainer": "JimyRyan",
+    "env": {
+      "LANGUAGE": "fr_FR.UTF-8",
+      "LANG": "fr_FR.UTF-8",
+      "LC_ALL": "fr_FR.UTF-8",
+      "TZ": "Europe/Paris",
+      "WORDPRESS_VERSION": "4.4.2",
+      "WORDPRESS_SHA1": "7444099fec298b599eb026e83227462bcdf312a6",
+      "WORDPRESS_SECURE": "true",
+      "WORDPRESS_MAIN_DOMAIN": "www.example.com",
+      "WORDPRESS_STATIC_DOMAIN": "static.cdn.com"
+    },
+    "copy": "./data/var/www/html/wordpress/wp-myconfig.php /tmp/wp-myconfig.php",
+    "entrypoint": "[\"/apply-security_entrypoint-launcher.sh\"]",
+    "cmd": "[\"php-fpm\"]"
+  },
+  "source_repository_url": "https://github.com/JimyRyan/wordpress-app.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/JimyRyan/wordpress-app",
+  "docker_repository": "jimyryan/wordpress-app",
+  "docker_image": "jimyryan/wordpress-app",
+  "parameters_schema": {
+    "LANGUAGE": {
+      "default": "fr_FR.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "fr_FR.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LC_ALL": {
+      "default": "fr_FR.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TZ": {
+      "default": "Europe/Paris",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WORDPRESS_VERSION": {
+      "default": "4.4.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WORDPRESS_SHA1": {
+      "default": "7444099fec298b599eb026e83227462bcdf312a6",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WORDPRESS_SECURE": {
+      "default": "true",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WORDPRESS_MAIN_DOMAIN": {
+      "default": "www.example.com",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WORDPRESS_STATIC_DOMAIN": {
+      "default": "static.cdn.com",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jimyryan/wordpress-app",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jimyryan/wordpress-app",
+    "https://hub.docker.com/v2/repositories/jimyryan/wordpress-app",
+    "https://github.com/JimyRyan/wordpress-app.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Runtime/PHP"
+  ],
+  "info_url": "https://hub.docker.com/r/jimyryan/wordpress-app",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

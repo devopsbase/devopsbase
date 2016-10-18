@@ -1,0 +1,115 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/webdeskltd/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/webdeskltd/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/webdeskltd/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/webdeskltd/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/webdeskltd/owncloud/autobuild",
+    "user": "webdeskltd",
+    "name": "owncloud",
+    "namespace": "webdeskltd",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 393,
+    "last_updated": "2016-04-05T06:31:48.171123Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 272186148,
+        "id": 70250,
+        "repository": 82376,
+        "creator": 145620,
+        "last_updater": 145620,
+        "last_updated": "2016-04-05T06:31:47.918952Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "webdeskltd/docker-owncloud"
+  },
+  "name": "webdeskltd/owncloud Docker container",
+  "description": "ownCloud based on opensuse Run: docker run -d -p 80:80 -p 443:443 webdeskltd/owncloud",
+  "readme": "Latest ownCloud 9.0.0 based on openSUSE Tumbleweed\n====================\n\nThis image installs ownCloud from the package available on the openSUSE Build Service, adds the PHP and runs Apache to serve ownCloud.\n\nThis image included support for HTTPS\n\nRun it: `docker run -d -p 80:80 -p 443:443 webdeskltd/owncloud`\n\nor\n\nRun it `docker run --restart=always -d -p 80:80 -p 443:443 -v /path/to/your/data:/srv/www/htdocs/owncloud/data -v /path/to/your/config:/srv/www/htdocs/owncloud/config webdeskltd/owncloud`\n\nThen you access http://you-server-here/ or https://you-server-here/\n",
+  "dockerfile": "FROM opensuse:tumbleweed\nMAINTAINER Alex Geer <monoflash@gmail.com>\n\nRUN zypper --non-interactive --gpg-auto-import-keys ref\nRUN zypper -n up\n\n# add ownCloud, PHP extensions repo and install\nRUN zypper ar -f -c http://download.owncloud.org/download/repositories/stable/openSUSE_Leap_42.1/ce:stable.repo\nRUN zypper -n --gpg-auto-import-keys ref\nRUN zypper -n in owncloud glibc-locale\nRUN zypper in -y apache2-mod_php5 php5 php5-fileinfo php5-fpm php5-pdo php5-sqlite\n\n# expose HTTP and HTTPS\nEXPOSE 80\nEXPOSE 443\n\nRUN mv /etc/apache2/default-server.conf /etc/apache2/default-server.conf.old\nRUN cat /etc/apache2/default-server.conf.old | sed --regexp-extended \"s/^DocumentRoot (.*)$/DocumentRoot \\\"\\/srv\\/www\\/htdocs\\/owncloud\\\"/g\" - > /etc/apache2/default-server.conf\n\n# set owncloud permissions\nRUN chown -R wwwrun:www /srv/www/htdocs/owncloud\n\n# enable mod_php5\nRUN a2enmod php5\nRUN a2enmod ssl\n\n# SSL\nRUN cd /etc/apache2 \\\n&& openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out server.key \\\n&& chmod 600 server.key \\\n&& openssl req -new -batch -subj '/CN=ownCloud' -key server.key -out server.csr \\\n&& openssl x509 -req -days 3650 -in server.csr -signkey server.key -out server.crt\n\nRUN cp /etc/apache2/server.crt /etc/apache2/ssl.crt/vhost-example.crt\nRUN cp /etc/apache2/server.key /etc/apache2/ssl.key/vhost-example.key\n\nRUN cat /etc/apache2/vhosts.d/vhost-ssl.template | sed --regexp-extended \"s/DocumentRoot (.*)$/DocumentRoot \\\"\\/srv\\/www\\/htdocs\\/owncloud\\\"/g\" - > /etc/apache2/conf.d/owncloud-ssl.conf\n\nADD processor/apache2.sh /etc/processor/apache2/run.sh\nRUN chmod 770 /etc/processor\nRUN chmod 775 /etc/processor/apache2/run.sh\n\n# start Apache\nCMD /etc/processor/apache2/run.sh\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "processor/apache2.sh",
+        "dest": "/etc/processor/apache2/run.sh"
+      }
+    ],
+    "expose": [
+      80,
+      443
+    ],
+    "volume": [],
+    "run": [
+      "zypper --non-interactive --gpg-auto-import-keys ref",
+      "zypper -n up",
+      "zypper ar -f -c http://download.owncloud.org/download/repositories/stable/openSUSE_Leap_42.1/ce:stable.repo",
+      "zypper -n --gpg-auto-import-keys ref",
+      "zypper -n in owncloud glibc-locale",
+      "zypper in -y apache2-mod_php5 php5 php5-fileinfo php5-fpm php5-pdo php5-sqlite",
+      "mv /etc/apache2/default-server.conf /etc/apache2/default-server.conf.old",
+      "cat /etc/apache2/default-server.conf.old | sed --regexp-extended \"s/^DocumentRoot (.*)$/DocumentRoot \\\"\\/srv\\/www\\/htdocs\\/owncloud\\\"/g\" - > /etc/apache2/default-server.conf",
+      "chown -R wwwrun:www /srv/www/htdocs/owncloud",
+      "a2enmod php5",
+      "a2enmod ssl",
+      "cd /etc/apache2 && openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out server.key && chmod 600 server.key && openssl req -new -batch -subj '/CN=ownCloud' -key server.key -out server.csr && openssl x509 -req -days 3650 -in server.csr -signkey server.key -out server.crt",
+      "cp /etc/apache2/server.crt /etc/apache2/ssl.crt/vhost-example.crt",
+      "cp /etc/apache2/server.key /etc/apache2/ssl.key/vhost-example.key",
+      "cat /etc/apache2/vhosts.d/vhost-ssl.template | sed --regexp-extended \"s/DocumentRoot (.*)$/DocumentRoot \\\"\\/srv\\/www\\/htdocs\\/owncloud\\\"/g\" - > /etc/apache2/conf.d/owncloud-ssl.conf",
+      "chmod 770 /etc/processor",
+      "chmod 775 /etc/processor/apache2/run.sh"
+    ],
+    "workdir": [],
+    "from": "opensuse:tumbleweed",
+    "maintainer": "Alex Geer <monoflash@gmail.com>",
+    "cmd": "/etc/processor/apache2/run.sh"
+  },
+  "source_repository_url": "https://github.com/webdeskltd/docker-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/webdeskltd/docker-owncloud",
+  "docker_repository": "webdeskltd/owncloud",
+  "docker_image": "webdeskltd/owncloud",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80,
+        443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "webdeskltd/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/webdeskltd/owncloud",
+    "https://hub.docker.com/v2/repositories/webdeskltd/owncloud",
+    "https://github.com/webdeskltd/docker-owncloud.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System/Linux/openSUSE"
+  ],
+  "info_url": "https://hub.docker.com/r/webdeskltd/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

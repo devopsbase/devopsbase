@@ -1,0 +1,137 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/ahmet2mir/mysql",
+    "repository_url": "https://hub.docker.com/v2/repositories/ahmet2mir/mysql",
+    "tags_url": "https://hub.docker.com/v2/repositories/ahmet2mir/mysql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/ahmet2mir/mysql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/ahmet2mir/mysql/autobuild",
+    "user": "ahmet2mir",
+    "name": "mysql",
+    "namespace": "ahmet2mir",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 298,
+    "last_updated": "2016-08-17T13:19:16.421692Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 85359884,
+        "id": 106159,
+        "repository": 87257,
+        "creator": 67283,
+        "last_updater": 67283,
+        "last_updated": "2016-08-17T13:19:16.145370Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "ahmet2mir/dockerfiles"
+  },
+  "name": "ahmet2mir/mysql Docker container",
+  "description": "This is a Debian based image with MySQL server installed listening on port 3306. ",
+  "readme": "Docker MySQL image\n=================\n\nThis is a Debian based image with MySQL server installed listening on port 3306. \n\nHow to use\n----------\n\nRun \n    docker run -d -p 3306:3306 --name mysql ahmet2mir/mysql\n\nConnexion informations\n----------------------\n    \nAdmin\n\n    login: root\n    password: root\n\nFull user\n\n    login: user\n    password: password\n\n    mysql --user=root --port=3306 --host=172.17.42.1 --password=root\n\nPlease change it (install mysql client first or use something like SQLBuddy or try http://www.cyberciti.biz/faq/mysql-change-root-password/)\n    \n    mysqladmin --user=root --port=3306 --host=172.17.42.1 --password=root password newpass\n    mysqladmin --user=user --port=3306 --host=172.17.42.1 --password=password password newpass\n\nEnter in image\n--------------\n\nIf you need to enter in the app, use docker exec since Docker 1.3 https://github.com/ahmet2mir/docker-memo\n\n    docker exec -it mysql /bin/bash\n    \n\nLicense\n-------\n\nApache 2 http://en.wikipedia.org/wiki/Apache_License\n",
+  "dockerfile": "FROM debian:wheezy\nMAINTAINER Ahmet Demir <ahmet2mir+github@gmail.com>\n\nENV RELEASE wheezy\nENV DEBIAN_FRONTEND noninteractive\nENV SHELL /bin/bash\n\nENV DB_ROOT_PWD root\nENV DB_USER user\nENV DB_USER_PWD password\n\n\n# Change sources.list to point on mirrors\nRUN echo \"deb http://ftp.fr.debian.org/debian $RELEASE main contrib non-free\" > /etc/apt/sources.list;\\\n\techo \"deb http://ftp.debian.org/debian/ $RELEASE-updates main contrib non-free\" >> /etc/apt/sources.list;\\\n\techo \"deb http://security.debian.org/ $RELEASE/updates main contrib non-free\" >> /etc/apt/sources.list\n\n# \"Update Repo\"\nRUN apt-get update\n\n# Mysql\nRUN echo \"mysql-server mysql-server/root_password password $DB_ROOT_PWD\" | debconf-set-selections;\\\n\techo \"mysql-server mysql-server/root_password_again password $DB_ROOT_PWD\" | debconf-set-selections;\n\nRUN\tapt-get install -y --no-install-recommends mysql-server\n\n# Bind to 0.0.0.0\nRUN sed -i -e\"s/^bind-address\\s*=\\s*127.0.0.1/bind-address = 0.0.0.0/\" /etc/mysql/my.cnf\n\n# Create an user\nRUN /usr/sbin/mysqld & \\\n    sleep 5s &&\\\n    echo \"GRANT ALL ON *.* TO root@'%' IDENTIFIED BY '$DB_ROOT_PWD'; FLUSH PRIVILEGES\" | mysql --user=root --password=$DB_ROOT_PWD &&\\\n    echo \"GRANT ALL ON *.* TO $DB_USER@'%' IDENTIFIED BY '$DB_USER_PWD' WITH GRANT OPTION; FLUSH PRIVILEGES\" | mysql --user=root --password=$DB_ROOT_PWD\n\n\nEXPOSE 3306\n\nCMD [\"/usr/bin/mysqld_safe\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3306
+    ],
+    "volume": [],
+    "run": [
+      "echo \"deb http://ftp.fr.debian.org/debian $RELEASE main contrib non-free\" > /etc/apt/sources.list;\techo \"deb http://ftp.debian.org/debian/ $RELEASE-updates main contrib non-free\" >> /etc/apt/sources.list;\techo \"deb http://security.debian.org/ $RELEASE/updates main contrib non-free\" >> /etc/apt/sources.list",
+      "apt-get update",
+      "echo \"mysql-server mysql-server/root_password password $DB_ROOT_PWD\" | debconf-set-selections;\techo \"mysql-server mysql-server/root_password_again password $DB_ROOT_PWD\" | debconf-set-selections;",
+      "sed -i -e\"s/^bind-address\\s*=\\s*127.0.0.1/bind-address = 0.0.0.0/\" /etc/mysql/my.cnf",
+      "/usr/sbin/mysqld &     sleep 5s &&    echo \"GRANT ALL ON *.* TO root@'%' IDENTIFIED BY '$DB_ROOT_PWD'; FLUSH PRIVILEGES\" | mysql --user=root --password=$DB_ROOT_PWD &&    echo \"GRANT ALL ON *.* TO $DB_USER@'%' IDENTIFIED BY '$DB_USER_PWD' WITH GRANT OPTION; FLUSH PRIVILEGES\" | mysql --user=root --password=$DB_ROOT_PWD"
+    ],
+    "workdir": [],
+    "from": "debian:wheezy",
+    "maintainer": "Ahmet Demir <ahmet2mir+github@gmail.com>",
+    "env": {
+      "RELEASE": "wheezy",
+      "DEBIAN_FRONTEND": "noninteractive",
+      "SHELL": "/bin/bash",
+      "DB_ROOT_PWD": "root",
+      "DB_USER": "user",
+      "DB_USER_PWD": "password"
+    },
+    "cmd": "[\"/usr/bin/mysqld_safe\"]"
+  },
+  "source_repository_url": "https://github.com/ahmet2mir/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/ahmet2mir/dockerfiles",
+  "docker_repository": "ahmet2mir/mysql",
+  "docker_image": "ahmet2mir/mysql",
+  "parameters_schema": {
+    "RELEASE": {
+      "default": "wheezy",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SHELL": {
+      "default": "/bin/bash",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DB_ROOT_PWD": {
+      "default": "root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DB_USER": {
+      "default": "user",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DB_USER_PWD": {
+      "default": "password",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "ahmet2mir/mysql",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/ahmet2mir/mysql",
+    "https://hub.docker.com/v2/repositories/ahmet2mir/mysql",
+    "https://github.com/ahmet2mir/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/ahmet2mir/mysql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

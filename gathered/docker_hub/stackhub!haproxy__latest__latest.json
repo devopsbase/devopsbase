@@ -1,0 +1,158 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/stackhub/haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/stackhub/haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/stackhub/haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/stackhub/haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/stackhub/haproxy/autobuild",
+    "user": "stackhub",
+    "name": "haproxy",
+    "namespace": "stackhub",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 4949,
+    "last_updated": "2016-05-31T15:54:01.851415Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 116562916,
+        "id": 957570,
+        "repository": 331676,
+        "creator": 39837,
+        "last_updater": 148599,
+        "last_updated": "2016-05-31T15:54:00.494816Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "1.2",
+        "full_size": 116489826,
+        "id": 1099316,
+        "repository": 331676,
+        "creator": 148599,
+        "last_updater": 148599,
+        "last_updated": "2016-05-31T15:46:14.014572Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "0.2.0",
+        "full_size": 10753736,
+        "id": 1110298,
+        "repository": 331676,
+        "creator": 39837,
+        "last_updater": 39837,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.2-dev",
+        "full_size": 101183375,
+        "id": 1107385,
+        "repository": 331676,
+        "creator": 148599,
+        "last_updater": 148599,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "runit",
+        "full_size": 10753743,
+        "id": 1097122,
+        "repository": 331676,
+        "creator": 39837,
+        "last_updater": 39837,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "stackhub/service-haproxy"
+  },
+  "name": "stackhub/haproxy Docker container",
+  "description": "Haproxy service that dynamically adjusts to backends coming and going.",
+  "readme": "# Purpose\n\nThis repo contains the processes necessary to build a dynamic haproxy container\nthat acts as a load balancer to http backends.\n\n# Overview\n\nConceptually, this container is meant to be balance *n* number of backend\nhttp services.  These will typically be nginx  \ne.g. [nginx-backend-eg](http://github.com/stackhub/nginx-backend-eg) or \n[apache-backend-eg](http://github.com/stackhub/apache-backend-eg)\n\nHowever a golang binary or Tomcat service that answers httpd requests would \nalso work as well.\n\nThe container checks every 5 seconds for new services at its serivce key.  \nWhen it sees a change, it rewrites the haproxy.cfg file and reloads\nthe haproxy service. \n\n# Usage\n\nFor example usage, please see the \n[stack-haproxy repo](http://github.com/stackhub/stack-haproxy).\n\n## Stats\n\nIf you would like to see the stats page, navigate to \n`http://IPADDR:1936/haproxy?stats`.  You will be prompted for basic auth:\n\n* username: stackhubdemo\n* password: stackhubpass\n\nIf you are working locally you can check with curl:\n\n`curl -u stackhubdemo:stackhubpass http://localhost:1936/haproxy?stats`\n\n# License\n\nMIT",
+  "dockerfile": "# Create an HAProxy container that will dynamically rewrite its config\n# when backends are added and removed.\nFROM stackhub/base-confd\n\n# Install `haproxy`\nRUN \\\n    apk upgrade && \\\n    apk update && \\\n    apk add haproxy\n\n# Lay down the configuration templates\nADD \\  \n    haproxy/haproxy.toml.template \\\n    /etc/confd/conf.d/haproxy.toml.template\n\nADD \\  \n    haproxy/haproxy.cfg.template_orig \\\n    /etc/confd/templates/haproxy.cfg.template_orig\n\nADD \\ \n    haproxy/haproxy.cfg.stub \\\n    /etc/haproxy/haproxy.cfg\n\n# Make `haproxy` start automagically with `runit`\nRUN \\\n    mkdir -pv /etc/sv/haproxy && \\\n    chmod 2775 /etc/sv/haproxy && \\\n    ln -sv /etc/sv/haproxy /service\n\nADD \\ \n    haproxy/haproxy.sh \\\n    /etc/sv/haproxy/run\n\nENTRYPOINT [\"/sbin/runsvdir\", \"/service\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "\\",
+        "dest": ""
+      },
+      {
+        "source": "\\",
+        "dest": ""
+      },
+      {
+        "source": "\\",
+        "dest": ""
+      },
+      {
+        "source": "\\",
+        "dest": ""
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "    apk upgrade &&     apk update &&     apk add haproxy",
+      "    mkdir -pv /etc/sv/haproxy &&     chmod 2775 /etc/sv/haproxy &&     ln -sv /etc/sv/haproxy /service"
+    ],
+    "workdir": [],
+    "from": "stackhub/base-confd",
+    "entrypoint": "[\"/sbin/runsvdir\", \"/service\"]"
+  },
+  "source_repository_url": "https://github.com/stackhub/service-haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/stackhub/service-haproxy",
+  "docker_repository": "stackhub/haproxy",
+  "docker_image": "stackhub/haproxy",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "stackhub/haproxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/stackhub/haproxy",
+    "https://hub.docker.com/v2/repositories/stackhub/haproxy",
+    "https://github.com/stackhub/service-haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image/VM Image/AMI",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/stackhub/haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

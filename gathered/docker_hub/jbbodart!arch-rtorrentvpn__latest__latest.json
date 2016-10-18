@@ -1,0 +1,122 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jbbodart/arch-rtorrentvpn",
+    "repository_url": "https://hub.docker.com/v2/repositories/jbbodart/arch-rtorrentvpn",
+    "tags_url": "https://hub.docker.com/v2/repositories/jbbodart/arch-rtorrentvpn/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jbbodart/arch-rtorrentvpn/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jbbodart/arch-rtorrentvpn/autobuild",
+    "user": "jbbodart",
+    "name": "arch-rtorrentvpn",
+    "namespace": "jbbodart",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 113,
+    "last_updated": "2016-08-16T10:14:04.170324Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 410904976,
+        "id": 1180622,
+        "repository": 372559,
+        "creator": 431355,
+        "last_updater": 431355,
+        "last_updated": "2016-08-16T10:14:03.692310Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "jbbodart/arch-rtorrentvpn"
+  },
+  "name": "jbbodart/arch-rtorrentvpn Docker container",
+  "description": "ArchLinux with latest stable rtorrent/rutorrent, and OpenVPN to tunnel torrent traffic securely",
+  "readme": "Arch Linux : rtorrent + OpenVPN + Privoxy\n=========================================\n\narch linux : https://www.archlinux.org/\n\nrtorrent : https://github.com/rakshasa/rtorrent\n\nrutorrent : https://github.com/Novik/ruTorrent\n\nopenvpn : https://openvpn.net/\n\nprivoxy : http://www.privoxy.org/\n\n**Description**\n\nLatest stable rtorrent release for Arch Linux, including OpenVPN\nto tunnel torrent traffic securely (using iptables to block any\ntraffic not bound for tunnel).\n\nruTorrent v3.7 included for rtorrent GUI.\nAlso includes Privoxy to allow http|https traffic through the VPN.\n\nThis container has been designed to work on Synology devices, but it should run on every Linux host\n(tun kernel module and iptables required for VPN).\nTested with DSM 6.0.1-7393 Update 2.\n\n**Usage**\n```\ndocker run -d \\\n\t--cap-add=NET_ADMIN \\\n\t-p 8080:8080 \\\n\t-p 8118:8118 \\\n\t--name=<container name> \\\n\t-v <path for data files>:/data \\\n\t-v <path for config files>:/config \\\n\t-e ENABLE_VPN=<yes|no> \\\n\t-e ENABLE_PRIVOXY=<yes|no> \\\n\t-e RTORRENT_LISTEN_PORT=<port no> \\\t\n\t-e RTORRENT_DHT_PORT=<port no> \\\t\t\n\tjbbodart/arch-rtorrentvpn\n```\n\nPlease replace all user variables in the above command defined by <> with the correct values.\n\n**Access ruTorrent**\n\n`http://<host ip>:8080`\n\n**Access Privoxy**\n\n`http://<host ip>:8118`\n\n**Setting up VPN**\n\n1. Start the rtorrentvpn docker to create the folder structure\n2. Stop rtorrentvpn docker and copy your .ovpn file in the /config/openvpn/ folder on the host\n3. Start rtorrentvpn docker\n\n**Execute in Docker on Synology**\n\n1. Create a directory for the container data (eg /docker/data and /docker/config)\n2. Start Synology Docker GUI\n3. Download container image by searching jbbodart/rtorrentvpn on Docker Hub Registry\n4. Create a new container using this image. You need to check the \"Execute container using high privilege\" box for iptables to work. \n6. Start container to populate the config directory\n7. Stop container and copy your .ovpn file in the /docker/config/openvpn/ folder\n8. Restart container\n\n**Using the container**\n\nTo start downloading, place a .torrent file in the /data/watch directory.\n\nCompleted downloads are stored in /data/downloads.\n\n**Advanced configuration**\n\nConfig files for rtorrent, rutorrent, openvpn, privoxy and nginx are located in the /config directory and can be modified (may need to restart the container).\n\n",
+  "dockerfile": "FROM jbbodart/arch-base\nMAINTAINER jbbodart\n\n# additional files\n##################\n\n# add supervisor conf file for app\nADD *.conf /etc/supervisor.d/\n\n# add bash scripts to install app, and setup iptables, routing etc\nADD *.sh /root/\n\n# add bash script to run rtorrent\nADD apps/nobody/*.sh /home/nobody/\n\n# add bash script to run sshd\nADD apps/root/*.sh /root/\n\n# add default config directory\nADD config /home/nobody/config\n\n# install app\n#############\n\n# make executable and run bash scripts to install app\nRUN chmod +x /root/*.sh /home/nobody/*.sh && \\\n\t/bin/bash /root/install.sh\n\n# docker settings\n#################\n\n# map /config to host defined config path (used to store configuration from app)\nVOLUME /config\n# map /data to host defined data path (used to store data from app)\nVOLUME /data\n\n# expose port for rutorrent\nEXPOSE 8080\n# expose port for privoxy\nEXPOSE 8118\n\n# run supervisor\n################\n\n# run supervisor\nCMD [\"supervisord\", \"-c\", \"/etc/supervisord.conf\", \"-n\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "*.conf",
+        "dest": "/etc/supervisor.d/"
+      },
+      {
+        "source": "*.sh",
+        "dest": "/root/"
+      },
+      {
+        "source": "apps/nobody/*.sh",
+        "dest": "/home/nobody/"
+      },
+      {
+        "source": "apps/root/*.sh",
+        "dest": "/root/"
+      },
+      {
+        "source": "config",
+        "dest": "/home/nobody/config"
+      }
+    ],
+    "expose": [
+      8080,
+      8118
+    ],
+    "volume": [
+      "/config",
+      "/data"
+    ],
+    "run": [
+      "chmod +x /root/*.sh /home/nobody/*.sh && \t/bin/bash /root/install.sh"
+    ],
+    "workdir": [],
+    "from": "jbbodart/arch-base",
+    "maintainer": "jbbodart",
+    "cmd": "[\"supervisord\", \"-c\", \"/etc/supervisord.conf\", \"-n\"]"
+  },
+  "source_repository_url": "https://github.com/jbbodart/arch-rtorrentvpn.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/jbbodart/arch-rtorrentvpn",
+  "docker_repository": "jbbodart/arch-rtorrentvpn",
+  "docker_image": "jbbodart/arch-rtorrentvpn",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        8080,
+        8118
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jbbodart/arch-rtorrentvpn",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jbbodart/arch-rtorrentvpn",
+    "https://hub.docker.com/v2/repositories/jbbodart/arch-rtorrentvpn",
+    "https://github.com/jbbodart/arch-rtorrentvpn.git"
+  ],
+  "labels": [
+    "Docker",
+    "Style/Virtualization Level/Hardware/Network/VPN",
+    "Type/Devopsware/Test",
+    "Type/Infrastructure/Operating System/Linux/Arch Linux",
+    "Type/Middleware/Runtime/Dart"
+  ],
+  "info_url": "https://hub.docker.com/r/jbbodart/arch-rtorrentvpn",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

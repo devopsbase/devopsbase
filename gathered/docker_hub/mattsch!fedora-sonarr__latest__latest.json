@@ -1,0 +1,154 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mattsch/fedora-sonarr",
+    "repository_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-sonarr",
+    "tags_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-sonarr/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-sonarr/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-sonarr/autobuild",
+    "user": "mattsch",
+    "name": "fedora-sonarr",
+    "namespace": "mattsch",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 315,
+    "last_updated": "2016-10-13T13:10:14.084543Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 212229060,
+        "id": 1092488,
+        "repository": 355111,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-10-13T13:10:12.271738Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "23",
+        "full_size": 161053275,
+        "id": 1386534,
+        "repository": 355111,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-10-13T13:06:18.033796Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "22",
+        "full_size": 184619456,
+        "id": 1092508,
+        "repository": 355111,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-09-14T12:53:18.377233Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "24",
+        "full_size": 185413448,
+        "id": 3744926,
+        "repository": 355111,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-09-14T12:15:38.635411Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "mattsch/fedora-sonarr"
+  },
+  "name": "mattsch/fedora-sonarr Docker container",
+  "description": "Fedora Sonarr",
+  "readme": "# Fedora Sonarr Docker Container\n\nDocker container for [Sonarr](https://sonarr.tv/) using Fedora.\nThis uses the update script from [tuxeh](https://github.com/tuxeh/docker-sonarr)\nso you'll need to adjust the update settings to use `/bin/update-sonarr.sh`.\n\n## Usage\n\nCreate with defaults:\n\n```bash\ndocker create -v /path/to/config/dir:/config \\\n    -v /path/to/storage/dir:/storage \\\n    -v /etc/localtime:/etc/localtime:ro \\\n    -p 8989:8989 --name=sonarr mattsch/fedora-sonarr\n```\n\nCreate with a custom uid/gid for the sonarr daemon:\n\n```bash\ndocker create -v /path/to/config/dir:/config \\\n    -v /path/to/storage/dir:/storage \\\n    -v /etc/localtime:/etc/localtime:ro \\\n    -e LUID=1234 -e LGID=1234 \\\n    -p 8989:8989 --name=sonarr mattsch/fedora-sonarr\n```\n\nUsing host networking rather than the port forwards above will give the best\nperformance.  However, this allows the container to have full access to the\nhost's networking stack.  Be sure you understand the implications before using\nit.\n\n",
+  "dockerfile": "FROM mattsch/fedora-rpmfusion:latest\nMAINTAINER Matthew Schick <matthew.schick@gmail.com>\n\nCOPY tpokorra-mono-fedora.repo /etc/yum.repos.d/tpokorra-mono-fedora.repo\n\n# Install required packages\nRUN dnf install -yq mediainfo \\\n                    mono-core \\\n                    procps-ng \\\n                    tar \\\n                    unrar && \\\n    dnf clean all\n\n# Set uid/gid (override with the '-e' flag), 1000/1000 used since it's the\n# default first uid/gid on a fresh Fedora install\nENV LUID=1000 LGID=1000\n\n# Create the sonarr user/group\nRUN groupadd -g $LGID sonarr && \\\n    useradd -c 'Sonarr User' -s /bin/bash -m -d /opt/sonarr -g $LGID -u $LUID sonarr\n\n# Grab the installer, do the thing\nRUN cd /tmp && \\\n    curl -qOL http://download.sonarr.tv/v2/master/mono/NzbDrone.master.tar.gz && \\\n    tar -xf NzbDrone.master.tar.gz -C /opt/ && \\\n    rm ./NzbDrone.master.tar.gz && \\\n    chown -R sonarr:sonarr /opt/NzbDrone\n\n# Need a config and storage volume, expose proper port\nVOLUME /config /storage\nEXPOSE 8989\n\n# Add script to copy default config if one isn't there and start sonarr\nCOPY run-sonarr.sh update-sonarr.sh /bin/\n \n# Run our script\nCMD [\"/bin/run-sonarr.sh\"]\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8989
+    ],
+    "volume": [
+      "/config /storage"
+    ],
+    "run": [
+      "dnf install -yq mediainfo                     mono-core                     procps-ng                     tar                     unrar &&     dnf clean all",
+      "groupadd -g $LGID sonarr &&     useradd -c 'Sonarr User' -s /bin/bash -m -d /opt/sonarr -g $LGID -u $LUID sonarr",
+      "cd /tmp &&     curl -qOL http://download.sonarr.tv/v2/master/mono/NzbDrone.master.tar.gz &&     tar -xf NzbDrone.master.tar.gz -C /opt/ &&     rm ./NzbDrone.master.tar.gz &&     chown -R sonarr:sonarr /opt/NzbDrone"
+    ],
+    "workdir": [],
+    "from": "mattsch/fedora-rpmfusion:latest",
+    "maintainer": "Matthew Schick <matthew.schick@gmail.com>",
+    "copy": "run-sonarr.sh update-sonarr.sh /bin/",
+    "env": {
+      "LUID": "1000",
+      "LGID": "1000"
+    },
+    "cmd": "[\"/bin/run-sonarr.sh\"]"
+  },
+  "source_repository_url": "https://github.com/mattsch/fedora-sonarr.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mattsch/fedora-sonarr",
+  "docker_repository": "mattsch/fedora-sonarr",
+  "docker_image": "mattsch/fedora-sonarr",
+  "parameters_schema": {
+    "LUID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LGID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8989
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mattsch/fedora-sonarr",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/mattsch/fedora-sonarr",
+    "https://hub.docker.com/v2/repositories/mattsch/fedora-sonarr",
+    "https://github.com/mattsch/fedora-sonarr.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/mattsch/fedora-sonarr",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

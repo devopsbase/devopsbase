@@ -1,0 +1,69 @@
+{
+  "name": "ceph Chef cookbook",
+  "chef_cookbook_name": "ceph",
+  "revision": "0.8.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/ceph",
+    "https://supermarket.chef.io/cookbooks/ceph/download",
+    "https://supermarket.chef.io/cookbooks/ceph/versions/0.8.0",
+    "https://supermarket.chef.io/cookbooks/ceph/versions/0.8.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/ceph/versions/0.8.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/ceph",
+    "https://supermarket.chef.io/api/v1/cookbooks/ceph/versions/0.8.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/ceph",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/ceph/versions/0.8.0/download",
+  "deprecated": false,
+  "created": "2013-07-18T10:43:05.000Z",
+  "updated": "2015-09-16T16:42:59.446Z",
+  "description": "Installs/Configures the Ceph distributed filesystem",
+  "maintainer": {
+    "name": "guilhemfr",
+    "email": "guilhem@lettron.fr"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 6,
+  "downloads_count": 2731453,
+  "downloads_count_revision": 372255,
+  "repository_url": "https://github.com/ceph/ceph-cookbooks",
+  "issues_url": "https://github.com/ceph/ceph-cookbooks",
+  "chef_source_url": "https://github.com/ceph/ceph-cookbooks",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Chef cookbook [![Build Status](https://travis-ci.org/ceph/ceph-cookbook.svg?branch=master)](https://travis-ci.org/ceph/ceph-cookbook) [![Gitter chat](https://badges.gitter.im/ceph/ceph-cookbook.png)](https://gitter.im/ceph/ceph-cookbook)\n\n## DESCRIPTION\n\nInstalls and configures Ceph, a distributed network storage and filesystem designed to provide excellent performance, reliability, and scalability.\n\nThe current version is focused towards deploying Monitors and OSD on Ubuntu.\n\nFor documentation on how to use this cookbook, refer to the [USAGE](#USAGE) section.\n\nFor help, use [Gitter chat](https://gitter.im/ceph/ceph-cookbook), [mailing-list](mailto:ceph-users-join@lists.ceph.com) or [issues](https://github.com/ceph/ceph-cookbook/issues)\n\n## REQUIREMENTS\n\n### Chef\n\n\\>= 11.6.0\n\n### Platform\n\nTested as working:\n\n* Debian Wheezy (7)\n* Ubuntu Precise (12.04)\n* Ubuntu Trusty (14.04)\n\n### Cookbooks\n\nThe ceph cookbook requires the following cookbooks from Chef:\n\nhttps://supermarket.chef.io/\n\n* [apt](https://supermarket.chef.io/cookbooks/apt)\n* [apache2](https://supermarket.chef.io/cookbooks/apache2)\n\n## TEMPLATES\n\n## USAGE\n\nCeph cluster design is beyond the scope of this README, please turn to the\npublic wiki, mailing lists, visit our IRC channel, or contact Inktank:\n\nhttp://ceph.com/docs/master\nhttp://ceph.com/resources/mailing-list-irc/\nhttp://www.inktank.com/\n\nThis cookbook can be used to implement a chosen cluster design. Most of the configuration is retrieved from node attributes, which can be set by an environment or by a wrapper cookbook. A basic cluster configuration will need most of the following attributes:\n\n* `node['ceph']['config']['fsid']` - the cluster UUID\n* `node['ceph']['config]'['global']['public network']` - a CIDR specification of the public network\n* `node['ceph']['config]'['global']['cluster network']` - a CIDR specification of a separate cluster replication network\n* `node['ceph']['config]'['global']['rgw dns name']` -  the main domain of the radosgw daemon\n\nMost notably, the configuration does _NOT_ need to set the `mon_initial_members`, because the cookbook does a node search to find other mons in the same environment.\n\nThe other set of attributes that this recipe needs is `node['ceph']['osd_devices']`, which is an array of OSD definitions, similar to the following:\n\n* {'device' => '/dev/sdb'} - Use a full disk for the OSD, with a small partition for the journal\n* {'type' => 'directory', 'device' => '/src/node/sdb1/ceph'} - Use a directory, and have a small file for the journal\n* {'device' => '/dev/sde', 'dmcrypt' => true} - Store the data encrypted by passing --dmcrypt to `ceph-disk-prepare`\n* {'device' => '/dev/sdc', 'journal' => '/dev/sdd2'} - use a full disk for the OSD with a custom partition for the journal\n\n### Ceph Monitor\n\nCeph monitor nodes should use the ceph-mon role.\n\nIncludes:\n\n* ceph::default\n\n### Ceph Metadata Server\n\nCeph metadata server nodes should use the ceph-mds role.\n\nIncludes:\n\n* ceph::default\n\n### Ceph OSD\n\nCeph OSD nodes should use the ceph-osd role\n\nIncludes:\n\n* ceph::default\n\n### Ceph Rados Gateway\n\nCeph Rados Gateway nodes should use the ceph-radosgw role\n\n## ATTRIBUTES\n\n### General\n\n* `node['ceph']['search_environment']` - a custom Chef environment to search when looking for mon nodes. The cookbook defaults to searching the current environment\n* `node['ceph']['branch']` - selects whether to install the stable, testing, or dev version of Ceph\n* `node['ceph']['version']` - install a version of Ceph that is different than the cookbook default. If this is changed in a wrapper cookbook, some repository urls may also need to be replaced, and they are found in attributes/repo.rb. If the branch attribute is set to dev, this selects the gitbuilder branch to install\n* `node['ceph']['extras_repo']` - whether to install the ceph extras repo. The tgt recipe requires this\n\n* `node['ceph']['config']['fsid']` - the cluster UUID\n* `node['ceph']['config']['global']['public network']` - a CIDR specification of the public network\n* `node['ceph']['config']['global']['cluster network']` - a CIDR specification of a separate cluster replication network\n* `node['ceph']['config']['config-sections']` - add to this hash to add extra config sections to the ceph.conf\n\n### Ceph MON\n\n* `node['ceph']['config']['mon']` - a hash of settings to save in ceph.conf in the [mon] section, such as `'mon osd nearfull ratio' => '0.70'`\n\n### Ceph OSD\n\n* `node['ceph']['osd_devices']` - an array of OSD definitions for the current node\n* `node['ceph']['config']['osd']` - a hash of settings to save in ceph.conf in the [osd] section, such as `'osd max backfills' => 2`\n* `node['ceph']['config']['osd']['osd crush location']` - this attribute can be set on a per-node basis to maintain Crush map locations\n\n### Ceph MDS\n\n* `node['ceph']['config']['mds']` - a hash of settings to save in ceph.conf in the [mds] section, such as `'mds cache size' => '100000'`\n* `node['ceph']['cephfs_mount']` - where the cephfs recipe should mount CephFS\n* `node['ceph']['cephfs_use_fuse']` - whether the cephfs recipe should use the fuse cephfs client. It will default to heuristics based on the kernel version\n\n### Ceph Rados Gateway\n\n* `node['ceph']['radosgw']['api_fqdn']` - what vhost to configure in the web server\n* `node['ceph']['radosgw']['admin_email']` - the admin email address to configure in the web server\n* `node['ceph']['radosgw']['rgw_addr']` - the web server's bind address, such as *:80\n* `node['ceph']['radosgw']['rgw_port']` - if set, connects to the radosgw fastcgi over this port instead of a unix socket\n* `node['ceph']['radosgw']['webserver_companion']` - defaults to 'apache2', but can be set to false to not configure anything\n* `node['ceph']['radosgw']['path']` - where to save the s3gw.fcgi file\n* `node['ceph']['config']['global']['rgw dns name']` -  the main domain of the radosgw daemon, to calculate the bucket name from a subdomain\n\n## Resources/Providers\n\n### ceph\\_client\n\nThe ceph\\_client LWRP provides an easy way to construct a Ceph client key. These keys are needed by anything that needs to talk to the Ceph cluster, including RadosGW, CephFS, and RBD access.\n\n#### Actions\n\n- :add - creates a client key with the given parameters\n\n#### Parameters\n\n- :name - name attribute. The name of the client key to create. This is used to provide a default for the other parameters\n- :caps - A hash of capabilities that should be granted to the client key. Defaults to `{ 'mon' => 'allow r', 'osd' => 'allow r' }`\n- :as\\_keyring - Whether the key should be saved in a keyring format or a simple secret key. Defaults to true, meaning it is saved as a keyring\n- :keyname - The key name to register in Ceph. Defaults to `client.#{name}.#{hostname}`\n- :filename - Where to save the key. Defaults to `/etc/ceph/ceph.client.#{name}.#{hostname}.keyring` if `as_keyring` and `/etc/ceph/ceph.client.#{name}.#{hostname}.secret` if not `as_keyring`\n- :owner - Which owner should own the saved key file. Defaults to root\n- :group - Which group should own the saved key file. Defaults to root\n- :mode - What file mode should be applied. Defaults to '00640'\n\n### ceph\\_cephfs\n\nThe ceph\\_cephfs LWRP provides an easy way to mount CephFS. It will automatically create a Ceph client key for the machine and mount CephFS to the specified location. If the kernel client is used, instead of the fuse client, a pre-existing subdirectory of CephFS can be mounted instead of the root.\n\n#### Actions\n\n- :mount - mounts CephFS\n- :umount - unmounts CephFS\n- :remount - remounts CephFS\n- :enable - adds an fstab entry to mount CephFS\n- :disable - removes an fstab entry to mount CephFS\n\n#### Parameters\n\n- :directory - name attribute. Where to mount CephFS in the local filesystem\n- :use\\_fuse - whether to use ceph-fuse or the kernel client to mount the filesystem. ceph-fuse is updated more often, but the kernel client allows for subdirectory mounting. Defaults to true\n- :cephfs\\_subdir - which CephFS subdirectory to mount. Defaults to '/'. An exception will be thrown if this option is set to anything other than '/' if use\\_fuse is also true\n\n## DEVELOPING\n\n### Style Guide\n\nThis cookbook requires a style guide for all contributions. Travis will automatically verify that every Pull Request follows the style guide.\n\n1. Install [ChefDK](http://downloads.chef.io/chef-dk/)\n2. Activate ChefDK's copy of ruby: `eval \"$(chef shell-init bash)\"`\n3. `bundle install`\n4. `bundle exec rake style`\n\n### Testing\n\nThis cookbook uses Test Kitchen to verify functionality. A Pull Request can't be merged if it causes any of the test configurations to fail.\n\n1. Install [ChefDK](http://downloads.chef.io/chef-dk/)\n2. Activate ChefDK's copy of ruby: `eval \"$(chef shell-init bash)\"`\n3. `bundle install`\n4. `bundle exec kitchen test aio-debian-74`\n5. `bundle exec kitchen test aio-ubuntu-1204`\n6. `bundle exec kitchen test aio-ubuntu-1404`\n\n## LICENSE AND AUTHORS\n\n* Author: Kyle Bader <kyle.bader@dreamhost.com>\n\n* Copyright 2013, DreamHost Web Hosting and Inktank Storage Inc.\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\n Unless required by applicable law or agreed to in writing, software\n distributed under the License is distributed on an \"AS IS\" BASIS,\n WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n See the License for the specific language governing permissions and\n limitations under the License.\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apache2",
+      "revision": ">= 1.1.12",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 3.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum-epel",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

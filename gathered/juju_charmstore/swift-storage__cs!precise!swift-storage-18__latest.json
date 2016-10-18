@@ -1,0 +1,98 @@
+{
+  "name": "swift-storage Juju charm",
+  "juju_charm_name": "swift-storage",
+  "revision": "cs:precise/swift-storage-18",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/swift-storage",
+    "https://jujucharms.com/swift-storage/precise",
+    "https://jujucharms.com/swift-storage/precise/18",
+    "https://api.jujucharms.com/v5/swift-storage",
+    "https://api.jujucharms.com/v5/precise/swift-storage",
+    "https://api.jujucharms.com/v5/precise/swift-storage-18"
+  ],
+  "labels": [
+    "Juju charm",
+    "file-servers",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Middleware/Runtime/JavaScript/Node.js",
+    "Type/Middleware/Data Store"
+  ],
+  "info_url": "https://jujucharms.com/swift-storage",
+  "package_url": "https://api.jujucharms.com/v5/precise/swift-storage-18/archive",
+  "created": "2015-06-17T09:34:00.337Z",
+  "updated": "2015-06-17T09:34:00.337Z",
+  "description": "Swift storage node\n\nContains swift-object, swift-container and swift-account servers.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "precise",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= precise"
+    }
+  ],
+  "parameters": {
+    "account-server-port": {
+      "type": "int",
+      "description": "Listening port of the swift-account-server.",
+      "default": 6002,
+      "mapping": "charm_option"
+    },
+    "block-device": {
+      "type": "string",
+      "description": "Device to be used to back Swift storage.  May be any valid block\ndevice or a path and size to a local file (/path/to/file.img|$sizeG),\nwhich will be created and used as a loopback device (for testing only).\nMultiple devices may be specified as a space-separated list of devices.\nIf set to \"guess\", the charm will attempt to format and mount all extra\nblock devices (this is currently experimental and potentially dangerous).\n",
+      "default": "sdb",
+      "mapping": "charm_option"
+    },
+    "container-server-port": {
+      "type": "int",
+      "description": "Listening port of the swift-container-server.",
+      "default": 6001,
+      "mapping": "charm_option"
+    },
+    "object-server-port": {
+      "type": "int",
+      "description": "Listening port of the swift-object-server.",
+      "default": 6000,
+      "mapping": "charm_option"
+    },
+    "openstack-origin": {
+      "type": "string",
+      "description": "Repository from which to install.  May be one of the following:\ndistro (default), ppa:somecustom/ppa, a deb url sources entry,\nor a supported Cloud Archive release pocket.\n.\nSupported Cloud Archive sources include: cloud:precise-folsom,\ncloud:precise-folsom/updates, cloud:precise-folsom/staging,\ncloud:precise-folsom/proposed.\n.\nNote that updating this setting to a source that is known to\nprovide a later version of OpenStack will trigger a software\nupgrade.\n",
+      "default": "distro",
+      "mapping": "charm_option"
+    },
+    "overwrite": {
+      "type": "string",
+      "description": "If true, charm will attempt to unmount and overwrite existing and in-use\nblock-devices (WARNING).\n",
+      "default": "false",
+      "mapping": "charm_option"
+    },
+    "zone": {
+      "type": "int",
+      "description": "Swift storage zone to request membership.  Relevant only when the\nswift-proxy charm has been configured for manual zone assignment\n(the default).  This should be changed for every service unit.\n",
+      "default": 1,
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/swift",
+      "juju_interface": "swift",
+      "juju_name": "swift-storage",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "Overview\n--------\n\nThis charm provides the swift-storage component of the OpenStack Swift object\nstorage system.  It can be deployed as part of its own standalone storage\ncluster or it can be integrated with the other OpenStack components, assuming\nthose are also managed by Juju.  For Swift to function, you'll also need to\ndeploy an additional swift-proxy using the cs:precise/swift-proxy charm.\n\nFor more information about Swift and its architecture, visit the official\nproject website at http://swift.openstack.org.\n\nThis charm was developed to support deploying multiple version of Swift on\nUbuntu Precise 12.04, as they relate to the release series of OpenStack.  That\nis, OpenStack Essex corresponds to Swift 1.4.8 while OpenStack Folsom shipped\n1.7.4.  This charm can be used to deploy either (and future) versions of Swift\nonto an Ubuntu Precise 12.04, making use of the Ubuntu Cloud Archive when\nneeded.\n\nUsage\n-----\n\nThis charm is quite simple.  Its basic function is to get a storage device\nsetup for swift usage, and run the container, object and account services.\nThe deployment workflow for swift using this charm is covered in the README\nfor the swift-proxy charm at cs:precise/swift-proxy.  The following are\ndeployment options to take into consideration when deploying swift-storage.\n\n**Zone assignment**\n\nIf the swift-proxy charm is configured for manual zone assignment (recommended),\nthe 'zone' option should be set for each swift-storage service being deployed.\nSee the swift-proxy README for more information about zone assignment.\n\n**Storage**\n\nSwift storage nodes require access to local storage and filesystem.  The charm\ntakes a 'block-device' config setting that can be used to specify which storage\ndevice(s) to use.  Options include:\n\n - 1 or more local block devices (eg, sdb or /dev/sdb).  It's important that this\n   device be the same on all machine units assigned to this service.  Multiple\n   block devices should be listed as a space-separated list of device nodes.\n - a path to a local file on the filesystem with the size appended after a pipe,\n   eg \"/etc/swift/storagedev1.img|5G\".  This will be created if it does not\n   exist and be mapped to a loopback device. Good for development and testing.\n - \"guess\" can be used to tell the charm to do its best to find a local devices\n   to use. *EXPERIMENTAL*\n\nMultiple devices can be specified. In all cases, the resulting block device(s)\nwill each be formatted as XFS file system and mounted at /srv/node/$devname.\n\n**Installation repository**\n\nThe 'openstack-origin' setting allows Swift to be installed from installation\nrepositories and can be used to setup access to the Ubuntu Cloud Archive\nto support installing Swift versions more recent than what is shipped with\nUbuntu 12.04 (1.4.8).  For more information, see config.yaml.\n",
+  "readme": "Overview\n--------\n\nThis charm provides the swift-storage component of the OpenStack Swift object\nstorage system.  It can be deployed as part of its own standalone storage\ncluster or it can be integrated with the other OpenStack components, assuming\nthose are also managed by Juju.  For Swift to function, you'll also need to\ndeploy an additional swift-proxy using the cs:precise/swift-proxy charm.\n\nFor more information about Swift and its architecture, visit the official\nproject website at http://swift.openstack.org.\n\nThis charm was developed to support deploying multiple version of Swift on\nUbuntu Precise 12.04, as they relate to the release series of OpenStack.  That\nis, OpenStack Essex corresponds to Swift 1.4.8 while OpenStack Folsom shipped\n1.7.4.  This charm can be used to deploy either (and future) versions of Swift\nonto an Ubuntu Precise 12.04, making use of the Ubuntu Cloud Archive when\nneeded.\n\nUsage\n-----\n\nThis charm is quite simple.  Its basic function is to get a storage device\nsetup for swift usage, and run the container, object and account services.\nThe deployment workflow for swift using this charm is covered in the README\nfor the swift-proxy charm at cs:precise/swift-proxy.  The following are\ndeployment options to take into consideration when deploying swift-storage.\n\n**Zone assignment**\n\nIf the swift-proxy charm is configured for manual zone assignment (recommended),\nthe 'zone' option should be set for each swift-storage service being deployed.\nSee the swift-proxy README for more information about zone assignment.\n\n**Storage**\n\nSwift storage nodes require access to local storage and filesystem.  The charm\ntakes a 'block-device' config setting that can be used to specify which storage\ndevice(s) to use.  Options include:\n\n - 1 or more local block devices (eg, sdb or /dev/sdb).  It's important that this\n   device be the same on all machine units assigned to this service.  Multiple\n   block devices should be listed as a space-separated list of device nodes.\n - a path to a local file on the filesystem with the size appended after a pipe,\n   eg \"/etc/swift/storagedev1.img|5G\".  This will be created if it does not\n   exist and be mapped to a loopback device. Good for development and testing.\n - \"guess\" can be used to tell the charm to do its best to find a local devices\n   to use. *EXPERIMENTAL*\n\nMultiple devices can be specified. In all cases, the resulting block device(s)\nwill each be formatted as XFS file system and mounted at /srv/node/$devname.\n\n**Installation repository**\n\nThe 'openstack-origin' setting allows Swift to be installed from installation\nrepositories and can be used to setup access to the Ubuntu Cloud Archive\nto support installing Swift versions more recent than what is shipped with\nUbuntu 12.04 (1.4.8).  For more information, see config.yaml.\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

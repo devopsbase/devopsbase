@@ -1,0 +1,158 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/gkhachik/rhq-fedora.20",
+    "repository_url": "https://hub.docker.com/v2/repositories/gkhachik/rhq-fedora.20",
+    "tags_url": "https://hub.docker.com/v2/repositories/gkhachik/rhq-fedora.20/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/gkhachik/rhq-fedora.20/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/gkhachik/rhq-fedora.20/autobuild",
+    "user": "gkhachik",
+    "name": "rhq-fedora.20",
+    "namespace": "gkhachik",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1256,
+    "last_updated": "2015-10-19T20:34:30.209044Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "4.12.0",
+        "full_size": 1030778132,
+        "id": 20374,
+        "repository": 17503,
+        "creator": 15409,
+        "last_updater": 15409,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 1030778912,
+        "id": 20369,
+        "repository": 17503,
+        "creator": 15409,
+        "last_updater": 15409,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "4.11.0-SNAPSHOT",
+        "full_size": 960388965,
+        "id": 20366,
+        "repository": 17503,
+        "creator": 15409,
+        "last_updater": 15409,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "4.11.0",
+        "full_size": 861719735,
+        "id": 20363,
+        "repository": 17503,
+        "creator": 15409,
+        "last_updater": 15409,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "4.11",
+        "full_size": 861717894,
+        "id": 20361,
+        "repository": 17503,
+        "creator": 15409,
+        "last_updater": 15409,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "gkhachik/rhq-docker"
+  },
+  "name": "gkhachik/rhq-fedora.20 Docker container",
+  "description": "Docker image for RHQ release(s).\n\nRecent RHQ version: (4.12.0-SNAPSHOT)\n\nCurrently available tags:\n- docker pull gkhachik/rhq-fedora.20:latest",
+  "readme": "## SUMMARY\nInstalls RHQ latest on Fedora 20 using docker.\n\n## STEP-BY-STEP SETUP \n\n```\nif [[ $(cat /etc/redhat-release | grep Fedora) ]]; then\n  yum -y install wget curl git docker-io\n  systemctl start docker \n  systemctl enable docker\nelse\n  rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm \n  yum -y install wget curl git docker-io\n  service docker start\n  chkconfig docker on\nfi\n \nexport RHQ_VERSION=\"latest\"\ndocker pull gkhachik/rhq-fedora.20:${RHQ_VERSION}\ncid=\"$(docker run -d -i -p 17080:7080 -t gkhachik/rhq-fedora.20:${RHQ_VERSION} /bin/bash)\"\ndocker logs -f ${cid}\n```\n\n## DOCKER BUILD\n`./build.sh`\n\n## DOCKER RUN\n`./run.sh`\n\n\n## USEFUL\ncleanup all images with given REPO:TAG\n```\nexport DOCKER_REPO=\"<none>\"\nexport DOCKER_TAG=\"<none>\"\n```\n\n```\nimgid=\"$(sudo docker images | grep -v \"IMAGE\" | grep -E \"${DOCKER_REPO}\" | grep -E \" ${DOCKER_TAG} \" | tail -1 | awk '{print $3}')\"\nwhile [[ \"x$imgid\" != \"x\" ]]; do\n  for cid in $(sudo docker ps -a | grep \"$imgid\" | grep -v \"CONTAINER ID\" | awk '{print $1}'); do \n    sudo docker stop $cid\n    sudo docker rm -f $cid\n  done\n  sleep 3\n  sudo docker rmi -f $imgid\n  imgid=\"$(sudo docker images | grep -v \"IMAGE\" | grep -E \"${DOCKER_REPO}\" | grep -E \" ${DOCKER_TAG} \" | tail -1 | awk '{print $3}')\"\ndone\n```\n\n\n",
+  "dockerfile": "#Dockerfile for RHQ 4.11.0 \n\nFROM fedora:20\n\nMAINTAINER Garik Khachikyan <gkhachik@redhat.com>\n\nENV RHQ_VERSION 4.12.0\n\n# install missing commands\nRUN yum -y install wget unzip java-1.7.0-openjdk-devel postgresql-server\n\n# Init postgres service; Start postgres service, create rhqadmin role and rhq db\nRUN \\\n  su -l postgres -c \"/usr/bin/initdb --pgdata='/var/lib/pgsql/data' --auth='ident'\" \\  >> \"/var/lib/pgsql/initdb.log\" 2>&1 < /dev/null;\\\n  sed -i 's/ident/trust/g'  /var/lib/pgsql/data/pg_hba.conf;\\\n  su -l postgres -c \" pg_ctl -l server.log -w stop; pg_ctl -l server.log -w start; \";\\\n  createuser -h 127.0.0.1 -p 5432 -U postgres -S -D -R -w rhqadmin;\\\n  createdb -h 127.0.0.1 -p 5432 -U postgres -O rhqadmin rhq\n  \n\n# Download rhq-server-${RHQ_VERSION}.zip from sourceforge; unzip & tune jboss.bind.address\nRUN \\\n  wget -q http://sourceforge.net/projects/rhq/files/rhq/rhq-4.12/rhq-server-${RHQ_VERSION}.zip -O /opt/rhq-server-${RHQ_VERSION}.zip 2>&1 >/dev/null;\\\n  unzip /opt/rhq-server-${RHQ_VERSION}.zip -d /opt 2>&1 >/dev/null;\\\n  sed -i 's/^rhq.server.management.password=.*/rhq.server.management.password=35c160c1f841a889d4cda53f0bfc94b6/g' /opt/rhq-server-${RHQ_VERSION}/bin/rhq-server.properties;\\\n  sed -i 's/^jboss.bind.address=.*/jboss.bind.address=0.0.0.0/g' /opt/rhq-server-${RHQ_VERSION}/bin/rhq-server.properties;\\\n  sed -i 's/^rhq.storage.nodes=.*/rhq.storage.nodes=127.0.0.1/g' /opt/rhq-server-${RHQ_VERSION}/bin/rhq-server.properties\n\nENV RHQ_SERVER_JAVA_EXE_FILE_PATH /usr/bin/java\n\n# Print out java version\nRUN \\\n  echo -e \"\\n** ** ** JAVA ** ** **\\n\";\\\n  java -version; ls -l /etc/alternatives/java; rpm -qa | grep openjdk;\\\n  echo -e \"\\n********************* \\n\"\n\nEXPOSE 7080\n\nENTRYPOINT \\\n  su -l postgres -c \" pg_ctl -l server.log -w stop; pg_ctl -l server.log -w start; \";\\\n  su root -c '/opt/rhq-server-${RHQ_VERSION}/bin/rhqctl install  --agent-preference=\"127.0.0.1\" --start --agent --server --storage';\\\n  /bin/bash\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      7080
+    ],
+    "volume": [],
+    "run": [
+      "yum -y install wget unzip java-1.7.0-openjdk-devel postgresql-server",
+      "  su -l postgres -c \"/usr/bin/initdb --pgdata='/var/lib/pgsql/data' --auth='ident'\" \\  >> \"/var/lib/pgsql/initdb.log\" 2>&1 < /dev/null;  sed -i 's/ident/trust/g'  /var/lib/pgsql/data/pg_hba.conf;  su -l postgres -c \" pg_ctl -l server.log -w stop; pg_ctl -l server.log -w start; \";  createuser -h 127.0.0.1 -p 5432 -U postgres -S -D -R -w rhqadmin;  createdb -h 127.0.0.1 -p 5432 -U postgres -O rhqadmin rhq",
+      "  wget -q http://sourceforge.net/projects/rhq/files/rhq/rhq-4.12/rhq-server-${RHQ_VERSION}.zip -O /opt/rhq-server-${RHQ_VERSION}.zip 2>&1 >/dev/null;  unzip /opt/rhq-server-${RHQ_VERSION}.zip -d /opt 2>&1 >/dev/null;  sed -i 's/^rhq.server.management.password=.*/rhq.server.management.password=35c160c1f841a889d4cda53f0bfc94b6/g' /opt/rhq-server-${RHQ_VERSION}/bin/rhq-server.properties;  sed -i 's/^jboss.bind.address=.*/jboss.bind.address=0.0.0.0/g' /opt/rhq-server-${RHQ_VERSION}/bin/rhq-server.properties;  sed -i 's/^rhq.storage.nodes=.*/rhq.storage.nodes=127.0.0.1/g' /opt/rhq-server-${RHQ_VERSION}/bin/rhq-server.properties",
+      "  echo -e \"\\n** ** ** JAVA ** ** **\\n\";  java -version; ls -l /etc/alternatives/java; rpm -qa | grep openjdk;  echo -e \"\\n********************* \\n\""
+    ],
+    "workdir": [],
+    "from": "fedora:20",
+    "maintainer": "Garik Khachikyan <gkhachik@redhat.com>",
+    "env": {
+      "RHQ_VERSION": "4.12.0",
+      "RHQ_SERVER_JAVA_EXE_FILE_PATH": "/usr/bin/java"
+    },
+    "entrypoint": "  su -l postgres -c \" pg_ctl -l server.log -w stop; pg_ctl -l server.log -w start; \";  su root -c '/opt/rhq-server-${RHQ_VERSION}/bin/rhqctl install  --agent-preference=\"127.0.0.1\" --start --agent --server --storage';  /bin/bash"
+  },
+  "source_repository_url": "git://github.com/gkhachik/rhq-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/gkhachik/rhq-docker",
+  "docker_repository": "gkhachik/rhq-fedora.20",
+  "docker_image": "gkhachik/rhq-fedora.20",
+  "parameters_schema": {
+    "RHQ_VERSION": {
+      "default": "4.12.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RHQ_SERVER_JAVA_EXE_FILE_PATH": {
+      "default": "/usr/bin/java",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        7080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "gkhachik/rhq-fedora.20",
+  "revision": "4.12.0",
+  "uris": [
+    "https://hub.docker.com/r/gkhachik/rhq-fedora.20",
+    "https://hub.docker.com/v2/repositories/gkhachik/rhq-fedora.20",
+    "git://github.com/gkhachik/rhq-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Test",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/gkhachik/rhq-fedora.20",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

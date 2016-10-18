@@ -1,0 +1,100 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/ekapusta/debian-sshd",
+    "repository_url": "https://hub.docker.com/v2/repositories/ekapusta/debian-sshd",
+    "tags_url": "https://hub.docker.com/v2/repositories/ekapusta/debian-sshd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/ekapusta/debian-sshd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/ekapusta/debian-sshd/autobuild",
+    "user": "ekapusta",
+    "name": "debian-sshd",
+    "namespace": "ekapusta",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 329,
+    "last_updated": "2016-09-23T21:22:09.483634Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 56183728,
+        "id": 2133967,
+        "repository": 549452,
+        "creator": 308240,
+        "last_updater": 308240,
+        "last_updated": "2016-09-23T21:22:09.134413Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "ekapusta/docker-debian-sshd"
+  },
+  "name": "ekapusta/debian-sshd Docker container",
+  "description": "Latest Debian-based OpenSSH daemon with configurable root password and popular settings",
+  "readme": "## Build\n\n    docker build --tag=ekapusta/debian-sshd .\n\n### Args\n\nDefaults are at `build.args.sh` to override create `build.args.override.sh` and change their values there.\n\n  * ROOT_PASSWORD=root\n  * SSHD_CONFIG_PERMIT_ROOT_LOGIN=yes\n  * SSHD_CONFIG_USE_PAM=no\n  * SSHD_CONFIG_USE_DNS=no\n\n*PS: This is ugly polyfill until docker hub autobuilds uses ancient 1.8 version*\n\n## Go into\n\n    docker ps --filter=name=sshd && docker stop sshd && docker rm sshd\n    docker run --detach --name=sshd ekapusta/debian-sshd\n    docker exec --interactive=true --tty=true sshd bash\n",
+  "dockerfile": "FROM debian\nMAINTAINER Alexander Ustimenko \"http://ustimen.co/\"\nEXPOSE 22\n\n# Build args\nCOPY ARG.sh /usr/bin/ARG\nCOPY build.args*.sh /etc/\n\nRUN \\\n    apt-get --quiet=2 update && \\\n    DEBIAN_FRONTEND=noninteractive \\\n        apt-get --assume-yes --no-install-recommends --quiet=2 install \\\n            openssh-server && \\\n    apt-get clean && \\\n    rm --recursive --force /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nWORKDIR /etc/ssh\n\nRUN \\\n    echo \"root:$(ARG ROOT_PASSWORD)\" | chpasswd && \\\n    echo \"Root password changed\" && \\\n    \\\n    sed --in-place 's/^\\(PermitRootLogin\\|UsePAM\\|UseDNS\\)/#\\1/' sshd_config && \\\n    echo \"\" >> sshd_config && \\\n    echo \"# Custom changes from `date`\" >> sshd_config && \\\n    echo \"PermitRootLogin $(ARG SSHD_CONFIG_PERMIT_ROOT_LOGIN)\" >> sshd_config && \\\n    echo \"UsePAM $(ARG SSHD_CONFIG_USE_PAM)\" >> sshd_config && \\\n    echo \"UseDNS $(ARG SSHD_CONFIG_USE_DNS)\" >> sshd_config && \\\n    echo \"SSH daemon config updated\" && \\\n    \\\n    rm /usr/bin/ARG /etc/build.args*.sh\n\n# This will create all required directories/files\nRUN service ssh start\n\nCMD [ \\\n    # Path to OpenSSH SSH daemon\n    \"/usr/sbin/sshd\", \\\n        # will not detach and does not become a daemon\n        \"-D\", \\\n        # will send the output to the standard error instead of the system log\n        \"-e\" \\\n]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      22
+    ],
+    "volume": [],
+    "run": [
+      "    apt-get --quiet=2 update &&     DEBIAN_FRONTEND=noninteractive         apt-get --assume-yes --no-install-recommends --quiet=2 install             openssh-server &&     apt-get clean &&     rm --recursive --force /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "    echo \"root:$(ARG ROOT_PASSWORD)\" | chpasswd &&     echo \"Root password changed\" &&         sed --in-place 's/^\\(PermitRootLogin\\|UsePAM\\|UseDNS\\)/#\\1/' sshd_config &&     echo \"\" >> sshd_config &&     echo \"# Custom changes from `date`\" >> sshd_config &&     echo \"PermitRootLogin $(ARG SSHD_CONFIG_PERMIT_ROOT_LOGIN)\" >> sshd_config &&     echo \"UsePAM $(ARG SSHD_CONFIG_USE_PAM)\" >> sshd_config &&     echo \"UseDNS $(ARG SSHD_CONFIG_USE_DNS)\" >> sshd_config &&     echo \"SSH daemon config updated\" &&         rm /usr/bin/ARG /etc/build.args*.sh",
+      "service ssh start"
+    ],
+    "workdir": [
+      "/etc/ssh"
+    ],
+    "from": "debian",
+    "maintainer": "Alexander Ustimenko \"http://ustimen.co/\"",
+    "copy": "build.args*.sh /etc/",
+    "cmd": "[     # Path to OpenSSH SSH daemon"
+  },
+  "source_repository_url": "https://github.com/ekapusta/docker-debian-sshd.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/ekapusta/docker-debian-sshd",
+  "docker_repository": "ekapusta/debian-sshd",
+  "docker_image": "ekapusta/debian-sshd",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        22
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "ekapusta/debian-sshd",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/ekapusta/debian-sshd",
+    "https://hub.docker.com/v2/repositories/ekapusta/debian-sshd",
+    "https://github.com/ekapusta/docker-debian-sshd.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Test",
+    "Type/Infrastructure/Operating System/Linux/Debian"
+  ],
+  "info_url": "https://hub.docker.com/r/ekapusta/debian-sshd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

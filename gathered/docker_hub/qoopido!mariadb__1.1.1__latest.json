@@ -1,0 +1,144 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/qoopido/mariadb",
+    "repository_url": "https://hub.docker.com/v2/repositories/qoopido/mariadb",
+    "tags_url": "https://hub.docker.com/v2/repositories/qoopido/mariadb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/qoopido/mariadb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/qoopido/mariadb/autobuild",
+    "user": "qoopido",
+    "name": "mariadb",
+    "namespace": "qoopido",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 153,
+    "last_updated": "2016-03-02T08:38:47.874914Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1.1.1",
+        "full_size": 186655277,
+        "id": 2170488,
+        "repository": 521321,
+        "creator": 317620,
+        "last_updater": 317620,
+        "last_updated": "2016-03-02T08:38:47.394291Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 186655407,
+        "id": 1965998,
+        "repository": 521321,
+        "creator": 317620,
+        "last_updater": 317620,
+        "last_updated": "2016-03-02T08:35:48.259282Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "development",
+        "full_size": 186655510,
+        "id": 1965945,
+        "repository": 521321,
+        "creator": 317620,
+        "last_updater": 317620,
+        "last_updated": "2016-03-02T08:27:32.929450Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.1.0",
+        "full_size": 186663791,
+        "id": 2138162,
+        "repository": 521321,
+        "creator": 317620,
+        "last_updater": 317620,
+        "last_updated": "2016-02-27T19:33:55.752279Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.0.6",
+        "full_size": 178358478,
+        "id": 2000609,
+        "repository": 521321,
+        "creator": 317620,
+        "last_updater": 317620,
+        "last_updated": "2016-02-14T14:42:51.511330Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.0.5",
+        "full_size": 177978580,
+        "id": 1966034,
+        "repository": 521321,
+        "creator": 317620,
+        "last_updater": 317620,
+        "last_updated": "2016-02-10T15:03:01.016845Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "dlueth/qoopido.docker.mariadb"
+  },
+  "name": "qoopido/mariadb Docker container",
+  "description": "MariaDB container (standalone, im- & exports SQL-dumps)",
+  "readme": "# recommended directory structure #\nLike with my other containers I encourage you to follow a unified directory structure approach to keep things simple & maintainable, e.g.:\n\n```\nproject root\n  - docker_compose.yaml\n  - config\n    - mariadb\n      - conf.d\n        - ...\n  -data \n    - mariadb\n      - logs\n      - database\n        - dump.sql\n```\n\n# Example docker-compose.yaml #\n```\ndb:\n  image: qoopido/mariadb:latest\n  ports:\n   - \"3306:3306\"\n  volumes:\n   - ./config:/app/config\n   - ./data/mariadb:/app/data\n```\n\n# Or start container manually #\n```\ndocker run -d -P -t -i -p 3306:3306 \\\n\t-v [local path to config]:/app/config \\\n\t-v [local path to data]:/app/data \\\n\t--name db qoopido/mariadb:latest\n```\n\n# Credentials #\n```root``` is restricted to access from localhost and does not have any password. ```admin``` is provided for general access using ```fyoDBafo``` as password.\n\n# Database import/export #\nThis container will create a file named ```dump.sql``` in ```/app/data/database``` on first execution and will export a fresh dump whenever the container gets stopped. If the file exists it will get imported when the container is started again.\n\nBoth im- and export will take some time but have major advantages regarding git or svn versioning. For bigger databases please make sure to add e.g. ```-t 600``` (default is 10, afterwards docker force-kills the container) option to ```docker-compose up``` as well as ```docker stop``` and ```docker-compose stop``` to ensure the dump can be imported/exported successfully before container shutdown.\n\n# Configuration #\nAny files under ```/app/config``` will be symlinked into the container's filesystem beginning at ```/etc/mysql```. This can be used to overwrite the container's default maria configuration with a custom, project specific configuration.\n\nIf you need a custom shell script to be run on start or stop (e.g. to set symlinks) you can do so by creating the file ```/app/config/up.sh``` or ```/app/config/down.sh```.",
+  "dockerfile": "FROM phusion/baseimage:latest\nMAINTAINER Dirk Lüth <info@qoopido.com>\n\n# Initialize environment\n\tCMD [\"/sbin/my_init\"]\n\tENV DEBIAN_FRONTEND noninteractive\n\n# based on dgraziotin/docker-osx-lamp\n\tENV DOCKER_USER_ID 501 \n\tENV DOCKER_USER_GID 20\n\tENV BOOT2DOCKER_ID 1000\n\tENV BOOT2DOCKER_GID 50\n\n# Tweaks to give MySQL write permissions to the app\n\tRUN useradd -r mysql -u ${BOOT2DOCKER_ID} && \\\n    \tusermod -G staff mysql && \\\n    \tgroupmod -g $(($BOOT2DOCKER_GID + 10000)) $(getent group $BOOT2DOCKER_GID | cut -d: -f1) && \\\n    \tgroupmod -g ${BOOT2DOCKER_GID} staff\n    \t\n# configure defaults\n\tADD configure.sh /configure.sh\n\tADD config /config\n\tRUN chmod +x /configure.sh && \\\n\t\tchmod 755 /configure.sh\n\tRUN /configure.sh && \\\n\t\tchmod +x /etc/my_init.d/*.sh && \\\n\t\tchmod 755 /etc/my_init.d/*.sh && \\\n\t\tchmod +x /etc/service/mariadb/run && \\\n\t\tchmod 755 /etc/service/mariadb/run\n\n# install packages\n\tRUN apt-get update && \\\n\t\tapt-get -qy upgrade && \\\n\t\tapt-get -qy dist-upgrade && \\\n\t\tapt-get install -qy mariadb-server\n\n# add default /app directory\n\tRUN mkdir -p /app/data/logs && \\\n\t\tmkdir -p /app/data/database && \\\n\t\tmkdir -p /app/config\n\t\n# cleanup\n\tRUN apt-get clean && \\\n\t\trm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /configure.sh\n\n# finalize\n\tVOLUME [\"/app/data\", \"/app/config\"]\n\tEXPOSE 3306\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [],
+    "workdir": [],
+    "from": "phusion/baseimage:latest",
+    "maintainer": "Dirk Lüth <info@qoopido.com>"
+  },
+  "source_repository_url": "https://github.com/dlueth/qoopido.docker.mariadb.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/dlueth/qoopido.docker.mariadb",
+  "docker_repository": "qoopido/mariadb",
+  "docker_image": "qoopido/mariadb",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "qoopido/mariadb",
+  "revision": "1.1.1",
+  "uris": [
+    "https://hub.docker.com/r/qoopido/mariadb",
+    "https://hub.docker.com/v2/repositories/qoopido/mariadb",
+    "https://github.com/dlueth/qoopido.docker.mariadb.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/qoopido/mariadb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

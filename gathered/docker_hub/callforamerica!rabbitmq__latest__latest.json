@@ -1,0 +1,141 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/callforamerica/rabbitmq",
+    "repository_url": "https://hub.docker.com/v2/repositories/callforamerica/rabbitmq",
+    "tags_url": "https://hub.docker.com/v2/repositories/callforamerica/rabbitmq/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/callforamerica/rabbitmq/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/callforamerica/rabbitmq/autobuild",
+    "user": "callforamerica",
+    "name": "rabbitmq",
+    "namespace": "callforamerica",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 4949,
+    "last_updated": "2016-10-14T21:56:54.444892Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 54644533,
+        "id": 2212746,
+        "repository": 563737,
+        "creator": 668293,
+        "last_updater": 668293,
+        "last_updated": "2016-10-14T21:56:53.652048Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "sip-li/docker-rabbitmq"
+  },
+  "name": "callforamerica/rabbitmq Docker container",
+  "description": "RabbitMQ Docker w/ Autoclustering & SSL for Kubernetes ",
+  "readme": "# RabbitMQ 3.5.6 dockerized with kubernetes fixes and manifests\n\n![docker automated build](https://img.shields.io/docker/automated/callforamerica/rabbitmq.svg) ![docker pulls](https://img.shields.io/docker/pulls/callforamerica/rabbitmq.svg)\n\n## Maintainer\n\nJoe Black <joe@valuphone.com>\n\n## Introduction \n\nMinimal image, the only plugin is rabbitmq-management.\n\n## Build Environment\n\nBuild environment variables are often used in the build script as plug in variables that can be set in the Dockerfile to bump version numbers of the various things that are installed during the `docker build` phase.  \n\nIn the case of this image, however, erlang and rabbitmq are installed via apt-get simply to grab the most current version.  This is made possible by adding some third party repos to apt beforehand which make the packages for erlang 19.x and rabbitmq-server 3.5.x available.  The decision was made to still export these variables to the environment during the build process in order to make them available to the build script and the entrypoint script in a manner consistent with the rest of the images.\n\nThe following variables are currently ignored in the build and entrypoint scripts and are included for possible future use and consistency:\n\n* `ERLANG_VERSION`\n* `RABBITMQ_VERSION`\n\nThe following variables are used in the build script:\n\n* `DUMB_INIT_VERSION`: value provided is used as the version of dumb-init to install. String, defaults to `1.1.3`.\n\n## Run Environment\n\nRun environment variables are used in the entrypoint script when rendering configuration templates and sometimes also for flow control in the entrypoint script.  These values can be provided when inheriting from the base dockerfile, or also specified at `docker run` as `-e` arguments, and in kubernetes manifests in the `env` array.\n\n* `RABBITMQ_LOG_LEVEL`: value provided is lowercased and supplied as the value for the connection log_level tuple in `rabbitmq.config`  String, defaults to `info`\n\n* `RABBITMQ_DISK_FREE_LIMIT`: value provided is supplied as the value of the `vm_memory_high_watermark` tuple in the `rabbitmq.config` file.  String, defaults to `50MB`\n\n* `RABBITMQ_VM_MEMORY_HIGH_WATERMARK`: value provided is supplied as the value for the `vm_memory_high_watermark` in the `rabbitmq.config` file. String, defaults to `0.8`\n\nIn addition to these environment variables, there are numerous other environment variables recognized by the rabbitmq bash script, several of these can be seen used in the current Dockerfile.  Refer to [https://www.rabbitmq.com/configure.html](https://www.rabbitmq.com/configure.html) for more details.\n\nAlso there are some environment variables recognized by the erlang vm itself.  These often start with `ERL_`.\n\n: ${RABBITMQ_LOG_LEVEL:=info}\n: ${RABBITMQ_DISK_FREE_LIMIT:=50MB}\n: ${RABBITMQ_VM_MEMORY_HIGH_WATERMARK:=0.8}\n\n## Instructions\n\n### Running locally under docker\n\nIf building and running locally for quick testing, feel free to use the convenience targets in the Makefile.\n\n`make launch`: launch under docker locally using the latest build version and default docker network.\n\n`make launch-net`: launch under docker locally using the latest version and the docker network: `local`.  You can create this network if it doesn't exist with `make create-network`.\n\n`make launch-deps`: Starts up local rabbitmq and couchdb servers for local testing. (requires the docker-couchdb and docker-rabbitmq projects to also be reachable as sibling directories)\n\n`make logsf`: Tail the logs of the kazoo docker container you just launched\n\n`make shell`: Exec's into the kazoo container you just launched with a bash shell\n\n*There are way more convenience targets in the Makefile, be sure to check it out.*\n\n### Running under docker using docker hub prebuilt image\n\nAll of our docker-* repos in github have automatic build pipelines setup with docker hub, reachable at [https://hub.docker.com/r/callforamerica/](https://hub.docker.com/r/callforamerica/).\n\nThis image resides at: [https://hub.docker.com/r/callforamerica/rabbitmq](https://hub.docker.com/r/callforamerica/rabbitmq), and under docker using the shortform: `callforamerica/rabbitmq`\n\nYou can run this docker hub image using the following docker run command:\n\n```bash\ndocker run -d \\\n    --name rabbitmq \\\n    -h rabbitmq \\\n    -e \"KAZOO_LOG_LEVEL=info\" \\\n    callforamerica/rabbitmq:4\n```\n*It's reccomended to run rabbitmq without mapping any ports to the host machine and rather use the dns function in your cluster manager to do service discovery.*\n\nPlease use the Run Environment section above to determine which environment variables you will need to change here to get everything working correctly.\n\n### Running under kubernetes\n\nEdit the manifests under kubernetes/ to best reflect your environment and configuration.\n\nYou will need to create a kubernetes secret named `erlang-cookie` including the base64'd erlang-cookie under the key: `cookie` or update the deployment manifest to reflect your own name.  See kubernetes documentation for instructions on how to do this.\n\nCreate the kubernetes service: `make kube-deploy-service`\n\nCreate the kubernetes deployment: `make kube-deploy`\n\nThat's literally it\n\n\n## Issues\n\n### 1. Sometimes the build process will exit early due to a remote server error using apt-get\n\nNo idea why this happens but it only effects debian, lovely.  Careful consideration will be necessary to make sure building this image doesn't return early.  The build script sets the -e flag to ensure this isn't ignored silently.\n\n### 2. Kubernetes Pod hostname's do not reflect it's PodIP assigned DNS. \n\nFor certain containers running erlang, it can be extremely convenient for the environments hostname to be resolvable to it's ip address outside of the pod.  The hack I've done to work around this requires root privileges at runtime to add entries to the `/etc/hosts` and /etc/hostname file as both are mounted by kubernetes in the container as the root user at runtime, effectively breaking the ability to set a non root user in the dockerfile.  `USER rabbitmq` has been commented out in the dockerfile for this reason.  If you are not running in a kubernetes environment and do not plan to take advantage of this feature by providing `KUBERNETES_HOSTNAME_FIX=true` to the environment, you can feel free to inherit from this dockerfile and set USER kazoo, `KUBERNETES_HOSTNAME_FIX` is false by default.\n\nI've fixed this by creating a dummy hostname bash script and place it at the beginning of the path: '/var/lib/rabbitmq/bin/hostname-fix'.  In the entrypoint script, if `KUBERNETES_HOSTNAME_FIX` is set, this script is linked at runtime to '/var/lib/rabbitmq/bin/hostname', and the environment variable `HOSTNAME` is set correctly, as well as creating entries in /etc/hosts and overwriting /etc/hostname.\n\nIf anyone knows of a better way to do this, please submit a pull request with a short explanation of the process you used.\n\n### 3. Using gosu at the end of the entrypoint script breaks logging.\n\nUsing gosu at the end of the entrypoint script breaks a later bash script that uses su internally.  While rabbitmq still loads it doesn't output logs to stdout, breaking container logging conventions.  There could be other issues as well.  Since that later script is dropping priveleges at the end before executing the erlang virtual machine, it seems to be a minimal concern overall.",
+  "dockerfile": "FROM callforamerica/debian\n\nMAINTAINER joe <joe@valuphone.com>\n\nARG     ERLANG_VERSION\nARG     RABBITMQ_VERSION\n\nENV     ERLANG_VERSION=${ERLANG_VERSION:-19.1} \\\n        RABBITMQ_VERSION=${RABBITMQ_VERSION:-3.6.5}\n\nLABEL   lang.erlang.version=$ERLANG_VERSION\nLABEL   app.rabbitmq.version=$RABBITMQ_VERSION\n\nENV     HOME=/var/lib/rabbitmq\n\nCOPY    build.sh /tmp/build.sh\nRUN     /tmp/build.sh\n\nCOPY    entrypoint /entrypoint\n\nENV     ERL_MAX_PORTS=65536\n\nENV     RABBITMQ_LOG_LEVEL=info\n\nEXPOSE  4369 5672 15672 11500-11999\n\n# USER    rabbitmq\n\nVOLUME  [\"/var/lib/rabbitmq/mnesia\"]\n\nWORKDIR /var/lib/rabbitmq\n\nENTRYPOINT  [\"/dumb-init\", \"--\"]\nCMD         [\"/entrypoint\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      4369
+    ],
+    "volume": [
+      " [\"/var/lib/rabbitmq/mnesia\"]"
+    ],
+    "run": [
+      "    /tmp/build.sh"
+    ],
+    "workdir": [
+      "/var/lib/rabbitmq"
+    ],
+    "from": "callforamerica/debian",
+    "maintainer": "joe <joe@valuphone.com>",
+    "arg": "    RABBITMQ_VERSION",
+    "env": {
+      "": "",
+      "ERLANG_VERSION": "${ERLANG_VERSION:-19.1}",
+      "RABBITMQ_VERSION": "${RABBITMQ_VERSION:-3.6.5}",
+      "HOME": "/var/lib/rabbitmq",
+      "ERL_MAX_PORTS": "65536",
+      "RABBITMQ_LOG_LEVEL": "info"
+    },
+    "label": "  app.rabbitmq.version=$RABBITMQ_VERSION",
+    "copy": "   entrypoint /entrypoint",
+    "entrypoint": " [\"/dumb-init\", \"--\"]",
+    "cmd": "        [\"/entrypoint\"]"
+  },
+  "source_repository_url": "https://github.com/sip-li/docker-rabbitmq.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/sip-li/docker-rabbitmq",
+  "docker_repository": "callforamerica/rabbitmq",
+  "docker_image": "callforamerica/rabbitmq",
+  "parameters_schema": {
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ERLANG_VERSION": {
+      "default": "${ERLANG_VERSION:-19.1}",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_VERSION": {
+      "default": "${RABBITMQ_VERSION:-3.6.5}",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/var/lib/rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ERL_MAX_PORTS": {
+      "default": "65536",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_LOG_LEVEL": {
+      "default": "info",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        4369
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "callforamerica/rabbitmq",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/callforamerica/rabbitmq",
+    "https://hub.docker.com/v2/repositories/callforamerica/rabbitmq",
+    "https://github.com/sip-li/docker-rabbitmq.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Orchestration/Cluster-based/Kubernetes",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/callforamerica/rabbitmq",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

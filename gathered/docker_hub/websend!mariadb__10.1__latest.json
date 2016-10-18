@@ -1,0 +1,116 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/websend/mariadb",
+    "repository_url": "https://hub.docker.com/v2/repositories/websend/mariadb",
+    "tags_url": "https://hub.docker.com/v2/repositories/websend/mariadb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/websend/mariadb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/websend/mariadb/autobuild",
+    "user": "websend",
+    "name": "mariadb",
+    "namespace": "websend",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 56,
+    "last_updated": "2016-10-14T08:12:17.310589Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "10.1",
+        "full_size": 186383608,
+        "id": 1222897,
+        "repository": 376880,
+        "creator": 34353,
+        "last_updater": 111321,
+        "last_updated": "2016-10-14T08:12:16.505397Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "websend/devops"
+  },
+  "name": "websend/mariadb Docker container",
+  "description": "Mariadb",
+  "readme": "# DevOps\n## Prerequisites\n### Ansible\nAnsible is only needed on the control machines. No extra software is needed on the managed nodes.\n\n## Server Operations\n### Development\n#### New Server\nCreate a new CoreOS host following the VirtualBox instructions.\n\nRun the following commands from the control machine:\n```\nansible-playbook -i ansible/inventory ansible/general/setup.yml -l development\nansible-playbook -i ansible/inventory ansible/general/iptables.yml -l development\nansible-playbook -i ansible/inventory ansible/general/certificates_keys_dev.yml\nansible-playbook -i ansible/inventory ansible/services/setup.yml -l development\n```\n\nSpecific services (names are self explanatory):\n```\nansible-playbook -i ansible/inventory ansible/services/redis.yml -l development\nansible-playbook -i ansible/inventory ansible/services/captain_restart_orchestrator.yml -l development\nansible-playbook -i ansible/inventory ansible/services/haproxy.yml -l development\n```\n\n### Production\n#### New Server\nCreate a new CoreOS host with the correct cloud config file from the cloud_config directory. Don't forget to change the\nvalues between <> before you apply the file. Add the host to Logentries and add the token to the host_vars.\n\nRun the following commands from the control machine:\n```\nansible-playbook -i ansible/inventory ansible/general/setup.yml -l [server-address] -e @ansible/inventory/group_vars/production_secrets --vault-password-file ./ansible/.vault_pass\nansible-playbook -i ansible/inventory ansible/general/iptables.yml -l production\nansible-playbook -i ansible/inventory ansible/general/restart.yml -l [server-address] (bug, because else MTU is not set)\nansible-playbook -i ansible/inventory ansible/general/certificates_keys_production.yml -l [server-address] --vault-password-file ./ansible/.vault_pass\nansible-playbook -i ansible/inventory ansible/services/custom_routes.yml -l production\nansible-playbook -i ansible/inventory ansible/services/setup.yml -l [server-address] -e @ansible/inventory/group_vars/production_secrets --vault-password-file ./ansible/.vault_pass\n```\n\n### Launching services\nYou launch new services by the following command.\n```\nansible-playbook -i ansible/inventory ansible/services/[service].yml -l production -e @ansible/inventory/group_vars/production_secrets --vault-password-file ./ansible/.vault_pass\n```\n\n## .p12 to .pem\nGoogle delivers a .p12 file for Google Cloud communications. For ansible we need to make it a .pem and encrypt it with\nansible-vault, upload it and make it a .p12 again. The command to create a .pem from a .p12:\n```\nopenssl pkcs12 -in google_price_comparator.p12 -out google_price_comparator.pem -nodes\n```\n\n## Docker enzo\n\n### Start mysql\n```bash\ndocker run --name mysql_data -e DATA_DIRECTORY=\"/home/mysql/data/\" -e USER_ID=\"3306\" -e GROUP_ID=\"3306\" -v /home/mysql/data/ thedutchselection/data:latest\ndocker run -d -p 3309:3306 --name mysql -e DATA_DIRECTORY=\"/home/mysql/data/\" --volumes-from mysql_data websend/mysql:5.6\n```\n\n### Start mariadb\n```bash\ndocker run --name mariadb_data -e DATA_DIRECTORY=\"/home/mysql/data/\" -e USER_ID=\"3306\" -e GROUP_ID=\"3306\" -v /home/mysql/data/ thedutchselection/data:latest\ndocker run -d -p 3309:3306 --name mariadb -e DATA_DIRECTORY=\"/home/mysql/data/\" --volumes-from mariadb_data websend/mariadb:10.1\n```\n\n### Misc\n\n#### Vmware fusion port forwarding\nEdit `[incomingtcp]` section in:\n```\n/Library/Preferences/VMware Fusion/vmnet8/nat.conf\n```\n\n#### Check privileges\n```sql\nSELECT host FROM mysql.user WHERE User = 'root';\n```\n",
+  "dockerfile": "# NAME: MariaDB\n#\n# DESCRIPTION: MariaDB image.\n#\n# REQUIRED ENVS: DATA_DIRECTORY\n#\n# OPTIONAL ENVS: ROOT_PASSWORD\n#\n# USAGE EXAMPLE: docker run websend/mariadb\n# BUILD EXAMPLE: docker build -t websend/mariadb:10.1 .\n\nFROM websend/debian:7.7\nMAINTAINER Ilja Krijger <i.krijger@websend.nl>\n\nAdd files/mariadb.list /etc/apt/sources.list.d/mariadb.list\n\nRUN \\\n  apt-key adv --keyserver keys.gnupg.net --recv-keys 0xcbcb082a1bb943db && \\\n  useradd -m -u 3306 mysql && \\\n  apt-get update && \\\n  apt-get install -yq mariadb-server && \\\n  apt-get install -yq inotify-tools && \\\n  apt-get clean && \\\n  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \\\n  rm -rf /etc/mysql/conf.d/mysqld_safe_syslog.conf\n\nADD files/my.cnf /etc/mysql/my.cnf\nADD files/scripts /usr/local/bin\n\nRUN \\\n  chmod 0640 /etc/mysql/my.cnf && \\\n  chmod +x /usr/local/bin/run.sh && \\\n  chown -R mysql:mysql /etc/mysql/\n\nENV TERM dumb\n\nEXPOSE 3306\n\nUSER mysql\n\nENTRYPOINT [\"/bin/bash\", \"/usr/local/bin/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "files/mariadb.list",
+        "dest": "/etc/apt/sources.list.d/mariadb.list"
+      },
+      {
+        "source": "files/my.cnf",
+        "dest": "/etc/mysql/my.cnf"
+      },
+      {
+        "source": "files/scripts",
+        "dest": "/usr/local/bin"
+      }
+    ],
+    "expose": [
+      3306
+    ],
+    "volume": [],
+    "run": [
+      "  apt-key adv --keyserver keys.gnupg.net --recv-keys 0xcbcb082a1bb943db &&   useradd -m -u 3306 mysql &&   apt-get update &&   apt-get install -yq mariadb-server &&   apt-get install -yq inotify-tools &&   apt-get clean &&   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* &&   rm -rf /etc/mysql/conf.d/mysqld_safe_syslog.conf",
+      "  chmod 0640 /etc/mysql/my.cnf &&   chmod +x /usr/local/bin/run.sh &&   chown -R mysql:mysql /etc/mysql/"
+    ],
+    "workdir": [],
+    "from": "websend/debian:7.7",
+    "maintainer": "Ilja Krijger <i.krijger@websend.nl>",
+    "env": {
+      "TERM": "dumb"
+    },
+    "user": "mysql",
+    "entrypoint": "[\"/bin/bash\", \"/usr/local/bin/run.sh\"]"
+  },
+  "source_repository_url": "git@github.com:websend/devops.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/websend/devops",
+  "docker_repository": "websend/mariadb",
+  "docker_image": "websend/mariadb",
+  "parameters_schema": {
+    "TERM": {
+      "default": "dumb",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "websend/mariadb",
+  "revision": "10.1",
+  "uris": [
+    "https://hub.docker.com/r/websend/mariadb",
+    "https://hub.docker.com/v2/repositories/websend/mariadb",
+    "git@github.com:websend/devops.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/websend/mariadb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

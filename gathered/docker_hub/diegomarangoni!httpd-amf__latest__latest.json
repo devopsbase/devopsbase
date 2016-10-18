@@ -1,0 +1,116 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/diegomarangoni/httpd-amf",
+    "repository_url": "https://hub.docker.com/v2/repositories/diegomarangoni/httpd-amf",
+    "tags_url": "https://hub.docker.com/v2/repositories/diegomarangoni/httpd-amf/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/diegomarangoni/httpd-amf/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/diegomarangoni/httpd-amf/autobuild",
+    "user": "diegomarangoni",
+    "name": "httpd-amf",
+    "namespace": "diegomarangoni",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 1506,
+    "last_updated": "2015-06-19T00:39:33.567809Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 138596901,
+        "id": 178876,
+        "repository": 189164,
+        "creator": 67449,
+        "last_updater": 67449,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "diegomarangoni/docker-httpd-amf"
+  },
+  "name": "diegomarangoni/httpd-amf Docker container",
+  "description": "Apache HTTP Server compiled within Apache Mobile Filter (AMF)",
+  "readme": "# What is Apache Mobile Filter (AMF)?\n\nApache Mobile Filter (created by Idel Fuschini) is the easiest and fastest way to detect mobile devices.\nAMF is a suite of tools that allow access to a Device Repository (such as WURFL, DetectRight, 51Degrees or others) directly from Apache: now you can detect devices no matter what language your website uses.\n\n> [http://www.apachemobilefilter.org](http://www.apachemobilefilter.org)\n\n# How to use this image.\n\n## Configure\n\n- Create a configuration file `amf.conf` within the content (adjust to fit your needs):\n\n```\nPerlSetEnv AMFMobileHome /data/amf\nPerlSetEnv CapabilityList brand_name,model_name,max_image_width\nPerlSetEnv AMFProductionMode true\nPerlSetEnv CacheDirectoryStore /data/cache\nPerlSetEnv ResizeImageDirectory /data/cache\nPerlSetEnv ServerMemCached memcached:11211\n```\n\n- Mount this file as a volume into `/etc/httpd/conf.d/amf.conf`\n- Create a vhost for your application, use this as example:\n\n```\n<VirtualHost *:80>\n    DocumentRoot /data/app\n    Alias /images /data/images\n\n    PerlTransHandler +Apache2::AMFWURFLFilterMemcached\n\n    <Location /images/*>\n        Require all granted\n\n        SetHandler modperl\n        PerlOutputFilterHandler Apache2::AMFImageRendering\n    </Location>\n\n    ErrorLog ${APACHE_LOG_DIR}/error.log\n    CustomLog ${APACHE_LOG_DIR}/access.log combined\n</VirtualHost>\n```\n\n- Mount this vhost as a volume into `/etc/httpd/conf.d/revive.conf`\n\n## Run\n\n```\ndocker run -it \\\n    -v $PWD/amf.conf:/etc/httpd/conf.d/amf.conf \\\n    -v $PWD/my-app_vhost.conf:/etc/httpd/conf.d/my-app.conf \\\n    diegomarangoni/apache-amf\n```\n",
+  "dockerfile": "FROM centos:7\n\nRUN yum install -y epel-release \\\n    && yum update -y \\\n    && yum install -y \\\n        freetype freetype-devel gcc gd gd-devel giflib giflib-devel httpd libjpeg libjpeg-devel libpng \\\n        libpng-devel make mod_perl perl perl-Cache-Cache perl-Cache-Memcached perl-CGI perl-CPAN \\\n        perl-CPANPLUS perl-Digest-SHA1 perl-Error perl-GD perl-Image-Base perl-Image-Info \\\n        perl-IO-Compress-Zlib perl-libwww-perl perl-local-lib perl-LWP-Protocol-https perl-Test-NoWarnings \\\n        perl-Test-Simple perl-Test-Tester perl-YAML tar wget zlib zlib-devel \\\n    && yum -y clean all\n\nRUN mkdir /tmp/amf && cd $_ \\\n    && wget http://search.cpan.org/CPAN/authors/id/S/SH/SHERZODR/Image-Resize-0.5.tar.gz \\\n    && wget http://search.cpan.org/CPAN/authors/id/A/AG/AGRUNDMA/Image-Scale-0.08.tar.gz \\\n    && wget http://search.cpan.org/CPAN/authors/id/T/TO/TONYC/Imager-1.002.tar.gz \\\n    && wget --content-disposition http://sourceforge.net/projects/mobilefilter/files/ApacheMobileFilter/4.03/Apache2-ApacheMobileFilter-4.03.tar.gz/download \\\n    && SORT_CREATED=\"--format=single-column --sort=time --time=ctime --reverse\" \\\n    && for file in `ls *gz $SORT_CREATED`; do tar -zxf $file; done \\\n    && sed -i 's/png_memcpy/memcpy/g' Image-Scale-0.08/src/png.c \\\n    && for dir in `ls -d */ $SORT_CREATED`; do cd $dir && perl Makefile.PL && make && make install && cd ..; done \\\n    && rm -rf /tmp/amf\n\nRUN mkdir /tmp/wurfl && cd $_ \\\n    && wget --content-disposition http://sourceforge.net/projects/wurfl/files/WURFL/2.3.5/wurfl-2.3.5.xml.gz/download \\\n    && gzip -d wurfl-2.3.5.xml.gz \\\n    && mkdir -p /data/amf \\\n    && mv wurfl-2.3.5.xml /data/amf/wurfl.xml \\\n    && rm -rf /tmp/wurfl\n\nRUN sed -ri 's!^(\\s*CustomLog)\\s+\\S+!\\1 /proc/self/fd/1!g; s!^(\\s*ErrorLog)\\s+\\S+!\\1 /proc/self/fd/2!g;' /etc/httpd/conf/httpd.conf\n\nRUN echo 'OPTIONS=\"-D FOREGROUND\" ' >> /etc/sysconfig/httpd\n\nENV APACHE_RUN_USER root\nENV APACHE_RUN_GROUP root\nENV APACHE_LOG_DIR /etc/httpd/logs\n\nEXPOSE 80\nEXPOSE 443\n\nCMD [\"/usr/sbin/apachectl\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80,
+      443
+    ],
+    "volume": [],
+    "run": [
+      "yum install -y epel-release     && yum update -y     && yum install -y         freetype freetype-devel gcc gd gd-devel giflib giflib-devel httpd libjpeg libjpeg-devel libpng         libpng-devel make mod_perl perl perl-Cache-Cache perl-Cache-Memcached perl-CGI perl-CPAN         perl-CPANPLUS perl-Digest-SHA1 perl-Error perl-GD perl-Image-Base perl-Image-Info         perl-IO-Compress-Zlib perl-libwww-perl perl-local-lib perl-LWP-Protocol-https perl-Test-NoWarnings         perl-Test-Simple perl-Test-Tester perl-YAML tar wget zlib zlib-devel     && yum -y clean all",
+      "mkdir /tmp/amf && cd $_     && wget http://search.cpan.org/CPAN/authors/id/S/SH/SHERZODR/Image-Resize-0.5.tar.gz     && wget http://search.cpan.org/CPAN/authors/id/A/AG/AGRUNDMA/Image-Scale-0.08.tar.gz     && wget http://search.cpan.org/CPAN/authors/id/T/TO/TONYC/Imager-1.002.tar.gz     && wget --content-disposition http://sourceforge.net/projects/mobilefilter/files/ApacheMobileFilter/4.03/Apache2-ApacheMobileFilter-4.03.tar.gz/download     && SORT_CREATED=\"--format=single-column --sort=time --time=ctime --reverse\"     && for file in `ls *gz $SORT_CREATED`; do tar -zxf $file; done     && sed -i 's/png_memcpy/memcpy/g' Image-Scale-0.08/src/png.c     && for dir in `ls -d */ $SORT_CREATED`; do cd $dir && perl Makefile.PL && make && make install && cd ..; done     && rm -rf /tmp/amf",
+      "mkdir /tmp/wurfl && cd $_     && wget --content-disposition http://sourceforge.net/projects/wurfl/files/WURFL/2.3.5/wurfl-2.3.5.xml.gz/download     && gzip -d wurfl-2.3.5.xml.gz     && mkdir -p /data/amf     && mv wurfl-2.3.5.xml /data/amf/wurfl.xml     && rm -rf /tmp/wurfl",
+      "sed -ri 's!^(\\s*CustomLog)\\s+\\S+!\\1 /proc/self/fd/1!g; s!^(\\s*ErrorLog)\\s+\\S+!\\1 /proc/self/fd/2!g;' /etc/httpd/conf/httpd.conf",
+      "echo 'OPTIONS=\"-D FOREGROUND\" ' >> /etc/sysconfig/httpd"
+    ],
+    "workdir": [],
+    "from": "centos:7",
+    "env": {
+      "APACHE_RUN_USER": "root",
+      "APACHE_RUN_GROUP": "root",
+      "APACHE_LOG_DIR": "/etc/httpd/logs"
+    },
+    "cmd": "[\"/usr/sbin/apachectl\"]"
+  },
+  "source_repository_url": "https://github.com/diegomarangoni/docker-httpd-amf.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/diegomarangoni/docker-httpd-amf",
+  "docker_repository": "diegomarangoni/httpd-amf",
+  "docker_image": "diegomarangoni/httpd-amf",
+  "parameters_schema": {
+    "APACHE_RUN_USER": {
+      "default": "root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APACHE_RUN_GROUP": {
+      "default": "root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APACHE_LOG_DIR": {
+      "default": "/etc/httpd/logs",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80,
+        443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "diegomarangoni/httpd-amf",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/diegomarangoni/httpd-amf",
+    "https://hub.docker.com/v2/repositories/diegomarangoni/httpd-amf",
+    "https://github.com/diegomarangoni/docker-httpd-amf.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/diegomarangoni/httpd-amf",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

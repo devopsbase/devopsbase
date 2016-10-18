@@ -1,0 +1,96 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/cdrage/couchpotato",
+    "repository_url": "https://hub.docker.com/v2/repositories/cdrage/couchpotato",
+    "tags_url": "https://hub.docker.com/v2/repositories/cdrage/couchpotato/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/cdrage/couchpotato/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/cdrage/couchpotato/autobuild",
+    "user": "cdrage",
+    "name": "couchpotato",
+    "namespace": "cdrage",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 47,
+    "last_updated": "2016-10-08T20:12:23.256889Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 224836258,
+        "id": 3706320,
+        "repository": 782880,
+        "creator": 253531,
+        "last_updater": 253531,
+        "last_updated": "2016-10-08T20:12:22.325497Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "cdrage/dockerfiles"
+  },
+  "name": "cdrage/couchpotato Docker container",
+  "description": "Couch Potato ",
+  "readme": "# Dockerfiles\nWelcome! This is a list of Dockerfiles that I use. Some are ones that I have created, other's have been modified for my usage.\n\nEach container is automatically built and pushed to [https://hub.docker.com/r/cdrage/](https://hub.docker.com/r/cdrage/) upon each commit.\n\nOtherwise, you may also `git clone https://github.com/cdrage/dockerfiles` and build it yourself.\n\nBelow is a general overview (with instructions) on each Docker container I use. This is automatically generated from the comments that I have left in each `Dockerfile`.\n\n\n### ./chrome\n\n```\n Run Chrome in a container (thx jess)\n\n Note: Disabled sandbox due to running-in-a-container issue with userns \n enabled in kernel, see: https://github.com/jfrazelle/dockerfiles/issues/149\n\n docker run -d \\\n   --memory 3gb \\\n   -v /etc/localtime:/etc/localtime:ro \\\n   -v /tmp/.X11-unix:/tmp/.X11-unix \\\n   -e DISPLAY=unix$DISPLAY \\\n   -v $HOME/.chrome:/data \\\n   -v $HOME/docker_files/chrome_downloads:/root/Downloads \\\n   -v /dev/shm:/dev/shm \\\n   --device /dev/dri \\\n   --name chrome \\\n   cdrage/chrome\n\n```\n### ./couchpotato\n\n```\n Couch Potato is a torrent grepper / downloader\n\n docker run -d -p 5050:5050 --name couchpotato cdrage/couchpotato \n \n pass in -v ./couchpotato_config:/root/.couchpotato for persistent data\n\n```\n### ./jrl\n\n```\n Encrypted journal (for writing your life entries!, not logs!)\n \n Pass in your encrypted txt file and type in your password.\n It'll then open it up in vim for you to edit and type up your\n latest entry.\n\n Remember, this is aes-256-cbc, so it's like hammering a nail\n with a screwdriver: \n http://stackoverflow.com/questions/16056135/how-to-use-openssl-to-encrypt-decrypt-files\n\n Public / Private key would be better, but hell, this is just a txt file.\n \n Now run it!\n\n docker run -it --rm -v ~/txt.enc:/tmp/txt.enc -v /etc/localtime:/etc/localtime:ro cdrage/jrl\n\n```\n### ./mosh\n\n```\n Mosh = SSH + mobile connection\n\n To normally use it:\n docker run -it --rm \\\n -e TERM=xterm-256color \\\n -v $HOME/.ssh:/root/.ssh \\\n cdrage/mosh user@blahblahserver\n\n How I use it (since I pipe it through a VPN):\n docker run -it --rm \\\n --net=container:vpn\n -e TERM=xterm-256color \\\n -v $HOME/.ssh:/root/.ssh \\\n cdrage/mosh user@blahblahserver\n\n```\n### ./mutt-gmail\n\n```\n My mutt configuration in a docker container\n\n Special thanks to jfrazelle for this config\n  docker run -it --rm \\\n    -e TERM=xterm-256color \\\n    -e MUTT_NAME \\\n    -e MUTT_EMAIL \\\n    -e MUTT_PASS \\\n    -v $HOME/.gnupg:/home/user/.gnupg \\\n    -v $HOME/dropbox/etc/signature:/home/user/.mutt/signature \\\n    -v $HOME/dropbox/etc/aliases:/home/user/.mutt/aliases \\\n    -v /etc/localtime:/etc/localtime:ro \\\n    cdrage/mutt-gmail\n\n```\n### ./netflix-dnsmasq\n\n```\n This is used to create a DNS cacher/forwarder in order to\n spoof the location when accessing Netflix. Similar to how a\n VPN does it, but this is with DNS.\n\n docker run -p 53:53/udp -e IP=10.10.10.1 -d cdrage/dnsmasq --name dnsmasq\n IP is the IP of the sniproxy / haproxy server\n if you're running it on the same host, it's your ip (eth0 or whatever).\n\n WARNING: it's a *really* bad idea to run an open recurse DNS server \n (prone to DNS DDoS aplification attacks), it's suggested to have some \n form of IP firewall for this. (hint: just use iptables)\n\n```\n### ./netflix-sniproxy\n\n```\n DNS proxy (netflix unblocker) open source. Used in conjuction\n with netflix-dnsmasq :)\n fork of: https://github.com/trick77/dockerflix\n\n docker run -d -p 80:80 -p 443:443 --name sniproxy cdrage/sniproxy\n\n build Dockerfile.uk for uk version\n\n```\n### ./openvpn-client\n\n```\n An openvpn-client in an Alpine Linux container\n\n docker run -it \n -v /filesblahblah/hacktheplanet.ovpn:/etc/openvpn/hacktheplanet.ovpn \\\n --net=host --device /dev/net/tun:/dev/net/tun --cap-add=NET_ADMIN \\\n cdrage/openvpn-client hacktheplanet.ovpn\n\n go check your public ip online and you'll see you're connected to the VPN :)\n\n```\n### ./openvpn-client-docker\n\n```\n OpenVPN within an Ubuntu container\n\n docker run --cap-add=NET_ADMIN --device /dev/net/tun -h openvpn --name openvpn -it cdrage/openvpn-client-docker\n \n then from another container just use --net=container:openvpn\n \n remember to add \n  up /etc/openvpn/update-resolv-conf\n  down /etc/openvpn/update-resolv-conf\n\n  to your openvpn conf file!\n\n```\n### ./openvpn-server\n\n```\n original: https://github.com/jpetazzo/dockvpn\n \n Start the openvpn server:\n docker run -d --privileged -p 1194:1194/udp -p 443:443/tcp --name vpn cdrage/openvpn-server\n\n Create a http server to termporarily download the configuration:\n docker run --rm -ti -p 8080:8080 --volumes-from vpn cdrage/openvpn-server serveconfig\n\n Download the configuration for your client to use:\n wget https://IP:8080/ --no-check-certificate -O config.ovpn\n\n NOTE:\n The keys are generate on EACH reboot and the private key is used in both the server\n and the client for simplicity reasons. If someone obtains your client information, they will be able \n to access the server and perhaps spoof a session. It's recommended that you find an alternative way\n of deploying a VPN server if you are keen to have 100% security.\n\n If you wish to re-generate the certificates, simply restart your Docker container.\n\n```\n### ./peerflix\n\n```\n Stream from a magnet torrent\n\n docker run -it -p 8888:8888 cdrage/peerflix $MAGNET_URL\n\n Then open up VLC and use localhost:8888 to view\n\n```\n### ./powerdns\n\n```\n\n```\n### ./sensu-client\n\n```\n Original Source: https://github.com/arypurnomoz/sensu-client.docker\n\n This container allows you to run sensu in a container (yay) although there are some caveats.\n\n This is a basic container with NO checks. This is enough to get you setup and connecting to the sensu master. However, in order to add checks you'd have to pass in a folder of plugins (if you wish to pass them as a volume) or add them HERE to the Dockerfile.\n\n In my example, I use the docker-api and docker folder since I'll be mounting a -v /checks folder containing a few plugins. This is all optional and you may modify it to your own will.\n\n You'll also have to modify the checks.json file on the sensu master server in order to make sure you are using the correct plugins in the respective folders.\n\n docker run \\\n  -v /etc/sensu/ssl/cert.pem:/etc/sensu/ssl/cert.pem \\\n  -v /etc/sensu/ssl/key.pem:/etc/sensu/ssl/key.pem \\\n  -v /etc/sensu/plugins:/etc/sensu/plugins \\\n  -e CLIENT_NAME=sensu-client \\\n  -e CLIENT_ADDRESS=10.0.0.1 \\\n  -e RABBITMQ_HOST=rabbitmq.local \\\n  -e RABBITMQ_PORT=5671 \\\n  -e RABBITMQ_VHOST=\"/sensu\" \\\n  -e RABBITMQ_USER=sensu \\\n  -e RABBITMQ_PASS=sensu \\\n  -e SUB=metrics,check \\\n  cdrage/sensu-client\n\n or use the Makefile provided.\n ex.\n make all SSL=/etc/sensu/ssl IP=10.10.10.1 NAME=sensu SUB=default RABBIT_HOST=10.10.10.10 RABBIT_USERNAME=sensu RABBIT_PASS=sensu\n\n```\n### ./ssh\n\n```\n SSH in a Docker container :)\n\n```\n### ./teamspeak\n\n```\n Praise Gaben! Teamspeak in a docker container :)\n\n Original *awesome* source: https://github.com/luzifer-docker/docker-teamspeak3\n\n To run:\n docker run --name teamspeak -d -p 9987:9987/udp -p 30033:30033/tcp -v $HOME/ts:/teamspeak3 cdrage/teamspeak\n \n All your files will be located within ~/ts (sqlite database, whitelist, etc.). \n This is your persistent folder. This will containe your credentials, whitelist, etc. So keep it safe.\n If you ever want to upgrade your teamspeak server (dif version or hash), simply point the files to there again.\n To find out the admin key on initial boot. Use docker logs teamspeak\n\n```\n### ./transmission\n\n```\n source: https://github.com/dperson/transmission\n\n docker run --name transmission -p 9091:9091 -v /path/to/directory:/var/lib/transmission-daemon/downloads -e TRUSER=admin -e TRPASSWD=admin -d cdrage/transmission\n\n ENVIRO VARIABLES\n TRUSER - set username for transmission auth\n TRPASSWD - set password for transmission auth\n TIMEZONE - set zoneinfo timezone\n\n```\n### ./weechat\n\n```\n Weechat IRC!\n\n recommended to daemonize it and run in background for collection of logs, etc while idle, simply attach to container.  ctrl+p ctrl+q to quit\n\n docker run -it -d \\\n -e TERM=xterm-256color \\\n -v /etc/localtime:/etc/localtime:ro \\\n --name weechat \\\n -p 40900:40900 \\\n cdrage/weechat\n\n port 40900 is used for weechat relay (if you decide to use it)\n\n docker attach weechat\n\n```\n",
+  "dockerfile": "# Couch Potato is a torrent grepper / downloader\n#\n# docker run -d -p 5050:5050 --name couchpotato cdrage/couchpotato \n# \n# pass in -v ./couchpotato_config:/root/.couchpotato for persistent data\n\nFROM debian:jessie\nMAINTAINER Charlie Drage <charlie@charliedrage.com>\n\nRUN apt-get update -qq && \\\n  apt-get install -y git openssl curl ca-certificates python-pip python-dev libz-dev libxml2-dev libxslt1-dev gcc && \\\n  pip install cheetah lxml pyopenssl && \\\n  pip install pyopenssl --upgrade && \\\n  apt-get clean && \\\n  echo -n > /var/lib/apt/extended_states\n\nRUN mkdir -p /opt/couchpotato && \\\n  git clone -b develop https://git@github.com/RuudBurger/CouchPotatoServer.git /opt/couchpotato\n\nWORKDIR /opt/couchpotato\nENTRYPOINT [\"python\", \"CouchPotato.py\"]\nEXPOSE 5050\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5050
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update -qq &&   apt-get install -y git openssl curl ca-certificates python-pip python-dev libz-dev libxml2-dev libxslt1-dev gcc &&   pip install cheetah lxml pyopenssl &&   pip install pyopenssl --upgrade &&   apt-get clean &&   echo -n > /var/lib/apt/extended_states",
+      "mkdir -p /opt/couchpotato &&   git clone -b develop https://git@github.com/RuudBurger/CouchPotatoServer.git /opt/couchpotato"
+    ],
+    "workdir": [
+      "/opt/couchpotato"
+    ],
+    "from": "debian:jessie",
+    "maintainer": "Charlie Drage <charlie@charliedrage.com>",
+    "entrypoint": "[\"python\", \"CouchPotato.py\"]"
+  },
+  "source_repository_url": "https://github.com/cdrage/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/cdrage/dockerfiles",
+  "docker_repository": "cdrage/couchpotato",
+  "docker_image": "cdrage/couchpotato",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5050
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "cdrage/couchpotato",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/cdrage/couchpotato",
+    "https://hub.docker.com/v2/repositories/cdrage/couchpotato",
+    "https://github.com/cdrage/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP"
+  ],
+  "info_url": "https://hub.docker.com/r/cdrage/couchpotato",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

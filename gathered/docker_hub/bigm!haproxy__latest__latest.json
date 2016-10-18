@@ -1,0 +1,114 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/bigm/haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/bigm/haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/bigm/haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/bigm/haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/bigm/haproxy/autobuild",
+    "user": "bigm",
+    "name": "haproxy",
+    "namespace": "bigm",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 581,
+    "last_updated": "2016-07-23T20:03:04.740618Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 121901166,
+        "id": 65322,
+        "repository": 169115,
+        "creator": 158161,
+        "last_updater": 158161,
+        "last_updated": "2016-07-23T20:03:04.387500Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "k2s/dockerfiles"
+  },
+  "name": "bigm/haproxy Docker container",
+  "description": "",
+  "readme": "#haproxy\n\n##Resources\n\n* http://seanmcgary.com/posts/automatically-scale-haproxy-with-confd-and-etcd\n* https://github.com/michielbdejong/docker-haproxy-confd\n* https://github.com/yaronr/dockerfile/tree/master/haproxy-confd\n\n## Starting\n\n    /usr/bin/docker run --name haproxy \\\n        -e ETCD_NODE=$ETCD_NODE \\\n        -e HAPROXY_STATS=1 \\\n        -e HAPROXY_STATS_PWD=mypassword \\\n        -p 80:80 \\\n        -p 39287:1000 \\\n        -v /path_to_merge_config/custom.cfg:/etc/haproxy/custom.cfg \\\n        quay.io/bigm/haproxy                \n\n### Docker environment variables\n \nHAPROXY_STATS       enable/disable haproxy stats (default 0)  \nHAPROXY_STATS_PWD   protect haproxy stats with password (default none)  \nHAPROXY_STATS_ADMIN enable management of backends (default 0)  \n\n## Configuring haproxy\n\nThe haproxy config is generated based on [confd](https://github.com/kelseyhightower/confd) template located in `/etc/confd` folder.\n\n### Etcd variables\n\nhttp_auth -  \ncookie_auth -  \nblock_robots -  \n\n##Testing haproxy configuration templating with confd\n\n###Start local etcd\n\nRead https://github.com/coreos/etcd/blob/master/Documentation/docker_guide.md\n\n    export HostIP=\"192.168.1.2\"\n    export ETCD_NODE=\"$HostIP:4001\"\n    \n    docker run -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 \\\n     -d -ti --name etcd quay.io/coreos/etcd:v2.0.8 \\\n     -name etcd0 \\\n     -advertise-client-urls http://$HostIP:2379,http://$HostIP:4001 \\\n     -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \\\n     -initial-advertise-peer-urls http://$HostIP:2380 \\\n     -listen-peer-urls http://0.0.0.0:2380 \\\n     -initial-cluster-token etcd-cluster-1 \\\n     -initial-cluster etcd0=http://$HostIP:2380 \\\n     -initial-cluster-state new\n\n    etcdctl -C http://$HostIP:4001 member list\n\n###Start interactive haproxy Docker instance with mapped configuration\n\n    export HostIP=\"192.168.1.2\"\n    export ETCD_NODE=\"$HostIP:4001\"\n\n    mkdir /tmp/haproxy_etc\n    chmod 0777 /tmp/haproxy_etc\n\n    #cd <dockerfiles/haproxy folder>\n     \n    # to avoid errors with default errorfile directives\n    docker run --rm -ti \\\n        -v /tmp/haproxy_etc:/etc/haproxy2 \\\n        --entrypoint /bin/cp \\\n        bigm/haproxy \\\n        -r /etc/haproxy/errors /etc/haproxy2/\n\n    # start interactive session where you will compile templates\n    docker run --rm -ti \\\n        -v $PWD/confd:/etc/confd \\\n        -v /tmp/haproxy_etc:/etc/haproxy \\\n        -v $PWD/supervisor/haproxy.conf:/etc/supervisord.d/haproxy.conf \\\n        -e ETCD_NODE=$ETCD_NODE \\\n        -e HAPROXY_STATS=1 \\\n        -e HAPROXY_STATS_PWD=mypwd \\\n        -P \\\n        --entrypoint bash \\\n        bigm/haproxy\n           \n    # generate temple and validate\n    confd -node $ETCD_NODE -onetime && /usr/sbin/haproxy -c -f /etc/haproxy/haproxy.cfg         \n    \n###Use etcd api if needed\n\nAPI https://coreos.com/etcd/docs/0.4.7/etcd-api/\n\n    #ETCDCTL_PEERS=http://$ETCD_NODE\n    \n    # create backend config (it should use ttl)\n    etcdctl --no-sync set '/lb/backends/youtrack.service/enabled' '1'\n    etcdctl --no-sync set '/lb/backends/youtrack.service/http_auth' '1'\n    etcdctl --no-sync set '/lb/backends/youtrack.service/cookie_auth' 'MyStagingProtectionCookieName'\n            \n    # create domain config\n    etcdctl --no-sync set '/lb/domains/youtrack.example.com:80' '{\"name\":\"youtrack.example.com\",\"port\":80,\"backend\":\"youtrack.service\",\"url\":\"\\/\"}'\n            \n    # remove domain config\n    etcdctl rm /lb/domains --recursive\n    curl -L -X DELETE http://$ETCD_NODE/v2/keys/lb/domains?recursive=true        \n            \n## SSL\n\nTODO ssl support\n",
+  "dockerfile": "#BUILD_PUSH=hub,quay\nFROM bigm/base-deb-tools\n\n# install confd\nENV CONFD_VER 0.11.0\nRUN /xt/tools/_download /usr/local/bin/confd https://github.com/kelseyhightower/confd/releases/download/v${CONFD_VER}/confd-${CONFD_VER}-linux-amd64 \\\n\t&& chmod  +x /usr/local/bin/confd\n\n# install haproxy\nRUN /xt/tools/_ppa_install ppa:vbernat/haproxy-1.6 haproxy\n\n# add haproxy templates\nADD root/ /\n# folders under /xt/defaults will be populated in instance if they are empty\nRUN mkdir -p /xt/defaults/etc \\\n    && cp -rp /etc/confd /xt/defaults/etc/confd\n\n# final\nADD supervisor.d/* /etc/supervisord.d/\nADD startup/* /prj/startup/\nEXPOSE 8080 1000\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "root/",
+        "dest": "/"
+      },
+      {
+        "source": "supervisor.d/*",
+        "dest": "/etc/supervisord.d/"
+      },
+      {
+        "source": "startup/*",
+        "dest": "/prj/startup/"
+      }
+    ],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "/xt/tools/_download /usr/local/bin/confd https://github.com/kelseyhightower/confd/releases/download/v${CONFD_VER}/confd-${CONFD_VER}-linux-amd64 \t&& chmod  +x /usr/local/bin/confd",
+      "/xt/tools/_ppa_install ppa:vbernat/haproxy-1.6 haproxy",
+      "mkdir -p /xt/defaults/etc     && cp -rp /etc/confd /xt/defaults/etc/confd"
+    ],
+    "workdir": [],
+    "from": "bigm/base-deb-tools",
+    "env": {
+      "CONFD_VER": "0.11.0"
+    }
+  },
+  "source_repository_url": "https://github.com/k2s/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/k2s/dockerfiles",
+  "docker_repository": "bigm/haproxy",
+  "docker_image": "bigm/haproxy",
+  "parameters_schema": {
+    "CONFD_VER": {
+      "default": "0.11.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "bigm/haproxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/bigm/haproxy",
+    "https://hub.docker.com/v2/repositories/bigm/haproxy",
+    "https://github.com/k2s/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/bigm/haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

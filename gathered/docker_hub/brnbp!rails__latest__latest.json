@@ -1,0 +1,117 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/brnbp/rails",
+    "repository_url": "https://hub.docker.com/v2/repositories/brnbp/rails",
+    "tags_url": "https://hub.docker.com/v2/repositories/brnbp/rails/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/brnbp/rails/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/brnbp/rails/autobuild",
+    "user": "brnbp",
+    "name": "rails",
+    "namespace": "brnbp",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 53,
+    "last_updated": "2016-04-10T21:03:44.285072Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 506177070,
+        "id": 2520363,
+        "repository": 616361,
+        "creator": 739333,
+        "last_updater": 739333,
+        "last_updated": "2016-04-10T21:03:43.909849Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "brnbp/alderaan"
+  },
+  "name": "brnbp/rails Docker container",
+  "description": "rails env",
+  "readme": "### Docker container for development of ruby on rails projects\n--------\n\n> this Dockerfile contains:\n  - Ubuntu 15.10 (wily)\n  - Git\n  - Ruby 2.3\n  - Rails 4.2.4\n  - NodeJS 5.6 && npm\n  - MongoDB\n  - MySQL 5.7\n\n###### average time to pulling: 10 minutes\n\n----\n\n\n###### you can simple clone this repo and run\n\n``` $ docker build -t foo/bar:0.1 . ```\n\n``` $ docker run -v /path/host/rails-project:/var/www -p 8080:3000 -i -t foo/bar:0.1 ```\n\n##### or you can just use it from docker registry\n\n``` $ docker run -v /path/host/rails-project:/var/www -p 8080:3000 -it brnbp/rails:latest ```\n\n\n--------\n\n###### You can now visit 127.0.0.1:8080 to view your application running!\n\n",
+  "dockerfile": "FROM ruby:2.3\n\nMAINTAINER Bruno Pereira <bruno9pereira@gmail.com>\n\nENV DEBIAN_FRONTEND noninteractive\n\nEXPOSE 3000\n\n##########################################\n### INSTALL GIT AND BASIC DEPENDENCIES ###\n##########################################\nRUN apt-get update && apt-get install -y \\\n  git \\\n  git-core \\\n  curl \\\n  debconf-utils \\\n  zlib1g-dev \\\n  libssl-dev \\\n  libreadline-dev \\\n  libyaml-dev \\\n  libffi-dev \\\n  libssl-dev \\\n  vim \\\n  libsqlite3-dev \\\n  sqlite3 \\\n  libxml2-dev \\\n  libxslt1-dev \\\n  python-software-properties \\\n  libcurl4-openssl-dev\n\nRUN apt-get install -y --no-install-recommends software-properties-common build-essential\n\n##############\n### NODEJS ###\n##############\nRUN curl -sL https://deb.nodesource.com/setup_5.x | bash -\nRUN apt-get install -y nodejs\n\n###############\n### MONGODB ###\n###############\nRUN apt-get install -y mongodb\nRUN mkdir /data\nRUN mkdir /data/db\nRUN chmod 755 -R /data\n\n###################\n### GIT CONFIGS ###\n###################\nRUN git config --global color.ui true\n\n#########################\n## INSTALL RAILS 4.2.4 ##\n#########################\nRUN gem install rails -v 4.2.4\n\n#########################\n### INSTALL MYSQL 5.7 ###\n#########################\n# COPY LOCAL FILE TO DOCKER CONTAINER DIRECTORY AND SET SELECTIONS CONFIG FOR REPOSITORY INSTALLATION\nCOPY configs/mysql/mysql-config-apt.seed /tmp/mysql-config-apt.seed\nRUN debconf-set-selections /tmp/mysql-config-apt.seed\n\n# INSTALL MYSQL 5.7 REPOSITORY AND UPDATE\nRUN URL='http://dev.mysql.com/get/mysql-apt-config_0.6.0-1_all.deb'; FILE=mktemp;wget \"$URL\" -qO $FILE &&  dpkg -i $FILE; rm $FILE\nRUN apt-get update\n\n# COPY LOCAL FILE TO DOCKER CONTAINER DIRECTORY AND SET SELECTIONS CONFIG FOR MYSQL 5.7 INSTALLATION\nCOPY configs/mysql/mysqlconf.seed /tmp/mysqlconf.seed\nRUN debconf-set-selections /tmp/mysqlconf.seed\n\n# AND FINALLY INSTALL MYSQL 5.7\nRUN apt-get install mysql-server -y\n\n\nWORKDIR /var/www\n\nCOPY startup.sh /usr/bin/startup\nRUN chmod +x /usr/bin/startup\nCMD /usr/bin/startup\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3000
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y   git   git-core   curl   debconf-utils   zlib1g-dev   libssl-dev   libreadline-dev   libyaml-dev   libffi-dev   libssl-dev   vim   libsqlite3-dev   sqlite3   libxml2-dev   libxslt1-dev   python-software-properties   libcurl4-openssl-dev",
+      "apt-get install -y --no-install-recommends software-properties-common build-essential",
+      "curl -sL https://deb.nodesource.com/setup_5.x | bash -",
+      "apt-get install -y nodejs",
+      "apt-get install -y mongodb",
+      "mkdir /data",
+      "mkdir /data/db",
+      "chmod 755 -R /data",
+      "git config --global color.ui true",
+      "gem install rails -v 4.2.4",
+      "debconf-set-selections /tmp/mysql-config-apt.seed",
+      "URL='http://dev.mysql.com/get/mysql-apt-config_0.6.0-1_all.deb'; FILE=mktemp;wget \"$URL\" -qO $FILE &&  dpkg -i $FILE; rm $FILE",
+      "apt-get update",
+      "debconf-set-selections /tmp/mysqlconf.seed",
+      "apt-get install mysql-server -y",
+      "chmod +x /usr/bin/startup"
+    ],
+    "workdir": [
+      "/var/www"
+    ],
+    "from": "ruby:2.3",
+    "maintainer": "Bruno Pereira <bruno9pereira@gmail.com>",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "copy": "startup.sh /usr/bin/startup",
+    "cmd": "/usr/bin/startup"
+  },
+  "source_repository_url": "https://github.com/brnbp/alderaan.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/brnbp/alderaan",
+  "docker_repository": "brnbp/rails",
+  "docker_image": "brnbp/rails",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "brnbp/rails",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/brnbp/rails",
+    "https://hub.docker.com/v2/repositories/brnbp/rails",
+    "https://github.com/brnbp/alderaan.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby"
+  ],
+  "info_url": "https://hub.docker.com/r/brnbp/rails",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

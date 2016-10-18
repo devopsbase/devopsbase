@@ -1,0 +1,109 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/moltar/perl-app",
+    "repository_url": "https://hub.docker.com/v2/repositories/moltar/perl-app",
+    "tags_url": "https://hub.docker.com/v2/repositories/moltar/perl-app/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/moltar/perl-app/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/moltar/perl-app/autobuild",
+    "user": "moltar",
+    "name": "perl-app",
+    "namespace": "moltar",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 76,
+    "last_updated": "2015-09-27T03:54:50.227827Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 111419234,
+        "id": 81018,
+        "repository": 64163,
+        "creator": 10646,
+        "last_updater": 10646,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "moltar/docker.perl-app"
+  },
+  "name": "moltar/perl-app Docker container",
+  "description": "All inclusive image for Perl projects",
+  "readme": "## Docker image for Perl projects ##\n\nThis is an all inclusive Docker image that will get your project running very quickly in a production-ready environment.\n\nThe image is not meant to be used directly, but to be inherited from. \n\nIt mostly targets the final, production builds, as the build process is too long for quick development iterations. A fresh Perl version is compiled on every build. This image is perfectly suitable for your final CI build step, after which the final image is pushed somewhere for release.\n\nThis image is available as a trusted build in [Docker Hub](https://registry.hub.docker.com/u/moltar/perl-app/).\n\n### plenv ###\n\nThe image uses [plenv](https://github.com/tokuhirom/plenv) to manage Perl versions. It will read `.perl-version` file from the root of your project directory to get the Perl version to compile.  This file is usually the result of calling `plenv local $PERL_VERSION` in your project root and it is recommended.\n\nIf no such file is present, build script will assume and install the latest Perl version, as reported by `plenv install --list` command.\n\n### Carton ###\n\nIf your project uses [Carton](https://metacpan.org/pod/Carton), it will be detected and used to install dependencies during Docker image build. Additionally, the build script will try to detect if you have used `carton bundle` and install modules with `--cached` flag, which will significantly speed up the build.\n\nIf your project does not use Carton, the build script will simply try to install dependencies via `cpanm --installdeps .` command into the Perl's module directory, rather than `local::lib`.\n\n### Build Hooks ###\n\nAdditionally, there are build hooks defined that you can use. If the build script finds these executables in your project root, they will be called.\n\n#### ./before_build ####\n\nAs the name suggest, this is called before the build of your project. However, for convenience, it is actually called after Perl is installed. Which means this script can be a regular Perl script if you wish, or Bash, or any other. This hook is useful for installing system pre-reqs for building Perl modules.\n\n#### ./after_build ####\n\nThis, of course, is called after the build. It can be used to do general clean up, asset building, etc.\n\n## Usage ##\n\nCreate the following files in the same directory or [check out the example repository on GitHub](https://github.com/moltar/docker.perl-app.example).\n\n### Files ###\n\n#### Dockerfile ####\n\n```\nFROM moltar/perl-app:latest\nENV PLACK_SERVER HTTP::Server::PSGI\nCMD [\"plackup\"]\nEXPOSE 5000\n```\n\n#### app.psgi ####\n\n```\n#!/usr/bin/env perl\n\nmy $app = sub {\n    return [200, [], ['Hello World!']];\n};\n```\n\n#### cpanfile ####\n\n```\nrequires 'Plack';\n```\n\n### Building Docker image ###\n\n```\ncd perl-project-dir\nplenv local 5.20.4\ndocker build -t my-perl-project .\ndocker run my-perl-project\n```\n\n## SSH ##\n\nThis image is ultimately based on [phusion/baseimage](https://github.com/phusion/baseimage-docker) image, which in turn enables SSH by default. If this is not desired, see instructions on how to [disable SSH](https://github.com/phusion/baseimage-docker#disabling-ssh).\n\n## Tips ##\n\n### .dockerignore ###\n\nUse a `.dockerignore` file to ignore directories that do not need to be part of the image. These directories should be `.git`, `local` (if you are using Carton), possibly other non-Perl project directories. Excluding these will, first of all, prevent you from accidentally sharing something you don't want to share. And also will make your final Docker image smaller.\n\n### .perl-version ###\n\nIf you are using Carton for dependency management, it is highly recommended to explicitly set your Perl version in `.perl-version`. You will run into problems installing dependencies in production, when your production Perl version is different from your development. This is a very common pitfall.\n\n## See Also ##\n\n* [moltar/plenv](https://registry.hub.docker.com/u/moltar/plenv/)\n* [phusion/baseimage](https://github.com/phusion/baseimage-docker)",
+  "dockerfile": "FROM moltar/plenv:latest\n\nMAINTAINER moltar <moltar@moltar.net>\n\nENV APP_DIR  /app\nENV APP_USER app\n\nWORKDIR /app\n\nADD ./build_perl_project.sh /usr/bin/build_perl_project.sh\n\nENTRYPOINT [\"/entrypoint.sh\"]\n\nONBUILD ADD ./ $APP_DIR\nONBUILD RUN build_perl_project.sh",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./build_perl_project.sh",
+        "dest": "/usr/bin/build_perl_project.sh"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [],
+    "workdir": [
+      "/app"
+    ],
+    "from": "moltar/plenv:latest",
+    "maintainer": "moltar <moltar@moltar.net>",
+    "env": {
+      "APP_DIR": "",
+      "APP_USER": "app"
+    },
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "onbuild": "RUN build_perl_project.sh"
+  },
+  "source_repository_url": "https://github.com/moltar/docker.perl-app.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/moltar/docker.perl-app",
+  "docker_repository": "moltar/perl-app",
+  "docker_image": "moltar/perl-app",
+  "parameters_schema": {
+    "APP_DIR": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APP_USER": {
+      "default": "app",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "moltar/perl-app",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/moltar/perl-app",
+    "https://hub.docker.com/v2/repositories/moltar/perl-app",
+    "https://github.com/moltar/docker.perl-app.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Middleware/Runtime/Perl"
+  ],
+  "info_url": "https://hub.docker.com/r/moltar/perl-app",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

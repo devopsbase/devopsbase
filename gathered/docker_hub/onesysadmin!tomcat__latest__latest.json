@@ -1,0 +1,145 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/onesysadmin/tomcat",
+    "repository_url": "https://hub.docker.com/v2/repositories/onesysadmin/tomcat",
+    "tags_url": "https://hub.docker.com/v2/repositories/onesysadmin/tomcat/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/onesysadmin/tomcat/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/onesysadmin/tomcat/autobuild",
+    "user": "onesysadmin",
+    "name": "tomcat",
+    "namespace": "onesysadmin",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 268,
+    "last_updated": "2016-02-06T00:35:03.383560Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 53991663,
+        "id": 1898602,
+        "repository": 510144,
+        "creator": 96365,
+        "last_updater": 96365,
+        "last_updated": "2016-02-06T00:35:03.003030Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "8",
+        "full_size": 53991673,
+        "id": 1898614,
+        "repository": 510144,
+        "creator": 96365,
+        "last_updater": 96365,
+        "last_updated": "2016-02-06T00:34:26.212453Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "onesysadmin/docker-tomcat"
+  },
+  "name": "onesysadmin/tomcat Docker container",
+  "description": "Tomcat server container running on top of Oracle JDK8 under Alpine.  Includes awscli as well.",
+  "readme": "\n### Building Your Webapp\n\nThis container image is really meant to be imported and inherited from so you can include your webapp.\n\nYour main webapp should be placed either in ${CATALINA_HOME}/webapps/ROOT/ folder (you need to create this)\nor as a war file located at ${CATALINA_HOME}/webapps/ROOT.war.  This will deploy your webapp at the root \"/\"\ncontext.  \n\nYou can then use the SERVICE_NAME environment variable to change the app context path.\n\n### Environment Variables\n\nAside from TOMCAT environment variables, the following environment variables are\nsupported by our container:\n\n* TOMCAT_PASS - Sets the admin password for the tomcat manager.  If not set, then a password will be randomly generated. The password will be shown in output when the container is launched.\n\n* SERVICE_NAME - Sets the context path for the app.  When this is set and detected, ROOT/ or ROOT.war will be renamed to the value of this environment variable.  When tomcat is launched, the app will be deployed under this context path.  For example, if SERVICE_NAME is set to _abc_, then the app will be access via `http://host:8080/abc/`.\n",
+  "dockerfile": "FROM develar/java:latest\n\nRUN apk --update add pwgen ca-certificates libssl1.0 libuuid openssl apr libcrypto1.0 && \\\n    rm -rf /tmp/* /var/cache/apk/*\n\nENV TOMCAT_MAJOR_VERSION 8\nENV TOMCAT_MINOR_VERSION 8.0.30\nENV CATALINA_HOME /tomcat\nENV CATALINA_TMPDIR /tmp\n\n# INSTALL TOMCAT\nRUN wget -q https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_MINOR_VERSION}/bin/apache-tomcat-${TOMCAT_MINOR_VERSION}.tar.gz && \\\n    wget -qO- https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_MINOR_VERSION}/bin/apache-tomcat-${TOMCAT_MINOR_VERSION}.tar.gz.md5 | md5sum -c - && \\\n    tar zxf apache-tomcat-*.tar.gz && \\\n    rm apache-tomcat-*.tar.gz && \\\n    mv apache-tomcat* tomcat && \\\n    rm -rf /tomcat/webapps/examples /tomcat/webapps/docs /tomcat/webapps/ROOT\n\nADD create_tomcat_admin_user.sh /create_tomcat_admin_user.sh\nADD run.sh /run.sh\nRUN chmod +x /*.sh\n\nEXPOSE 8080\nVOLUME /tomcat/logs\n# reset entrypoint from parent image\nENTRYPOINT []\nCMD [\"/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "create_tomcat_admin_user.sh",
+        "dest": "/create_tomcat_admin_user.sh"
+      },
+      {
+        "source": "run.sh",
+        "dest": "/run.sh"
+      }
+    ],
+    "expose": [
+      8080
+    ],
+    "volume": [
+      "/tomcat/logs"
+    ],
+    "run": [
+      "apk --update add pwgen ca-certificates libssl1.0 libuuid openssl apr libcrypto1.0 &&     rm -rf /tmp/* /var/cache/apk/*",
+      "wget -q https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_MINOR_VERSION}/bin/apache-tomcat-${TOMCAT_MINOR_VERSION}.tar.gz &&     wget -qO- https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_MINOR_VERSION}/bin/apache-tomcat-${TOMCAT_MINOR_VERSION}.tar.gz.md5 | md5sum -c - &&     tar zxf apache-tomcat-*.tar.gz &&     rm apache-tomcat-*.tar.gz &&     mv apache-tomcat* tomcat &&     rm -rf /tomcat/webapps/examples /tomcat/webapps/docs /tomcat/webapps/ROOT",
+      "chmod +x /*.sh"
+    ],
+    "workdir": [],
+    "from": "develar/java:latest",
+    "env": {
+      "TOMCAT_MAJOR_VERSION": "8",
+      "TOMCAT_MINOR_VERSION": "8.0.30",
+      "CATALINA_HOME": "/tomcat",
+      "CATALINA_TMPDIR": "/tmp"
+    },
+    "entrypoint": "[]",
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/onesysadmin/docker-tomcat.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/onesysadmin/docker-tomcat",
+  "docker_repository": "onesysadmin/tomcat",
+  "docker_image": "onesysadmin/tomcat",
+  "parameters_schema": {
+    "TOMCAT_MAJOR_VERSION": {
+      "default": "8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_MINOR_VERSION": {
+      "default": "8.0.30",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CATALINA_HOME": {
+      "default": "/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CATALINA_TMPDIR": {
+      "default": "/tmp",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "onesysadmin/tomcat",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/onesysadmin/tomcat",
+    "https://hub.docker.com/v2/repositories/onesysadmin/tomcat",
+    "https://github.com/onesysadmin/docker-tomcat.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Binding/Provider/Amazon",
+    "Mode/CLI",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/onesysadmin/tomcat",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

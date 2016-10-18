@@ -1,0 +1,121 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/odaniait/docker-haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/odaniait/docker-haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/odaniait/docker-haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/odaniait/docker-haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/odaniait/docker-haproxy/autobuild",
+    "user": "odaniait",
+    "name": "docker-haproxy",
+    "namespace": "odaniait",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 106,
+    "last_updated": "2016-10-01T11:28:50.530251Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 413777601,
+        "id": 1250521,
+        "repository": 383175,
+        "creator": 139506,
+        "last_updater": 139507,
+        "last_updated": "2016-10-01T11:28:50.118915Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Odania-IT/docker-haproxy"
+  },
+  "name": "odaniait/docker-haproxy Docker container",
+  "description": "Basic haproxy image",
+  "readme": "# Haproxy\n\nBasic HAProxy image. You can use it in two ways:\n\n1. Add own haproxy.cfg\n\n```\nFROM odaniait/docker-haproxy:latest\nCOPY haproxy.cfg /usr/local/etc/haproxy/haproxy.cfg\n```\n\n2. Use the default and proxy to a local app\n\nBy default any request will be proxied to 127.0.0.1:8080. If you add e.g. an Java Application, nginx, etc. on port 8080\nhaproxy will forward the request.\n",
+  "dockerfile": "FROM odaniait/docker-base:latest\nMAINTAINER Mike Petersen <mike@odania-it.de>\n\nRUN apt-get update && apt-get install -y libssl1.0.0 libpcre3 --no-install-recommends\n\nENV HAPROXY_MAJOR 1.6\nENV HAPROXY_VERSION 1.6.1\nENV HAPROXY_MD5 7343def2af8556ebc8972a9748176094\n\n# see http://sources.debian.net/src/haproxy/1.5.8-1/debian/rules/ for some helpful navigation of the possible \"make\" arguments\nRUN set -x && apt-get update && apt-get install -y curl gcc libc6-dev libpcre3-dev libssl-dev make\nRUN buildDeps='curl gcc libc6-dev libpcre3-dev libssl-dev make' \\\n\t&& set -x \\\n\t&& curl -SL \"http://www.haproxy.org/download/${HAPROXY_MAJOR}/src/haproxy-${HAPROXY_VERSION}.tar.gz\" -o haproxy.tar.gz \\\n\t&& echo \"${HAPROXY_MD5}  haproxy.tar.gz\" | md5sum -c \\\n\t&& mkdir -p /usr/src/haproxy \\\n\t&& tar -xzf haproxy.tar.gz -C /usr/src/haproxy --strip-components=1 \\\n\t&& rm haproxy.tar.gz \\\n\t&& make -C /usr/src/haproxy \\\n\t\tTARGET=linux2628 \\\n\t\tUSE_PCRE=1 PCREDIR= \\\n\t\tUSE_OPENSSL=1 \\\n\t\tUSE_ZLIB=1 \\\n\t\tall \\\n\t\tinstall-bin \\\n\t&& mkdir -p /usr/local/etc/haproxy \\\n\t&& cp -R /usr/src/haproxy/examples/errorfiles /usr/local/etc/haproxy/errors \\\n\t&& rm -rf /usr/src/haproxy\n\n# Setup haproxy with supervisord\nRUN mkdir -p /etc/service/haproxy\nCOPY runit/haproxy.sh /etc/service/haproxy/run\nRUN ln -s /usr/local/etc/haproxy/ /etc/haproxy\n\nRUN groupadd haproxy\nRUN useradd -g haproxy -r haproxy\n\nEXPOSE 80 1936\n\n# Clean up APT when done.\nRUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y libssl1.0.0 libpcre3 --no-install-recommends",
+      "set -x && apt-get update && apt-get install -y curl gcc libc6-dev libpcre3-dev libssl-dev make",
+      "buildDeps='curl gcc libc6-dev libpcre3-dev libssl-dev make' \t&& set -x \t&& curl -SL \"http://www.haproxy.org/download/${HAPROXY_MAJOR}/src/haproxy-${HAPROXY_VERSION}.tar.gz\" -o haproxy.tar.gz \t&& echo \"${HAPROXY_MD5}  haproxy.tar.gz\" | md5sum -c \t&& mkdir -p /usr/src/haproxy \t&& tar -xzf haproxy.tar.gz -C /usr/src/haproxy --strip-components=1 \t&& rm haproxy.tar.gz \t&& make -C /usr/src/haproxy \t\tTARGET=linux2628 \t\tUSE_PCRE=1 PCREDIR= \t\tUSE_OPENSSL=1 \t\tUSE_ZLIB=1 \t\tall \t\tinstall-bin \t&& mkdir -p /usr/local/etc/haproxy \t&& cp -R /usr/src/haproxy/examples/errorfiles /usr/local/etc/haproxy/errors \t&& rm -rf /usr/src/haproxy",
+      "mkdir -p /etc/service/haproxy",
+      "ln -s /usr/local/etc/haproxy/ /etc/haproxy",
+      "groupadd haproxy",
+      "useradd -g haproxy -r haproxy",
+      "apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+    ],
+    "workdir": [],
+    "from": "odaniait/docker-base:latest",
+    "maintainer": "Mike Petersen <mike@odania-it.de>",
+    "env": {
+      "HAPROXY_MAJOR": "1.6",
+      "HAPROXY_VERSION": "1.6.1",
+      "HAPROXY_MD5": "7343def2af8556ebc8972a9748176094"
+    },
+    "copy": "runit/haproxy.sh /etc/service/haproxy/run"
+  },
+  "source_repository_url": "https://github.com/Odania-IT/docker-haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Odania-IT/docker-haproxy",
+  "docker_repository": "odaniait/docker-haproxy",
+  "docker_image": "odaniait/docker-haproxy",
+  "parameters_schema": {
+    "HAPROXY_MAJOR": {
+      "default": "1.6",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_VERSION": {
+      "default": "1.6.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_MD5": {
+      "default": "7343def2af8556ebc8972a9748176094",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "odaniait/docker-haproxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/odaniait/docker-haproxy",
+    "https://hub.docker.com/v2/repositories/odaniait/docker-haproxy",
+    "https://github.com/Odania-IT/docker-haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/odaniait/docker-haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

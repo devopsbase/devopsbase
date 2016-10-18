@@ -1,0 +1,173 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/wpbakery/ci-wordpress",
+    "repository_url": "https://hub.docker.com/v2/repositories/wpbakery/ci-wordpress",
+    "tags_url": "https://hub.docker.com/v2/repositories/wpbakery/ci-wordpress/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/wpbakery/ci-wordpress/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/wpbakery/ci-wordpress/autobuild",
+    "user": "wpbakery",
+    "name": "ci-wordpress",
+    "namespace": "wpbakery",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1899,
+    "last_updated": "2016-10-04T10:40:31.530406Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 237892063,
+        "id": 2707950,
+        "repository": 643419,
+        "creator": 772328,
+        "last_updater": 772328,
+        "last_updated": "2016-10-04T10:40:31.132557Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "php5.5",
+        "full_size": 236846964,
+        "id": 2723328,
+        "repository": 643419,
+        "creator": 772328,
+        "last_updater": 772328,
+        "last_updated": "2016-10-04T09:39:31.679882Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "php5.6",
+        "full_size": 237892035,
+        "id": 2722716,
+        "repository": 643419,
+        "creator": 772328,
+        "last_updater": 772328,
+        "last_updated": "2016-10-04T09:33:55.211107Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "php7",
+        "full_size": 240261746,
+        "id": 2707917,
+        "repository": 643419,
+        "creator": 772328,
+        "last_updater": 772328,
+        "last_updated": "2016-10-04T09:28:27.460838Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "wpbakery/ci-wordpress"
+  },
+  "name": "wpbakery/ci-wordpress Docker container",
+  "description": "CI WordPress image including composer, wp-cli, phpunit",
+  "readme": "# Docker WordPress image\n\n\n",
+  "dockerfile": "FROM php:5.6-apache\n\nENV WP_TESTS_DIR /opt/wp-tests\nENV WP_TESTS_ABSPATH /var/www/html/\nENV WP_TESTS_DOMAIN localhost\n\nCOPY wp-tests.tar.gz /opt\n\n# Install dotdeb repo, PHP, composer and selected extensions\nRUN apt-get update \\\n    && apt-get install -y curl \\\n    && apt-get update \\\n    && apt-get -y --no-install-recommends install php5-cli php5-fpm php5-apcu php5-curl php5-mcrypt php5-mysql php5-readline \\\n    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \\\n    && apt-get clean \\\n    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/* \\\n    && cp /etc/php5/fpm/php.ini $PHP_INI_DIR \\\n    && docker-php-ext-install mysqli pdo pdo_mysql \\\n    && pecl install -o -f xdebug\n\n# POST and max upload sizes on php.ini\nRUN sed -i \"/upload_max_filesize = .*/c\\upload_max_filesize = 200M\" $PHP_INI_DIR/php.ini \\\n    && sed -i \"/post_max_size = .*/c\\post_max_size = 200M\" $PHP_INI_DIR/php.ini \\\n    && sed -i \"/memory_limit = .*/c\\memory_limit = 256M\" $PHP_INI_DIR/php.ini\n\nRUN tar -zxvf /opt/wp-tests.tar.gz -C /opt\n\nENV DEBIAN_FRONTEND=noninteractive\n\nRUN apt-get update \\\n    && apt-get install -y mysql-server libmysqlclient-dev --no-install-recommends \\\n    && apt-get install -y git zip \\\n    && rm -rf /var/lib/apt/lists/*\n\nRUN apt-get update \\\n    && apt-get install -y ca-certificates \\\n    && rm -rf /var/lib/apt/lists/*\n\nWORKDIR /var/www/html\n\n# Install PhpUnit\nRUN curl -SL --insecure \"https://phar.phpunit.de/phpunit.phar\" -o phpunit.phar \\\n    && chmod +x phpunit.phar \\\n    && mv phpunit.phar /usr/bin/phpunit\n\n# Configure mysql sock\nRUN ln -s /var/run/mysqld/mysqld.sock /tmp/mysql.sock\n\n# Install wp-cli\nRUN curl --insecure -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \\\n    && chmod +x wp-cli.phar \\\n    && mv wp-cli.phar /usr/local/bin/wp\n\nRUN pear install PHP_CodeSniffer\n\n# Setup database `test`\nRUN service mysql start \\\n    && mysql --user=\"root\" --execute=\"CREATE DATABASE test;\"\n\nRUN service mysql start \\\n    && wp core download --path=/var/www/html --allow-root \\\n    && wp core config --path=/var/www/html --dbname=test --dbuser=root --allow-root \\\n    && wp core install --url=http://localhost --title=Test --admin_user=admin --admin_password=12345 --admin_email=test@test.com --path=/var/www/html --allow-root\n\n# Start the mysql\nENTRYPOINT service mysql start && bash\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update     && apt-get install -y curl     && apt-get update     && apt-get -y --no-install-recommends install php5-cli php5-fpm php5-apcu php5-curl php5-mcrypt php5-mysql php5-readline     && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer     && apt-get clean     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*     && cp /etc/php5/fpm/php.ini $PHP_INI_DIR     && docker-php-ext-install mysqli pdo pdo_mysql     && pecl install -o -f xdebug",
+      "sed -i \"/upload_max_filesize = .*/c\\upload_max_filesize = 200M\" $PHP_INI_DIR/php.ini     && sed -i \"/post_max_size = .*/c\\post_max_size = 200M\" $PHP_INI_DIR/php.ini     && sed -i \"/memory_limit = .*/c\\memory_limit = 256M\" $PHP_INI_DIR/php.ini",
+      "tar -zxvf /opt/wp-tests.tar.gz -C /opt",
+      "apt-get update     && apt-get install -y mysql-server libmysqlclient-dev --no-install-recommends     && apt-get install -y git zip     && rm -rf /var/lib/apt/lists/*",
+      "apt-get update     && apt-get install -y ca-certificates     && rm -rf /var/lib/apt/lists/*",
+      "curl -SL --insecure \"https://phar.phpunit.de/phpunit.phar\" -o phpunit.phar     && chmod +x phpunit.phar     && mv phpunit.phar /usr/bin/phpunit",
+      "ln -s /var/run/mysqld/mysqld.sock /tmp/mysql.sock",
+      "curl --insecure -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar     && chmod +x wp-cli.phar     && mv wp-cli.phar /usr/local/bin/wp",
+      "pear install PHP_CodeSniffer",
+      "service mysql start     && mysql --user=\"root\" --execute=\"CREATE DATABASE test;\"",
+      "service mysql start     && wp core download --path=/var/www/html --allow-root     && wp core config --path=/var/www/html --dbname=test --dbuser=root --allow-root     && wp core install --url=http://localhost --title=Test --admin_user=admin --admin_password=12345 --admin_email=test@test.com --path=/var/www/html --allow-root"
+    ],
+    "workdir": [
+      "/var/www/html"
+    ],
+    "from": "php:5.6-apache",
+    "env": {
+      "WP_TESTS_DIR": "/opt/wp-tests",
+      "WP_TESTS_ABSPATH": "/var/www/html/",
+      "WP_TESTS_DOMAIN": "localhost",
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "copy": "wp-tests.tar.gz /opt",
+    "entrypoint": "service mysql start && bash"
+  },
+  "source_repository_url": "https://github.com/wpbakery/ci-wordpress.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/wpbakery/ci-wordpress",
+  "docker_repository": "wpbakery/ci-wordpress",
+  "docker_image": "wpbakery/ci-wordpress",
+  "parameters_schema": {
+    "WP_TESTS_DIR": {
+      "default": "/opt/wp-tests",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WP_TESTS_ABSPATH": {
+      "default": "/var/www/html/",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WP_TESTS_DOMAIN": {
+      "default": "localhost",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "wpbakery/ci-wordpress",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/wpbakery/ci-wordpress",
+    "https://hub.docker.com/v2/repositories/wpbakery/ci-wordpress",
+    "https://github.com/wpbakery/ci-wordpress.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image",
+    "Mode/CLI",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/PHP"
+  ],
+  "info_url": "https://hub.docker.com/r/wpbakery/ci-wordpress",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,111 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/withinboredom/ubuntu-base",
+    "repository_url": "https://hub.docker.com/v2/repositories/withinboredom/ubuntu-base",
+    "tags_url": "https://hub.docker.com/v2/repositories/withinboredom/ubuntu-base/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/withinboredom/ubuntu-base/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/withinboredom/ubuntu-base/autobuild",
+    "user": "withinboredom",
+    "name": "ubuntu-base",
+    "namespace": "withinboredom",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 899,
+    "last_updated": "2016-10-13T21:27:49.141619Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 149809861,
+        "id": 829420,
+        "repository": 307841,
+        "creator": 110774,
+        "last_updater": 110774,
+        "last_updated": "2016-10-13T21:27:48.705823Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "withinboredom/docker-base"
+  },
+  "name": "withinboredom/ubuntu-base Docker container",
+  "description": "A modern s6 based ubuntu 14.04 based image",
+  "readme": "ubuntu-base\n===========\n\nA base image for running just about anything within a container, based on Ubuntu 14.04.\n\nProcess management\n------------------\n\nThis image includes [s6](s6) ([built statically][s6-built-statically]), to make it super simple to start multiple process and manage them correctly.\n\n_**Aren't you only supposed to run one process per container?**_ Well yes and no... the following are good examples of when multiple processes within one container might be necessary:\n\n- automatically updating [nginx][nginx] proxy settings when a down-stream application server (nodejs, php, etc) restarts (and the IP changes)\n- automatically updating [HAProxy][haproxy] configuration to load balance to a group of down-stream application servers\n- running a logging daemon to centralize log management (i.e. [logentries][logentries], [loggly][loggly], [logstash][logstash])\n- when you need to run a script on application server crash (to tidy something up), as the standard [Docker container restart policies][drsp] won't provide this\n\n[s6]: http://www.skarnet.org/software/s6/\n[s6-built-statically]: https://github.com/smebberson/docker-ubuntu-base/blob/master/s6/s6-build\n[logentries]: https://logentries.com/\n[loggly]: https://www.loggly.com/\n[logstash]: http://logstash.net/\n[drsp]: https://docs.docker.com/reference/commandline/cli/#restart-policies\n[nginx]: http://nginx.org/\n[haproxy]: http://www.haproxy.org/\n\nUsage\n-----\n\nTo use this image include `FROM withinboredom/ubuntu-base` at the top of your `Dockerfile`. Inheriting from `withinboredom/ubuntu-base` provides you with the ability to easily start any service using [s6][s6]. s6 will also keep it running for you, restarting it when it crashes.\n\nTo start your service using s6:\n\n- create a folder at `/etc/s6/service_name`\n- create a file in your new folder called `run` and give it execute permissions\n- inside that file start your service, for example:\n\n```\n#!/usr/bin/env bash\n\n# start nginx\nexec nginx;\n```\n\n### Finish scripts\n\nIf you want to run a script when your application stops, simply:\n\n- create a file in your `/etc/s6/service_name` folder called `finish` and give it execute permissions\n\nIn this file, do whatever you need to, but keep it quick and simple (anything over 3 seconds and s6 will force quit it). Once this script has run, s6 will call `/etc/s6/service_name/run` again to restart your service.\n\n### Crashes, logs, no-restarts?\n\n[s6 has a number of other options][s6-servicedir] that you can use to gain more information about your process and what's happening to them.\n\n[s6-servicedir]: http://www.skarnet.org/software/s6/servicedir.html\n\nExamples\n--------\n\nAn example of using this image can be found in the [smebberson/nodejs][smebbersonnodejs] [Dockerfile][smebbersonnodejsdockerfile].\n\n[smebbersonnodejs]: https://registry.hub.docker.com/u/smebberson/nodejs/\n[smebbersonnodejsdockerfile]: https://github.com/smebberson/docker-ubuntu-base/blob/master/nodejs/Dockerfile\n",
+  "dockerfile": "# DOCKER-VERSION 1.0.0\n\nFROM ubuntu:14.04\nMAINTAINER Rob Landers <landers.robert@gmail.com>\n\nRUN export DEBIAN_FRONTEND=noninteractive && \\\n    apt-get update && \\\n    apt-get upgrade -y && \\\n    apt-get install -y wget build-essential software-properties-common curl rsync dnsutils unzip inotify-tools python python-pip && \\\n    apt-get purge -y python-pip python-requests && \\\n    apt-get clean && \\\n    rm -rf /var/lib/apt/lists/* && \\\n    curl -sSLO https://bootstrap.pypa.io/get-pip.py && \\\n    python get-pip.py && \\\n    rm get-pip.py && \\\n    pip install consulate && \\\n    pip install --upgrade requests\n\n\nENV PATH /package/admin/s6-2.1.3.0/command:$PATH\nENV GOMAXPROCS 100\n\nRUN touch /etc/leapsecs.dat\n\nADD root /\n\nENTRYPOINT [\"/package/admin/s6-2.1.3.0/command/s6-svscan\",\"/etc/s6\"]\nCMD []",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "root",
+        "dest": "/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "export DEBIAN_FRONTEND=noninteractive &&     apt-get update &&     apt-get upgrade -y &&     apt-get install -y wget build-essential software-properties-common curl rsync dnsutils unzip inotify-tools python python-pip &&     apt-get purge -y python-pip python-requests &&     apt-get clean &&     rm -rf /var/lib/apt/lists/* &&     curl -sSLO https://bootstrap.pypa.io/get-pip.py &&     python get-pip.py &&     rm get-pip.py &&     pip install consulate &&     pip install --upgrade requests",
+      "touch /etc/leapsecs.dat"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "Rob Landers <landers.robert@gmail.com>",
+    "env": {
+      "PATH": "/package/admin/s6-2.1.3.0/command:$PATH",
+      "GOMAXPROCS": "100"
+    },
+    "entrypoint": "[\"/package/admin/s6-2.1.3.0/command/s6-svscan\",\"/etc/s6\"]",
+    "cmd": "[]"
+  },
+  "source_repository_url": "https://github.com/withinboredom/docker-base.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/withinboredom/docker-base",
+  "docker_repository": "withinboredom/ubuntu-base",
+  "docker_image": "withinboredom/ubuntu-base",
+  "parameters_schema": {
+    "PATH": {
+      "default": "/package/admin/s6-2.1.3.0/command:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOMAXPROCS": {
+      "default": "100",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "withinboredom/ubuntu-base",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/withinboredom/ubuntu-base",
+    "https://hub.docker.com/v2/repositories/withinboredom/ubuntu-base",
+    "https://github.com/withinboredom/docker-base.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu"
+  ],
+  "info_url": "https://hub.docker.com/r/withinboredom/ubuntu-base",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,171 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/appcelerator/kibana",
+    "repository_url": "https://hub.docker.com/v2/repositories/appcelerator/kibana",
+    "tags_url": "https://hub.docker.com/v2/repositories/appcelerator/kibana/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/appcelerator/kibana/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/appcelerator/kibana/autobuild",
+    "user": "appcelerator",
+    "name": "kibana",
+    "namespace": "appcelerator",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 4618,
+    "last_updated": "2016-08-11T07:01:19.581494Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 50408632,
+        "id": 3417288,
+        "repository": 743604,
+        "creator": 12425,
+        "last_updater": 279747,
+        "last_updated": "2016-08-11T07:01:18.089257Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "kibana-4.5",
+        "full_size": 50577214,
+        "id": 4068095,
+        "repository": 743604,
+        "creator": 12425,
+        "last_updater": 12425,
+        "last_updated": "2016-07-29T18:59:50.462303Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "appcelerator/docker-kibana"
+  },
+  "name": "appcelerator/kibana Docker container",
+  "description": "Kibana image builder using only environment variables to set the cluster",
+  "readme": "# docker-kibana\n\n[![Build Status](http://drone.amp.appcelerator.io:8000/api/badges/appcelerator/docker-kibana/status.svg)](http://drone.amp.appcelerator.io:8000/appcelerator/docker-kibana)\n\nDocker Image for [Kibana](https://www.elastic.co/products/kibana).\n\nBased on Alpine Linux (appcelerator/amp).\n\n## Run\n\nMost basic form:\n```\ndocker run -t -p 5601:5601 -e \"ELASTICSEARCH_URL=http://myElasticSearchHost:9200\" appcelerator/kibana\n```\n\n# Configuration (ENV, -e)\n\n- `CONSUL`: Consul hostname and port (used by amp-pilot). Example: `consul:8500`, is disabled by default\n- `ELASTICSEARCH_URL`: URL of ElasticSearch. Default value: `http://elasticsearch:9200`\n- `KIBANA_BASE_PATH`: Value of 'server.basePath' inside kibana.yml. Default value: *Empty*\n\n## Tags\n\n- latest\n",
+  "dockerfile": "FROM appcelerator/alpine:20160726\n\nRUN apk --no-cache add nodejs\n\n# Kibana installation\nENV KIBANA_MAJOR 4.5\nENV KIBANA_VERSION 4.5.3\nRUN curl -LO https://download.elastic.co/kibana/kibana/kibana-${KIBANA_VERSION}-linux-x64.tar.gz \\\n    && mkdir /opt \\\n    && tar xzf /kibana-${KIBANA_VERSION}-linux-x64.tar.gz -C /opt \\\n    && mv /opt/kibana-${KIBANA_VERSION}-linux-x64 /opt/kibana \\\n    && rm /opt/kibana/node/bin/node \\\n    && rm /opt/kibana/node/bin/npm \\\n    && ln -s /usr/bin/node /opt/kibana/node/bin/node \\\n    && ln -s /usr/bin/npm /opt/kibana/node/bin/npm \\\n    && rm /kibana-${KIBANA_VERSION}-linux-x64.tar.gz\n\nENV PATH /opt/kibana/bin:$PATH\nENV ELASTICSEARCH_URL http://elasticsearch:9200\n\nCOPY kibana.yml.tpl /opt/kibana/config/kibana.yml.tpl\nRUN rm -v /opt/kibana/config/kibana.yml\n\nCOPY preconfiguration.sh /\nCOPY run.sh /\n\nEXPOSE 5601\nENTRYPOINT [\"/bin/sh\", \"-c\"]\nCMD [\"/run.sh\"]\n\n# amp-pilot scripts and configuration\nENV SERVICE_NAME=kibana\nENV AMPPILOT_REGISTEREDPORT=5601\nENV AMPPILOT_LAUNCH_CMD=kibana\nENV DEPENDENCIES=\"elasticsearch, amp-log-agent\"\nENV AMPPILOT_AMPLOGAGENT_ONLYATSTARTUP=true\n\nLABEL axway_image=kibana\n# will be updated whenever there's a new commit\nLABEL commit=${GIT_COMMIT}\nLABEL branch=${GIT_BRANCH}\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5601
+    ],
+    "volume": [],
+    "run": [
+      "apk --no-cache add nodejs",
+      "curl -LO https://download.elastic.co/kibana/kibana/kibana-${KIBANA_VERSION}-linux-x64.tar.gz     && mkdir /opt     && tar xzf /kibana-${KIBANA_VERSION}-linux-x64.tar.gz -C /opt     && mv /opt/kibana-${KIBANA_VERSION}-linux-x64 /opt/kibana     && rm /opt/kibana/node/bin/node     && rm /opt/kibana/node/bin/npm     && ln -s /usr/bin/node /opt/kibana/node/bin/node     && ln -s /usr/bin/npm /opt/kibana/node/bin/npm     && rm /kibana-${KIBANA_VERSION}-linux-x64.tar.gz",
+      "rm -v /opt/kibana/config/kibana.yml"
+    ],
+    "workdir": [],
+    "from": "appcelerator/alpine:20160726",
+    "env": {
+      "KIBANA_MAJOR": "4.5",
+      "KIBANA_VERSION": "4.5.3",
+      "PATH": "/opt/kibana/bin:$PATH",
+      "ELASTICSEARCH_URL": "http://elasticsearch:9200",
+      "SERVICE_NAME": "kibana",
+      "AMPPILOT_REGISTEREDPORT": "5601",
+      "AMPPILOT_LAUNCH_CMD": "kibana",
+      "DEPENDENCIES": "\"elasticsearch,",
+      "AMPPILOT_AMPLOGAGENT_ONLYATSTARTUP": "true"
+    },
+    "copy": "run.sh /",
+    "entrypoint": "[\"/bin/sh\", \"-c\"]",
+    "cmd": "[\"/run.sh\"]",
+    "label": "branch=${GIT_BRANCH}"
+  },
+  "source_repository_url": "git@github.com:appcelerator/docker-kibana.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/appcelerator/docker-kibana",
+  "docker_repository": "appcelerator/kibana",
+  "docker_image": "appcelerator/kibana",
+  "parameters_schema": {
+    "KIBANA_MAJOR": {
+      "default": "4.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIBANA_VERSION": {
+      "default": "4.5.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/opt/kibana/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ELASTICSEARCH_URL": {
+      "default": "http://elasticsearch:9200",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SERVICE_NAME": {
+      "default": "kibana",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "AMPPILOT_REGISTEREDPORT": {
+      "default": "5601",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "AMPPILOT_LAUNCH_CMD": {
+      "default": "kibana",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEPENDENCIES": {
+      "default": "\"elasticsearch,",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "AMPPILOT_AMPLOGAGENT_ONLYATSTARTUP": {
+      "default": "true",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5601
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "appcelerator/kibana",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/appcelerator/kibana",
+    "https://hub.docker.com/v2/repositories/appcelerator/kibana",
+    "git@github.com:appcelerator/docker-kibana.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Build",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/appcelerator/kibana",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

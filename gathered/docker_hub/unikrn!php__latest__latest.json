@@ -1,0 +1,148 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/unikrn/php",
+    "repository_url": "https://hub.docker.com/v2/repositories/unikrn/php",
+    "tags_url": "https://hub.docker.com/v2/repositories/unikrn/php/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/unikrn/php/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/unikrn/php/autobuild",
+    "user": "unikrn",
+    "name": "php",
+    "namespace": "unikrn",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 926,
+    "last_updated": "2016-10-15T03:29:36.618259Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 351691122,
+        "id": 2353861,
+        "repository": 585905,
+        "creator": 692894,
+        "last_updater": 692894,
+        "last_updated": "2016-10-15T03:29:36.300024Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "unikrn/docker-php"
+  },
+  "name": "unikrn/php Docker container",
+  "description": "Unikrn Docker PHP",
+  "readme": "# Docker for PHP Development\n- Running a container will spawn an nginx at 9000 and a xdebug relay at 9001.\n- nginx is running from /var/www/html\n- running plain redis on default ports and with default config\n- Help https://github.com/wsargent/docker-cheat-sheet\n- a mysql tmpfs server to run unit tests against it without io issues\n\n### XDEBUG Forward\n```\ndocker run -d -p 9001:9001 -p 9000:9000 unikrn/php\nnpm install -g tcprelayc\ntcprelayc --host localhost --port 9000 --relayHost localhost --relayPort 9001 --numConn 10 \n```\n\n### Run \n```\ndocker run -p 9001:9001 -p 9000:9000 -v /Users/xxxx/php:/var/www/html yyyyyyy\n```\n\n### Cheat Sheet\n- build locally `docker build -t unikrn/php .`\n- tag `docker tag xxx  unikrn/php`\n- `docker run -it --entrypoint \"/bin/bash\" unikrn/php` \n- `docker push unikrn/php`\n\n### TODO\n- Make 9002 xcache adm work in the same mem as php-adm.\n\tAdm you need to run it in php-adm also.\n\tDirty workaround for projects inside php-fpm\n\t```\n    $data = $_REQUEST;\n    ob_start();\n    chdir('/var/www/htdocs/cacher/');\n    global $module;\n    global $config;\n    global $strings;\n    if ($data[0] == 'edit') {\n        require_once './edit.php';\n    } else {\n        require_once './index.php';\n    }\n    $html = ob_get_contents();\n    ob_end_clean();\n    $html = str_replace('../common','http://localhost:9002/common',$html);\n    $html = str_replace('cacher.css','http://localhost:9002/cacher/cacher.css',$html);\n    $html = str_replace('.php','',$html);\n    echo $html;\n     ```\n\n### Credits\n- https://github.com/theasci/docker-mysql-tmpfs\n\n",
+  "dockerfile": "FROM php:5.5-fpm\n\nENV TERM=xterm\n\nRUN echo deb http://httpredir.debian.org/debian stable main contrib >/etc/apt/sources.list \\\n    && echo deb http://security.debian.org/ stable/updates main contrib >>/etc/apt/sources.list \\\n    && curl -sL https://deb.nodesource.com/setup_4.x | bash - \\\n    && DEBIAN_FRONTEND=noninteractive apt-get install -y \\\n        libfreetype6-dev \\\n        libjpeg62-turbo-dev \\\n        libmcrypt-dev \\\n        libpng12-dev \\\n        zlib1g-dev \\\n        libgeoip-dev \\\n        python \\\n        locales \\\n        expect-dev \\\n        geoip-bin geoip-database-contrib \\\n        nodejs \\\n        libgmp-dev \\\n        redis-server redis-tools \\\n    && curl -fsSL https://dev.mysql.com/get/mysql-apt-config_0.7.3-1_all.deb -o /tmp/mysql.deb \\\n    && DEBIAN_FRONTEND=noninteractive MYSQL_SERVER_VERSION=mysql-5.6 dpkg -i /tmp/mysql.deb \\\n    && rm /tmp/mysql.deb\\\n    && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-community-server \\\n    && ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h \\\n    && docker-php-ext-install -j$(nproc) iconv mcrypt \\\n    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \\\n    && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql mysql mysqli bcmath mbstring zip gmp \\\n    && DEBIAN_FRONTEND=noninteractive MYSQL_SERVER_VERSION=mysql-5.6 apt-get upgrade -y\\\n    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nRUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer\n\nRUN curl -fsSL 'https://xcache.lighttpd.net/pub/Releases/3.2.0/xcache-3.2.0.tar.gz' -o xcache.tar.gz \\\n    && mkdir -p xcache \\\n    && tar -xf xcache.tar.gz -C xcache --strip-components=1 \\\n    && rm xcache.tar.gz \\\n    && ( \\\n        cd xcache \\\n        && cp -vr htdocs /var/www/ \\\n        && phpize \\\n        && ./configure --enable-xcache \\\n        && make -j$(nproc) \\\n        && make install \\\n    ) \\\n    && rm -r xcache \\\n    && docker-php-ext-enable xcache\n\nRUN pecl install xdebug && docker-php-ext-enable xdebug \\\n    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nRUN pecl install geoip && docker-php-ext-enable geoip \\\n    && echo \"<?php var_dump(geoip_record_by_name('141.30.225.1')); \" | php  | grep Dresden -cq || (echo \"Geo not working\" && exit 1) \\\n    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nCOPY *.sh /\nRUN chmod u+rwx /*.sh\n\nRUN npm set registry https://npm.bsolut.com \\\n    && npm config set always-auth true \\\n    && /npm-exp.sh \"npm login \" docker insecure docker@unikrn.com \\\n    && npm install node-tcp-relay pm2 less grunt gulp -g\n\nRUN echo -e \"de_DE.UTF-8 UTF-8\\nde_DE ISO-8859-1\\nde_DE@euro ISO-8859-15\\nen_US.UTF-8 UTF-8\" >> /etc/locale.gen\nRUN locale-gen && /usr/sbin/update-locale LANG=en_US.UTF-8\nENV LANG en_US.UTF-8\nENV LANGUAGE en_US.UTF-8\nENV LC_ALL en_US.UTF-8\n\nVOLUME /var/lib/redis\n\nEXPOSE 9000 9001 9002 6379\n\nADD zzz-unikrn-fpm.conf /usr/local/etc/php-fpm.d/\nADD unikrn-php.ini /usr/local/etc/php/conf.d/\nADD unikrn-xdebug.ini /usr/local/etc/php/conf.d/\nADD mysql-tmpfs.cnf /etc/mysql/conf.d/mysql-tmpfs.cnf\nRUN chmod go-w /etc/mysql/conf.d/mysql-tmpfs.cnf && chown mysql /etc/mysql/conf.d/mysql-tmpfs.cnf\n\nENTRYPOINT [ \"/run.sh\" ]\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "zzz-unikrn-fpm.conf",
+        "dest": "/usr/local/etc/php-fpm.d/"
+      },
+      {
+        "source": "unikrn-php.ini",
+        "dest": "/usr/local/etc/php/conf.d/"
+      },
+      {
+        "source": "unikrn-xdebug.ini",
+        "dest": "/usr/local/etc/php/conf.d/"
+      },
+      {
+        "source": "mysql-tmpfs.cnf",
+        "dest": "/etc/mysql/conf.d/mysql-tmpfs.cnf"
+      }
+    ],
+    "expose": [
+      9000
+    ],
+    "volume": [
+      "/var/lib/redis"
+    ],
+    "run": [
+      "echo deb http://httpredir.debian.org/debian stable main contrib >/etc/apt/sources.list     && echo deb http://security.debian.org/ stable/updates main contrib >>/etc/apt/sources.list     && curl -sL https://deb.nodesource.com/setup_4.x | bash -     && DEBIAN_FRONTEND=noninteractive apt-get install -y         libfreetype6-dev         libjpeg62-turbo-dev         libmcrypt-dev         libpng12-dev         zlib1g-dev         libgeoip-dev         python         locales         expect-dev         geoip-bin geoip-database-contrib         nodejs         libgmp-dev         redis-server redis-tools     && curl -fsSL https://dev.mysql.com/get/mysql-apt-config_0.7.3-1_all.deb -o /tmp/mysql.deb     && DEBIAN_FRONTEND=noninteractive MYSQL_SERVER_VERSION=mysql-5.6 dpkg -i /tmp/mysql.deb     && rm /tmp/mysql.deb    && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-community-server     && ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h     && docker-php-ext-install -j$(nproc) iconv mcrypt     && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/     && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql mysql mysqli bcmath mbstring zip gmp     && DEBIAN_FRONTEND=noninteractive MYSQL_SERVER_VERSION=mysql-5.6 apt-get upgrade -y    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer",
+      "curl -fsSL 'https://xcache.lighttpd.net/pub/Releases/3.2.0/xcache-3.2.0.tar.gz' -o xcache.tar.gz     && mkdir -p xcache     && tar -xf xcache.tar.gz -C xcache --strip-components=1     && rm xcache.tar.gz     && (         cd xcache         && cp -vr htdocs /var/www/         && phpize         && ./configure --enable-xcache         && make -j$(nproc)         && make install     )     && rm -r xcache     && docker-php-ext-enable xcache",
+      "pecl install xdebug && docker-php-ext-enable xdebug     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "pecl install geoip && docker-php-ext-enable geoip     && echo \"<?php var_dump(geoip_record_by_name('141.30.225.1')); \" | php  | grep Dresden -cq || (echo \"Geo not working\" && exit 1)     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "chmod u+rwx /*.sh",
+      "npm set registry https://npm.bsolut.com     && npm config set always-auth true     && /npm-exp.sh \"npm login \" docker insecure docker@unikrn.com     && npm install node-tcp-relay pm2 less grunt gulp -g",
+      "echo -e \"de_DE.UTF-8 UTF-8\\nde_DE ISO-8859-1\\nde_DE@euro ISO-8859-15\\nen_US.UTF-8 UTF-8\" >> /etc/locale.gen",
+      "locale-gen && /usr/sbin/update-locale LANG=en_US.UTF-8",
+      "chmod go-w /etc/mysql/conf.d/mysql-tmpfs.cnf && chown mysql /etc/mysql/conf.d/mysql-tmpfs.cnf"
+    ],
+    "workdir": [],
+    "from": "php:5.5-fpm",
+    "env": {
+      "TERM": "xterm",
+      "LANG": "en_US.UTF-8",
+      "LANGUAGE": "en_US.UTF-8",
+      "LC_ALL": "en_US.UTF-8"
+    },
+    "copy": "*.sh /",
+    "entrypoint": "[ \"/run.sh\" ]"
+  },
+  "source_repository_url": "git@github.com:unikrn/docker-php.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/unikrn/docker-php",
+  "docker_repository": "unikrn/php",
+  "docker_image": "unikrn/php",
+  "parameters_schema": {
+    "TERM": {
+      "default": "xterm",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "en_US.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANGUAGE": {
+      "default": "en_US.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LC_ALL": {
+      "default": "en_US.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        9000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "unikrn/php",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/unikrn/php",
+    "https://hub.docker.com/v2/repositories/unikrn/php",
+    "git@github.com:unikrn/docker-php.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Middleware/Runtime/PHP"
+  ],
+  "info_url": "https://hub.docker.com/r/unikrn/php",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

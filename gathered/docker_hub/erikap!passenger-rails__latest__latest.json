@@ -1,0 +1,122 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/erikap/passenger-rails",
+    "repository_url": "https://hub.docker.com/v2/repositories/erikap/passenger-rails",
+    "tags_url": "https://hub.docker.com/v2/repositories/erikap/passenger-rails/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/erikap/passenger-rails/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/erikap/passenger-rails/autobuild",
+    "user": "erikap",
+    "name": "passenger-rails",
+    "namespace": "erikap",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 7,
+    "pull_count": 227,
+    "last_updated": "2015-11-14T10:43:17.103590Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 232012828,
+        "id": 183960,
+        "repository": 161075,
+        "creator": 248899,
+        "last_updater": 248899,
+        "last_updated": "2015-11-14T10:43:25.235375Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "erikap/docker-passenger-rails"
+  },
+  "name": "erikap/passenger-rails Docker container",
+  "description": "Hosting a Rails production app in Phusion Passenger",
+  "readme": "# Passenger-Rails docker\nDocker for hosting a Rails production app in Phusion Passenger running Ruby 2.1\n\n## Preparing the Rails application\nConfigure the production database in Rails (`config/database.yml`) such that the values are filled by environment variables. These variables will be set on start up of the container. The adapter and port defaults to Postgres.\n\n    production:\n        adapter: <%= ENV['APP_DB_ADAPTER'] || \"postgresql\" %>\n        encoding: unicode\n        pool: 5\n        host: \"database\"\n        port: <%= ENV['APP_DB_PORT'] || \"5432\" %>\n        database: <%= ENV['APP_DB_DATABASE'] %>\n        username: <%= ENV['APP_DB_USERNAME'] %>\n        password: <%= ENV['APP_DB_PASSWORD'] %> \n\n## Running your Rails application in Phusion Passenger\n\n    docker run --name my-rails-app \\\n           --volume /path/to/rails/app:/home/app/webapp \\\n           --link my-database-container:database \\\n           -e \"SECRET_KEY_BASE=my-secret-production-key-for-rails\" \\\n           -e \"APP_DB_DATABASE=rails_db\" -e \"APP_DB_USERNAME=rails_db_user\" -e \"APP_DB_PASSWORD=rails_db_password\" \\\n           -d erikap/passenger-rails\n\nOn start up the following actions will be executed:\n- bundle install\n- assets precompilation\n- database migrations\n\n## Start up scripts\nCustom start up scripts can be added to `/ect/my_init.d` and will be executed during container start up.",
+  "dockerfile": "# See https://intercityup.com/blog/how-i-build-a-docker-image-for-my-rails-app.html\n# See https://intercityup.com/blog/deploy-rails-app-including-database-configuration-env-vars-assets-using-docker.html\n\nFROM phusion/passenger-ruby21:0.9.15\n\n# Set correct environment variables.\nENV HOME /root\nENV RAILS_ENV production\n\n# Use baseimage-docker's init system.\nCMD [\"/sbin/my_init\"]\n\n# Start Nginx / Passenger\nRUN rm -f /etc/service/nginx/down\n\n# Remove the default site\nRUN rm /etc/nginx/sites-enabled/default\n\n# Add the nginx info\nADD nginx.conf /etc/nginx/sites-enabled/webapp.conf\n\n# Add the rails-env configuration file so Nginx preserves the environment variables listed\nADD rails-env.conf /etc/nginx/main.d/rails-env.conf\n\n# Prepare folders\nRUN mkdir /home/app/webapp\nWORKDIR /home/app/webapp\n\n# Add startup script to run during container startup\nRUN mkdir -p /etc/my_init.d\nADD startup.sh /etc/my_init.d/startup.sh\nRUN chmod +x /etc/my_init.d/*.sh\n\n# Clean up APT when done.\nRUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "nginx.conf",
+        "dest": "/etc/nginx/sites-enabled/webapp.conf"
+      },
+      {
+        "source": "rails-env.conf",
+        "dest": "/etc/nginx/main.d/rails-env.conf"
+      },
+      {
+        "source": "startup.sh",
+        "dest": "/etc/my_init.d/startup.sh"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "rm -f /etc/service/nginx/down",
+      "rm /etc/nginx/sites-enabled/default",
+      "mkdir /home/app/webapp",
+      "mkdir -p /etc/my_init.d",
+      "chmod +x /etc/my_init.d/*.sh",
+      "apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+    ],
+    "workdir": [
+      "/home/app/webapp"
+    ],
+    "from": "phusion/passenger-ruby21:0.9.15",
+    "env": {
+      "HOME": "/root",
+      "RAILS_ENV": "production"
+    },
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/erikap/docker-passenger-rails.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/erikap/docker-passenger-rails",
+  "docker_repository": "erikap/passenger-rails",
+  "docker_image": "erikap/passenger-rails",
+  "parameters_schema": {
+    "HOME": {
+      "default": "/root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RAILS_ENV": {
+      "default": "production",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "erikap/passenger-rails",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/erikap/passenger-rails",
+    "https://hub.docker.com/v2/repositories/erikap/passenger-rails",
+    "https://github.com/erikap/docker-passenger-rails.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/erikap/passenger-rails",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

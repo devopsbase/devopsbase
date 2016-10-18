@@ -1,0 +1,147 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/nicolaihald/logstash",
+    "repository_url": "https://hub.docker.com/v2/repositories/nicolaihald/logstash",
+    "tags_url": "https://hub.docker.com/v2/repositories/nicolaihald/logstash/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/nicolaihald/logstash/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/nicolaihald/logstash/autobuild",
+    "user": "nicolaihald",
+    "name": "logstash",
+    "namespace": "nicolaihald",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1206,
+    "last_updated": "2016-06-13T14:36:04.324800Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 202704363,
+        "id": 3062363,
+        "repository": 693722,
+        "creator": 589118,
+        "last_updater": 589118,
+        "last_updated": "2016-06-13T14:36:03.845760Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "nicolaihald/dockerfiles"
+  },
+  "name": "nicolaihald/logstash Docker container",
+  "description": "Logstash container image for managing events and logs. ",
+  "readme": "### More to come... ",
+  "dockerfile": "FROM java:8-jre\n\nMAINTAINER nicolaihald\n# TODO: Merge RUN and ENV commands (fewer layers)\n\n# install plugin dependencies\nRUN apt-get update && apt-get install -y --no-install-recommends \\\n\t\tlibzmq3 \\\n\t&& rm -rf /var/lib/apt/lists/*\n\n# the \"ffi-rzmq-core\" gem is very picky about where it looks for libzmq.so\nRUN mkdir -p /usr/local/lib \\\n\t&& ln -s /usr/lib/*/libzmq.so.3 /usr/local/lib/libzmq.so\n\n# grab gosu for easy step-down from root\nENV GOSU_VERSION 1.7\nRUN set -x \\\n\t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \\\n\t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \\\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n\t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\n\t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu \\\n\t&& gosu nobody true\n\n# https://www.elastic.co/guide/en/logstash/2.3/package-repositories.html\n# https://packages.elastic.co/GPG-KEY-elasticsearch\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4\n\nENV LOGSTASH_MAJOR 2.3\nENV LOGSTASH_VERSION 1:2.3.2-1\n\nENV LOGSTASH_HOME /opt/logstash\nENV PATH $LOGSTASH_HOME/bin:$PATH\n\nRUN echo \"deb http://packages.elastic.co/logstash/${LOGSTASH_MAJOR}/debian stable main\" > /etc/apt/sources.list.d/logstash.list\n\nRUN set -x \\\n\t&& apt-get update \\\n\t&& apt-get install -y --no-install-recommends logstash=$LOGSTASH_VERSION \\\n\t&& apt-get clean \\\n\t&& rm -rf /var/lib/apt/lists/*\n\n\n# Support downloading logstash configuration file during container startup:\nENV LOGSTASH_CFG_URL=\"\"\n# ENV LOGSTASH_CFG_URL=\"https://raw.githubusercontent.com/nicolaihald/dockerfiles/master/logstash/logstash.searchlogger.conf\"\n\nWORKDIR $LOGSTASH_HOME\n\nCOPY src/ /\nCOPY start.sh /\nRUN chmod +x /start.sh\n\n# update geolite database\nRUN set -x \\\n\t&& mkdir -p /data/geoip \\\n\t&& mkdir -p /config \\\n\t# Download latest version of the geolite database\n\t&& wget -q -O /tmp/GeoLiteCity.dat.gz \"http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz\"  \\\n\t#&& gzip -d /tmp/GeoLiteCity.dat.gz > /opt/logstash/GeoLiteCity.dat \\\n\t&& gzip -d /tmp/GeoLiteCity.dat.gz > /data/geoip/GeoLiteCity.dat \\\n\t&& rm /tmp/GeoLiteCity.dat \\\n\n\t## Set owner of logstash home so we can access the \n    && chown -hR logstash:logstash /data/geoip \\\n    && chmod -R 777 /data/geoip\n\nRUN chmod +x /start.sh\n\n# /conf is the default directory where our logstash will read pipeline config files\n# /logs is an optional attach point to reference something like /var/log on the host\nVOLUME [\"/config\",\"/data\"]\n\n# Listen for defaults: 25826 (collectd), 5044 (beats)\nEXPOSE 25826 5044\n\n# install plugins \nRUN bin/logstash-plugin install logstash-input-heartbeat logstash-input-beats\n\nENTRYPOINT [\"/start.sh\"]\nCMD [\"bin/logstash\", \"agent\", \"-f\",\"/config\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      25826
+    ],
+    "volume": [
+      "[\"/config\",\"/data\"]"
+    ],
+    "run": [
+      "apt-get update && apt-get install -y --no-install-recommends \t\tlibzmq3 \t&& rm -rf /var/lib/apt/lists/*",
+      "mkdir -p /usr/local/lib \t&& ln -s /usr/lib/*/libzmq.so.3 /usr/local/lib/libzmq.so",
+      "set -x \t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \t&& export GNUPGHOME=\"$(mktemp -d)\" \t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu \t&& gosu nobody true",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4",
+      "echo \"deb http://packages.elastic.co/logstash/${LOGSTASH_MAJOR}/debian stable main\" > /etc/apt/sources.list.d/logstash.list",
+      "set -x \t&& apt-get update \t&& apt-get install -y --no-install-recommends logstash=$LOGSTASH_VERSION \t&& apt-get clean \t&& rm -rf /var/lib/apt/lists/*",
+      "chmod +x /start.sh",
+      "set -x \t&& mkdir -p /data/geoip \t&& mkdir -p /config \t# Download latest version of the geolite database",
+      "chmod +x /start.sh",
+      "bin/logstash-plugin install logstash-input-heartbeat logstash-input-beats"
+    ],
+    "workdir": [
+      "$LOGSTASH_HOME"
+    ],
+    "from": "java:8-jre",
+    "maintainer": "nicolaihald",
+    "env": {
+      "GOSU_VERSION": "1.7",
+      "LOGSTASH_MAJOR": "2.3",
+      "LOGSTASH_VERSION": "1:2.3.2-1",
+      "LOGSTASH_HOME": "/opt/logstash",
+      "PATH": "$LOGSTASH_HOME/bin:$PATH",
+      "LOGSTASH_CFG_URL": "\"\""
+    },
+    "copy": "start.sh /",
+    "entrypoint": "[\"/start.sh\"]",
+    "cmd": "[\"bin/logstash\", \"agent\", \"-f\",\"/config\"]"
+  },
+  "source_repository_url": "https://github.com/nicolaihald/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/nicolaihald/dockerfiles",
+  "docker_repository": "nicolaihald/logstash",
+  "docker_image": "nicolaihald/logstash",
+  "parameters_schema": {
+    "GOSU_VERSION": {
+      "default": "1.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LOGSTASH_MAJOR": {
+      "default": "2.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LOGSTASH_VERSION": {
+      "default": "1:2.3.2-1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LOGSTASH_HOME": {
+      "default": "/opt/logstash",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$LOGSTASH_HOME/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LOGSTASH_CFG_URL": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        25826
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "nicolaihald/logstash",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/nicolaihald/logstash",
+    "https://hub.docker.com/v2/repositories/nicolaihald/logstash",
+    "https://github.com/nicolaihald/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image",
+    "Type/Devopsware/Logging/Logstash"
+  ],
+  "info_url": "https://hub.docker.com/r/nicolaihald/logstash",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

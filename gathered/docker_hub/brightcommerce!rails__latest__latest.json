@@ -1,0 +1,146 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/brightcommerce/rails",
+    "repository_url": "https://hub.docker.com/v2/repositories/brightcommerce/rails",
+    "tags_url": "https://hub.docker.com/v2/repositories/brightcommerce/rails/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/brightcommerce/rails/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/brightcommerce/rails/autobuild",
+    "user": "brightcommerce",
+    "name": "rails",
+    "namespace": "brightcommerce",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 79,
+    "last_updated": "2015-11-13T15:26:41.817093Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 203325718,
+        "id": 44010,
+        "repository": 54934,
+        "creator": 91912,
+        "last_updater": 91912,
+        "last_updated": "2015-11-13T15:26:51.165756Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "4.1.5.20140915",
+        "full_size": 203325777,
+        "id": 44001,
+        "repository": 54934,
+        "creator": 91912,
+        "last_updater": 91912,
+        "last_updated": "2015-11-13T15:24:49.355893Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "brightcommerce/docker-rails"
+  },
+  "name": "brightcommerce/rails Docker container",
+  "description": "Ruby on Rails projects base container image installs & configures git, nodejs, rbenv, ruby-build, bundler & supporting libraries like curl, ssl, readline, yaml, xml & xslt.",
+  "readme": "# Docker Rails\r\n\r\nDockerfile to build a base container image for Rails projects. Installs and configures git, nodejs, rbenv, ruby-build, bundler and supporting libraries like curl, ssl, readline, yaml, xml and xslt.\r\n\r\n## Table Of Contents\r\n\r\n- [Version](#version)\r\n- [How To Use](#how-to-use)\r\n- [Configuration](#configuration)\r\n    - [Ports](#ports)\r\n    - [Specifying Ruby Versions](#specifying-ruby-versions)\r\n- [Copyright](#copyright)\r\n\r\n## Version\r\n\r\nThe current release (4.1.5.20140915) contains scripts to install dependencies for Ruby on Rails 4.1.5 using Ruby 2.1.2p95. You can howver specify alternative ruby versions in the `rubies.txt` file (one ruby version per line) and these versions will be installed and bundler will be setup for each version. Our version numbers will reflect the version of Rails being installed.\r\n\r\n## How To Use\r\n\r\nThis repository is intended to be used as a base layer for Rails projects. To specify this as a base, just include the `FROM` key in the Dockerfile of your Rails project. For example:\r\n\r\n``` bash\r\nFROM brightcommerce/rails:4.1.5.20140915\r\n```\r\n\r\n## Configuration\r\n\r\n### Ports\r\n\r\nThis installation exposes port `80`.\r\n\r\n### Specifying Ruby Versions\r\n\r\nSpecifies each version of ruby to be installed by adding them to the `rubies.txt` file, one per line. Bundler will be installed for each version of ruby specified. By default this repository only specifies one version of ruby which is currently `2.1.2p95`.\r\n\r\n## Copyright\r\n\r\nCopyright 2014 Brightcommerce, Inc.\r\n",
+  "dockerfile": "FROM brightcommerce/ubuntu:14.04.20140911\n\nMAINTAINER support@brightcommerce.com\n\n# Install curl, git, nodejs and supporting libraries\nRUN apt-get update -q\nRUN apt-get install -qy --force-yes build-essential\nRUN apt-get install -qy --force-yes curl\nRUN apt-get install -qy --force-yes git\nRUN apt-get install -qy --force-yes nodejs\nRUN apt-get install -qy --force-yes zlib1g-dev\nRUN apt-get install -qy --force-yes libssl-dev\nRUN apt-get install -qy --force-yes libreadline-dev\nRUN apt-get install -qy --force-yes libyaml-dev\nRUN apt-get install -qy --force-yes libxml2-dev\nRUN apt-get install -qy --force-yes libxslt-dev\n\n# Install rbenv and ruby-build\nRUN git clone https://github.com/sstephenson/rbenv.git /root/.rbenv\nRUN git clone https://github.com/sstephenson/ruby-build.git /root/.rbenv/plugins/ruby-build\nRUN ./root/.rbenv/plugins/ruby-build/install.sh\nENV PATH /root/.rbenv/bin:$PATH\nRUN echo 'eval \"$(rbenv init -)\"' >> /etc/profile.d/rbenv.sh # or /etc/profile\nRUN echo 'eval \"$(rbenv init -)\"' >> .bashrc\n\n# Install multiple versions of ruby\nENV CONFIGURE_OPTS --disable-install-doc\nADD ./rubies.txt /root/rubies.txt\nRUN xargs -L 1 rbenv install < /root/rubies.txt\n\n# Install Bundler and rehash for each version of ruby\nRUN echo 'gem: --no-rdoc --no-ri' >> /.gemrc\nRUN bash -l -c 'for v in $(cat /root/versions.txt); do rbenv global $v; gem install bundler; rbenv rehash; done'\n\n# Publish port 80\nEXPOSE 80\n\n# Clean up\nRUN apt-get clean\nRUN rm -rf /var/lib/apt/lists/*\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./rubies.txt",
+        "dest": "/root/rubies.txt"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update -q",
+      "apt-get install -qy --force-yes build-essential",
+      "apt-get install -qy --force-yes curl",
+      "apt-get install -qy --force-yes git",
+      "apt-get install -qy --force-yes nodejs",
+      "apt-get install -qy --force-yes zlib1g-dev",
+      "apt-get install -qy --force-yes libssl-dev",
+      "apt-get install -qy --force-yes libreadline-dev",
+      "apt-get install -qy --force-yes libyaml-dev",
+      "apt-get install -qy --force-yes libxml2-dev",
+      "apt-get install -qy --force-yes libxslt-dev",
+      "git clone https://github.com/sstephenson/rbenv.git /root/.rbenv",
+      "git clone https://github.com/sstephenson/ruby-build.git /root/.rbenv/plugins/ruby-build",
+      "./root/.rbenv/plugins/ruby-build/install.sh",
+      "echo 'eval \"$(rbenv init -)\"' >> /etc/profile.d/rbenv.sh # or /etc/profile",
+      "echo 'eval \"$(rbenv init -)\"' >> .bashrc",
+      "xargs -L 1 rbenv install < /root/rubies.txt",
+      "echo 'gem: --no-rdoc --no-ri' >> /.gemrc",
+      "bash -l -c 'for v in $(cat /root/versions.txt); do rbenv global $v; gem install bundler; rbenv rehash; done'",
+      "apt-get clean",
+      "rm -rf /var/lib/apt/lists/*"
+    ],
+    "workdir": [],
+    "from": "brightcommerce/ubuntu:14.04.20140911",
+    "maintainer": "support@brightcommerce.com",
+    "env": {
+      "PATH": "/root/.rbenv/bin:$PATH",
+      "CONFIGURE_OPTS": "--disable-install-doc"
+    }
+  },
+  "source_repository_url": "https://github.com/brightcommerce/docker-rails.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/brightcommerce/docker-rails",
+  "docker_repository": "brightcommerce/rails",
+  "docker_image": "brightcommerce/rails",
+  "parameters_schema": {
+    "PATH": {
+      "default": "/root/.rbenv/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CONFIGURE_OPTS": {
+      "default": "--disable-install-doc",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "brightcommerce/rails",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/brightcommerce/rails",
+    "https://hub.docker.com/v2/repositories/brightcommerce/rails",
+    "https://github.com/brightcommerce/docker-rails.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Type/Middleware/Runtime/JavaScript/Node.js",
+    "Mode/Executable/Image/Container Image",
+    "Mode/Executable/Bundle",
+    "Type/Devopsware/Build",
+    "Type/Devopsware/Version Control/Git"
+  ],
+  "info_url": "https://hub.docker.com/r/brightcommerce/rails",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

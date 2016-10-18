@@ -1,0 +1,182 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/appcontainers/jenkins",
+    "repository_url": "https://hub.docker.com/v2/repositories/appcontainers/jenkins",
+    "tags_url": "https://hub.docker.com/v2/repositories/appcontainers/jenkins/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/appcontainers/jenkins/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/appcontainers/jenkins/autobuild",
+    "user": "appcontainers",
+    "name": "jenkins",
+    "namespace": "appcontainers",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 7,
+    "pull_count": 23689,
+    "last_updated": "2016-07-31T19:04:58.945609Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "debian",
+        "full_size": 201431722,
+        "id": 850781,
+        "repository": 157555,
+        "creator": 79833,
+        "last_updater": 79833,
+        "last_updated": "2016-07-31T19:04:58.574724Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "centos",
+        "full_size": 234073201,
+        "id": 850775,
+        "repository": 157555,
+        "creator": 79833,
+        "last_updater": 79833,
+        "last_updated": "2016-07-31T19:00:11.661908Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 234072381,
+        "id": 174232,
+        "repository": 157555,
+        "creator": 79833,
+        "last_updater": 79833,
+        "last_updated": "2016-07-31T18:55:53.163933Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "ubuntu",
+        "full_size": 193205165,
+        "id": 850779,
+        "repository": 157555,
+        "creator": 79833,
+        "last_updater": 79833,
+        "last_updated": "2016-06-15T17:56:22.550066Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "appcontainers/jenkins"
+  },
+  "name": "appcontainers/jenkins Docker container",
+  "description": "Centos/Debian/Ubuntu Based Customizable Jenkins 2.9 Container - Updated 06/11/2016",
+  "readme": "**Centos/Debian/Ubuntu Based Customizable Jenkins Container - 506 MB - Updated 06/11/2016**\n\n**CentOS 6.8 Based Customizable Jenkins Container - 506 MB - Updated 06/11/2016**\n>**Built from appcontainers/centos:6**\n\n> appcontainers/jenkins:latest\n> appcontainers/jenkins:centos\n\n>##### In Depth Container Details, and Changelog can be found here:\nhttp://www.appcontainers.com/jenkins\n\n&nbsp;\n\n**Debian 8 Jessie Based Customizable Jenkins Container - 380MB - Updated 06/11/2016**\n>**Built from appcontainers/debian:jessie**\n\n> appcontainers/jenkins:debian\n\n>##### In Depth Container Details, and Changelog can be found here:\nhttp://www.appcontainers.com/jenkins\n\n&nbsp;",
+  "dockerfile": "############################################################\n# Dockerfile to build Jenkins Base Container\n# Based on: appcontainers/debian\n# DATE: 09/05/2015\n# COPYRIGHT: Appcontainers.com\n############################################################\n\n# Set the base image to Centos 6.6 Base\nFROM appcontainers/debian\n\n# File Author / Maintainer\nMAINTAINER Rich Nason rnason@appcontainers.com\n\n###################################################################\n#*************************  APP VERSIONS  *************************\n###################################################################\n\n \n###################################################################\n#***************  OVERRIDE ENABLED ENV VARIABLES  *****************\n###################################################################\n\nENV ROLE master\nENV SSH_PASS jenkins123\nENV ENV prod\nENV TERMTAG JENKINS\n\n###################################################################\n#******************  ADD REQUIRED APP FILES  **********************\n###################################################################\n\n\n###################################################################\n#*******************  UPDATES & PRE-REQS  *************************\n###################################################################\n\n# Run Update, and install Jenkins\n# Clean, Update, Upgrade, and Install... then clear non English local data. openjdk-7-jdk\nRUN apt-get clean && \\\napt-get update && \\\napt-get -y upgrade && \\\napt-get -y install sudo git wget openssh-server net-tools && \\\n#export JAVA_HOME=/usr/lib/jvm/jre-1.7.0-openjdk.x86_64 && \\\napt-get clean && \\\nrm -fr /var/lib/apt/lists/*\n\n# Remove locales other than english\nRUN for x in `ls /usr/share/locale | grep -v en_GB`; do rm -fr /usr/share/locale/$x; done && \\\nfor x in `ls /usr/share/i18n/locales/ | grep -v en_`; do rm -fr /usr/share/i18n/locales/$x; done\n\n# Recreate a needed directory so that java headless installs\nRUN mkdir -p /usr/share/man/man1/ && \\\ntouch /usr/share/man/man1/rmid.1.gz.dpkg-tmp\n\n###################################################################\n#*******************  APPLICATION INSTALL  ************************\n###################################################################\n\n# Add Jenkins Repository\nRUN wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add - && \\\necho \"deb http://pkg.jenkins-ci.org/debian binary/\" >> /etc/apt/sources.list\n\nRUN apt-get clean && \\\napt-get update && \\\napt-get -y install jenkins && \\\napt-get clean && \\\nrm -fr /var/lib/apt/lists/*\n\n###################################################################\n#******************  POST DEPLOY CLEAN UP  ************************\n###################################################################\n\n# Make SSH Directory, Instruct Jenkins not to prompt for host key verification and set perms\nRUN mkdir /var/lib/jenkins/.ssh && \\\necho \"Host *\\n\\tStrictHostKeyChecking no\\n\" >> /var/lib/jenkins/.ssh/config\n\nRUN mkdir -p /var/cache/jenkins/war && \\\nmkdir /var/log/jenkins || exit 0 && \\\ncd /var/cache/jenkins/war && \\\njar -xvf /usr/lib/jenkins/jenkins.war && \\\nchmod a+w ./\n\n# Reset Permissions\nRUN chown -R jenkins:jenkins /var/cache/jenkins && \\\nchown jenkins:jenkins /var/log/jenkins && \\\nchmod -R 775 /var/cache/jenkins && \\\nchmod -R 777 /var/log/jenkins && \\\nchown -R jenkins:jenkins /var/lib/jenkins && \\\nchown -R jenkins:jenkins /var/lib/jenkins/.ssh && \\\nchmod -R 0700 /var/lib/jenkins/.ssh && \\\nchmod -R 0600 /var/lib/jenkins/.ssh/*\n\n###################################################################\n#*****************  CONFIGURE START ITEMS  ************************\n###################################################################\n\n# Add Database Scripts, and Runconfig\nADD runconfig.sh /tmp/.runconfig.sh\n\n# Set boot items\nRUN chmod +x /tmp/.runconfig.sh && \\\necho \"/tmp/./.runconfig.sh\" >> /root/.bashrc && \\\necho \"[ -f /tmp/.runconfig.sh ] && rm -fr /tmp/.runconfig.sh\" >> /root/.bashrc && \\\necho \"service jenkins start\" >> /root/.bashrc\n\nCMD /bin/bash\n\n###################################################################\n#****************  EXPOSE APPLICATION PORTS  **********************\n###################################################################\n\n# Expose ports to other containers only\nEXPOSE 22\nEXPOSE 8080\nEXPOSE 50000\n\n###################################################################\n#*******************  OPTIONAL / LEGACY  **************************\n###################################################################",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "runconfig.sh",
+        "dest": "/tmp/.runconfig.sh"
+      }
+    ],
+    "expose": [
+      22,
+      8080,
+      50000
+    ],
+    "volume": [],
+    "run": [
+      "apt-get clean && apt-get update && apt-get -y upgrade && apt-get -y install sudo git wget openssh-server net-tools && #export JAVA_HOME=/usr/lib/jvm/jre-1.7.0-openjdk.x86_64 && apt-get clean && rm -fr /var/lib/apt/lists/*",
+      "for x in `ls /usr/share/locale | grep -v en_GB`; do rm -fr /usr/share/locale/$x; done && for x in `ls /usr/share/i18n/locales/ | grep -v en_`; do rm -fr /usr/share/i18n/locales/$x; done",
+      "mkdir -p /usr/share/man/man1/ && touch /usr/share/man/man1/rmid.1.gz.dpkg-tmp",
+      "wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add - && echo \"deb http://pkg.jenkins-ci.org/debian binary/\" >> /etc/apt/sources.list",
+      "apt-get clean && apt-get update && apt-get -y install jenkins && apt-get clean && rm -fr /var/lib/apt/lists/*",
+      "mkdir /var/lib/jenkins/.ssh && echo \"Host *\\n\\tStrictHostKeyChecking no\\n\" >> /var/lib/jenkins/.ssh/config",
+      "mkdir -p /var/cache/jenkins/war && mkdir /var/log/jenkins || exit 0 && cd /var/cache/jenkins/war && jar -xvf /usr/lib/jenkins/jenkins.war && chmod a+w ./",
+      "chown -R jenkins:jenkins /var/cache/jenkins && chown jenkins:jenkins /var/log/jenkins && chmod -R 775 /var/cache/jenkins && chmod -R 777 /var/log/jenkins && chown -R jenkins:jenkins /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins/.ssh && chmod -R 0700 /var/lib/jenkins/.ssh && chmod -R 0600 /var/lib/jenkins/.ssh/*",
+      "chmod +x /tmp/.runconfig.sh && echo \"/tmp/./.runconfig.sh\" >> /root/.bashrc && echo \"[ -f /tmp/.runconfig.sh ] && rm -fr /tmp/.runconfig.sh\" >> /root/.bashrc && echo \"service jenkins start\" >> /root/.bashrc"
+    ],
+    "workdir": [],
+    "from": "appcontainers/debian",
+    "maintainer": "Rich Nason rnason@appcontainers.com",
+    "env": {
+      "ROLE": "master",
+      "SSH_PASS": "jenkins123",
+      "ENV": "prod",
+      "TERMTAG": "JENKINS"
+    },
+    "cmd": "/bin/bash"
+  },
+  "source_repository_url": "git@bitbucket.org:appcontainers/jenkins.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/appcontainers/jenkins",
+  "docker_repository": "appcontainers/jenkins",
+  "docker_image": "appcontainers/jenkins",
+  "parameters_schema": {
+    "ROLE": {
+      "default": "master",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSH_PASS": {
+      "default": "jenkins123",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ENV": {
+      "default": "prod",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TERMTAG": {
+      "default": "JENKINS",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        22,
+        8080,
+        50000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "appcontainers/jenkins",
+  "revision": "debian",
+  "uris": [
+    "https://hub.docker.com/r/appcontainers/jenkins",
+    "https://hub.docker.com/v2/repositories/appcontainers/jenkins",
+    "git@bitbucket.org:appcontainers/jenkins.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Integration/Jenkins",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Type/Infrastructure/Operating System/Linux/CentOS",
+    "Type/Infrastructure/Operating System/Linux/Debian"
+  ],
+  "info_url": "https://hub.docker.com/r/appcontainers/jenkins",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,103 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/afimb/chouette-postgres",
+    "repository_url": "https://hub.docker.com/v2/repositories/afimb/chouette-postgres",
+    "tags_url": "https://hub.docker.com/v2/repositories/afimb/chouette-postgres/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/afimb/chouette-postgres/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/afimb/chouette-postgres/autobuild",
+    "user": "afimb",
+    "name": "chouette-postgres",
+    "namespace": "afimb",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 117,
+    "last_updated": "2016-10-11T09:37:19.204952Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "develop",
+        "full_size": 213723888,
+        "id": 4715152,
+        "repository": 705342,
+        "creator": 695319,
+        "last_updater": 695319,
+        "last_updated": "2016-10-11T09:37:18.900877Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 260540269,
+        "id": 3143877,
+        "repository": 705342,
+        "creator": 695319,
+        "last_updater": 695319,
+        "last_updated": "2016-07-25T15:14:26.705863Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "afimb/docker-chouette"
+  },
+  "name": "afimb/chouette-postgres Docker container",
+  "description": "Postgres",
+  "readme": "docker-chouette is a pre-installed docker container \nof Chouette2, an open source web project in Ruby/Rails for editing and viewing Public Transport data\nFor more information see https://github.com/afimb/chouette2/\nand http://www.chouette.mobi\nFor any question please use [the User Forum](http://forum.chouette.mobi/index.php) or [Contact us](http://www.chouette.mobi/club-utilisateurs/contact-support/) !\n\n# 1. Installation in a nutshell\nIf you already have docker on your machine,\nyou'll just have to download and unzip https://github.com/afimb/docker-chouette/archive/master.zip \n(which contains the instructions for composing the 3 images located at https://hub.docker.com/r/afimb)\nand then launch the application with:\n```docker-compose pull\ndocker-compose up -d```\n\n# 2. Prerequisites\n- docker-compose v1.7.1\n- docker version 1.10 (or newer)\nOnly Centos 7 has been tested, but it should work on any Linux distribution\nFor Windows and MacOS, see the last section of this readme\n\n# 3. For Linux / Centos7\n## 3.1 Docker installation\nAdd yum docker.repo :\n\n```\nsudo tee /etc/yum.repos.d/docker.repo <<-'EOF'\n[dockerrepo]\nname=Docker Repository\nbaseurl=https://yum.dockerproject.org/repo/main/centos/$releasever/\nenabled=1\ngpgcheck=1\ngpgkey=https://yum.dockerproject.org/gpg\nEOF\n```\n\n```\nsudo yum install -y docker-engine git\n```\n\n## 3.2 docker-compose installation\n```\ncurl -L https://github.com/docker/compose/releases/download/1.7.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose\n```\n\n```\nchmod +x /usr/local/bin/docker-compose\n```\n\n## 3.3 Run docker without root permissions\nIf you are new to docker : so as to avoid lauching docker with sudo, docker, you'll need to add your user to the docker group (if it doesn't exist : `sudo groupadd docker`) ;\nfor Ubuntu the command will be\n```\nsudo adduser nom_utilisateur docker\n```\nor\n```\nsudo usermod -a -G docker nom_utilisateur\n```\nThen, restart docker\n\n## 3.4 Retrieve and Start the application\n### Download docker-chouette\n```\nmkdir -p /opt/chouette && git clone https://github.com/afimb/docker-chouette.git /opt/chouette\n```\n\nor if you don't have git, download the archive: https://github.com/afimb/docker-chouette/archive/master.zip and unzip archive into /opt/chouette\n\n### Download the docker images\n```\ncd /opt/chouette\ndocker-compose pull\n```\n\n### Start all containers\n```\ncd /opt/chouette\ndocker-compose up\n```\n\n### Use the Application\nwait until containers start...\n\nthen go to http://localhost:3000\nalso open Mailcatcher http://localhost:1080 to catch e-mails\n\nFor docker-toolbox on Mac or Windows: you must change every localhost with the ip address given by docker on startup (see below)\nFrom the Docker QuickStart Terminal, ```docker-machine ip``` will give your ip address.\n\n## 3.5 How to launch \"Chouette2\" at startup\n\n### Systemd script\nYou need to create chouette.service in /usr/lib/systemd/system/\n```\nsudo tee /usr/lib/systemd/system/chouette.service <<-'EOF'\n[Unit]\nDescription=Infra Serv\nRequires=docker.service\nAfter=docker.service\nBindsTo=docker.service\nConflicts=shutdown.target reboot.target halt.target\n[Service]\nRestart=always\nWorkingDirectory=/opt/chouette\nTimeoutStartSec=0\nTimeoutStopSec=30\nExecStart=/usr/local/bin/docker-compose -f docker-compose.yml up\nExecStop=/usr/local/bin/docker-compose -f docker-compose.yml stop\n[Install]\nWantedBy=local.target\nEOF\n```\n\nCheck that everything works (chouette must be installed first):\n```\nsudo systemctl start chouette.service\n```\n\nEnable service at boot:\n```\nsudo systemctl enable chouette.service\n```\nand then start the containers with:\n```\ndocker-compose up\n```\n\n### System V (init) script\nTODO\n\n\n## 3.6 SMTP settings\nIf you don't want to use MailCatcher, you can use an external SMTP.\nStop all the containers first and then fill all the lines in the file docker-compose.yml with the information from your provider:\n- smtp_host=smtp\n- smtp_port=25\n- smtp_domain=\n- smtp_user_name=\n- smtp_password=\n- smtp_authentication=\n\n\n## 3.7 Google API Key\nIf you want to use Google API services, you must specify a key https://developers.google.com/maps/documentation/javascript/get-api-key\nFill the field with your key:\n- google_api_key=\n\n\n# 4. Detailed installation instruction for docker-toolbox on Mac or Windows (also valid for Linux!):\n\n- if you want to understand docker, read this https://docs.docker.com/windows/ \n- until Docker for Windows/Mac is released ([in beta now](https://blog.docker.com/2016/03/docker-for-mac-windows-beta/), and only for Windows 10 and above), you'll have to [install the docker toolbox](https://www.docker.com/products/docker-toolbox), which includes docker-compose ;\n- download https://github.com/afimb/docker-chouette/archive/master.zip and unzip in a local directory (ex. D:/docker-chouette)\n- launch the Docker QuickStart Terminal (it is also possible to launch docker from a DOS terminal windows if you have already created a docker-machine, for more advanced users : see https://docs.docker.com/engine/installation/windows/)\n- if you are behind a proxy, followed the instructions of http://www.netinstructions.com/how-to-install-docker-on-windows-behind-a-pr…  (from \"docker-machine ssh default\" to \"docker-machine restart default\")\n- the next steps are the same in any OS (except that on linux you can use the localhost URL because docker runs natively on your OS without the need for a VM host)\n- go in the directory where you have downloaded docker-chouette (i.e. where the docker-compose.yml file is), and ```docker-compose pull``` then ```docker-compose up -d``` (this will start the application in the background, you can check if processes are started with ```docker ps```)\n- wait until all files are downloaded and the chouette2 is started (it may take several minutes)\n- find the IP adress of your docker machine with ```docker ip```\n- to access to the Chouette application, go in your browser to ```your_ip_address:3000```\n- when you first sign up (create an organisation and user), you'll have to validate your account by going to mailCatcher (your_docker-machine_ip_address:1080) and click in the e-mail you'll just received (change the localhost address into your_docker-machine_ip_address)\n- sign in with your Chouette user name and you can use the application\n- if needed you can connect the Chouette PostgreSQL database from  PGADMIN (create a server with host: your_docker-machine_ip_address, port: 5433, user: chouette, password: chouette)\n",
+  "dockerfile": "FROM mdillon/postgis:9.4\nMAINTAINER Cityway\n\nLABEL Description=\"Chouette DB\" \\\n      Usage=\"docker run --name chouette-postgres -p 5433:5432 -e POSTGRES_USER=chouette -e POSTGRES_PASSWORD=chouette -d chouette-postgres\" \\\n      BuildUsage=\"docker build -t chouette-postgres .\" \\\n      License=\"CECILL/B\" \\\n      Version=\"3.0\"\n\nCOPY docker-entrypoint-initdb.d/* /docker-entrypoint-initdb.d/\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [],
+    "workdir": [],
+    "from": "mdillon/postgis:9.4",
+    "maintainer": "Cityway",
+    "label": "Description=\"Chouette DB\"       Usage=\"docker run --name chouette-postgres -p 5433:5432 -e POSTGRES_USER=chouette -e POSTGRES_PASSWORD=chouette -d chouette-postgres\"       BuildUsage=\"docker build -t chouette-postgres .\"       License=\"CECILL/B\"       Version=\"3.0\"",
+    "copy": "docker-entrypoint-initdb.d/* /docker-entrypoint-initdb.d/"
+  },
+  "source_repository_url": "https://github.com/afimb/docker-chouette.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/afimb/docker-chouette",
+  "docker_repository": "afimb/chouette-postgres",
+  "docker_image": "afimb/chouette-postgres",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "afimb/chouette-postgres",
+  "revision": "develop",
+  "uris": [
+    "https://hub.docker.com/r/afimb/chouette-postgres",
+    "https://hub.docker.com/v2/repositories/afimb/chouette-postgres",
+    "https://github.com/afimb/docker-chouette.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/afimb/chouette-postgres",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

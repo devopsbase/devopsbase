@@ -1,0 +1,127 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/google/dart-test-runner",
+    "repository_url": "https://hub.docker.com/v2/repositories/google/dart-test-runner",
+    "tags_url": "https://hub.docker.com/v2/repositories/google/dart-test-runner/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/google/dart-test-runner/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/google/dart-test-runner/autobuild",
+    "user": "google",
+    "name": "dart-test-runner",
+    "namespace": "google",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 268,
+    "last_updated": "2016-03-21T17:07:52.245888Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 317883933,
+        "id": 93646,
+        "repository": 122305,
+        "creator": 4362,
+        "last_updater": 4362,
+        "last_updated": "2016-03-21T17:07:51.908392Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.8.3",
+        "full_size": 301090541,
+        "id": 93657,
+        "repository": 122305,
+        "creator": 4362,
+        "last_updater": 249422,
+        "last_updated": "2015-11-14T09:35:53.834352Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "google/test_runner.dart"
+  },
+  "name": "google/dart-test-runner Docker container",
+  "description": "",
+  "readme": "# google/dart-test-runner\n\n[`google/dart-test-runner`][2] is a [docker](https://docker.io) image that\nmakes it easy to run a [Dart](https://dartlang.org) applications tests.\n\nIt automatically downloads a Dart application and its dependencies and run\nall tests of the project in an environment pre-configured with all tools to run\ntests (Dartium Content Shell, Dart SDK, Dart Test Runner...).\n\nIt is based on the [`google/dart`][1] image.\n\n## Usage\n\nYou can use this Docker image to automatically download and test a Pub package,\na GitHub repo or a local project.\n\n### Pub packages\n\nTo automatically download and test a Pub package run:\n\n    docker run -e PKG=<package_name> -e VERSION=<package_version> google/dart-test-runner\n\nexample: `docker run -e PKG=test_runner -e VERSION=0.2.11 google/dart-test-runner`\n\nexample: `docker run -e PKG=test_runner -e VERSION=0.2.11 google/dart-test-runner:1.8.3`\n\n### GitHub repos\n\nTo automatically download and test a GitHub repo run:\n\n    docker run -e REPO=<repo_path> -e BRANCH=<branch_name> google/dart-test-runner\n\nexample: `docker run -e REPO=google/test_runner.dart -e BRANCH=master google/dart-test-runner`\n\nexample: `docker run -e REPO=google/test_runner.dart -e BRANCH=1d10a11f0404be12ec643396c5b3db9041bb9919 google/dart-test-runner`\n\nexample: `docker run -e REPO=google/test_runner.dart google/dart-test-runner # Defaults to master`\n\nexample: `docker run -e REPO=google/test_runner.dart google/dart-test-runner:1.8.3`\n\n### Local projects\n\nTo test a local project. You need to first create a `Dockerfile` at the root of\nyour project with this content:\n\n    FROM google/dart-test-runner\n    ADD pubspec.* /app/\n    WORKDIR /app\n    RUN pub get\n    ADD . /app\n    RUN pub get --offline\n\nTo run the tests use:\n\n    docker build -t my_project/tests .\n    docker run my_project/tests\n\n### Options\n\nYou can also pass options to the Dart Test Runner. For instance you can get a\ncolored output by adding `-c`:\n\n    docker run -e REPO=google/test_runner.dart google/dart-test-runner -c\n\n[1]: https://registry.hub.docker.com/u/google/dart/\n[2]: https://registry.hub.docker.com/u/google/dart-test-runner/\n",
+  "dockerfile": "# Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file\n# for details. All rights reserved. Use of this source code is governed by a\n# BSD-style license that can be found in the LICENSE file.\n#\n# Dockerfile for google/dart-test-runner\n\nFROM google/dart\n\n# Enable contrib and non-free packages.\n\nRUN echo \"deb http://gce_debian_mirror.storage.googleapis.com wheezy contrib non-free\" >> /etc/apt/sources.list \\\n  && echo \"deb http://gce_debian_mirror.storage.googleapis.com wheezy-updates contrib non-free\" >> /etc/apt/sources.list \\\n  && echo \"deb http://security.debian.org/ wheezy/updates contrib non-free\" >> /etc/apt/sources.list\nRUN apt-get update\n\n# Install Chromium, required fonts and needed tools.\n\nRUN echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula \\\n    select true | debconf-set-selections\nRUN apt-get install --no-install-recommends -y -q chromium-browser \\\n    tar wget unzip xvfb xauth \\\n    ttf-kochi-gothic ttf-kochi-mincho ttf-mscorefonts-installer \\\n    ttf-indic-fonts ttf-dejavu-core fonts-thai-tlwg\n\n# Install libc6-dev from testing cource.\n\nRUN echo \"deb http://ftp.debian.org/debian/ testing main contrib non-free\" >> /etc/apt/sources.list\nRUN apt-get update\nRUN apt-get install --no-install-recommends -y -q libc6-dev\n\n# Trick to have ttf-indic-fonts-core since ttf-indic-fonts is transitional.\n\nWORKDIR /usr/share/fonts/truetype/ttf-indic-fonts-core\nRUN ln -s ../lohit-punjabi/Lohit-Punjabi.ttf lohit_hi.ttf \\\n  && ln -s ../lohit-tamil/Lohit-Tamil.ttf lohit_ta.ttf \\\n  && ln -s ../fonts-beng-extra/MuktiNarrow.ttf \\\n  && ln -s ../lohit-punjabi/Lohit-Punjabi.ttf lohit_pa.ttf\n\n# Install Dartium Content Shell.\n\nWORKDIR /usr/local/content_shell\nRUN wget https://storage.googleapis.com/dart-archive/channels/stable/release/latest/dartium/content_shell-linux-x64-release.zip\nRUN unzip content_shell-linux-x64-release.zip \\\n  && rm content_shell-linux-x64-release.zip \\\n  && mv $(ls) latest\nENV PATH /usr/local/content_shell/latest:$PATH\n\n# Install the Dart test runner.\n\nENV PATH $PATH:/root/.pub-cache/bin\nRUN pub global activate test_runner\n\n# Run Test Runner and display results.\n\nADD test.sh /usr/local/bin/test.sh\nRUN chmod +x /usr/local/bin/test.sh\n\nENTRYPOINT [\"/usr/local/bin/test.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "test.sh",
+        "dest": "/usr/local/bin/test.sh"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "echo \"deb http://gce_debian_mirror.storage.googleapis.com wheezy contrib non-free\" >> /etc/apt/sources.list   && echo \"deb http://gce_debian_mirror.storage.googleapis.com wheezy-updates contrib non-free\" >> /etc/apt/sources.list   && echo \"deb http://security.debian.org/ wheezy/updates contrib non-free\" >> /etc/apt/sources.list",
+      "apt-get update",
+      "echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula     select true | debconf-set-selections",
+      "apt-get install --no-install-recommends -y -q chromium-browser     tar wget unzip xvfb xauth     ttf-kochi-gothic ttf-kochi-mincho ttf-mscorefonts-installer     ttf-indic-fonts ttf-dejavu-core fonts-thai-tlwg",
+      "echo \"deb http://ftp.debian.org/debian/ testing main contrib non-free\" >> /etc/apt/sources.list",
+      "apt-get update",
+      "apt-get install --no-install-recommends -y -q libc6-dev",
+      "ln -s ../lohit-punjabi/Lohit-Punjabi.ttf lohit_hi.ttf   && ln -s ../lohit-tamil/Lohit-Tamil.ttf lohit_ta.ttf   && ln -s ../fonts-beng-extra/MuktiNarrow.ttf   && ln -s ../lohit-punjabi/Lohit-Punjabi.ttf lohit_pa.ttf",
+      "wget https://storage.googleapis.com/dart-archive/channels/stable/release/latest/dartium/content_shell-linux-x64-release.zip",
+      "unzip content_shell-linux-x64-release.zip   && rm content_shell-linux-x64-release.zip   && mv $(ls) latest",
+      "pub global activate test_runner",
+      "chmod +x /usr/local/bin/test.sh"
+    ],
+    "workdir": [
+      "/usr/share/fonts/truetype/ttf-indic-fonts-core",
+      "/usr/local/content_shell"
+    ],
+    "from": "google/dart",
+    "env": {
+      "PATH": "$PATH:/root/.pub-cache/bin"
+    },
+    "entrypoint": "[\"/usr/local/bin/test.sh\"]"
+  },
+  "source_repository_url": "https://github.com/google/test_runner.dart.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/google/test_runner.dart",
+  "docker_repository": "google/dart-test-runner",
+  "docker_image": "google/dart-test-runner",
+  "parameters_schema": {
+    "PATH": {
+      "default": "$PATH:/root/.pub-cache/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "google/dart-test-runner",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/google/dart-test-runner",
+    "https://hub.docker.com/v2/repositories/google/dart-test-runner",
+    "https://github.com/google/test_runner.dart.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/Google",
+    "Type/Devopsware/Test",
+    "Type/Middleware/Runtime/Dart"
+  ],
+  "info_url": "https://hub.docker.com/r/google/dart-test-runner",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

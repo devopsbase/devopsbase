@@ -1,0 +1,147 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/websend/jenkins",
+    "repository_url": "https://hub.docker.com/v2/repositories/websend/jenkins",
+    "tags_url": "https://hub.docker.com/v2/repositories/websend/jenkins/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/websend/jenkins/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/websend/jenkins/autobuild",
+    "user": "websend",
+    "name": "jenkins",
+    "namespace": "websend",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 268,
+    "last_updated": "2016-10-14T09:48:05.395958Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2.19.1",
+        "full_size": 1216788815,
+        "id": 5246683,
+        "repository": 343743,
+        "creator": 111321,
+        "last_updater": 111321,
+        "last_updated": "2016-10-14T09:48:04.309815Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.642.3",
+        "full_size": 1199119948,
+        "id": 2429954,
+        "repository": 343743,
+        "creator": 111321,
+        "last_updater": 111321,
+        "last_updated": "2016-08-15T08:38:57.001924Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.609.1",
+        "full_size": 1150706569,
+        "id": 1043906,
+        "repository": 343743,
+        "creator": 42387,
+        "last_updater": 111321,
+        "last_updated": "2016-01-28T11:09:21.986573Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.625.1",
+        "full_size": 1183525368,
+        "id": 1151163,
+        "repository": 343743,
+        "creator": 44012,
+        "last_updater": 44012,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.609.3",
+        "full_size": 1183997303,
+        "id": 1113121,
+        "repository": 343743,
+        "creator": 42387,
+        "last_updater": 44012,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "websend/devops"
+  },
+  "name": "websend/jenkins Docker container",
+  "description": "Jenkins",
+  "readme": "# DevOps\n## Prerequisites\n### Ansible\nAnsible is only needed on the control machines. No extra software is needed on the managed nodes.\n\n## Server Operations\n### Development\n#### New Server\nCreate a new CoreOS host following the VirtualBox instructions.\n\nRun the following commands from the control machine:\n```\nansible-playbook -i ansible/inventory ansible/general/setup.yml -l development\nansible-playbook -i ansible/inventory ansible/general/iptables.yml -l development\nansible-playbook -i ansible/inventory ansible/general/certificates_keys_dev.yml\nansible-playbook -i ansible/inventory ansible/services/setup.yml -l development\n```\n\nSpecific services (names are self explanatory):\n```\nansible-playbook -i ansible/inventory ansible/services/redis.yml -l development\nansible-playbook -i ansible/inventory ansible/services/captain_restart_orchestrator.yml -l development\nansible-playbook -i ansible/inventory ansible/services/haproxy.yml -l development\n```\n\n### Production\n#### New Server\nCreate a new CoreOS host with the correct cloud config file from the cloud_config directory. Don't forget to change the\nvalues between <> before you apply the file. Add the host to Logentries and add the token to the host_vars.\n\nRun the following commands from the control machine:\n```\nansible-playbook -i ansible/inventory ansible/general/setup.yml -l [server-address] -e @ansible/inventory/group_vars/production_secrets --vault-password-file ./ansible/.vault_pass\nansible-playbook -i ansible/inventory ansible/general/iptables.yml -l production\nansible-playbook -i ansible/inventory ansible/general/restart.yml -l [server-address] (bug, because else MTU is not set)\nansible-playbook -i ansible/inventory ansible/general/certificates_keys_production.yml -l [server-address] --vault-password-file ./ansible/.vault_pass\nansible-playbook -i ansible/inventory ansible/services/custom_routes.yml -l production\nansible-playbook -i ansible/inventory ansible/services/setup.yml -l [server-address] -e @ansible/inventory/group_vars/production_secrets --vault-password-file ./ansible/.vault_pass\n```\n\n### Launching services\nYou launch new services by the following command.\n```\nansible-playbook -i ansible/inventory ansible/services/[service].yml -l production -e @ansible/inventory/group_vars/production_secrets --vault-password-file ./ansible/.vault_pass\n```\n\n## .p12 to .pem\nGoogle delivers a .p12 file for Google Cloud communications. For ansible we need to make it a .pem and encrypt it with\nansible-vault, upload it and make it a .p12 again. The command to create a .pem from a .p12:\n```\nopenssl pkcs12 -in google_price_comparator.p12 -out google_price_comparator.pem -nodes\n```\n\n## Docker enzo\n\n### Start mysql\n```bash\ndocker run --name mysql_data -e DATA_DIRECTORY=\"/home/mysql/data/\" -e USER_ID=\"3306\" -e GROUP_ID=\"3306\" -v /home/mysql/data/ thedutchselection/data:latest\ndocker run -d -p 3309:3306 --name mysql -e DATA_DIRECTORY=\"/home/mysql/data/\" --volumes-from mysql_data websend/mysql:5.6\n```\n\n### Start mariadb\n```bash\ndocker run --name mariadb_data -e DATA_DIRECTORY=\"/home/mysql/data/\" -e USER_ID=\"3306\" -e GROUP_ID=\"3306\" -v /home/mysql/data/ thedutchselection/data:latest\ndocker run -d -p 3309:3306 --name mariadb -e DATA_DIRECTORY=\"/home/mysql/data/\" --volumes-from mariadb_data websend/mariadb:10.1\n```\n\n### Misc\n\n#### Vmware fusion port forwarding\nEdit `[incomingtcp]` section in:\n```\n/Library/Preferences/VMware Fusion/vmnet8/nat.conf\n```\n\n#### Check privileges\n```sql\nSELECT host FROM mysql.user WHERE User = 'root';\n```\n",
+  "dockerfile": "# NAME: Jenkins 1.642.3\n#\n# DESCRIPTION: Jenkins image.\n#\n# REQUIRED ENVS:\n# DATA_DIRECTORY (ie. \"/home/jenkins/data/\")\n#\n# OPTIONAL ENVS:\n# GIT_USER_NAME: (ie. \"TDS Servers\")\n# GIT_USER_EMAIL: (ie. \"github@tdsservers.com\")\n# REDIS_HOST (ie. 127.0.0.1)\n# REDIS_PORT (ie. 6379)\n# REDIS_DATABASE (ie. 0)\n# REDIS_NAMESPACE (ie. \"tds\", : not allowed)\n# REDIS_PASSWORD: (ie. \"abcdabcd1234\")\n# SSH_KEY: (ie. \"/home/jenkins/.ssh/id_rsa\")\n# SSH_PUB_KEY: (ie. \"/home/jenkins/.ssh/id_rsa.pub\")\n#\n# OTHER:\n# mount the docker.sock from the host into this container for jenkins to be able to run docker commands, ie.\n# -v /var/run/docker.sock:/var/run/docker.sock.\n#\n# The REDIS_ variables are needed for the deploy.sh script to communicate with redis and captain.\n\nFROM thedutchselection/java:8\nMAINTAINER Ilja Krijger <ilja@quittheprogram.org>\n\nRUN \\\n  groupadd --gid 900 --system docker && \\\n  useradd -g docker -m -u 900 docker\n\nRUN \\\n  apt-get update && \\\n  apt-get install -yq apt-transport-https && \\\n  echo \"deb http://http.debian.net/debian jessie-backports main\" > /etc/apt/sources.list.d/backports.list && \\\n  apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D && \\\n  echo \"deb https://apt.dockerproject.org/repo debian-jessie main\" > /etc/apt/sources.list.d/docker.list && \\\n  apt-get update && \\\n  apt-get install -yq curl && \\\n  apt-get install -yq redis-tools && \\\n  apt-get install -yq docker-engine=1.9.1-0~jessie && \\\n  apt-get install -yq zlib1g-dev && \\\n  apt-get install -yq libssl-dev && \\\n  apt-get install -yq libreadline6-dev && \\\n  apt-get install -yq libyaml-dev && \\\n  apt-get install -yq libffi-dev && \\\n  apt-get install -yq libmysqlclient-dev && \\\n  apt-get install -yq libsqlite3-dev && \\\n  apt-get install -yq sqlite3 && \\\n  apt-get install -yq libfreetype6 && \\\n  apt-get install -yq libfontconfig1 && \\\n  apt-get install -yq libjpeg-dev && \\\n  apt-get install -yq libcurl4-openssl-dev && \\\n  apt-get install -yq libxml2-dev && \\\n  apt-get install -yq libxslt1-dev && \\\n  apt-get install -yq qt5-default && \\\n  apt-get install -yq libqt5webkit5-dev && \\\n  apt-get install -yq imagemagick && \\\n  apt-get install -yq mariadb-client && \\\n  apt-get install -yq xfonts-base && \\\n  apt-get install -yq xfonts-75dpi && \\\n  apt-get install -yq xvfb && \\\n  curl -sL https://deb.nodesource.com/setup | bash - && \\\n  apt-get install -yq nodejs && \\\n  apt-get clean && \\\n  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \\\n  #Always be bashing...\n  ln -snf /bin/bash /bin/sh\n\nCOPY files/scripts/chruby.sh /etc/profile.d/chruby.sh\nCOPY files/scripts /usr/local/bin\n\nRUN \\\n  mkdir -p /opt/jenkins && \\\n  curl -sL -o /opt/jenkins/jenkins.war http://mirrors.jenkins-ci.org/war-stable/2.19.1/jenkins.war && \\\n  curl -sL -o /tmp/chruby-0.3.9.tar.gz https://github.com/postmodern/chruby/archive/v0.3.9.tar.gz && \\\n  curl -sL -o /tmp/phantomjs-2.1.1-linux-x86_64.tar.bz2 https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 && \\\n  curl -sL -o /tmp/wkhtmltox-0.12.3_linux-generic-amd64.tar.xz http://download.gna.org/wkhtmltopdf/0.12/0.12.3/wkhtmltox-0.12.3_linux-generic-amd64.tar.xz && \\\n  curl -sL -o /tmp/parallel-20150922.tar.bz2 http://ftpmirror.gnu.org/parallel/parallel-20150922.tar.bz2 && \\\n  curl -sL -o /tmp/ruby-2.1.5.tar.gz http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.5.tar.gz && \\\n  curl -sL -o /tmp/ruby-2.1.2.tar.gz http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.2.tar.gz && \\\n  curl -sL -o /tmp/ruby-2.2.0.tar.gz http://cache.ruby-lang.org/pub/ruby/2.2/ruby-2.2.0.tar.gz && \\\n  curl -sL -o /tmp/ruby-2.2.2.tar.gz http://cache.ruby-lang.org/pub/ruby/2.2/ruby-2.2.2.tar.gz && \\\n  curl -sL -o /tmp/ruby-2.3.0.tar.gz http://cache.ruby-lang.org/pub/ruby/2.3/ruby-2.3.0.tar.gz && \\\n  curl -sL -o /tmp/ruby-2.3.1.tar.gz http://cache.ruby-lang.org/pub/ruby/2.3/ruby-2.3.1.tar.gz && \\\n  curl -sL -o /usr/local/bin/docker-compose https://github.com/docker/compose/releases/download/1.5.2/docker-compose-Linux-x86_64 && \\\n  chmod +x /usr/local/bin/docker-compose && \\\n  cd /tmp && \\\n  tar -xJf wkhtmltox-0.12.3_linux-generic-amd64.tar.xz && \\\n  mv wkhtmltox/bin/* /usr/local/bin && \\\n  rm wkhtmltox-0.12.3_linux-generic-amd64.tar.xz && \\\n  bzip2 -dc parallel-20150922.tar.bz2 | tar xvf - && \\\n  cd parallel-20150922 && \\\n  ./configure && make && make install && \\\n  mkdir -p ~/.parallel && \\\n  touch ~/.parallel/will-cite && \\\n  cd /tmp && \\\n  rm -rf parallel-20150922 && \\\n  tar -xvjf phantomjs-2.1.1-linux-x86_64.tar.bz2 --directory /usr/local/share && \\\n  rm phantomjs-2.1.1-linux-x86_64.tar.bz2 && \\\n  ln -s /usr/local/share/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/local/bin/phantomjs && \\\n  ln -s /usr/local/share/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/bin/phantomjs && \\\n  tar -xzvf chruby-0.3.9.tar.gz && \\\n  cd chruby-0.3.9/ && \\\n  make install && \\\n  cd /tmp && \\\n  rm -rf chruby-0.3.9 && \\\n  rm -f chruby-0.3.9.tar.gz && \\\n  tar -xzf ruby-2.1.5.tar.gz && \\\n  cd ruby-2.1.5 && \\\n  ./configure --prefix=/opt/rubies/ruby-2.1.5 --with-readline-dir=/usr/lib/x86_64-linux-gnu && \\\n  make && \\\n  make install && \\\n  cd /tmp && \\\n  rm -rf ruby-2.1.5 && \\\n  rm -f ruby-2.1.5.tar.gz && \\\n  tar -xzf ruby-2.1.2.tar.gz && \\\n  cd ruby-2.1.2 && \\\n  ./configure --prefix=/opt/rubies/ruby-2.1.2 --with-readline-dir=/usr/lib/x86_64-linux-gnu && \\\n  make && \\\n  make install && \\\n  cd /tmp && \\\n  rm -rf ruby-2.1.2 && \\\n  rm -f ruby-2.1.2.tar.gz && \\\n  tar -xzf ruby-2.2.0.tar.gz && \\\n  cd ruby-2.2.0 && \\\n  ./configure --prefix=/opt/rubies/ruby-2.2.0 --with-readline-dir=/usr/lib/x86_64-linux-gnu && \\\n  make && \\\n  make install && \\\n  cd /tmp && \\\n  rm -rf ruby-2.2.0 && \\\n  rm -f ruby-2.2.0.tar.gz && \\\n  tar -xzf ruby-2.2.2.tar.gz && \\\n  cd ruby-2.2.2 && \\\n  ./configure --prefix=/opt/rubies/ruby-2.2.2 --with-readline-dir=/usr/lib/x86_64-linux-gnu && \\\n  make && \\\n  make install && \\\n  cd /tmp && \\\n  rm -rf ruby-2.2.2 && \\\n  rm -f ruby-2.2.2.tar.gz && \\\n  tar -xzf ruby-2.3.0.tar.gz && \\\n  cd ruby-2.3.0 && \\\n  ./configure --prefix=/opt/rubies/ruby-2.3.0 --with-readline-dir=/usr/lib/x86_64-linux-gnu && \\\n  make && \\\n  make install && \\\n  cd /tmp && \\\n  rm -rf ruby-2.3.0 && \\\n  rm -f ruby-2.3.0.tar.gz && \\\n  tar -xzf ruby-2.3.1.tar.gz && \\\n  cd ruby-2.3.1 && \\\n  ./configure --prefix=/opt/rubies/ruby-2.3.1 --with-readline-dir=/usr/lib/x86_64-linux-gnu && \\\n  make && \\\n  make install && \\\n  cd /tmp && \\\n  rm -rf ruby-2.3.1 && \\\n  rm -f ruby-2.3.1.tar.gz\n\n\nRUN \\\n  . /usr/local/share/chruby/chruby.sh && \\\n  chruby 2.1.5 && \\\n  gem install bundler --no-ri --no-rdoc && \\\n  bundle config --global jobs $(cat /proc/cpuinfo | grep -c processor) && \\\n  chruby 2.1.2 && \\\n  gem install bundler --no-ri --no-rdoc && \\\n  bundle config --global jobs $(cat /proc/cpuinfo | grep -c processor) && \\\n  chruby 2.2.0 && \\\n  gem install bundler --no-ri --no-rdoc && \\\n  bundle config --global jobs $(cat /proc/cpuinfo | grep -c processor) && \\\n  chruby 2.2.2 && \\\n  gem install bundler --no-ri --no-rdoc && \\\n  bundle config --global jobs $(cat /proc/cpuinfo | grep -c processor) && \\\n  chruby 2.3.0 && \\\n  gem install -N bundler && \\\n  bundle config --global jobs $(cat /proc/cpuinfo | grep -c processor) && \\\n  chruby 2.3.1 && \\\n  gem install -N bundler && \\\n  bundle config --global jobs $(cat /proc/cpuinfo | grep -c processor) && \\\n  echo 'gem: --no-document' >> ~/.gemrc && \\\n  cp ~/.gemrc /etc/gemrc && \\\n  chmod uog+r /etc/gemrc && \\\n  useradd -m -u 8080 jenkins && \\\n  usermod -a -G docker jenkins && \\\n  usermod -a -G staff jenkins && \\\n  chmod +x /usr/local/bin/run.sh && \\\n  chown -R jenkins:jenkins /usr/local/bin/* && \\\n  chown -R jenkins:jenkins /opt/jenkins/*\n\nEXPOSE 8080\n\nENTRYPOINT [\"/bin/bash\", \"/usr/local/bin/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "  groupadd --gid 900 --system docker &&   useradd -g docker -m -u 900 docker",
+      "  apt-get update &&   apt-get install -yq apt-transport-https &&   echo \"deb http://http.debian.net/debian jessie-backports main\" > /etc/apt/sources.list.d/backports.list &&   apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D &&   echo \"deb https://apt.dockerproject.org/repo debian-jessie main\" > /etc/apt/sources.list.d/docker.list &&   apt-get update &&   apt-get install -yq curl &&   apt-get install -yq redis-tools &&   apt-get install -yq docker-engine=1.9.1-0~jessie &&   apt-get install -yq zlib1g-dev &&   apt-get install -yq libssl-dev &&   apt-get install -yq libreadline6-dev &&   apt-get install -yq libyaml-dev &&   apt-get install -yq libffi-dev &&   apt-get install -yq libmysqlclient-dev &&   apt-get install -yq libsqlite3-dev &&   apt-get install -yq sqlite3 &&   apt-get install -yq libfreetype6 &&   apt-get install -yq libfontconfig1 &&   apt-get install -yq libjpeg-dev &&   apt-get install -yq libcurl4-openssl-dev &&   apt-get install -yq libxml2-dev &&   apt-get install -yq libxslt1-dev &&   apt-get install -yq qt5-default &&   apt-get install -yq libqt5webkit5-dev &&   apt-get install -yq imagemagick &&   apt-get install -yq mariadb-client &&   apt-get install -yq xfonts-base &&   apt-get install -yq xfonts-75dpi &&   apt-get install -yq xvfb &&   curl -sL https://deb.nodesource.com/setup | bash - &&   apt-get install -yq nodejs &&   apt-get clean &&   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* &&   #Always be bashing...",
+      "  mkdir -p /opt/jenkins &&   curl -sL -o /opt/jenkins/jenkins.war http://mirrors.jenkins-ci.org/war-stable/2.19.1/jenkins.war &&   curl -sL -o /tmp/chruby-0.3.9.tar.gz https://github.com/postmodern/chruby/archive/v0.3.9.tar.gz &&   curl -sL -o /tmp/phantomjs-2.1.1-linux-x86_64.tar.bz2 https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 &&   curl -sL -o /tmp/wkhtmltox-0.12.3_linux-generic-amd64.tar.xz http://download.gna.org/wkhtmltopdf/0.12/0.12.3/wkhtmltox-0.12.3_linux-generic-amd64.tar.xz &&   curl -sL -o /tmp/parallel-20150922.tar.bz2 http://ftpmirror.gnu.org/parallel/parallel-20150922.tar.bz2 &&   curl -sL -o /tmp/ruby-2.1.5.tar.gz http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.5.tar.gz &&   curl -sL -o /tmp/ruby-2.1.2.tar.gz http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.2.tar.gz &&   curl -sL -o /tmp/ruby-2.2.0.tar.gz http://cache.ruby-lang.org/pub/ruby/2.2/ruby-2.2.0.tar.gz &&   curl -sL -o /tmp/ruby-2.2.2.tar.gz http://cache.ruby-lang.org/pub/ruby/2.2/ruby-2.2.2.tar.gz &&   curl -sL -o /tmp/ruby-2.3.0.tar.gz http://cache.ruby-lang.org/pub/ruby/2.3/ruby-2.3.0.tar.gz &&   curl -sL -o /tmp/ruby-2.3.1.tar.gz http://cache.ruby-lang.org/pub/ruby/2.3/ruby-2.3.1.tar.gz &&   curl -sL -o /usr/local/bin/docker-compose https://github.com/docker/compose/releases/download/1.5.2/docker-compose-Linux-x86_64 &&   chmod +x /usr/local/bin/docker-compose &&   cd /tmp &&   tar -xJf wkhtmltox-0.12.3_linux-generic-amd64.tar.xz &&   mv wkhtmltox/bin/* /usr/local/bin &&   rm wkhtmltox-0.12.3_linux-generic-amd64.tar.xz &&   bzip2 -dc parallel-20150922.tar.bz2 | tar xvf - &&   cd parallel-20150922 &&   ./configure && make && make install &&   mkdir -p ~/.parallel &&   touch ~/.parallel/will-cite &&   cd /tmp &&   rm -rf parallel-20150922 &&   tar -xvjf phantomjs-2.1.1-linux-x86_64.tar.bz2 --directory /usr/local/share &&   rm phantomjs-2.1.1-linux-x86_64.tar.bz2 &&   ln -s /usr/local/share/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/local/bin/phantomjs &&   ln -s /usr/local/share/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/bin/phantomjs &&   tar -xzvf chruby-0.3.9.tar.gz &&   cd chruby-0.3.9/ &&   make install &&   cd /tmp &&   rm -rf chruby-0.3.9 &&   rm -f chruby-0.3.9.tar.gz &&   tar -xzf ruby-2.1.5.tar.gz &&   cd ruby-2.1.5 &&   ./configure --prefix=/opt/rubies/ruby-2.1.5 --with-readline-dir=/usr/lib/x86_64-linux-gnu &&   make &&   make install &&   cd /tmp &&   rm -rf ruby-2.1.5 &&   rm -f ruby-2.1.5.tar.gz &&   tar -xzf ruby-2.1.2.tar.gz &&   cd ruby-2.1.2 &&   ./configure --prefix=/opt/rubies/ruby-2.1.2 --with-readline-dir=/usr/lib/x86_64-linux-gnu &&   make &&   make install &&   cd /tmp &&   rm -rf ruby-2.1.2 &&   rm -f ruby-2.1.2.tar.gz &&   tar -xzf ruby-2.2.0.tar.gz &&   cd ruby-2.2.0 &&   ./configure --prefix=/opt/rubies/ruby-2.2.0 --with-readline-dir=/usr/lib/x86_64-linux-gnu &&   make &&   make install &&   cd /tmp &&   rm -rf ruby-2.2.0 &&   rm -f ruby-2.2.0.tar.gz &&   tar -xzf ruby-2.2.2.tar.gz &&   cd ruby-2.2.2 &&   ./configure --prefix=/opt/rubies/ruby-2.2.2 --with-readline-dir=/usr/lib/x86_64-linux-gnu &&   make &&   make install &&   cd /tmp &&   rm -rf ruby-2.2.2 &&   rm -f ruby-2.2.2.tar.gz &&   tar -xzf ruby-2.3.0.tar.gz &&   cd ruby-2.3.0 &&   ./configure --prefix=/opt/rubies/ruby-2.3.0 --with-readline-dir=/usr/lib/x86_64-linux-gnu &&   make &&   make install &&   cd /tmp &&   rm -rf ruby-2.3.0 &&   rm -f ruby-2.3.0.tar.gz &&   tar -xzf ruby-2.3.1.tar.gz &&   cd ruby-2.3.1 &&   ./configure --prefix=/opt/rubies/ruby-2.3.1 --with-readline-dir=/usr/lib/x86_64-linux-gnu &&   make &&   make install &&   cd /tmp &&   rm -rf ruby-2.3.1 &&   rm -f ruby-2.3.1.tar.gz",
+      "  . /usr/local/share/chruby/chruby.sh &&   chruby 2.1.5 &&   gem install bundler --no-ri --no-rdoc &&   bundle config --global jobs $(cat /proc/cpuinfo | grep -c processor) &&   chruby 2.1.2 &&   gem install bundler --no-ri --no-rdoc &&   bundle config --global jobs $(cat /proc/cpuinfo | grep -c processor) &&   chruby 2.2.0 &&   gem install bundler --no-ri --no-rdoc &&   bundle config --global jobs $(cat /proc/cpuinfo | grep -c processor) &&   chruby 2.2.2 &&   gem install bundler --no-ri --no-rdoc &&   bundle config --global jobs $(cat /proc/cpuinfo | grep -c processor) &&   chruby 2.3.0 &&   gem install -N bundler &&   bundle config --global jobs $(cat /proc/cpuinfo | grep -c processor) &&   chruby 2.3.1 &&   gem install -N bundler &&   bundle config --global jobs $(cat /proc/cpuinfo | grep -c processor) &&   echo 'gem: --no-document' >> ~/.gemrc &&   cp ~/.gemrc /etc/gemrc &&   chmod uog+r /etc/gemrc &&   useradd -m -u 8080 jenkins &&   usermod -a -G docker jenkins &&   usermod -a -G staff jenkins &&   chmod +x /usr/local/bin/run.sh &&   chown -R jenkins:jenkins /usr/local/bin/* &&   chown -R jenkins:jenkins /opt/jenkins/*"
+    ],
+    "workdir": [],
+    "from": "thedutchselection/java:8",
+    "maintainer": "Ilja Krijger <ilja@quittheprogram.org>",
+    "copy": "files/scripts /usr/local/bin",
+    "entrypoint": "[\"/bin/bash\", \"/usr/local/bin/run.sh\"]"
+  },
+  "source_repository_url": "git@github.com:websend/devops.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/websend/devops",
+  "docker_repository": "websend/jenkins",
+  "docker_image": "websend/jenkins",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "websend/jenkins",
+  "revision": "2.19.1",
+  "uris": [
+    "https://hub.docker.com/r/websend/jenkins",
+    "https://hub.docker.com/v2/repositories/websend/jenkins",
+    "git@github.com:websend/devops.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Integration/Jenkins"
+  ],
+  "info_url": "https://hub.docker.com/r/websend/jenkins",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

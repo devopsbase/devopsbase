@@ -1,0 +1,90 @@
+{
+  "name": "postgresql_lwrp Chef cookbook",
+  "chef_cookbook_name": "postgresql_lwrp",
+  "revision": "1.1.10",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/postgresql_lwrp",
+    "https://supermarket.chef.io/cookbooks/postgresql_lwrp/download",
+    "https://supermarket.chef.io/cookbooks/postgresql_lwrp/versions/1.1.10",
+    "https://supermarket.chef.io/cookbooks/postgresql_lwrp/versions/1.1.10/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/postgresql_lwrp/versions/1.1.10",
+    "https://supermarket.chef.io/api/v1/cookbooks/postgresql_lwrp",
+    "https://supermarket.chef.io/api/v1/cookbooks/postgresql_lwrp/versions/1.1.10/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Databases",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Mode/CLI",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/postgresql_lwrp",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/postgresql_lwrp/versions/1.1.10/download",
+  "deprecated": false,
+  "created": "2014-08-25T12:49:30.948Z",
+  "updated": "2016-07-26T07:57:38.069Z",
+  "description": "Installs and configures postgresql for clients or servers",
+  "maintainer": {
+    "name": "express42",
+    "email": "cookbooks@express42.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 8,
+  "downloads_count": 2663895,
+  "downloads_count_revision": 242963,
+  "repository_url": "https://github.com/express42-cookbooks/postgresql_lwrp",
+  "issues_url": "https://github.com/express42-cookbooks/postgresql_lwrp/issues",
+  "chef_source_url": "https://github.com/express42-cookbooks/postgresql_lwrp",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "[![Chef cookbook](https://img.shields.io/cookbook/v/postgresql_lwrp.svg)](https://github.com/express42-cookbooks/postgresql_lwrp)\n[![Code Climate](https://codeclimate.com/github/express42-cookbooks/postgresql_lwrp/badges/gpa.svg)](https://codeclimate.com/github/express42-cookbooks/postgresql_lwrp)\n[![Build Status](https://travis-ci.org/express42-cookbooks/postgresql_lwrp.svg)](https://travis-ci.org/express42-cookbooks/postgresql_lwrp)\n\nDescription\n===========\nThis cookbook includes recipes and providers to install and configure postgresql database. This cookbook was tested with Postgresql 9.0, 9.1, 9.2, 9.3. Version 9.0 is supported with limitations: creating users and databases are not working.\nSupported platforms: Debian Squeeze/Wheezy and Ubuntu 12.04/14.04.\n\nChangelog\n=========\nSee CHANGELOG.md\n\nRequirements\n============\nPostgresql cookbook depends on apt cookbook\n\nAttributes\n==========\nThis cookbook have server and client attribute files.\n\nWith client attributes([\"postgresql\"][\"client\"]) you can set only postgresql client and library version.\n\nServer attributes are starting from [\"postgresql\"][\"defaults\"] and used as default attributes for postgresql provider. You should not override this defaults, you can pass your settings to provider instead.\n\nResources/Providers\n===================\n\n### Resource: default\n\n#### Actions\n\n- :create: creates postgresql cluster\n\n#### Resource parameters\n\n- cluster_name: name attribute. Cluster name (e.g. main).\n- cluster_version: set cluster version\n- cookbook: cookbook for templates. Skip this for default templates.\n- cluster_create_options: options for pg_createcluster (only locale related options)\n- configuration: Hash with configuration options for postgresql, see examples.\n- hba_configuration: Array with hba configuration, see examples.\n- ident_configuration: Array with ident configuration, see examples.\n- replication: Hash with replication configuration. See replication example.\n- replication_initial_copy: Boolean. If `true` pg_basebackup will be exec to make initial replication copy. Default is `false`.\n- replication_start_slave: Boolean. If `true` slave cluster will be started after creation. Should be used with replication_initial_copy option. Default `false`.\n- allow_restart_cluster: Can be `first`, `always` or `none`. Specifies when cluster must restart instead of reload. `first` – only first time after installation. `always` – always restart, even if changes doesn't require restart. `none` - never, use reload every time. Default is `none`.\n\n\nOther\n=====\n### Cloud backup helper:\n\n`postgresql_cloud_backup_helper.sh` helper can be found at `/opt/wal-e/bin/`.\n\n#### Usage:\n\n`postgresql_cloud_backup_helper.sh <cluster_name> <cluster_version> last|count`\n\n- `cluster_name` – postgresql cluster name (ex. *main*)\n- `cluser_version` – postgresql cluser version (ex. 9.3)\n- `last` – shows last backup time\n- `count` – shows total number of backups.\n\nExamples\n========\nExample master database setup:\n\n```ruby\npostgresql 'main' do\n  cluster_version '9.3'\n  cluster_create_options( locale: 'ru_RU.UTF-8' )\n  configuration(\n      listen_addresses:           '192.168.0.2',\n      max_connections:            300,\n      ssl_renegotiation_limit:    0,\n      shared_buffers:             '512MB',\n      maintenance_work_mem:       '64MB',\n      work_mem:                   '8MB',\n      log_min_duration_statement: 200\n  )\n  hba_configuration(\n    [\n      { type: 'host', database: 'all', user: 'all', address: '192.168.0.0/24', method: 'md5' },\n      { type: 'host', database: 'replication', user: 'postgres', address: '192.168.0.3/32', method: 'trust' }\n    ]\n  )\nend\n```\n\nExample slave database setup:\n\n```ruby\npostgresql 'main' do\n   cluster_version '9.3'\n  cluster_create_options( locale: 'ru_RU.UTF-8' )\n  configuration(\n      listen_addresses:           '192.168.0.3',\n      max_connections:            300,\n      ssl_renegotiation_limit:    0,\n      shared_buffers:             '512MB',\n      maintenance_work_mem:       '64MB',\n      work_mem:                   '8MB',\n      log_min_duration_statement: 200\n  )\n  hba_configuration(\n    [\n      { type: 'host', database: 'all', user: 'all', address: '192.168.0.0/24', method: 'md5' },\n      { type: 'host', database: 'replication', user: 'postgres', address: '192.168.0.2/32', method: 'trust' }\n    ]\n  )\n  replication(\n    standby_mode: 'on',\n    primary_conninfo: 'host=192.168.0.1',\n    trigger_file: '/tmp/pgtrigger'\n  )\n  replication_initial_copy true\n  replication_start_slave true\nend\n```\n\nExample slave configuration with replication slots (PostgreSQL >= 9.4)\n\n```ruby\nreplication(\n  standby_mode: 'on',\n  primary_conninfo: 'host=192.168.0.1',\n  trigger_file: '/tmp/pgtrigger'\n  primary_slot_name: 'some_slot_on_master'\n)\n```\nDon't forget to create slot on master server before:\n\n```sql\n# SELECT pg_create_physical_replication_slot('some_slot_on_master');\n```\n\nExample users and databases setup\n\n```ruby\npostgresql_user 'user01' do\n  in_version '9.3'\n  in_cluster 'main'\n  unencrypted_password 'user01password'\nend\n\npostgresql_database 'database01' do\n  in_version '9.3'\n  in_cluster 'main'\n  owner 'user01'\nend\n```\n\nExample full daily database backup\n\n```ruby\npostgresql_cloud_backup 'main' do\n  in_version '9.3'\n  in_cluster 'main'\n  full_backup_time weekday: '*', month: '*', day: '*', hour: '3', minute: '0'\n  # Data bag item should contain following keys for S3 protocol:\n  # aws_access_key_id, aws_secret_access_key, wale_s3_prefix\n  params Chef::EncryptedDataBagItem.load('s3', 'secrets').to_hash.select {|i| i != \"id\"}\n  # Or just a hash, if you don't use data bags:\n  params { aws_access_key_id: 'access_key', aws_secret_access_key: 'secret_key', wale_s3_prefix: 's3_prefix' }\n  protocol 's3'\n  # In case you need to prepend wal-e with, for example, traffic limiter\n  # you can use following method:\n  command_prefix 'trickle -s -u 1024'\n  # It will be prepended to resulting wal-e execution in cron task\nend\n```\n\nExample usage of cloud backup helper usage\n\n```bash\n$ /opt/wal-e/bin/postgresql_cloud_backup_helper.sh main 9.3 last\n1428192159\n$ /opt/wal-e/bin/postgresql_cloud_backup_helper.sh main 9.3 count\n31\n```\n\nLicense and Author\n==================\n\nAuthor:: Nikita Borzykh (<nikita@express42.com>)\n\nCopyright (C) 2012-2015 LLC Express 42\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/python",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/cron",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "conflicts": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/database",
+      "revision": ">= 0.0.0"
+    }
+  ],
+  "chef_recipes": {
+    "postgresql_lwrp::default": "Installs postgresql client packages",
+    "postgresql_lwrp::apt_official_repository": "Setup official apt repository",
+    "postgresql_lwrp::cloud_backup": "Setup cloud backup via wal-e utility"
+  }
+}

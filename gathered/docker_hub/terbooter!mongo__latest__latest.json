@@ -1,0 +1,120 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/terbooter/mongo",
+    "repository_url": "https://hub.docker.com/v2/repositories/terbooter/mongo",
+    "tags_url": "https://hub.docker.com/v2/repositories/terbooter/mongo/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/terbooter/mongo/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/terbooter/mongo/autobuild",
+    "user": "terbooter",
+    "name": "mongo",
+    "namespace": "terbooter",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 25,
+    "last_updated": "2016-08-23T15:30:15.622142Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 160029340,
+        "id": 4390664,
+        "repository": 864547,
+        "creator": 25081,
+        "last_updater": 25081,
+        "last_updated": "2016-08-23T15:30:15.270342Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "terbooter/mongo"
+  },
+  "name": "terbooter/mongo Docker container",
+  "description": "Mongo image for fast deploy replica set cluster",
+  "readme": "Deploy mongo replicaset of 3 nodes\n\nДанная инструкция создана по мотивам официальной доки\nhttps://docs.mongodb.com/manual/tutorial/deploy-replica-set-with-keyfile-access-control/#deploy-repl-set-with-auth\n\n#Step by step\n* На трех машинах должен быть установлен консул с регистратором из этого репозитория\n https://github.com/terbooter/consul\n* Заходим по ssh на первую машину\n* Делаем `git clone` этого репозитория\n* Переименовываем .dockerenv.EXAMPLE в .dockerenv\n* Генерим рандомный ключ и пишем его в переменную окружения MONGO_KEY\n* Задаем переменную среды SERVICE_NAME которую понимает регистратор для каждой ноды свой (mongo0, mongo1, mongo2)\nmongo0 запускается с приоритетом 2, остальные с приоритетом 1\n* Запускаем как обычно `docker-compose up`\n* На втором сервере повторяем все тоже самое, но ключ не генерим а копируем с первого сервера, SERVICE_NAME задаем mongo1 \n* Повторяем на третьем сервере то же что и на втором, SERVICE_NAME задаем mongo2\nВ конце этого шага у нас есть три экземпляра монг запущенных на трех разных машинах.\n* Входим внутрь контейнера на хосте с mongo0\n```\ndocker exec -it mongo_mongo_1 bash\n```\n* Запускаем mongo shell скрипт инициализирующий реплику (см доку)\n```\nmongo < /js/init_rs.js\n```\n* Проверяем, что репликасет инициализовалась и мы в PRIMARY\nДля этого запускаем монго шелл\n```\nroot@cacc5b6cf03c:/# mongo\nMongoDB shell version: 3.2.7\nconnecting to: test\nrs0:PRIMARY> exit\nbye\n```\nЕсли видим строку `rs0:PRIMARY` то данный сервер -  primary\n* Запускаем bash скрипт создающий root юзера\n```\n/add_root_user.sh\n```\nЭтот скрипт создает еще один скрипт для запуска mongo shell под root юзером \n* Для того чтобы войти под рутом запускаем скрипт `/mongo.sh`\n\n\n#TODO\nМонга выдает ворнинг. \n```\n** WARNING: /sys/kernel/mm/transparent_hugepage/enabled is 'always'.\n**        We suggest setting it to 'never'\n```\n\nЧтобы его исправить нужно произвести настройку на хосте. В контейнере этого настроить нельзя.\nНиже скрипт шпаргалка\n```\n#!/bin/sh -e\n#\n# rc.local\n#\n# This script is executed at the end of each multiuser runlevel.\n# Make sure that the script will \"exit 0\" on success or any other\n# value on error.\n#\n# In order to enable or disable this script just change the execution\n# bits.\n#\n# By default this script does nothing.\n\nif test -f /sys/kernel/mm/transparent_hugepage/khugepaged/defrag; then\n  echo 0 > /sys/kernel/mm/transparent_hugepage/khugepaged/defrag\nfi\nif test -f /sys/kernel/mm/transparent_hugepage/defrag; then\n  echo never > /sys/kernel/mm/transparent_hugepage/defrag\nfi\nif test -f /sys/kernel/mm/transparent_hugepage/enabled; then\n  echo never > /sys/kernel/mm/transparent_hugepage/enabled\nfi\n\nexit 0\n```",
+  "dockerfile": "FROM ubuntu:14.04\nRUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927\nRUN echo \"deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.2 multiverse\" | tee /etc/apt/sources.list.d/mongodb-org-3.2.list\nRUN apt-get update\nRUN apt-get install -y mongodb-org=3.2.7 mongodb-org-server=3.2.7 mongodb-org-shell=3.2.7 mongodb-org-mongos=3.2.7 mongodb-org-tools=3.2.7\nRUN apt-get install -y pwgen\nENV TERM=xterm\nVOLUME /data/db\nCOPY ./js /js\nADD ./mongod.conf /etc/mongod.conf\nADD ./run.sh /run.sh\nADD ./add_root_user.sh /add_root_user.sh\nRUN chmod +x /run.sh && chmod +x /add_root_user.sh\n\nCMD /run.sh",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./mongod.conf",
+        "dest": "/etc/mongod.conf"
+      },
+      {
+        "source": "./run.sh",
+        "dest": "/run.sh"
+      },
+      {
+        "source": "./add_root_user.sh",
+        "dest": "/add_root_user.sh"
+      }
+    ],
+    "expose": [],
+    "volume": [
+      "/data/db"
+    ],
+    "run": [
+      "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927",
+      "echo \"deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.2 multiverse\" | tee /etc/apt/sources.list.d/mongodb-org-3.2.list",
+      "apt-get update",
+      "apt-get install -y mongodb-org=3.2.7 mongodb-org-server=3.2.7 mongodb-org-shell=3.2.7 mongodb-org-mongos=3.2.7 mongodb-org-tools=3.2.7",
+      "apt-get install -y pwgen",
+      "chmod +x /run.sh && chmod +x /add_root_user.sh"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "env": {
+      "TERM": "xterm"
+    },
+    "copy": "./js /js",
+    "cmd": "/run.sh"
+  },
+  "source_repository_url": "https://github.com/terbooter/mongo.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/terbooter/mongo",
+  "docker_repository": "terbooter/mongo",
+  "docker_image": "terbooter/mongo",
+  "parameters_schema": {
+    "TERM": {
+      "default": "xterm",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "terbooter/mongo",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/terbooter/mongo",
+    "https://hub.docker.com/v2/repositories/terbooter/mongo",
+    "https://github.com/terbooter/mongo.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB"
+  ],
+  "info_url": "https://hub.docker.com/r/terbooter/mongo",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,159 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/nuagebec/ubuntu",
+    "repository_url": "https://hub.docker.com/v2/repositories/nuagebec/ubuntu",
+    "tags_url": "https://hub.docker.com/v2/repositories/nuagebec/ubuntu/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/nuagebec/ubuntu/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/nuagebec/ubuntu/autobuild",
+    "user": "nuagebec",
+    "name": "ubuntu",
+    "namespace": "nuagebec",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 9,
+    "pull_count": 387166,
+    "last_updated": "2016-10-13T21:43:13.971265Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "14.04",
+        "full_size": 106742679,
+        "id": 27221,
+        "repository": 43073,
+        "creator": 62071,
+        "last_updater": 62071,
+        "last_updated": "2016-10-13T21:43:12.594038Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "15.04",
+        "full_size": 106742553,
+        "id": 460876,
+        "repository": 43073,
+        "creator": 11560,
+        "last_updater": 62071,
+        "last_updated": "2016-10-13T21:38:35.589629Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "16.04",
+        "full_size": 119423499,
+        "id": 1801312,
+        "repository": 43073,
+        "creator": 62071,
+        "last_updater": 62071,
+        "last_updated": "2016-10-13T21:34:59.389328Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 106742549,
+        "id": 27223,
+        "repository": 43073,
+        "creator": 62071,
+        "last_updater": 62071,
+        "last_updated": "2016-10-13T21:29:02.878048Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "cloudbec/nuagebec-docker-ubuntu"
+  },
+  "name": "nuagebec/ubuntu Docker container",
+  "description": "Simple always updated Ubuntu docker images with SSH access and supervisord.",
+  "readme": "nuagebec-ubuntu\n============\n\nSimple always updated Ubuntu docker images with SSH access and supervisord.\n\nIt include some tools like :\n\n- python 2.7 & 3\n- ruby 1.9\n- wget\n- vim-nox\n- git\n- tar\n- ca-certificates\n\nUsage\n-----\n\nTo create the image `nuagebec/ubuntu` with Ubuntu,\nexecute the following commands on the nugebec-ubuntu master branch:\n\n\tgit checkout master\n\tdocker build -t nuagebec/ubuntu .\n\nRunning nuagebec/ubuntu\n--------------------\n\nTo run a container from the image you created earlier binding it to port 2222 in\nall interfaces, execute:\n\n\tdocker run -d -p 0.0.0.0:2222:22 nuagebec/ubuntu\n\nThe first time that you run your container, a random password will be generated\nfor user `root`. To get the password, check the logs of the container by running:\n\n\tdocker logs <CONTAINER_ID>\n\nYou will see an output like the following:\n\n\t========================================================================\n\tYou can now connect to this Ubuntu container via SSH using:\n\n\t    ssh -p <port> root@<host>\n\tand enter the root password 'U0iSGVUCr7W3' when prompted\n\n\tPlease remember to change the above password as soon as possible!\n\t========================================================================\n\nIn this case, `U0iSGVUCr7W3` is the password allocated to the `root` user.\n\nDone!\n\n\nSetting a specific password for the root account\n------------------------------------------------\n\nIf you want to use a preset password instead of a random generated one, you can\nset the environment variable `ROOT_PASS` to your specific password when running the container:\n\n\tdocker run -d -p 0.0.0.0:2222:22 -e ROOT_PASS=\"mypass\" nuagebec/ubuntu\n\nDeactivating ssh server\n-----------------------\n\nyou may not like to have a running ssh server use SSH_SERVER=false to prevent starting it. Default is true\n\n\n        docker run -e SSH_SERVER=false nuagebec/ubuntu\n\n",
+  "dockerfile": "FROM ubuntu:14.04\nMAINTAINER Michaël Faille <michael@faille.io> \n\n# Install packages\nRUN apt-get update -y && apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-get -y install openssh-server ca-certificates pwgen supervisor git tar vim-nox vim-syntax-go wget  --no-install-recommends && apt-get clean  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n# #https://github.com/docker/docker/issues/6103\nRUN mkdir -p /var/run/sshd && sed -i \"s/UsePrivilegeSeparation.*/UsePrivilegeSeparation no/g\" /etc/ssh/sshd_config && sed -i \"s/PermitRootLogin.*/PermitRootLogin yes/g\" /etc/ssh/sshd_config && sed -ri 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config\n\n# define volume\nVOLUME /data/persistent\n\n# Define working directory.\nWORKDIR /data\n\nADD set_root_pw.sh /data/set_root_pw.sh\nADD run.sh /data/run.sh\n\n\n# As suggested here : http://docs.docker.com/articles/using_supervisord/\nADD supervisord_nuagebec.conf /etc/supervisor/conf.d/supervisord_nuagebec.conf\n\nADD sshd.conf /etc/supervisor/conf.d/sshd.conf\n\nRUN chmod a+x /data/*.sh\n\n# ## Strangely... docker.io don't want build this image since xterm env..\n# # ENV TERM=\"xterm-color\"\n\nEXPOSE 22\nCMD [\"/data/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "set_root_pw.sh",
+        "dest": "/data/set_root_pw.sh"
+      },
+      {
+        "source": "run.sh",
+        "dest": "/data/run.sh"
+      },
+      {
+        "source": "supervisord_nuagebec.conf",
+        "dest": "/etc/supervisor/conf.d/supervisord_nuagebec.conf"
+      },
+      {
+        "source": "sshd.conf",
+        "dest": "/etc/supervisor/conf.d/sshd.conf"
+      }
+    ],
+    "expose": [
+      22
+    ],
+    "volume": [
+      "/data/persistent"
+    ],
+    "run": [
+      "apt-get update -y && apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-get -y install openssh-server ca-certificates pwgen supervisor git tar vim-nox vim-syntax-go wget  --no-install-recommends && apt-get clean  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "mkdir -p /var/run/sshd && sed -i \"s/UsePrivilegeSeparation.*/UsePrivilegeSeparation no/g\" /etc/ssh/sshd_config && sed -i \"s/PermitRootLogin.*/PermitRootLogin yes/g\" /etc/ssh/sshd_config && sed -ri 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config",
+      "chmod a+x /data/*.sh"
+    ],
+    "workdir": [
+      "/data"
+    ],
+    "from": "ubuntu:14.04",
+    "maintainer": "Michaël Faille <michael@faille.io> ",
+    "cmd": "[\"/data/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/cloudbec/nuagebec-docker-ubuntu.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/cloudbec/nuagebec-docker-ubuntu",
+  "docker_repository": "nuagebec/ubuntu",
+  "docker_image": "nuagebec/ubuntu",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        22
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "nuagebec/ubuntu",
+  "revision": "14.04",
+  "uris": [
+    "https://hub.docker.com/r/nuagebec/ubuntu",
+    "https://hub.docker.com/v2/repositories/nuagebec/ubuntu",
+    "https://github.com/cloudbec/nuagebec-docker-ubuntu.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu"
+  ],
+  "info_url": "https://hub.docker.com/r/nuagebec/ubuntu",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

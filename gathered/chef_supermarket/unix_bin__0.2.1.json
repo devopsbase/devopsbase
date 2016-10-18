@@ -1,0 +1,61 @@
+{
+  "name": "unix_bin Chef cookbook",
+  "chef_cookbook_name": "unix_bin",
+  "revision": "0.2.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/unix_bin",
+    "https://supermarket.chef.io/cookbooks/unix_bin/download",
+    "https://supermarket.chef.io/cookbooks/unix_bin/versions/0.2.1",
+    "https://supermarket.chef.io/cookbooks/unix_bin/versions/0.2.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/unix_bin/versions/0.2.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/unix_bin",
+    "https://supermarket.chef.io/api/v1/cookbooks/unix_bin/versions/0.2.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Provider/HP",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/unix_bin",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/unix_bin/versions/0.2.1/download",
+  "deprecated": false,
+  "created": "2013-03-11T11:12:53.000Z",
+  "updated": "2013-08-06T04:38:34.000Z",
+  "description": "LWRPs for installing/requiring command-line executables with package name auto-detection.",
+  "maintainer": {
+    "name": "binarybabel",
+    "email": "projects@binarybabel.org"
+  },
+  "license": "Apache License, Version 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 5009964,
+  "downloads_count_revision": 1258853,
+  "repository_url": "https://github.com/org-binbab/cookbook-unix_bin",
+  "issues_url": "https://github.com/org-binbab/cookbook-unix_bin",
+  "chef_source_url": "https://github.com/org-binbab/cookbook-unix_bin",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Description\nProvide LWRPs for installing (or requiring) unix command-line executables, without needing to know or specify the OS package that provides it.\n\n**You can do this:**\n\n    unix_bin \"nslookup\" do\n      action :install\n    end\n\n    unix_bin \"mysqldump\" do\n      action :install\n    end\n\n    unix_bin \"mail\" do\n      action :require\n    end\n\n**Instead of:**\n\n    # Having to specify a less discernable name.\n    package \"bind-utils\" do\n      action :install\n    end\n\n    # Having to switch between platforms.\n    case node[:platform]\n      when \"ubuntu\",\"debian\"\n        package \"mysql-client\" do\n          action :install\n        end\n      when \"centos\"\n        package \"mysql\" do\n          action :install\n        end\n      end\n    end\n\n    # Having to directly invoke the shell.\n    extend ::Chef::Mixin::ShellOut\n    shell_out!(\"/usr/bin/which mail\")\n\nOnly the name of the executable needs specified in the recipe, the package is detected automatically.\n\nBenefits realized by this functionality include:\n\n* **Increased portability**\n\n  An install action works in any OS this cookbook does, even if the required package is different.\n\n* **Increased readability**\n\n  Clarity in what resource you need even if the executable is part of a larger package.\n\n* **Simplified cookbook prep**\n\n  Ensure the command-line tools you need are in-place, and optionally try to install missing ones, without extensive testing and/or causing more obscure errors later in your recipe.\n\n# Platforms\n\nIn general compatibility is dependent on the underlying OS package manager.\n\n#### Current\n\nAt present **yum** and **apt** are supported -- by extension most redhat and debian distros.\n\n#### Future\n\nSupport is eventually planned for zypper and thereby OpenSUSE and SLED\n\n#### Test-Kitchen\n\nThis package is **test-kitchen** enabled and automatically tested against **centos** and **ubuntu**.\n\n# Detection method\n\nTesting whether or not an executable is available is consistent across each OS.\n\nThe executable is determined to be **INSTALLED** if it exists in one of the paths specified in the configuration `node['unix_bin']['search_paths']`, which defaults to: `/usr/bin : /usr/sbin : /bin : /sbin`.\n\nIt is determined to be **AVAILALBE** if it can be invoked from the system's shell PATH.\n\nBy default the `:require` action ensures that a given executable be AVAILABLE, but this can be changed.\n\n**PLEASE NOTE:** For safety reasons, no attempt will be made to install an executable that is either AVAILABLE or INSTALLED. As such, if you :install an excutable that is installed in a search path, but not available via the shell PATH, an exception will be raised (unless `in_shell_path` is false).\n\n\n# LWRP Usage\n\n### Requiring an executable\n\nAn exception will be raised if the executable is not available, no attempt will be made to install it. **This is the default action.**\n\nAs an example, we want to ensure \"ifconfig\" is available.\n\n    unix_bin \"ifconfig\"\n\nIf you don't want to require the executable be available in the system's shell PATH, but are satisfied with it only being installed (in one of the configured paths), you can use:\n\n    unix_bin \"ifconfig\"\n      action :require\n      in_shell_path false\n    end\n\n### Installing an executable (if it is missing)\n\nThis also requires the executable in general, so a failure to install will lead to an exception.\n\nSay we want to use the `convert` utility, which is actually part of ImageMagick\n\n    unix_bin \"convert\"\n      action :install\n    end\n\nOn **redhat** platforms you can also request the matching development package be installed. (**This generates a warning on debian.**)\n\n    unix_bin \"convert\"\n      action :install\n      with_devel true\n    end\n\nWhich would install the packages:\n\n  * ImageMagic\n  * ImageMagic-devel\n\n### Bulk syntax\n\nAs a convenience you can also use the following helper definition:\n\n    unix_binaries do\n      install [ \"nslookup\", \"ncat\", \"wget\" ]\n      require [ \"ifconfig\" ]\n    end\n\nIt also accepts the `in_shell_path` and `with_devel` flags (which are applied uniformly). You can use this definition multiple times in a row if you need different options.\n\n# Recipes\n\nThe default recipe is not required to use the LWRPs, however adding it to your `run_list` will automatically install any executables listed in an array under `node['unix_bin']['install']`. **By default this list is empty.**\n\n\n# Attributes\n\n* `node['unix_bin']['search_paths']` - An array of paths to check (non-recursively) that an executable is already installed.\n* `node['unix_bin']['install']` - An array of executable names to automatically install, if the default recipe is run.\n\n# Resource addons\n\nThis cookbook also provides a helper for use with `only_if` and `not_if` clauses in Chef resources.\n\n**Example:**\n\n    cookbook_file \"/etc/skel/.vimrc\" do\n      source \"vimrc\"\n      only_if unix_bin_available(\"vim\")\n    end\n\n# Bugs / Docs / Updates\n\n  * http://code.binbab.org\n\n# Authors and License\n\n  * Author:: BinaryBabel OSS (<projects@binarybabel.org>)\n  * Copyright:: 2013 `sha1(OWNER) = df334a7237f10846a0ca302bd323e35ee1463931`\n  * License:: Apache License, Version 2.0\n\n----\n\n    Licensed under the Apache License, Version 2.0 (the \"License\");\n    you may not use this file except in compliance with the License.\n    You may obtain a copy of the License at\n\n        http://www.apache.org/licenses/LICENSE-2.0\n\n    Unless required by applicable law or agreed to in writing, software\n    distributed under the License is distributed on an \"AS IS\" BASIS,\n    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n    See the License for the specific language governing permissions and\n    limitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ],
+  "chef_recipes": {
+    "unix_bin": "Automatically install executables specified via node attribute."
+  }
+}

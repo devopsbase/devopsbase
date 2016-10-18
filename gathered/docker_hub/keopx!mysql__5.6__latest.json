@@ -1,0 +1,161 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/keopx/mysql",
+    "repository_url": "https://hub.docker.com/v2/repositories/keopx/mysql",
+    "tags_url": "https://hub.docker.com/v2/repositories/keopx/mysql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/keopx/mysql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/keopx/mysql/autobuild",
+    "user": "keopx",
+    "name": "mysql",
+    "namespace": "keopx",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 42,
+    "last_updated": "2016-09-23T15:52:18.733863Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "5.6",
+        "full_size": 131907387,
+        "id": 4425107,
+        "repository": 868150,
+        "creator": 185558,
+        "last_updater": 185558,
+        "last_updated": "2016-09-23T15:52:18.074404Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5.5",
+        "full_size": 109324796,
+        "id": 4425094,
+        "repository": 868150,
+        "creator": 185558,
+        "last_updater": 185558,
+        "last_updated": "2016-09-23T15:49:38.023480Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 150865885,
+        "id": 4425091,
+        "repository": 868150,
+        "creator": 185558,
+        "last_updater": 185558,
+        "last_updated": "2016-09-23T15:47:13.311014Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5.7",
+        "full_size": 150865892,
+        "id": 4425123,
+        "repository": 868150,
+        "creator": 185558,
+        "last_updater": 185558,
+        "last_updated": "2016-09-23T15:43:28.548432Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "keopx/docker-mysql"
+  },
+  "name": "keopx/mysql Docker container",
+  "description": "MySQL 5.7, 5.6 and 5.5 for Docker. Debian 8 based.",
+  "readme": "# Introduction #\n\nThis image works with **Debian 8** and use current last **MySQL 5.7/5.6/5.5** version.\n\n## Example usage: ##\n\n`$ docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=change_me keopx/mysql`\n\n## Environment variables ##\n\n* MYSQL_ROOT_PASSWORD: The password for the root user. Defaults to a blank password\n* MYSQL_DATABASE: A database to automatically create. If not provided, does not create a database.\n* MYSQL_USER: A user to create that has access to the database specified by MYSQL_DATABASE.\n* MYSQL_PASSWORD: The password for MYSQL_USER. Defaults to a blank password.\n",
+  "dockerfile": "FROM debian:jessie\n\nMAINTAINER keopx <keopx@keopx.net>\n\nENV DEBIAN_FRONTEND noninteractive\n\n# Set repositories\nRUN \\\n  echo \"deb http://ftp.de.debian.org/debian/ jessie main non-free contrib\\n\" > /etc/apt/sources.list && \\\n  echo \"deb-src http://ftp.de.debian.org/debian/ jessie main non-free contrib\\n\" >> /etc/apt/sources.list && \\\n  echo \"deb http://security.debian.org/ jessie/updates main contrib non-free\\n\" >> /etc/apt/sources.list && \\\n  echo \"deb-src http://security.debian.org/ jessie/updates main contrib non-free\" >> /etc/apt/sources.list\n\n\n# Update repositories cache and distribution\nRUN apt-get -qq update && apt-get -qqy upgrade\n\n# gpg: key 5072E1F5: public key \"MySQL Release Engineering <mysql-build@oss.oracle.com>\" imported\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys A4A9406876FCBD3C456770C88C718D3B5072E1F5\n\nENV MYSQL_VERSION 5.6\n\nRUN echo \"deb http://repo.mysql.com/apt/debian/ jessie mysql-${MYSQL_VERSION}\" > /etc/apt/sources.list.d/mysql.list\n\n# Install MySQL server.\n# The \"/var/lib/mysql\" stuff here is because the mysql-server postinst doesn't have an explicit way to disable the mysql_install_db codepath besides having a database already \"configured\" (ie, stuff in /var/lib/mysql/mysql) also, we set debconf keys to make APT a little quieter\nRUN { \\\n\t\techo mysql-community-server mysql-community-server/data-dir select ''; \\\n\t\techo mysql-community-server mysql-community-server/root-pass password ''; \\\n\t\techo mysql-community-server mysql-community-server/re-root-pass password ''; \\\n\t\techo mysql-community-server mysql-community-server/remove-test-db select false; \\\n\t} | debconf-set-selections \\\n\t&& apt-get update && apt-get install -y mysql-server-\"${MYSQL_VERSION}\" && rm -rf /var/lib/apt/lists/* \\\n\t&& rm -rf /var/lib/mysql && mkdir -p /var/lib/mysql /var/run/mysqld \\\n\t&& chown -R mysql:mysql /var/lib/mysql /var/run/mysqld \\\n# ensure that /var/run/mysqld (used for socket and lock files) is writable regardless of the UID our mysqld instance ends up having at runtime\n\t&& chmod 777 /var/run/mysqld\n\n# comment out a few problematic configuration values\n# don't reverse lookup hostnames, they are usually another container\nRUN sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/my.cnf \\\n\t&& echo 'skip-host-cache\\nskip-name-resolve' | awk '{ print } $1 == \"[mysqld]\" && c == 0 { c = 1; system(\"cat\") }' /etc/mysql/my.cnf > /tmp/my.cnf \\\n\t&& mv /tmp/my.cnf /etc/mysql/my.cnf\n\n# Volume for MySQL data\nVOLUME /var/lib/mysql\n\n# MySQL start command.\nCOPY scripts/docker-entrypoint.sh /usr/local/bin/\nRUN chmod a+x /usr/local/bin/docker-entrypoint.sh\nRUN ln -s usr/local/bin/docker-entrypoint.sh /entrypoint.sh # backwards compat\nENTRYPOINT [\"docker-entrypoint.sh\"]\n\nEXPOSE 3306\nCMD [\"mysqld\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      "/var/lib/mysql"
+    ],
+    "run": [
+      "  echo \"deb http://ftp.de.debian.org/debian/ jessie main non-free contrib\\n\" > /etc/apt/sources.list &&   echo \"deb-src http://ftp.de.debian.org/debian/ jessie main non-free contrib\\n\" >> /etc/apt/sources.list &&   echo \"deb http://security.debian.org/ jessie/updates main contrib non-free\\n\" >> /etc/apt/sources.list &&   echo \"deb-src http://security.debian.org/ jessie/updates main contrib non-free\" >> /etc/apt/sources.list",
+      "apt-get -qq update && apt-get -qqy upgrade",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys A4A9406876FCBD3C456770C88C718D3B5072E1F5",
+      "echo \"deb http://repo.mysql.com/apt/debian/ jessie mysql-${MYSQL_VERSION}\" > /etc/apt/sources.list.d/mysql.list",
+      "{ \t\techo mysql-community-server mysql-community-server/data-dir select ''; \t\techo mysql-community-server mysql-community-server/root-pass password ''; \t\techo mysql-community-server mysql-community-server/re-root-pass password ''; \t\techo mysql-community-server mysql-community-server/remove-test-db select false; \t} | debconf-set-selections \t&& apt-get update && apt-get install -y mysql-server-\"${MYSQL_VERSION}\" && rm -rf /var/lib/apt/lists/* \t&& rm -rf /var/lib/mysql && mkdir -p /var/lib/mysql /var/run/mysqld \t&& chown -R mysql:mysql /var/lib/mysql /var/run/mysqld # ensure that /var/run/mysqld (used for socket and lock files) is writable regardless of the UID our mysqld instance ends up having at runtime",
+      "sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/my.cnf \t&& echo 'skip-host-cache\\nskip-name-resolve' | awk '{ print } $1 == \"[mysqld]\" && c == 0 { c = 1; system(\"cat\") }' /etc/mysql/my.cnf > /tmp/my.cnf \t&& mv /tmp/my.cnf /etc/mysql/my.cnf",
+      "chmod a+x /usr/local/bin/docker-entrypoint.sh",
+      "ln -s usr/local/bin/docker-entrypoint.sh /entrypoint.sh # backwards compat"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "keopx <keopx@keopx.net>",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "MYSQL_VERSION": "5.6"
+    },
+    "copy": "scripts/docker-entrypoint.sh /usr/local/bin/",
+    "entrypoint": "[\"docker-entrypoint.sh\"]",
+    "cmd": "[\"mysqld\"]"
+  },
+  "source_repository_url": "https://github.com/keopx/docker-mysql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/keopx/docker-mysql",
+  "docker_repository": "keopx/mysql",
+  "docker_image": "keopx/mysql",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_VERSION": {
+      "default": "5.6",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "keopx/mysql",
+  "revision": "5.6",
+  "uris": [
+    "https://hub.docker.com/r/keopx/mysql",
+    "https://hub.docker.com/v2/repositories/keopx/mysql",
+    "https://github.com/keopx/docker-mysql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/keopx/mysql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

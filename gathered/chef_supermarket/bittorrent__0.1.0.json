@@ -1,0 +1,52 @@
+{
+  "name": "bittorrent Chef cookbook",
+  "chef_cookbook_name": "bittorrent",
+  "revision": "0.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/bittorrent",
+    "https://supermarket.chef.io/cookbooks/bittorrent/download",
+    "https://supermarket.chef.io/cookbooks/bittorrent/versions/0.1.0",
+    "https://supermarket.chef.io/cookbooks/bittorrent/versions/0.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/bittorrent/versions/0.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/bittorrent",
+    "https://supermarket.chef.io/api/v1/cookbooks/bittorrent/versions/0.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Networking",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/bittorrent",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/bittorrent/versions/0.1.0/download",
+  "deprecated": false,
+  "created": "2012-01-10T03:33:27.000Z",
+  "updated": "2012-02-08T16:46:23.000Z",
+  "description": "Manages use of BitTorrent for file distribution.",
+  "maintainer": {
+    "name": "mray",
+    "email": "matt@opscode.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 3,
+  "downloads_count": 2432642,
+  "downloads_count_revision": 1216216,
+  "repository_url": "http://github.com/mattray/bittorrent-cookbook",
+  "issues_url": "http://github.com/mattray/bittorrent-cookbook",
+  "chef_source_url": "http://github.com/mattray/bittorrent-cookbook",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\nManages the use of [BitTorrent](http://en.wikipedia.org/wiki/BitTorrent) for distributing files with the [Aria2 BitTorrent Client](http://aria2.sourceforge.net). It includes LWRPs for downloading files, creating torrents and for seeding files. There are also recipes that use attributes to share and download files via bittorrent with minimal interaction.\n\nRequirements\n============\nPlatform\n--------\nTested with Ubuntu 10.04 and 11.04. Uses the `aria2` and `mktorrent` packages.\n\nNetworking\n----------\nFor torrentless trackers you must have both TCP and UDP open on the firewall for whatever port you may be using. For simplicity and efficiency only a single port is supported (DHT uses UDP and transfers use TCP). EC2 instances can communicate between each other as long as they are in the same security group.\n\nResource/Provider\n=================\nbittorrent_peer\n---------------\nDownload the file or files specified by a torrent via the [BitTorrent protocol](http://en.wikipedia.org/wiki/BitTorrent). Update notifications are triggered when a blocking download completes and on the initiation of seeding.\n\n# Actions\n- :create: Download the contents of a torrent via the BitTorrent protocol\n- :stop: Stop a download (usually used to end seeding).\n\n# Attribute Parameters\n- torrent: torrent file of the swarm to join.  Can either be a url or local file path. Name attribute.\n- file: file to download.\n- path: directory for the downloaded file.\n- port: listening port for peers. (default 6881)\n- blocking: should the file be downloaded in a blocking way? If `true` Chef will download the file in a single Chef run, if `false` will start the download and continue in the background (and based on `continue_seeding` stop or continue when finished). (default true)\n- seeder: hostname or address of the seeder if the torrent does not have a tracker. (optional)\n- continue_seeding: should the file continue to be seeded to the swarm after download? You will need to use the :stop action to stop it. (default false)\n- upload_limit: maximum upload speed limit in megabytes/sec. (optional)\n\n# Examples\n    # download the lucid iso\n    bittorrent_peer \"http://releases.ubuntu.com/lucid/ubuntu-10.04.3-server-i386.iso.torrent\" do\n      file \"ubuntu-10.04.3-server-i386.iso\"\n      path \"/home/ubuntu/\"\n      action :create\n    end\n\n    # continue seeding with a local torrent after download\n    bittorrent_peer \"/tmp/bigfile.torrent\" do\n      file \"bigfile.tar.gz\"\n      path \"/home/ubuntu/\"\n      continue_seeding true\n      action :create\n    end\n\n    # stop the previous torrent\n    bittorrent_peer \"bigfile.tar.gz do\n      action :stop\n    end\n\nbittorrent_seed\n---------------\nShare a local file via the [BitTorrent protocol](http://en.wikipedia.org/wiki/BitTorrent).\n\n# Actions\n- :create: Seed a local file and share it via BitTorrent.\n- :stop: Stop a download (used to end seeding).\n\n# Attribute Parameters\n- file: source file to share. Name attribute.\n- path: path to the source file.\n- torrent: torrent file to seed. Can either be a url or local file path. (optional)\n- port: listening port for peers. (default 6881)\n- upload_limit: maximum upload speed limit in megabytes/sec. (optional)\n\n# Examples\n    # share an ubuntu iso via a torrent\n    bittorrent_seed \"ubuntu.iso\" do\n      path \"/home/ubuntu/\"\n      torrent \"/home/ubuntu/ubuntu.iso.torrent\"\n      action :create\n    end\n\n    # seed without a torrent with a megabyte limit\n    bittorrent_seed \"bigpackage.zip\" do\n      path \"/tmp\"\n      upload_limit 1\n      action :create\n    end\n\n    # stop the previous torrent\n    bittorrent_seed \"bigpackage.zip\" do\n      action :stop\n    end\n\nbittorrent_torrent\n------------------\nCreates a .torrent file for sharing a local file via the [BitTorrent protocol](http://en.wikipedia.org/wiki/BitTorrent). You can use the `bittorrent_seed` LWRP to share the .torrent after it is created.\n\n# Actions\n- :create: Generate a .torrent for sharing a local file via the BitTorrent protocol.\n\n# Attribute Parameters\n- torrent: torrent file to generate. Local file path. Name attribute.\n- file: source file.\n- path: directory of the source file.\n- tracker: tracker or trackers to list. (optional)\n- owner: owner of the generated .torrent file. (optional)\n- group: group of the generated .torrent file. (optional)\n- mode: mode of the generated .torrent file. (optional)\n\n# Example\n    # create a torrent for the the lucid iso\n    bittorrent_torrent \"/home/ubuntu/ubuntu.iso.torrent\" do\n      file \"ubuntu.iso\"\n      path \"/home/ubuntu\"\n      tracker \"http://mytracker.example.com:6969/announce\"\n      action :create\n    end\n\n    # create a torrent for using trackerless with DHT\n    bittorrent_torrent \"/tmp/bigpackage.torrent\" do\n      file \"bigpackage.zip\"\n      path \"/tmp/\"\n      tracker \"node://#{node.ipaddress}:#{node['bittorrent']['port']}\"\n      action :create\n    end\n\nRecipes\n=======\nThese recipes are provided as an easy way to use bittorrent to share and download files simply by passing the path and filename. They currently require the presence of a `bittorrent` data bag for automating the distribution of torrent files (the plan is to move to magnet URIs in the future).\n\n```\nknife data bag create bittorrent\n```\n\nseed\n----\nGiven the filename and path via `['bittorrent']['file']` and `['bittorrent']['path']`, the file will be seeded via bittorrent (you may optionally set the `['bittorrent']['torrent']` file name). A torrent file is created and stored in the `bittorrent` data bag with the ip address of the seeding node for use by downloading peers.\n\npeer\n----\nGiven the filename and path via `['bittorrent']['file']` and `['bittorrent']['path']`, the file will be downloaded and seeded via bittorrent (you may optionally set the `['bittorrent']['torrent']` file name). The torrent file is pulled from the `bittorrent` data bag, written to the filesystem and the file is downloaded. If you wish to speed up the distribution of your files by continuing to seed after downloading, set the `[:bittorrent][:seed]` to true.\n\nstop\n----\nStops the seeding and peering of the the `['bittorrent']['file']` file.\n\nRoles\n=====\nThere are a pair of roles in the `examples` directory called `btpeer.rb` and `btseeder.rb`. Thsese examples show how to automate the seeding and peering of a \"crm84.tar.gz\" file with just the attributes and included recipes.\n\nAttributes\n==========\n* `['bittorrent']['torrent]` - Filename of the .torrent file for sharing, defaults to \"/tmp/chef.torrent\"\n* `['bittorrent']['file']` - File to download or share via bittorrent\n* `['bittorrent']['path']` - Path to save or share the `node['bittorrent']['file']`, defaults to \"/tmp\"\n* `['bittorrent']['seed']` - Whether the node is seeding, defaults to `false`\n* `['bittorrent']['port']` - Bittorrent port to use, default is 6881\n* `['bittorrent']['upload_limit']` - Megabytes/second limit, default is 0 which is unlimited\n\nLicense and Author\n==================\n\nAuthor: Matt Ray (<matt@opscode.com>)\n\nCopyright 2011,2012 Opscode, Inc.\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ]
+}

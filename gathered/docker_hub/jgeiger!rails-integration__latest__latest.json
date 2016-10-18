@@ -1,0 +1,149 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jgeiger/rails-integration",
+    "repository_url": "https://hub.docker.com/v2/repositories/jgeiger/rails-integration",
+    "tags_url": "https://hub.docker.com/v2/repositories/jgeiger/rails-integration/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jgeiger/rails-integration/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jgeiger/rails-integration/autobuild",
+    "user": "jgeiger",
+    "name": "rails-integration",
+    "namespace": "jgeiger",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 71,
+    "last_updated": "2016-04-07T05:25:57.276667Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 417817096,
+        "id": 2160091,
+        "repository": 543909,
+        "creator": 16601,
+        "last_updater": 16601,
+        "last_updated": "2016-04-07T05:25:56.897586Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "jgeiger/dockerfiles"
+  },
+  "name": "jgeiger/rails-integration Docker container",
+  "description": "Rails with VNC, xvfb, chrome and chromedriver",
+  "readme": "# dockerfiles\nA collection of Dockerfiles to build containers\n",
+  "dockerfile": "FROM jgeiger/rails\nMAINTAINER jgeiger@gmail.com\n\n#============================\n# Some configuration options\n#============================\nENV SCREEN_WIDTH 1024\nENV SCREEN_HEIGHT 768\nENV SCREEN_DEPTH 16\nENV DISPLAY :99.0\n\nEXPOSE 5900\n\nUSER root\n\nWORKDIR /tmp\n\n#===============\n# Google Chrome\n#===============\nRUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \\\n  && echo \"deb http://dl.google.com/linux/chrome/deb/ stable main\" >> /etc/apt/sources.list.d/google-chrome.list \\\n  && apt-get update -qqy \\\n  && apt-get -qqy install \\\n  google-chrome-stable \\\n  gstreamer1.0-plugins-base \\\n  gstreamer1.0-tools \\\n  gstreamer1.0-x \\\n  && rm /etc/apt/sources.list.d/google-chrome.list \\\n  && rm -rf /var/lib/apt/lists/*\n\n#==================\n# Chrome webdriver\n#==================\nENV CHROME_DRIVER_VERSION 2.21\nRUN wget --no-verbose -O /tmp/chromedriver_linux64.zip http://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip \\\n  && rm -rf /opt/selenium/chromedriver \\\n  && unzip /tmp/chromedriver_linux64.zip -d /opt/selenium \\\n  && rm /tmp/chromedriver_linux64.zip \\\n  && mv /opt/selenium/chromedriver /opt/selenium/chromedriver-$CHROME_DRIVER_VERSION \\\n  && chmod 755 /opt/selenium/chromedriver-$CHROME_DRIVER_VERSION \\\n  && ln -fs /opt/selenium/chromedriver-$CHROME_DRIVER_VERSION /usr/bin/chromedriver\n\n#=============\n# VNC and Xvfb\n#=============\nRUN apt-get update -qqy \\\n  && apt-get -qqy install \\\n    x11vnc \\\n    xvfb \\\n  && rm -rf /var/lib/apt/lists/*\n\n#=================\n# Locale settings\n#=================\nENV LANGUAGE en_US.UTF-8\nENV LANG en_US.UTF-8\nRUN locale-gen $LANG \\\n  && dpkg-reconfigure --frontend noninteractive locales \\\n  && apt-get update -qqy \\\n  && apt-get -qqy --no-install-recommends install \\\n    language-pack-en \\\n  && rm -rf /var/lib/apt/lists/*\n\n#=======\n# Fonts\n#=======\nRUN apt-get update -qqy \\\n  && apt-get -qqy --no-install-recommends install \\\n    fonts-ipafont-gothic \\\n    xfonts-100dpi \\\n    xfonts-75dpi \\\n    xfonts-cyrillic \\\n    xfonts-scalable \\\n  && rm -rf /var/lib/apt/lists/*\n\n#=========\n# fluxbox\n# A fast, lightweight and responsive window manager\n#=========\nRUN apt-get update -qqy \\\n  && apt-get -qqy install \\\n    fluxbox \\\n  && rm -rf /var/lib/apt/lists/*\n\n#=========\n# firefox\n#=========\nRUN apt-get update -qqy \\\n  && apt-get -qqy install \\\n    firefox \\\n  && rm -rf /var/lib/apt/lists/*\n\nCOPY docker-entrypoint.sh /entrypoint.sh\nRUN chmod +x /entrypoint.sh\n\nUSER $USERNAME\n\nRUN mkdir -p $HOME/.vnc \\\n  && x11vnc -storepasswd secret $HOME/.vnc/passwd\n\nWORKDIR $HOME\n\nCMD [ \"bundle\", \"exec\", \"rspec\" ]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5900
+    ],
+    "volume": [],
+    "run": [
+      "wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -   && echo \"deb http://dl.google.com/linux/chrome/deb/ stable main\" >> /etc/apt/sources.list.d/google-chrome.list   && apt-get update -qqy   && apt-get -qqy install   google-chrome-stable   gstreamer1.0-plugins-base   gstreamer1.0-tools   gstreamer1.0-x   && rm /etc/apt/sources.list.d/google-chrome.list   && rm -rf /var/lib/apt/lists/*",
+      "wget --no-verbose -O /tmp/chromedriver_linux64.zip http://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip   && rm -rf /opt/selenium/chromedriver   && unzip /tmp/chromedriver_linux64.zip -d /opt/selenium   && rm /tmp/chromedriver_linux64.zip   && mv /opt/selenium/chromedriver /opt/selenium/chromedriver-$CHROME_DRIVER_VERSION   && chmod 755 /opt/selenium/chromedriver-$CHROME_DRIVER_VERSION   && ln -fs /opt/selenium/chromedriver-$CHROME_DRIVER_VERSION /usr/bin/chromedriver",
+      "apt-get update -qqy   && apt-get -qqy install     x11vnc     xvfb   && rm -rf /var/lib/apt/lists/*",
+      "locale-gen $LANG   && dpkg-reconfigure --frontend noninteractive locales   && apt-get update -qqy   && apt-get -qqy --no-install-recommends install     language-pack-en   && rm -rf /var/lib/apt/lists/*",
+      "apt-get update -qqy   && apt-get -qqy --no-install-recommends install     fonts-ipafont-gothic     xfonts-100dpi     xfonts-75dpi     xfonts-cyrillic     xfonts-scalable   && rm -rf /var/lib/apt/lists/*",
+      "apt-get update -qqy   && apt-get -qqy install     fluxbox   && rm -rf /var/lib/apt/lists/*",
+      "apt-get update -qqy   && apt-get -qqy install     firefox   && rm -rf /var/lib/apt/lists/*",
+      "chmod +x /entrypoint.sh",
+      "mkdir -p $HOME/.vnc   && x11vnc -storepasswd secret $HOME/.vnc/passwd"
+    ],
+    "workdir": [
+      "/tmp",
+      "$HOME"
+    ],
+    "from": "jgeiger/rails",
+    "maintainer": "jgeiger@gmail.com",
+    "env": {
+      "SCREEN_WIDTH": "1024",
+      "SCREEN_HEIGHT": "768",
+      "SCREEN_DEPTH": "16",
+      "DISPLAY": ":99.0",
+      "CHROME_DRIVER_VERSION": "2.21",
+      "LANGUAGE": "en_US.UTF-8",
+      "LANG": "en_US.UTF-8"
+    },
+    "user": "$USERNAME",
+    "copy": "docker-entrypoint.sh /entrypoint.sh",
+    "cmd": "[ \"bundle\", \"exec\", \"rspec\" ]"
+  },
+  "source_repository_url": "https://github.com/jgeiger/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/jgeiger/dockerfiles",
+  "docker_repository": "jgeiger/rails-integration",
+  "docker_image": "jgeiger/rails-integration",
+  "parameters_schema": {
+    "SCREEN_WIDTH": {
+      "default": "1024",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SCREEN_HEIGHT": {
+      "default": "768",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SCREEN_DEPTH": {
+      "default": "16",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DISPLAY": {
+      "default": ":99.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CHROME_DRIVER_VERSION": {
+      "default": "2.21",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANGUAGE": {
+      "default": "en_US.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "en_US.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5900
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jgeiger/rails-integration",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jgeiger/rails-integration",
+    "https://hub.docker.com/v2/repositories/jgeiger/rails-integration",
+    "https://github.com/jgeiger/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Type/Devopsware/Integration"
+  ],
+  "info_url": "https://hub.docker.com/r/jgeiger/rails-integration",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

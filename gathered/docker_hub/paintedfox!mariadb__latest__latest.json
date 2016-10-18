@@ -1,0 +1,109 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/paintedfox/mariadb",
+    "repository_url": "https://hub.docker.com/v2/repositories/paintedfox/mariadb",
+    "tags_url": "https://hub.docker.com/v2/repositories/paintedfox/mariadb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/paintedfox/mariadb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/paintedfox/mariadb/autobuild",
+    "user": "paintedfox",
+    "name": "mariadb",
+    "namespace": "paintedfox",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 29,
+    "pull_count": 8543,
+    "last_updated": "2015-11-13T00:28:57.668867Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 169399221,
+        "id": 7165,
+        "repository": 3986,
+        "creator": 4274,
+        "last_updater": 4274,
+        "last_updated": "2015-11-13T00:29:02.190664Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "Painted-Fox/docker-mariadb"
+  },
+  "name": "paintedfox/mariadb Docker container",
+  "description": "A docker image for running MariaDB 5.5, a drop-in replacement for MySQL.",
+  "readme": "# docker-mariadb\n\nA Dockerfile that produces a container that will run [MariaDB][mariadb] 5.5,\na drop-in replacement for MySQL.\n\n[mariadb]: https://mariadb.org/\n\n## Image Creation\n\nThis example creates the image with the tag `paintedfox/mariadb`, but you can\nchange this to use your own username.\n\n```\n$ docker build -t=\"paintedfox/mariadb\" .\n```\n\nAlternately, you can run the following if you have *make* installed...\n\n```\n$ make\n```\n\nYou can also specify a custom docker username like so:\n\n```\n$ make DOCKER_USER=paintedfox\n```\n\n## Container Creation / Running\n\nThe MariaDB server is configured to store data in `/data` inside the container.\nYou can map the container's `/data` volume to a volume on the host so the data\nbecomes independant of the running container.\n\nThis example uses `/tmp/mariadb` to store the MariaDB data, but you can modify\nthis to your needs.\n\nWhen the container runs, it creates a superuser with a random password.  You\ncan set the username and password for the superuser by setting the container's\nenvironment variables.  This lets you discover the username and password of the\nsuperuser from within a linked container or from the output of `docker inspect\nmariadb`.\n\n``` shell\n$ mkdir -p /tmp/mariadb\n$ docker run -d -name=\"mariadb\" \\\n             -p 127.0.0.1:3306:3306 \\\n             -v /tmp/mariadb:/data \\\n             -e USER=\"super\" \\\n             -e PASS=\"$(pwgen -s -1 16)\" \\\n             paintedfox/mariadb\n```\n\nAlternately, you can run the following if you have *make* installed...\n\n``` shell\n$ make run\n```\n\nYou can also specify a custom port to bind to on the host, a custom data\ndirectory, and the superuser username and password on the host like so:\n\n``` shell\n$ sudo mkdir -p /srv/docker/mariadb\n$ make run PORT=127.0.0.1:3306 \\\n           DATA_DIR=/srv/docker/mariadb \\\n           USER=super \\\n           PASS=$(pwgen -s -1 16)\n```\n\n## Connecting to the Database\n\nTo connect to the MariaDB server, you will need to make sure you have a client.\nYou can install the `mysql-client` on your host machine by running the\nfollowing (Ubuntu 12.04LTS):\n\n``` shell\n$ sudo apt-get install mysql-client\n```\n\nAs part of the startup for MariaDB, the container will generate a random\npassword for the superuser.  To view the login in run `docker logs\n<container_name>` like so:\n\n``` shell\n$ docker logs mariadb\nMARIADB_USER=super\nMARIADB_PASS=FzNQiroBkTHLX7y4\nMARIADB_DATA_DIR=/data\nStarting MariaDB...\n140103 20:33:49 mysqld_safe Logging to '/data/mysql.log'.\n140103 20:33:49 mysqld_safe Starting mysqld daemon with databases from /data\n```\n\nThen you can connect to the MariaDB server from the host with the following\ncommand:\n\n``` shell\n$ mysql -u super --password=FzNQiroBkTHLX7y4 --protocol=tcp\n```\n\n## Linking with the Database Container\n\nYou can link a container to the database container.  You may want to do this to\nkeep web application processes that need to connect to the database in\na separate container.\n\nTo demonstrate this, we can spin up a new container like so:\n\n``` shell\n$ docker run -t -i -link mariadb:db ubuntu bash\n```\n\nThis assumes you're already running the database container with the name\n*mariadb*.  The `-link mariadb:db` will give the linked container the alias\n*db* inside of the new container.\n\nFrom the new container you can connect to the database by running the following\ncommands:\n\n``` shell\n$ apt-get install -y mysql-client\n$ mysql -u \"$DB_ENV_USER\" --password=\"$DB_ENV_PASS\" -h \"$DB_PORT_3306_TCP_ADDR\" -P \"$DB_PORT_3306_TCP_PORT\"\n```\n\nIf you ran the *mariadb* container with the flags `-e USER=<user>` and `-e\nPASS=<pass>`, then the linked container should have these variables available\nin its environment.  Since we aliased the database container with the name\n*db*, the environment variables from the database container are copied into the\nlinked container with the prefix `DB_ENV_`.\n",
+  "dockerfile": "#MariaDB (https://mariadb.org/)\n\nFROM phusion/baseimage:0.9.10\nMAINTAINER Ryan Seto <ryanseto@yak.net>\n\n# Ensure UTF-8\nRUN locale-gen en_US.UTF-8\n\n# Disable SSH (Not using it at the moment).\nRUN rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh\n\n# Install MariaDB from repository.\nRUN echo \"deb http://ftp.osuosl.org/pub/mariadb/repo/5.5/ubuntu trusty main\" > /etc/apt/sources.list.d/mariadb.list && \\\n    apt-get update && \\\n    DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes mariadb-server mariadb-server-5.5\n\n# Install other tools.\nRUN DEBIAN_FRONTEND=noninteractive apt-get install -y pwgen inotify-tools\n\n# Clean up APT when done.\nRUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n# Configure the database to use our data dir.\nRUN sed -i -e 's/^datadir\\s*=.*/datadir = \\/data/' /etc/mysql/my.cnf\n\n# Configure MariaDB to listen on any address.\nRUN sed -i -e 's/^bind-address/#bind-address/' /etc/mysql/my.cnf\n\n# Change the innodb-buffer-pool-size to 128M (default is 256M).\n# This should make it friendlier to run on low memory servers.\nRUN sed -i -e 's/^innodb_buffer_pool_size\\s*=.*/innodb_buffer_pool_size = 128M/' /etc/mysql/my.cnf\n\nEXPOSE 3306\nADD scripts /scripts\nRUN chmod +x /scripts/start.sh\nRUN touch /firstrun\n\n# Expose our data, log, and configuration directories.\nVOLUME [\"/data\", \"/var/log/mysql\", \"/etc/mysql\"]\n\n# Use baseimage-docker's init system.\nCMD [\"/sbin/my_init\", \"--\", \"/scripts/start.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "scripts",
+        "dest": "/scripts"
+      }
+    ],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      "[\"/data\", \"/var/log/mysql\", \"/etc/mysql\"]"
+    ],
+    "run": [
+      "locale-gen en_US.UTF-8",
+      "rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh",
+      "echo \"deb http://ftp.osuosl.org/pub/mariadb/repo/5.5/ubuntu trusty main\" > /etc/apt/sources.list.d/mariadb.list &&     apt-get update &&     DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes mariadb-server mariadb-server-5.5",
+      "DEBIAN_FRONTEND=noninteractive apt-get install -y pwgen inotify-tools",
+      "apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "sed -i -e 's/^datadir\\s*=.*/datadir = \\/data/' /etc/mysql/my.cnf",
+      "sed -i -e 's/^bind-address/#bind-address/' /etc/mysql/my.cnf",
+      "sed -i -e 's/^innodb_buffer_pool_size\\s*=.*/innodb_buffer_pool_size = 128M/' /etc/mysql/my.cnf",
+      "chmod +x /scripts/start.sh",
+      "touch /firstrun"
+    ],
+    "workdir": [],
+    "from": "phusion/baseimage:0.9.10",
+    "maintainer": "Ryan Seto <ryanseto@yak.net>",
+    "cmd": "[\"/sbin/my_init\", \"--\", \"/scripts/start.sh\"]"
+  },
+  "source_repository_url": "git://github.com/Painted-Fox/docker-mariadb.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Painted-Fox/docker-mariadb",
+  "docker_repository": "paintedfox/mariadb",
+  "docker_image": "paintedfox/mariadb",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "paintedfox/mariadb",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/paintedfox/mariadb",
+    "https://hub.docker.com/v2/repositories/paintedfox/mariadb",
+    "git://github.com/Painted-Fox/docker-mariadb.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Data Store/Relational/MySQL",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/paintedfox/mariadb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,89 @@
+{
+  "name": "opsworks_ruby Chef cookbook",
+  "chef_cookbook_name": "opsworks_ruby",
+  "revision": "0.5.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/opsworks_ruby",
+    "https://supermarket.chef.io/cookbooks/opsworks_ruby/download",
+    "https://supermarket.chef.io/cookbooks/opsworks_ruby/versions/0.5.0",
+    "https://supermarket.chef.io/cookbooks/opsworks_ruby/versions/0.5.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/opsworks_ruby/versions/0.5.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/opsworks_ruby",
+    "https://supermarket.chef.io/api/v1/cookbooks/opsworks_ruby/versions/0.5.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Type/Middleware/Runtime/Ruby",
+    "Binding/Provider/Amazon/OpsWorks",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/opsworks_ruby",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/opsworks_ruby/versions/0.5.0/download",
+  "deprecated": false,
+  "created": "2016-04-23T14:29:55.612Z",
+  "updated": "2016-10-04T10:41:43.239Z",
+  "description": "Set of chef recipes for OpsWorks based Ruby projects",
+  "maintainer": {
+    "name": "ajgon",
+    "email": "igor@rzegocki.pl"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 3,
+  "downloads_count": 855,
+  "downloads_count_revision": 41,
+  "repository_url": "https://github.com/ajgon/opsworks_ruby",
+  "issues_url": "https://github.com/ajgon/opsworks_ruby/issues",
+  "chef_source_url": "https://github.com/ajgon/opsworks_ruby",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# opsworks_ruby Cookbook\n\n[![Chef cookbook](https://img.shields.io/cookbook/v/opsworks_ruby.svg)](https://supermarket.chef.io/cookbooks/opsworks_ruby)\n[![Build Status](https://travis-ci.org/ajgon/opsworks_ruby.svg?branch=master)](https://travis-ci.org/ajgon/opsworks_ruby)\n[![Coverage Status](https://coveralls.io/repos/github/ajgon/opsworks_ruby/badge.svg?branch=master)](https://coveralls.io/github/ajgon/opsworks_ruby?branch=master)\n[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)\n[![license](https://img.shields.io/github/license/ajgon/opsworks_ruby.svg?maxAge=2592000)](https://opsworks-ruby.mit-license.org/)\n\nA [chef](https://www.chef.io/) cookbook to deploy Ruby applications to Amazon OpsWorks.\n\n## Quick Start\n\nThis cookbook is designed to \"just work\". So in base case scenario, all you have\nto do is create a layer and application with an optional assigned RDS data source,\nthen [add recipes to the corresponding OpsWorks actions](#recipes).\n\n## Support\n\n* Database\n  * MariaDB\n  * MySQL\n  * PostgreSQL\n  * Sqlite3\n* SCM\n  * git\n* Framework\n  * Ruby on Rails\n* App server\n  * Unicorn\n* Web server\n  * nginx\n* Worker\n  * Null (no worker)\n  * sidekiq\n\n## Requirements\n\n### Cookbooks\n\n* [build-essential (~> 2.0)](https://supermarket.chef.io/cookbooks/build-essential/versions/2.4.0)\n* [deployer](https://supermarket.chef.io/cookbooks/deployer)\n* [ruby-ng](https://supermarket.chef.io/cookbooks/ruby-ng)\n* [nginx (~> 2.7)](https://supermarket.chef.io/cookbooks/nginx)\n* [application_ruby](https://supermarket.chef.io/cookbooks/application_ruby)\n\n### Platform\n\nThis cookbook was tested on the following OpsWorks platforms:\n\n* Amazon Linux 2016.03\n* Amazon Linux 2015.09\n* Amazon Linux 2015.03\n* Ubuntu 14.04 LTS\n* Ubuntu 12.04 LTS\n\nIn addition, all recent Debian family distrubutions are assumed to work.\n\n## Attributes\n\nAttributes format follows the guidelines of old Chef 11.x based OpsWorks stack.\nSo all of them, need to be placed under `node['deploy'][<application_shortname>]`.\nAttributes (and whole logic of this cookbook) are divided to six sections.\nFollowing convention is used: `app == node['deploy'][<application_shortname>]`\nso for example `app['framework']['adapter']` actually means\n`node['deploy'][<application_shortname>]['framework']['adapter']`.\n\n### basic\n\n* `node['applications']`\n  * An array of application shortnames which should be deployed to given layer.\n    If not provided, all detected applications will be deployed.\n\n### database\n\nThose parameters will be passed without any alteration to the `database.yml`\nfile. Keep in mind, that if you have RDS connected to your OpsWorks application,\nyou don't need to use them. The chef will do all the job, and determine them\nfor you.\n\n* `app['database']['adapter']`\n  * **Supported values:** `mariadb`, `mysql`, `postgresql`, `sqlite3`\n  * **Note:** There is no default database adapter if a RDS resource is not\n    defined in your stack.\n  * ActiveRecord adapter which will be used for database connection.\n* `app['database']['username']`\n  * Username used to authenticate to the DB\n* `app['database']['password']`\n  * Password used to authenticate to the DB\n* `app['database']['host']`\n  * Database host\n* `app['database']['database']`\n  * Database name\n* `app['database'][<any other>]`\n  * Any other key-value pair provided here, will be passed directly to the\n    `database.yml`\n\n### scm\n\nThose parameters can also be determined from OpsWorks application, and usually\nyou don't need to provide them here. Currently only `git` is supported.\n\n* `app['scm']['scm_provider']`\n  * **Supported values:** `git`\n  * **Default:** `git`\n  * SCM used by the cookbook to clone the repo.\n* `app['scm']['remove_scm_files']`\n  * **Supported values:** `true`, `false`\n  * **Default:** `true`\n  * If set to true, all SCM leftovers (like `.git`) will be removed.\n* `app['scm']['repository']`\n  * Repository URL\n* `app['scm']['revision']`\n  * Branch name/SHA1 of commit which should be use as a base of the deployment.\n* `app['scm']['ssh_key']`\n  * A private SSH deploy key (the key itself, not the file name), used when\n    fetching repositories via SSH.\n* `app['scm']['ssh_wrapper']`\n  * A wrapper script, which will be used by git when fetching repository\n    via SSH. Essentially, a value of `GIT_SSH` environment variable. This\n    cookbook provides one of those scripts for you, so you shouldn't alter this\n    variable unless you know what you're doing.\n* `app['scm']['enabled_submodules']`\n  * If set to `true`, any submodules included in the repository, will also be\n    fetched.\n\n### framework\n\nPre-optimalization for specific frameworks (like migrations, cache etc.).\nCurrently only `Rails` is supported.\n\n* `app['framework']['adapter']`\n  * **Supported values:** `rails`\n  * **Default:** `rails`\n  * Ruby framework used in project.\n* `app['framework']['migrate']`\n  * **Supported values:** `true`, `false`\n  * **Default:** `true`\n  * If set to `true`, migrations will be launch during deployment.\n* `app['framework']['migration_command']`\n  * A command which will be invoked to perform migration. This cookbook comes\n    with predefined migration commands, well suited for the task, and usually\n    you don't have to change this parameter.\n* `app['framework']['assets_precompile']`\n  * **Supported values:** `true`, `false`\n  * **Default:** `true`\n* `app['framework']['assets_precompilation_command']`\n  * A command which will be invoked to precompile assets.\n\n### appserver\n\nConfiguration parameters for the ruby application server. Currently only\n`Unicorn` is supported.\n\n* `app['appserver']['adapter']`\n  * **Default:** `unicorn`\n  * **Supported values:** `unicorn`, `null`\n  * Server on the application side, which will receive requests from webserver\n    in front. `null` means no appserver enabled.\n* [`app['appserver']['accept_filter']`](https://unicorn.bogomips.org/Unicorn/Configurator.html#method-i-listen)\n  * **Default:** `httpready`\n* [`app['appserver']['backlog']`](https://unicorn.bogomips.org/Unicorn/Configurator.html#method-i-listen)\n  * **Default:** `1024`\n* [`app['appserver']['delay']`](https://unicorn.bogomips.org/Unicorn/Configurator.html#method-i-listen)\n  * **Default:** `0.5`\n* [`app['appserver']['preload_app']`](https://unicorn.bogomips.org/Unicorn/Configurator.html#method-i-preload_app)\n  * **Supported values:** `true`, `false`\n  * **Default:** `true`\n* [`app['appserver']['tcp_nodelay']`](https://unicorn.bogomips.org/Unicorn/Configurator.html#method-i-listen)\n  * **Supported values:** `true`, `false`\n  * **Default:** `true`\n* [`app['appserver']['tcp_nopush']`](https://unicorn.bogomips.org/Unicorn/Configurator.html#method-i-listen)\n  * **Supported values:** `true`, `false`\n  * **Default:** `false`\n* [`app['appserver']['tries']`](https://unicorn.bogomips.org/Unicorn/Configurator.html#method-i-listen)\n  * **Default:** `5`\n* [`app['appserver']['timeout']`](https://unicorn.bogomips.org/Unicorn/Configurator.html#method-i-timeout)\n  * **Default:** `50`\n* [`app['appserver']['worker_processes']`](https://unicorn.bogomips.org/TUNING.html)\n  * **Default:** `4`\n\n### webserver\n\nWebserver configuration. Proxy passing to application is handled out-of-the-box.\nCurrently only nginx is supported.\n\n* `app['webserver']['adapter']`\n  * **Default:** `nginx`\n  * **Supported values:** `nginx`, `null`\n  * Webserver in front of the instance. It runs on port 80,\n    and receives all requests from Load Balancer/Internet.\n    `null` means no webserver enabled.\n* `app['webserver']['build_type']`\n  * **Supported values:** `default` or `source`\n  * **Default:** `default`\n  * The way the [nginx](https://supermarket.chef.io/cookbooks/nginx) cookbooks\n    handles `nginx` installation. Check out [the corresponding docs](https://github.com/miketheman/nginx/tree/2.7.x#recipes)\n    for more details. Never use `node['nginx']['install_method']`, as it will\n    be always overwritten by this attribute.\n* [`app['webserver']['client_body_timeout']`](http://nginx.org/en/docs/http/ngx_http_core_module.html#client_body_timeout)\n  * **Default:** `12`\n* [`app['webserver']['client_header_timeout']`](http://nginx.org/en/docs/http/ngx_http_core_module.html#client_header_timeout)\n  * **Default:** `12`\n* [`app['webserver']['client_max_body_size']`](http://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size)\n  * **Default:** `10m`\n* `app['webserver']['dhparams']`\n  * If you wish to use custom generated DH primes, instead of common ones\n    (which is a very good practice), put the contents (not file name) of the\n    `dhparams.pem` file into this attribute. [Read more here.](https://weakdh.org/sysadmin.html)\n* `app['webserver']['extra_config']`\n  * Raw nginx configuration, which will be inserted into `server` section of the\n    application for HTTP port.\n* `app['webserver']['extra_config_ssl']`\n  * Raw nginx configuration, which will be inserted into `server` section of the\n    application for HTTPS port. If set to `true`, the `extra_config` will be copied.\n* [`app['webserver']['keepalive_timeout']`](http://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_timeout)\n  * **Default**: `15`\n* `app['webserver']['log_dir']`\n  * **Default**: `/var/log/nginx`\n  * A place to store application-related nginx logs.\n* [`app['webserver']['proxy_read_timeout']`](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_read_timeout)\n  * **Default**: `60`\n* [`app['webserver']['proxy_send_timeout']`](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_send_timeout)\n  * **Default**: `60`\n* [`app['webserver']['send_timeout']`](http://nginx.org/en/docs/http/ngx_http_core_module.html#send_timeout)\n  * **Default**: `10`\n* `app['webserver']['ssl_for_legacy_browsers']`\n  * **Supported values:** `true`, `false`\n  * **Default:** `false`\n  * By default nginx is configured to follow strict SSL security standards,\n    [covered in this article](https://cipherli.st/). However, old browsers\n    (like IE < 9 or Android < 2.2) wouldn't work with this configuration very\n    well. If your application needs a support for those browsers, set this\n    parameter to `true`.\n\nSince this driver is basically a wrapper for [nginx cookbook](https://github.com/miketheman/nginx/tree/2.7.x),\nyou can also configure [`node['nginx']` attributes](https://github.com/miketheman/nginx/tree/2.7.x#attributes)\nas well (notice that `node['deploy'][<application_shortname>]` logic doesn't\napply here.)\n\n### worker\n\nConfiguration for ruby workers. Currenty `Null` (no worker) and `Sidekiq`\nare supported. Every worker is covered by `monitd` daemon out-of-the-box.\n\n* `app['worker']['adapter']`\n  * **Default:** `null`\n  * **Supported values:** `null`, `sidekiq`\n  * Worker used to perform background tasks. `null` means no worker enabled.\n* `app['worker']['process_count']`\n  * ** Default:** `2`\n  * How many separate worker processes will be launched.\n* `app['worker']['syslog']`\n  * **Default:** `true`\n  * **Supported values:** `true`, `false`\n  * Log worker output to syslog?\n* `app['worker']['config']`\n  * Configuration parameters which will be directly passed to the worker.\n    For example, for `sidekiq` they will be serialized to\n    [`sidekiq.yml` config file](https://github.com/mperham/sidekiq/wiki/Advanced-Options#the-sidekiq-configuration-file).\n\n## Recipes\n\nThis cookbook provides five main recipes, which should be attached\nto corresponding OpsWorks actions.\n\n* `opsworks_ruby::setup` - attach to **Setup**\n* `opsworks_ruby::configure` - attach to **Configure**\n* `opsworks_ruby::deploy` - attach to **Deploy**\n* `opsworks_ruby::undeploy` - attach to **Undeploy**\n* `opsworks_ruby::shutdown` - attach to **Shutdown**\n\n## Contributing\n\nPlease see [CONTRIBUTING](https://github.com/ajgon/opsworks_ruby/blob/master/CONTRIBUTING.md)\nfor details.\n\n## Author and Contributors\n\nAuthor: Igor Rzegocki <[igor@rzegocki.pl](mailto:igor@rzegocki.pl)>\n\n### Contributors\n\n* Nathan Flood ([@npflood](https://github.com/npflood))\n\n## License\n\nLicense: [MIT](http://opsworks-ruby.mit-license.org/)\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 2015.03",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 12.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/deployer",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ruby-ng",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/nginx",
+      "revision": "~> 2.7",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/application_ruby",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

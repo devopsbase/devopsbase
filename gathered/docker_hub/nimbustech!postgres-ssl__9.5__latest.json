@@ -1,0 +1,98 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/nimbustech/postgres-ssl",
+    "repository_url": "https://hub.docker.com/v2/repositories/nimbustech/postgres-ssl",
+    "tags_url": "https://hub.docker.com/v2/repositories/nimbustech/postgres-ssl/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/nimbustech/postgres-ssl/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/nimbustech/postgres-ssl/autobuild",
+    "user": "nimbustech",
+    "name": "postgres-ssl",
+    "namespace": "nimbustech",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 928,
+    "last_updated": "2016-09-29T18:03:43.784485Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "9.5",
+        "full_size": 101318409,
+        "id": 1652790,
+        "repository": 466450,
+        "creator": 361574,
+        "last_updater": 361574,
+        "last_updated": "2016-09-29T18:03:43.478872Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "CjS77/docker-postgres-cert"
+  },
+  "name": "nimbustech/postgres-ssl Docker container",
+  "description": "PostgreSQL with SSL enabled based on the Postgres 9.5 image",
+  "readme": "# Docker Postgres with SSL Certificate\nThis repo is for running a Docker postgres image with SSL based on the library\n[postgres 9.5 image](https://github.com/docker-library/postgres).\n\n## Build\n```\ndocker pull nimbustech/postgres-ssl:9.5 \n```\n\n## Use\n\n 1. First get postgres up and running (replace `$PG_DATA` and '`demo'` as required):\n        \n        docker run --rm --name psql -e POSTGRES_DB='demo' -e POSTGRES_PASSWORD='password' nimbustech/postgres-ssl:9.5\n        \n 2. Then copy your `server.crt` and `server.key` files to `/my/cert/folder`. You must make sure that the ownership\n  and permisions are correct, typically by running the following *in the host*:\n  \n        sudo chown 999.docker *\n        sudo chmod 600 server.key\n \n 3. You can configure postgres to use your\n    certificates with:\n   \n        docker run --name psql -d -v /my/cert/folder:/var/ssl -e POSTGRES_PASSWORD='password' nimbustech/postgres-ssl:9.5\n        \n         \n 3. Then connect with the proper `sslmode` parameter that your client uses to connect to postgres.\n([libpq docs](http://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNECT-SSLMODE))\n    * disable - **will not use ssl**\n    * allow - **will revert to non-ssl mode with an outdated cert**\n    * prefer - **will revert to non-ssl mode with an outdated cert**\n    * require - **will fail with an outdated cert**\n    * verify-ca - **will fail with an outdated cert**\n    * verify-full- **will fail with an outdated cert**\n\n```\nPGSSLMODE=\"prefer\"  psql -h xxx.xxx.xxx.xxx -U postgres -d dbname\n```\n\n## Environment\n\nThe environment variables are he same as for the [official postgres](https://hub.docker.com/r/library/postgres/) image:\n\n### POSTGRES_PASSWORD\n\nThis environment variable is recommended for you to use the PostgreSQL image. This environment variable sets the \nsuperuser password for PostgreSQL. The default superuser is defined by the POSTGRES_USER environment variable. \nIn the above example, it is being set to \"password\".\n\n### POSTGRES_USER\nThis optional environment variable is used in conjunction with POSTGRES_PASSWORD to set a user and its password. This \nvariable will create the specified user with superuser power and a database with the same name. If it is not specified, \nthen the default user of `postgres` will be used.\n\n### PGDATA\nThis optional environment variable can be used to define another location - like a subdirectory - for the database \nfiles. The default is /var/lib/postgresql/data, but if the data volume you're using is a fs mountpoint (like with GCE \npersistent disks), Postgres initdb recommends a subdirectory (for example /var/lib/postgresql/data/pgdata ) \nbe created to contain the data.\n\n### POSTGRES_DB\nThis optional environment variable can be used to define a different name for the default database that is created when \nthe image is first started. If it is not specified, than the value of `POSTGRES_USER` will be used.\n\n### Volumes\n\nThe following directories are defined as volumes:\n\n * /var/lib/postgresql/data\n * /var/ssl - postgres looks here for your `server.crt` and `server.key` files\n\n## MIT License\nSee the `LICENSE` file for full information.\n",
+  "dockerfile": "FROM postgres:9.5\n\nMAINTAINER Cayle Sharrock<cayle@nimbustech.biz>\n\n# Override this in your docker run command to customize\nADD ./ssl.conf /etc/postgresql-common/ssl.conf\n# Add the ssl config setup script\nCOPY pg_hba.conf /usr/share/postgresql/9.5/pg_hba.conf.sample\nCOPY postgresql.conf /usr/share/postgresql/9.5/postgresql.conf.sample\nCOPY server.crt server.key /var/ssl/\nRUN chown postgres.postgres /usr/share/postgresql/9.5/pg_hba.conf.sample \\\n                            /usr/share/postgresql/9.5/postgresql.conf.sample \\\n                            /var/ssl/server.key \\\n                            /var/ssl/server.crt && \\\n    chmod 600 /var/ssl/server.key\n\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./ssl.conf",
+        "dest": "/etc/postgresql-common/ssl.conf"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "chown postgres.postgres /usr/share/postgresql/9.5/pg_hba.conf.sample                             /usr/share/postgresql/9.5/postgresql.conf.sample                             /var/ssl/server.key                             /var/ssl/server.crt &&     chmod 600 /var/ssl/server.key"
+    ],
+    "workdir": [],
+    "from": "postgres:9.5",
+    "maintainer": "Cayle Sharrock<cayle@nimbustech.biz>",
+    "copy": "server.crt server.key /var/ssl/"
+  },
+  "source_repository_url": "https://github.com/CjS77/docker-postgres-cert.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/CjS77/docker-postgres-cert",
+  "docker_repository": "nimbustech/postgres-ssl",
+  "docker_image": "nimbustech/postgres-ssl",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "nimbustech/postgres-ssl",
+  "revision": "9.5",
+  "uris": [
+    "https://hub.docker.com/r/nimbustech/postgres-ssl",
+    "https://hub.docker.com/v2/repositories/nimbustech/postgres-ssl",
+    "https://github.com/CjS77/docker-postgres-cert.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/nimbustech/postgres-ssl",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

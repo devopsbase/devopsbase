@@ -1,0 +1,81 @@
+{
+  "name": "apache-zookeeper Juju charm",
+  "juju_charm_name": "apache-zookeeper",
+  "revision": "cs:trusty/apache-zookeeper-1",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/apache-zookeeper",
+    "https://jujucharms.com/apache-zookeeper/trusty",
+    "https://jujucharms.com/apache-zookeeper/trusty/1",
+    "https://api.jujucharms.com/v5/apache-zookeeper",
+    "https://api.jujucharms.com/v5/trusty/apache-zookeeper",
+    "https://api.jujucharms.com/v5/trusty/apache-zookeeper-1"
+  ],
+  "labels": [
+    "Juju charm",
+    "bigdata",
+    "hadoop",
+    "apache",
+    "Binding/Provider/HP",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image/VM Image/AMI",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Style/Virtualization Level/Application",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Store/Document-oriented/HBase",
+    "Type/Middleware/Data Processing/Hadoop"
+  ],
+  "info_url": "https://jujucharms.com/apache-zookeeper",
+  "package_url": "https://api.jujucharms.com/v5/trusty/apache-zookeeper-1/archive",
+  "created": "2015-12-10T16:32:44.264Z",
+  "updated": "2015-12-10T16:32:44.264Z",
+  "description": "High-performance coordination service for distributed applications\n\nApache ZooKeeper is a centralized, reliable, service for maintaining\nconfiguration information, naming, providing distributed\nsynchronization, and group services. All of these kinds of services\nare used in some form or another by distributed applications. \nIn order to install and configure Apache HBase and other Hadoop ecosystem\ncomponents, you must start the ZooKeeper service. \n",
+  "maintainer": {
+    "name": "bigdata-charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "bigdata-charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    }
+  ],
+  "parameters": {
+    "resources_mirror": {
+      "type": "string",
+      "description": "URL from which to fetch resources (e.g., Hadoop binaries) instead of Launchpad.\n",
+      "default": "",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/zookeeper",
+      "juju_interface": "zookeeper",
+      "juju_name": "zookeeper",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "juju_peers": {
+    "quorum": {
+      "Name": "quorum",
+      "Role": "peer",
+      "Interface": "zookeeper-quorum",
+      "Optional": false,
+      "Limit": 1,
+      "Scope": "global"
+    }
+  },
+  "license": "## Overview\nApache ZooKeeper is a high-performance coordination service for distributed\napplications. It exposes common services such as naming, configuration\nmanagement, synchronization, and group services in a simple interface so you\ndon't have to write them from scratch. You can use it off-the-shelf to\nimplement consensus, group management, leader election, and presence protocols.\n\n\n## Usage\nDeploy a Zookeeper unit. With only one unit, the service will be running in\n`standalone` mode:\n\n    juju deploy apache-zookeeper zookeeper\n\n\n## Scaling\nRunning ZooKeeper in `standalone` mode is convenient for evaluation, some\ndevelopment, and testing. But in production, you should run ZooKeeper in\n`replicated` mode. A replicated group of servers in the same application is\ncalled a quorum, and in `replicated` mode, all servers in the quorum have\ncopies of the same configuration file.\n\nScaling Zookeeper to create a quorum is trivial. The following will add two\nadditional Zookeeper units and will automatically configure them with knowledge\nof the other quorum members based on their peer relation to one another:\n\n    juju add-unit -n 2 zookeeper\n\n\n## Test the deployment\nTest if the Zookeeper service is running by using the `zkServer.sh` script:\n\n    juju run --service=zookeeper '/usr/lib/zookeeper/bin/zkServer.sh status'\n\nA successful deployment will report the service mode as either `standalone`\n(if only one Zookeeper unit has been deployed) or `leader` / `follower` (if\na Zookeeper quorum has been formed).\n\n\n## Integrate Zookeeper into another charm\n1) Add following lines to your charm's metadata.yaml:\n\n    requires:\n      zookeeper:\n         interface: zookeeper\n\n2) Add a `zookeeper-relation-changed` hook to your charm. Example contents:\n\n    from charmhelpers.core.hookenv import relation_get\n    ZK_hostname = relation_get('private-address')\n    ZK_port = relation_get('port')\n\n\n## Deploying in Network-Restricted Environments\nThis charm can be deployed in environments with limited network access. To\ndeploy in this environment, you will need a local mirror to serve the packages\nand resources required by this charm.\n\n### Mirroring Packages\nYou can setup a local mirror for apt packages using squid-deb-proxy.\nFor instructions on configuring juju to use this, see the\n[Juju Proxy Documentation](https://juju.ubuntu.com/docs/howto-proxies.html).\n\n### Mirroring Resources\nIn addition to apt packages, this charm requires a few binary resources\nwhich are normally hosted on Launchpad. If access to Launchpad is not\navailable, the `jujuresources` library makes it easy to create a mirror\nof these resources:\n\n    sudo pip install jujuresources\n    juju resources fetch --all apache-zookeeper/resources.yaml -d /tmp/resources\n    juju resources serve -d /tmp/resources\n\nThis will fetch all of the resources needed by this charm and serve them via a\nsimple HTTP server. You can then set the `resources_mirror` config option to\nhave the charm use this server for retrieving resources.\n\n\n## Contact Information\n[bigdata-dev@canonical.com](mailto:bigdata-dev@canonical.com)\n\n\n## Help\n- [Apache Zookeeper home page](https://zookeeper.apache.org/)\n- [Apache Zookeeper issue tracker](https://issues.apache.org/jira/browse/ZOOKEEPER)\n- [Juju mailing list](https://lists.ubuntu.com/mailman/listinfo/juju)\n- [Juju community](https://jujucharms.com/community)\n",
+  "readme": "## Overview\nApache ZooKeeper is a high-performance coordination service for distributed\napplications. It exposes common services such as naming, configuration\nmanagement, synchronization, and group services in a simple interface so you\ndon't have to write them from scratch. You can use it off-the-shelf to\nimplement consensus, group management, leader election, and presence protocols.\n\n\n## Usage\nDeploy a Zookeeper unit. With only one unit, the service will be running in\n`standalone` mode:\n\n    juju deploy apache-zookeeper zookeeper\n\n\n## Scaling\nRunning ZooKeeper in `standalone` mode is convenient for evaluation, some\ndevelopment, and testing. But in production, you should run ZooKeeper in\n`replicated` mode. A replicated group of servers in the same application is\ncalled a quorum, and in `replicated` mode, all servers in the quorum have\ncopies of the same configuration file.\n\nScaling Zookeeper to create a quorum is trivial. The following will add two\nadditional Zookeeper units and will automatically configure them with knowledge\nof the other quorum members based on their peer relation to one another:\n\n    juju add-unit -n 2 zookeeper\n\n\n## Test the deployment\nTest if the Zookeeper service is running by using the `zkServer.sh` script:\n\n    juju run --service=zookeeper '/usr/lib/zookeeper/bin/zkServer.sh status'\n\nA successful deployment will report the service mode as either `standalone`\n(if only one Zookeeper unit has been deployed) or `leader` / `follower` (if\na Zookeeper quorum has been formed).\n\n\n## Integrate Zookeeper into another charm\n1) Add following lines to your charm's metadata.yaml:\n\n    requires:\n      zookeeper:\n         interface: zookeeper\n\n2) Add a `zookeeper-relation-changed` hook to your charm. Example contents:\n\n    from charmhelpers.core.hookenv import relation_get\n    ZK_hostname = relation_get('private-address')\n    ZK_port = relation_get('port')\n\n\n## Deploying in Network-Restricted Environments\nThis charm can be deployed in environments with limited network access. To\ndeploy in this environment, you will need a local mirror to serve the packages\nand resources required by this charm.\n\n### Mirroring Packages\nYou can setup a local mirror for apt packages using squid-deb-proxy.\nFor instructions on configuring juju to use this, see the\n[Juju Proxy Documentation](https://juju.ubuntu.com/docs/howto-proxies.html).\n\n### Mirroring Resources\nIn addition to apt packages, this charm requires a few binary resources\nwhich are normally hosted on Launchpad. If access to Launchpad is not\navailable, the `jujuresources` library makes it easy to create a mirror\nof these resources:\n\n    sudo pip install jujuresources\n    juju resources fetch --all apache-zookeeper/resources.yaml -d /tmp/resources\n    juju resources serve -d /tmp/resources\n\nThis will fetch all of the resources needed by this charm and serve them via a\nsimple HTTP server. You can then set the `resources_mirror` config option to\nhave the charm use this server for retrieving resources.\n\n\n## Contact Information\n[bigdata-dev@canonical.com](mailto:bigdata-dev@canonical.com)\n\n\n## Help\n- [Apache Zookeeper home page](https://zookeeper.apache.org/)\n- [Apache Zookeeper issue tracker](https://issues.apache.org/jira/browse/ZOOKEEPER)\n- [Juju mailing list](https://lists.ubuntu.com/mailman/listinfo/juju)\n- [Juju community](https://jujucharms.com/community)\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

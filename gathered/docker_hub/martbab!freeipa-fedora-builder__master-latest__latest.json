@@ -1,0 +1,120 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/martbab/freeipa-fedora-builder",
+    "repository_url": "https://hub.docker.com/v2/repositories/martbab/freeipa-fedora-builder",
+    "tags_url": "https://hub.docker.com/v2/repositories/martbab/freeipa-fedora-builder/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/martbab/freeipa-fedora-builder/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/martbab/freeipa-fedora-builder/autobuild",
+    "user": "martbab",
+    "name": "freeipa-fedora-builder",
+    "namespace": "martbab",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 286,
+    "last_updated": "2016-10-11T09:36:08.114299Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "master-latest",
+        "full_size": 573865876,
+        "id": 4677186,
+        "repository": 897990,
+        "creator": 1077304,
+        "last_updater": 1077304,
+        "last_updated": "2016-10-11T09:36:07.097430Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "master-rawhide",
+        "full_size": 448436140,
+        "id": 5369968,
+        "repository": 897990,
+        "creator": 1077304,
+        "last_updater": 1077304,
+        "last_updated": "2016-10-11T09:14:30.473842Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "ipa-4-4-latest",
+        "full_size": 588050265,
+        "id": 4688797,
+        "repository": 897990,
+        "creator": 1077304,
+        "last_updater": 1077304,
+        "last_updated": "2016-09-30T06:59:20.925932Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "martbab/freeipa-builder"
+  },
+  "name": "martbab/freeipa-fedora-builder Docker container",
+  "description": "Docker images for building FreeIPA in Fedora",
+  "readme": "# FreeIPA Builder\n\nrepository of FreeIPA docker builder images\n===========================================\n\nThis repo contains Dockerfiles for creating a containerized environment for\nbuilding FreeIPA packages. It currently only containers optimized for building\nfreeipa master on latest and rawhide Fedora, but more images will be coming\nsoon.\n\nYou can create an image and run the build in your repo (assuming you have\ndocker up and running) like this:\n\n```\n# build the Fedora latest image first\ndocker build -t freeipa-fedora-builder:master-latest \\\n    https://github.com/martbab/freeipa-builder.git#master:fedora/latest\n\n# clone FreeIPA repo\ngit clone https://github.com/freeipa/freeipa.git && cd freeipa\n\n# build the RPMs while preserving the correct ownership of the built artifacts\ndocker run -v $PWD:/freeipa:Z -w /freeipa freeipa-fedora-builder:master-latest \\\n    /bin/bash -c \"make rpms && chown -R $UID:$GROUPS dist\" \n```\n\nAlternatively, selected images have been built in Docker registry, so you can\npull in the image and run build in one command:\n\n```\ndocker run -v $PWD:/freeipa:Z -w /freeipa \\\n    martbab/freeipa-fedora-builder:master-latest\n    /bin/bash -c \"make rpms && chown -R $UID:$GROUPS dist\" \n```\n",
+  "dockerfile": "FROM fedora:latest\nMAINTAINER [Martin Babinsky martbab@gmail.com]\n\nRUN echo 'deltarpm = false' >> /etc/dnf/dnf.conf \\\n    && dnf update -y dnf \\\n    && dnf install -y dnf-plugins-core sudo dnf-plugins-extras wget \\\n    && dnf config-manager --set-enabled updates-testing \\\n    && dnf copr enable -y @freeipa/freeipa-master \\\n    # FIXME: due to packaging issues the following is not a dependency of\n    # python{2,3}-rpm-macros, and must be installed manually\n    && dnf install -y python-srpm-macros \\\n    && dnf clean all\n\n# install build dependencies from COPR and latest devel branch\nRUN dnf install -y @buildsys-build @development-tools \\\n    && dnf repository-packages group_freeipa-freeipa-master install -y \\\n    && wget https://raw.githubusercontent.com/freeipa/freeipa/master/freeipa.spec.in \\\n    && dnf builddep -y --spec ./freeipa.spec.in --best --allowerasing \\\n    && dnf clean all \\\n    && rm -f ./freeipa.spec.in\n\n# update everything and try to resolve conflicts\nRUN dnf update -y --best --allowerasing && dnf clean all\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "echo 'deltarpm = false' >> /etc/dnf/dnf.conf     && dnf update -y dnf     && dnf install -y dnf-plugins-core sudo dnf-plugins-extras wget     && dnf config-manager --set-enabled updates-testing     && dnf copr enable -y @freeipa/freeipa-master     # FIXME: due to packaging issues the following is not a dependency of",
+      "dnf install -y @buildsys-build @development-tools     && dnf repository-packages group_freeipa-freeipa-master install -y     && wget https://raw.githubusercontent.com/freeipa/freeipa/master/freeipa.spec.in     && dnf builddep -y --spec ./freeipa.spec.in --best --allowerasing     && dnf clean all     && rm -f ./freeipa.spec.in",
+      "dnf update -y --best --allowerasing && dnf clean all"
+    ],
+    "workdir": [],
+    "from": "fedora:latest",
+    "maintainer": "[Martin Babinsky martbab@gmail.com]"
+  },
+  "source_repository_url": "https://github.com/martbab/freeipa-builder.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/martbab/freeipa-builder",
+  "docker_repository": "martbab/freeipa-fedora-builder",
+  "docker_image": "martbab/freeipa-fedora-builder",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "martbab/freeipa-fedora-builder",
+  "revision": "master-latest",
+  "uris": [
+    "https://hub.docker.com/r/martbab/freeipa-fedora-builder",
+    "https://hub.docker.com/v2/repositories/martbab/freeipa-fedora-builder",
+    "https://github.com/martbab/freeipa-builder.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Build",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/martbab/freeipa-fedora-builder",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

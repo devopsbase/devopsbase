@@ -1,0 +1,67 @@
+{
+  "name": "etcd-v2 Chef cookbook",
+  "chef_cookbook_name": "etcd-v2",
+  "revision": "1.0.5",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/etcd-v2",
+    "https://supermarket.chef.io/cookbooks/etcd-v2/download",
+    "https://supermarket.chef.io/cookbooks/etcd-v2/versions/1.0.5",
+    "https://supermarket.chef.io/cookbooks/etcd-v2/versions/1.0.5/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/etcd-v2/versions/1.0.5",
+    "https://supermarket.chef.io/api/v1/cookbooks/etcd-v2",
+    "https://supermarket.chef.io/api/v1/cookbooks/etcd-v2/versions/1.0.5/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/etcd-v2",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/etcd-v2/versions/1.0.5/download",
+  "deprecated": false,
+  "created": "2015-04-30T21:20:40.264Z",
+  "updated": "2015-09-01T14:40:46.354Z",
+  "description": "Install and configure etcd",
+  "maintainer": {
+    "name": "jmanero",
+    "email": "coreservices@rapid7.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 711397,
+  "downloads_count_revision": 161972,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "etcd-v2 Cookbook\n=============\nThis cookbook manages [etcd](https://github.com/coreos/etcd) version 2. It provides resources for installation from both binaries and source, and for management of one or more etcd service instnaces.\n\n## What even is all of this for?!\nThis cookbook aims to provide a feature complete utility to install and configure one or more instances of etcd for both production and development/testing proposes.\n\nThe `etcd_service` resource allows multiple etcd processes to run on the same system to:\n * Test client libraries with actual clusters. Not just the one node you `brew install`d and started in another terminal.\n * Test discovery configurations and failovers _before_ doing it live.\n * Figure out how to actually add/remove nodes to/from your cluster safely before you [do this](https://twitter.com/honest_update/status/591293366245163008).\n\nSimilarly, the `etcd_binary` and `etcd_source` resources ensure that their respecitve installations are vendored so as to allow mutliple versions/builds of etcd to coexist on a single system. `etcd_service` resources each map to an installation, allowing you to test arbitrary compatability scenarios both within a cluster and with client libraries.\n\n## Recipes\n * **etcd-v2::aws** Create a simple cluster using the `:aws` discovery method\n * **etcd-v2::default** Install base dependencies. Must be included before using resources.\n * **etcd-v2::node** Create a standalone node\n * **etcd-v2::testing** Create a cluster of three nodes on the same host for testing\n\n## Resources\n### etcd_binary\nInstall etcd from a compiled release, by default from coreos/etcd on GitHub.\n\n`etcd_binary 'default'` will install etcd in `/opt` and link to `etcd` and `etcdctl` from `/usr/local/bin`.\n\n```\netcd_binary 'name' do\n  version 'v2.0.10'       # Default set in node['etcd_v2']['version'], currently 'v2.0.10'\n  platform 'linux-amd64'  # Default set in node['etcd_v2']['platform']\n  path '/opt'             # Install root. Unpacked into <path>/etcd-<version>-<platform>\n  srv_bin 'etcd'          # Name of etcd binary in package\n  ctl_bin 'etcdctl'       # Name of etcd control binary in package\n  bin_path '/usr/local/bin' # Path to link to binaries from. Set to nil or false to disable linking\n  from :github            # Package source. Currently only :github is supported\n  repository '/coreos/etcd' # GitHub repo to fetch release from. Default node['etcd_v2']['bin_repository']\nend\n```\n\n### etcd_source\nFetch and build etcd from a git repository. This resource does not install golang. The [golang cookbook](https://supermarket.chef.io/cookbooks/golang) should do the needful for you.\n\n```\netcd_source 'name' do\n  version 'v2.0.10'       # Default set in node['etcd_v2']['version'], currently 'v2.0.10'\n  path '/opt'             # Install root. Unpacked into <path>/etcd-<version>-<platform>-<name>\n  srv_bin 'etcd'          # Name of etcd binary\n  ctl_bin 'etcdctl'       # Name of etcd control binary\n  bin_path '/usr/local/bin' # Path to link to binaries from. Set to nil or false to disable linking\n  repository 'git@github.com:coreos/etcd.git' # Git repo to fetch source from. Default node['etcd_v2']['source_repository']\nend\n```\n\n### etcd_service\nConfigure and run an installation (`etcd_binary` or `etcd_source`) as a service. The only required attributes in the following are `name_node` (name attribute) and `instance`. Other values have sane defaults for running a single node cluster.\n\nWhile most configuration parameters are exposed directly, several abstractions are provided to capture some of the more confusing or repetitive parts of the etcd v2 configuration spec:\n\n**`client_port`, `peer_port`, `client_listen`, `peer_listen`, `client_host`, and `peer_host`** attributes are used to simplify the composition of various `*-url` arguments. Arrays passed to these attributes will result in geometric compositions, including the `protocol` arrtibute in the respective argument:\n\n```\n-advertise-client-urls\\\n  http://client_host[0]:client_port[0],\\\n  http://client_host[0]:client_port[1],\n  http://client_host[1]:client_port[0],\\\n  ...\n```\n\n**Static peers** are added using the **`peer(name, protocol, host, client_port, peer_port)`** method. The node's `-initial-cluster` argument will be composed from a merge of `protocol`, `host`, and `peer_port` parameters as well as the nodes own 'peer_host:peer_port' set.\n\n**The `discovery` attribute** enables different configuration arguments specific to the respecive clustering method. `:static`, `:etcd`, and `:dns` are features of etcd. The `:aws` discovery method is implemented by this cookbook. It uses the EC2 tags API to find peers for cluster bootstrapping.\n\n```\netcd_service 'node_name' do\n  node_name 'node0'       # Name attribute. etcd node name\n\n  ## Required: Installed version of etcd to use. Can be a string/hash reference or an instance\n  ## of the `etcd_binary` or `etcd_source` resource (e.g. inherits Chef::Resource::Etcd).\n  instance 'etcd_binary[default]'\n\n  ## Service operator. User/group will be created if missing. Default 'etcd'\n  user 'etcd'\n  group 'etcd'\n\n  ## Passed to unterlying `service` resource\n  service_action [:start, :enable]\n\n  ## Node configuration/tuning\n  client_host 'localhost' # One or more advertised client hosts (String, Array). Default `node['ipaddress']`\n  client_listen '0.0.0.0' # One or more client bind addresses (String, Array). Default `0.0.0.0`\n  client_port 2379        # One or more client listen ports (Integer, Array). Default 2379\n  peer_host 'localhost'   # One or more advertised peer hosts. Default `node['ipaddress']`\n  peer_listen '0.0.0.0'   # One or more peer bind addresses. Default `0.0.0.0`\n  peer_port 2380          # One or more peer listen ports. Default 2380\n\n  ## See https://github.com/coreos/etcd/blob/master/Documentation/configuration.md#member-flags\n  data_dir '/var/data/etcd'\n  snapshot_count 10_000\n  max_snapshots 5\n  max_wals 5\n  heartbeat_interval 100\n  election_timeout 1000\n\n  cors 'allowed.domain.com' # CORS origins allowed by client API (String, Array).\n  proxy :off              # One of :on, :readonly, :off. See https://github.com/coreos/etcd/blob/master/Documentation/proxy.md\n\n  ## SSL\n  protocol :http          # Transport protocol. One of :http, :https. Default :http\n\n  ## See https://github.com/coreos/etcd/blob/master/Documentation/configuration.md#security-flags\n  cert_file 'client-cert.pem'\n  key_file 'client-key.pem'\n  client_cert_auth true\n  trusted_ca_file 'client-ca.pem'\n  peer_cert_file 'peer-cert.pem'\n  peer_key_file 'peer-key.pem'\n  peer_client_cert_auth true\n  peer_trusted_ca_file 'peer-ca.pem'\n\n  ## Cluster configuration See https://github.com/coreos/etcd/blob/master/Documentation/configuration.md#clustering-flags for specifics\n  discovery :static       # One of :static, :etcd, :dns, :aws.\n  quorum 3                # Resource will wait for a quorum to be available before configuring and starting etcd. Currently only used by `:aws` discovery\n  state :new              # initial-cluster-state: One of :new, :existing. Default :new\n  token 'etcd-cluster'    # initial-cluster-token: Default 'etcd-cluster'\n\n  ## Define a peer node for :static configuration.\n  peer 'node1', :http, 'localhost', 2381, 2382\n\n  discovery_service 'https://discovery.etcd.io/blahblahblah' # An etcd discovery node\n  discovery_proxy 'proxy.domain.com' # HTTP(S) Proxy to etcd discovery servuce\n  discovery_domain 'domain.com' # Domain inwhich to query DNS SRV record etcd-server[-ssl]._tcp.domain.com\n  discovery_fallback :exit # One of :exit, :proxy. See https://github.com/coreos/etcd/blob/master/Documentation/proxy.md\n\n  ## AWS Discovery parameters\n  aws_tags :service => 'foo', :cluster => 'production' # Tags used to discover peers\n  aws_host_attribute :private_dns_name # AWS-SDK Instance key to be used as hostnames See [The Docs](http://docs.aws.amazon.com/sdkforruby/api/Aws/EC2/Instance.html)\n\n  ## AWS key attributes are provided for compatability with the Opscode AWS cookbook;\n  ## however, **you should be using IAM instance profiles ಠ_ಠ**\n  aws_access_key ''\n  aws_secret_access_key ''\nend\n```\n\n### Using the :aws discovery method\nThe `:aws` discovery method uses AWS tags and etcd APIs to bootstrap a new cluster, join an exizting cluster, or fail back to a proxy node if a cluster of the desired size exists.\n\n * The `:aws` discovery method requires the `aws` cookbook. You must add it to your downstream dependencies and include the `aws::default` recipe before defining resources that use the `:aws` discovery method! The `aws::ec2_hints` recipe may be necessary to coerce ohai into populating `node['ec2']`\n * `node_name` will be set to `node['ec2']['instance_id']`. The same transport `protocol` and `peer_port` must be used across the cluster.\n * Due to the serial nature of Chef, multiple `etcd_service` resources should not be defined in the same run_list for the same cluster when using the `:aws` discovery method. One resource will block the Chef run until the desired quorum of peers is discovered. Note that the `:aws` method uses the same underlying configuration as the `:static` method. For simple testing scenarios, they should be functionally equivalent.\n * The instance will need the following authorizations. They should be configured in an IAM role and applied with an instance profile:\n   * ec2:CreateTags\n   * ec2:DeleteTags\n   * ec2:DescribeTags\n   * ec2:DescribeInstances\n\n## Vagrant\nThe included Vagrant file uses the `vagrant-secret` and `vagrant-aws` plugins. If you would like to provision EC2 nodes, install both plugins and create a .vagrant/secret.yaml file. Run `vagrant secret-init` and edit the resulting file:\n\n```\n# Account-specific AWS configurations\naccess_key_id: 'xxx'\nsecret_access_key: 'xxx'\nkeypair_name: 'xxx'\n\nsubnet_id: 'subnet-xxx'\nsecurity_groups:\n  - 'sg-xxx'\n\n# IAM Profile ARN. Associated role must have the actions, listed above, allowed.\niam_instance_profile_arn: 'arn:aws:iam::xxx:instance-profile/xxx'\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/libarchive",
+      "revision": ">= 0.5.0",
+      "self_resolve": true
+    }
+  ],
+  "recommends": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/aws",
+      "revision": ">= 0.0.0"
+    }
+  ]
+}

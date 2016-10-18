@@ -1,0 +1,55 @@
+{
+  "name": "amazon_s3cmd Chef cookbook",
+  "chef_cookbook_name": "amazon_s3cmd",
+  "revision": "0.1.45",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/amazon_s3cmd",
+    "https://supermarket.chef.io/cookbooks/amazon_s3cmd/download",
+    "https://supermarket.chef.io/cookbooks/amazon_s3cmd/versions/0.1.45",
+    "https://supermarket.chef.io/cookbooks/amazon_s3cmd/versions/0.1.45/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/amazon_s3cmd/versions/0.1.45",
+    "https://supermarket.chef.io/api/v1/cookbooks/amazon_s3cmd",
+    "https://supermarket.chef.io/api/v1/cookbooks/amazon_s3cmd/versions/0.1.45/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Provider/Amazon",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/amazon_s3cmd",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/amazon_s3cmd/versions/0.1.45/download",
+  "deprecated": false,
+  "created": "2013-09-05T18:38:36.000Z",
+  "updated": "2014-01-02T21:28:58.000Z",
+  "description": "Installs/Configures amazon_s3cmd",
+  "maintainer": {
+    "name": "jackl0phty",
+    "email": "jackl0phty@gmail.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 3,
+  "downloads_count": 9854844,
+  "downloads_count_revision": 1231825,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Travis-ci status: [![Build Status](https://secure.travis-ci.org/jackl0phty/opschef-cookbook-amazon_s3cmd.png?branch=master)](http://travis-ci.org/jackl0phty/opschef-cookbook-amazon_s3cmd)\n\namazon_s3cmd Cookbook\n=====================\n\nThis cookbook will install s3tools which gives you access to the s3cmd command which you can use to \ntransfer files to/from Amazon's Simple Storage Service S3.\n\nRequirements\n------------\n\n#### packages\n- Debian: python-magic, s3cmd.\n- Redhat: s3cmd.\n- Arch: s3cmd.\n- Gentoo: s3cmd.\n- SUSE: There is no s3cmd package.\n\nAttributes\n----------\n\n# User using s3cmd.\n<pre><code>\nnode.set['amazon_s3cmd']['user'] = 'root'\n</pre></code>\n\n# Group using s3cmd.\n<pre><code>\nnode.set['amazon_s3cmd']['group'] = 'root'\n</pre></code>\n\n# Location of s3cmd config.\n<pre><code>\nnode.set['amazon_s3cmd']['s3cfg'] = \"#{node['amazon_s3cmd']['user']}/.s3cfg\"\n</pre></code>\n# Amazon S3 Key. No need to override.\n# Will be populated from encrypted data bag you created. \n# See USAGE section of this README for details.\n<pre><code>\nnode.set['amazon_s3cmd']['amazon_key'] = ''\n</pre></code>\n# Amazon secret. No need to override.\n# Will be populated from encrypted data bag you created. \n# See USAGE section of this README for details.\n<pre><code>\nnode.set['amazon_s3cmd']['amazon_secret'] = ''\n</pre></code>\n\n# Encrypted data bag secret file.\n<pre><code>\nnode.set['amazon_s3cmd']['data_bag_secret'] = '/etc/chef/encrypted_data_bag_secret'\n</pre></code>\n\n# Encrypted data bag name.\n<pre><code>\nnode.set['amazonZ_s3cmd']['encrypted_data_bag_name'] = 's3cmd'\n</pre></code>\n\n# Encrypted data bag item.\n<pre><code>\nnode.set['amazonZ_s3cmd']['encrypted_data_bag_item'] = 's3cfg'\n</pre></code>\n\nUsage\n-----\n\n# You'll need to create a secret key for your data bag.\n<pre><code>\nskywalker@alderaan:~$ openssl rand -base64 512 > data_bag_secret_key\n</pre></code>\n# Create new data bag item to be used with S3.\n<pre><code>\nskywalker@alderaan:~/your/chef-repo$ knife data bag create  --secret-file ~/data_bag_secret_key s3cmd s3cfg \nCreated data_bag[s3cmd] \nCreated data_bag_item[s3cfg] \n\n{ \n  \"id\": \"s3cfg\", \n  \"s3_access_key\": \"YOUR_S3_ACCESS_KEY_HERE\", \n  \"s3_secret_key\": \"YOUR_S3_SECRET_KEY_HERE\" \n} \n</pre></code>\n\n# If you get the following error below...\n<pre><code>\nERROR: RuntimeError: Please set EDITOR environment variable\n</pre></code>\n\n# ...make sure you export your editor as EDITOR\n<pre><code>\nexport EDITOR=vim\n</pre></code>\n\n# Verify your encrypted data bag items.\n<pre><code>\nskywaler@alderaan:~/your/chef-repo$ knife data bag show s3cmd s3cfg \nid:            s3cfg \ns3_access_key: \n  cipher:         aes-256-cbc \n  encrypted_data:  BUNCH_OF_RANDOM_CHARS_HERE\n  \n  iv:             RANDOM_CHARS_HERE\n  \n  version:        1 \ns3_secret_key: \n  cipher:         aes-256-cbc \n  encrypted_data: BUNCH_OF_RANDOM_CHARS_HERE\n  \n  iv:             RANDOM_CHARS_HERE\n  \n  version:        1 \nskywaler@alderaan:~/your/chef-repo$ \n</pre></code>\n\n# Now check your decrypted data bag items\n<pre><code>\nskywaler@alderaan:~/your/chef-repo$ knife data bag show –secret-file=/home/you/data_bag_secret_key s3cmd s3cfg \nid:            s3cfg \ns3_access_key: YOUR_ACCESS_KEY_HERE\ns3_secret_key: YOUR_SECRET_KEY_HERE\n</pre></code>\n\n# Copy your secret key to your node.\n<pre><code>\nskywalker@alderaan:~ $ scp -P 6565 /home/you/data_bag_secret_key skywalker@alderaan: \nskywalker@alderaan's password: \ndata_bag_secret_key                                                                                                                                                            100%  695     0.7KB/s   00:00    \n</pre></code>\n\n# Move your key to /etc/chef\n<pre><code>\nskywalker@alderaan:~ $ sudo mv /home/skywalker/data_bag_secret_key /etc/chef/\n</pre></code>\n\nJust include `amazon_s3cmd` in your node's `run_list`:\n\n<pre><code>\n{\n  \"name\":\"my_node\",\n  \"run_list\": [\n    \"recipe[amazon_s3cmd]\"\n  ]\n}\n</pre></code>\n\nFuture TODO list.\n-----------------\n\n1. Add an amazon_s3cmd::source recipe to install latest via source.\n2. Add some Chefspec tests.\n\nContributing\n------------\n1. Fork the repository on Github by clicking [here](https://github.com/jackl0phty/opschef-cookbook-amazon_s3cmd/fork).\n2. Create a topic branch (like `yourname-add-awesomeness`).\n3. Write you change.\n4. Write tests for your change (if applicable).\n5. Run the tests, ensuring they all pass.\n6. Submit a Pull Request using Github [here](https://github.com/jackl0phty/opschef-cookbook-amazon_s3cmd).\n\nLicense and Authors\n-------------------\nLicensed under the Apache 2.0 \"The License\".\nFor questions regarding the license of this software please see the actual license located [here](http://www.apache.org/licenses/LICENSE-2.0)\nGerald L. Hevener Jr., Jackl0phty LLC.\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/magic_shell",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

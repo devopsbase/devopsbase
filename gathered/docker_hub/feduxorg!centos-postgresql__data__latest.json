@@ -1,0 +1,135 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/feduxorg/centos-postgresql",
+    "repository_url": "https://hub.docker.com/v2/repositories/feduxorg/centos-postgresql",
+    "tags_url": "https://hub.docker.com/v2/repositories/feduxorg/centos-postgresql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/feduxorg/centos-postgresql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/feduxorg/centos-postgresql/autobuild",
+    "user": "feduxorg",
+    "name": "centos-postgresql",
+    "namespace": "feduxorg",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 380,
+    "last_updated": "2016-09-30T15:13:12.306027Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "data",
+        "full_size": 158860939,
+        "id": 2113525,
+        "repository": 348570,
+        "creator": 157710,
+        "last_updater": 157710,
+        "last_updated": "2016-09-30T15:13:11.969946Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 171336203,
+        "id": 1062476,
+        "repository": 348570,
+        "creator": 211491,
+        "last_updater": 157710,
+        "last_updated": "2016-09-28T12:20:56.075562Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest-data",
+        "full_size": 131276462,
+        "id": 1062474,
+        "repository": 348570,
+        "creator": 211491,
+        "last_updater": 157710,
+        "last_updated": "2016-02-12T12:58:22.133625Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "fedux-org/centos-postgresql"
+  },
+  "name": "feduxorg/centos-postgresql Docker container",
+  "description": "Centos Image with postgres",
+  "readme": "# centos-ruby\n\n## Overview\n\nThere are the following images available:\n\n* latest\n* data\n\n## Tasks\n\n### Build image\n\n~~~\nrake docker:build\n# or simply\nrake\n~~~\n\n### Run database\n\n~~~\n# Without data container\nPG_MAJOR=9.4\ndocker run -ti --rm --name \"centos-postgres1\" -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $(pwd)tmp/storage:/var/lib/pgsql/${PG_MAJOR}/data -v $(pwd)tmp/log:/var/log/postgresql -v /var/log/journal:/var/log/journal -p 5432:5432 feduxorg/centos-postgresql\n\n# With data container\nPG_MAJOR=9.4\ndocker run -ti --rm --name \"centos-postgres1\" -v /sys/fs/cgroup:/sys/fs/cgroup:ro --volumes-from \"centos-postgres1-data\" -p 5432:5432 feduxorg/centos-postgresql\n~~~\n\n### Create data container\n\n~~~bash\n# Run data container\nPG_MAJOR=9.4\ndocker create --name \"centos-postgres1-data\" -v $(pwd)/tmp/storage:/var/lib/pgsql/${PG_MAJOR}/data -v $(pwd)/tmp/log:/var/log/postgresql -v /var/log/journal:/var/log/journal feduxorg/centos-postgresql:data true\n\n# Run data container with backup directory (required if you want the backup service to run daily)\nPG_MAJOR=9.4\ndocker create --name \"centos-postgres1-data\" -it -v $(pwd)/tmp/storage:/var/lib/pgsql/${PG_MAJOR}/data -v $(pwd)/tmp/backup:/srv/backup/database -v $(pwd)/tmp/log:/var/log/postgresql -v /var/log/journal:/var/log/journal feduxorg/centos-postgresql:data true\n~~~\n\n### Create database\n\n~~~bash\n# Run from within other container\ndocker exec -it --name centos-postgres1 bash\nPOSTGRES_USER=myapp POSTGRES_PW=asdfkasdf POSTGRES_DB=myapp_production /usr/local/bin/pg-init.sh\n~~~\n\n### Create backups from your databases\n\nIf you mount a directory to `/srv/backup/database` a cron job runs once a day\nand backups all your databases. This also activates the cleanup task. Both are\ncontrolled via a `.timer`-unit.\n\n~~~\nPG_MAJOR=9.4\ndocker run -ti --rm --name \"centos-postgres1\" -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v $(pwd)/tmp/storage:/var/lib/pgsql/${PG_MAJOR}/data -v $(pwd)/tmp/backup:/srv/backup/database -v $(pwd)tmp/log:/var/log/postgresql -v /var/log/journal:/var/log/journal -p 5432:5432 feduxorg/centos-postgresql\n~~~\n\n## Further description of images\n\n### Services\n\n* `pg-backup`: Run daily and backup all databases\n* `pg-backup-cleanup`: Cleanup old backups daily\n* `pg-init`: Run once on very early startup\n* `postgresql-<x.x>`: Database server\n",
+  "dockerfile": "FROM feduxorg/centos\nMAINTAINER dev@fedux.org\n\nENV PG_MAJOR 9.4\nENV PGDATA /var/lib/pgsql/${PG_MAJOR}/data\n\nRUN mkdir -p ${PGDATA} \\\n    && groupadd -r -g 990 postgres && useradd -r -g postgres -u 990 postgres \\\n    && chown -R postgres:postgres ${PGDATA}\n\nUSER postgres\n\nVOLUME [${PGDATA}]\n\nCMD [\"true\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "[${PGDATA}]"
+    ],
+    "run": [
+      "mkdir -p ${PGDATA}     && groupadd -r -g 990 postgres && useradd -r -g postgres -u 990 postgres     && chown -R postgres:postgres ${PGDATA}"
+    ],
+    "workdir": [],
+    "from": "feduxorg/centos",
+    "maintainer": "dev@fedux.org",
+    "env": {
+      "PG_MAJOR": "9.4",
+      "PGDATA": "/var/lib/pgsql/${PG_MAJOR}/data"
+    },
+    "user": "postgres",
+    "cmd": "[\"true\"]"
+  },
+  "source_repository_url": "https://github.com/fedux-org/centos-postgresql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/fedux-org/centos-postgresql",
+  "docker_repository": "feduxorg/centos-postgresql",
+  "docker_image": "feduxorg/centos-postgresql",
+  "parameters_schema": {
+    "PG_MAJOR": {
+      "default": "9.4",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGDATA": {
+      "default": "/var/lib/pgsql/${PG_MAJOR}/data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "feduxorg/centos-postgresql",
+  "revision": "data",
+  "uris": [
+    "https://hub.docker.com/r/feduxorg/centos-postgresql",
+    "https://hub.docker.com/v2/repositories/feduxorg/centos-postgresql",
+    "https://github.com/fedux-org/centos-postgresql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux/CentOS",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/feduxorg/centos-postgresql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

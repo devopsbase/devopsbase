@@ -1,0 +1,115 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/stakater/logstash",
+    "repository_url": "https://hub.docker.com/v2/repositories/stakater/logstash",
+    "tags_url": "https://hub.docker.com/v2/repositories/stakater/logstash/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/stakater/logstash/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/stakater/logstash/autobuild",
+    "user": "stakater",
+    "name": "logstash",
+    "namespace": "stakater",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1315,
+    "last_updated": "2016-10-16T13:43:14.852073Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 395549439,
+        "id": 2805665,
+        "repository": 657674,
+        "creator": 520426,
+        "last_updater": 520426,
+        "last_updated": "2016-10-16T13:43:14.544585Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "stakater/docker-images"
+  },
+  "name": "stakater/logstash Docker container",
+  "description": "Logstash is an open source tool for collecting, parsing, and storing logs for future use",
+  "readme": "## logstash docker image\n\nbased on Ubuntu 14.04 & oracle java 8\n\nRun the latest container with:\n\n`docker run stakater/logstash`\n\n## Advanced\n\nBuild an image:\n`docker build -t stakater/logstash .`\n\nPush an image:\n`sudo docker push stakater/logstash`\n\n_Note_ you might have to login first before you can push the image to docker-hub `sudo docker login`\n\nStart Logstash with configuration file\n\nIf you need to run logstash with a configuration file, logstash.conf, that's located in your current directory, you can use the logstash image as follows:\n\nrun logstash which will take input from stdin & send output to stdout\n`docker run -it --rm stakater/logstash logstash -e 'input { stdin { } } output { stdout { } }'`\n\nTell logstash container three things:\n1. ports to expose\n2. logstash conf\n3. \n`docker run -it --rm -v \"$PWD\":/config-dir -p 5044:5044 stakater/logstash logstash -f /config-dir/logstash.conf`\n\nit should print:\n\n```\nSettings: Default pipeline workers: 1\nPipeline main started\n```\n\n`$ docker run -it --rm -v \"$PWD\":/config-dir logstash logstash -f /config-dir/logstash.conf`\n\nlogstash configurations can be found on this location:\n\n/etc/logstash/conf.d\n\none beats input: beats-input.conf \n\n\none elasticsearch output: 30-output.conf\n\nLogstash has a rich collection of input, filter, codec and output plugins.\n\nInput Plugins - https://www.elastic.co/guide/en/logstash/current/input-plugins.html\nAn input plugin enables a specific source of events to be read by Logstash.\n\n\nFilter Plugins - https://www.elastic.co/guide/en/logstash/current/filter-plugins.html\nA filter plugin performs intermediary processing on an event. Filters are often applied conditionally depending on the characteristics of the event.\n\n\nOutput Plugins - https://www.elastic.co/guide/en/logstash/current/output-plugins.html\nAn output plugin sends event data to a particular destination. Outputs are the final stage in the event pipeline.\n\n\nCodec Plugins - https://www.elastic.co/guide/en/logstash/current/codec-plugins.html\nA codec plugin changes the data representation of an event. Codecs are essentially stream filters that can operate as part of an input or output.\n\nInspiration from: https://hub.docker.com/_/logstash/\n\n\t\tmanage_template => false\n\t\tindex => \"%{[@metadata][beat]}-%{+YYYY.MM.dd}\"\n\t\tdocument_type => \"%{[@metadata][type]}\"\n",
+  "dockerfile": "FROM \t\t\t\t\tstakater/java:oracle-8\nMAINTAINER \t\t\t\tRasheed Amir <rasheed@aurorasolutions.io>\n\nRUN \t\t\t\t\tapt-get update && \\\n    \t\t\t\t\tapt-get install -yq --no-install-recommends wget pwgen ca-certificates && \\\n    \t\t\t\t\tapt-get clean && \\\n    \t\t\t\t\trm -rf /var/lib/apt/lists/*\n\n# grab gosu for easy step-down from root\nENV GOSU_VERSION 1.7\nRUN set -x \\\n\t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \\\n\t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \\\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n\t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\n\t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu \\\n\t&& gosu nobody true\n\n# Set default Logstash version\nENV \t\t\t\t\tLOGSTASH_VERSION 2.3.1-1_all\n\nRUN \t\t\t\t\twget https://download.elastic.co/logstash/logstash/packages/debian/logstash_${LOGSTASH_VERSION}.deb -O /tmp/logstash.deb && \\\n    \t\t\t\t\tdpkg -i /tmp/logstash.deb ; \\\n    \t\t\t\t\tapt-get -f -y install && \\\n    \t\t\t\t\trm -rf /tmp/logstash.deb && \\\n    \t\t\t\t\t/opt/logstash/bin/plugin install logstash-input-beats && \\\n    \t\t\t\t\t/opt/logstash/bin/plugin install logstash-filter-grok && \\\n    \t\t\t\t\t/opt/logstash/bin/plugin install logstash-output-elasticsearch && \\\n    \t\t\t\t\t/opt/logstash/bin/plugin install logstash-output-email && \\\n    \t\t\t\t\t/opt/logstash/bin/plugin install logstash-output-hipchat\n\n\nENV \t\t\t\t\tPATH /opt/logstash/bin:$PATH\n\nCOPY \t\t\t\t\tdocker-entrypoint.sh /\n\nENTRYPOINT \t\t\t\t[\"/docker-entrypoint.sh\"]\nCMD \t\t\t\t\t[\"logstash\", \"agent\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "\t\t\t\t\tapt-get update &&     \t\t\t\t\tapt-get install -yq --no-install-recommends wget pwgen ca-certificates &&     \t\t\t\t\tapt-get clean &&     \t\t\t\t\trm -rf /var/lib/apt/lists/*",
+      "set -x \t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \t&& export GNUPGHOME=\"$(mktemp -d)\" \t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu \t&& gosu nobody true",
+      "\t\t\t\t\twget https://download.elastic.co/logstash/logstash/packages/debian/logstash_${LOGSTASH_VERSION}.deb -O /tmp/logstash.deb &&     \t\t\t\t\tdpkg -i /tmp/logstash.deb ;     \t\t\t\t\tapt-get -f -y install &&     \t\t\t\t\trm -rf /tmp/logstash.deb &&     \t\t\t\t\t/opt/logstash/bin/plugin install logstash-input-beats &&     \t\t\t\t\t/opt/logstash/bin/plugin install logstash-filter-grok &&     \t\t\t\t\t/opt/logstash/bin/plugin install logstash-output-elasticsearch &&     \t\t\t\t\t/opt/logstash/bin/plugin install logstash-output-email &&     \t\t\t\t\t/opt/logstash/bin/plugin install logstash-output-hipchat"
+    ],
+    "workdir": [],
+    "from": "\t\t\t\t\tstakater/java:oracle-8",
+    "maintainer": "\t\t\t\tRasheed Amir <rasheed@aurorasolutions.io>",
+    "env": {
+      "GOSU_VERSION": "1.7",
+      "\t\t\t\t\tLOGSTASH_VERSION": "2.3.1-1_all",
+      "\t\t\t\t\tPATH": "/opt/logstash/bin:$PATH"
+    },
+    "copy": "\t\t\t\t\tdocker-entrypoint.sh /",
+    "entrypoint": "\t\t\t\t[\"/docker-entrypoint.sh\"]",
+    "cmd": "\t\t\t\t\t[\"logstash\", \"agent\"]"
+  },
+  "source_repository_url": "https://github.com/stakater/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/stakater/docker-images",
+  "docker_repository": "stakater/logstash",
+  "docker_image": "stakater/logstash",
+  "parameters_schema": {
+    "GOSU_VERSION": {
+      "default": "1.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "\t\t\t\t\tLOGSTASH_VERSION": {
+      "default": "2.3.1-1_all",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "\t\t\t\t\tPATH": {
+      "default": "/opt/logstash/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "stakater/logstash",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/stakater/logstash",
+    "https://hub.docker.com/v2/repositories/stakater/logstash",
+    "https://github.com/stakater/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Logging/Logstash"
+  ],
+  "info_url": "https://hub.docker.com/r/stakater/logstash",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

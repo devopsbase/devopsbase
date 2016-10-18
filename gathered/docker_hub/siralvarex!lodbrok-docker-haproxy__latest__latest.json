@@ -1,0 +1,110 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/siralvarex/lodbrok-docker-haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/siralvarex/lodbrok-docker-haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/siralvarex/lodbrok-docker-haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/siralvarex/lodbrok-docker-haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/siralvarex/lodbrok-docker-haproxy/autobuild",
+    "user": "siralvarex",
+    "name": "lodbrok-docker-haproxy",
+    "namespace": "siralvarex",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 849,
+    "last_updated": "2016-01-14T17:44:34.244027Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 39618870,
+        "id": 1518746,
+        "repository": 438586,
+        "creator": 387670,
+        "last_updater": 387670,
+        "last_updated": "2016-01-14T17:44:32.829849Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "SirAlvarex/lodbrok"
+  },
+  "name": "siralvarex/lodbrok-docker-haproxy Docker container",
+  "description": "HAProxy Docker container to be used with Lodbrok",
+  "readme": "# Lodbrok - An alternative Client Side Loadbalancer\n\nThe reason for this project is two-fold:\n\n* There are a lot of client side loadbalancing solutions out there but all of them require rigid configurations or helper scripts to make them work with automation software.  I'd like to try and provide a simple solution that can be extended to multiple uses and orchestrators.\n\n* I wanted to play with Golang and Zookeeper.\n\n\n# Goals\n\n* Create a framework that can be modified via plugins to solve the problem of client side loadbalancing orchestration.\n\n* Allow implementation of Mesos, Marathon, ConfigFiles, Haproxy, Nginx, etc.\n\n* Be well documented and provide a comprehensive test suite for the core components.\n\n* Provide localized health checks to prevent proxy storms.\n\n* Provied real-ish-time updates to all agents/servers when a service either goes away or it fails its healthcheck.\n\n* Core components should be as simple as possible so mistakes are few.\n\n* Provide example implementations.\n\n* Fail Open.  Not Break.\n",
+  "dockerfile": "FROM ubuntu-debootstrap:14.04\nRUN apt-get update && apt-get install -y libssl1.0.0 libpcre3 --no-install-recommends && rm -rf /var/lib/apt/lists/*\n\nENV HAPROXY_MAJOR 1.5\nENV HAPROXY_VERSION 1.5.14\nENV HAPROXY_MD5 ad9d7262b96ba85a0f8c6acc6cb9edde\n\n# see http://sources.debian.net/src/haproxy/1.5.8-1/debian/rules/ for some helpful navigation of the possible \"make\" arguments\nRUN buildDeps='curl gcc libc6-dev libpcre3-dev libssl-dev make' \\\n\t&& set -x \\\n\t&& apt-get update && apt-get install -y $buildDeps --no-install-recommends && rm -rf /var/lib/apt/lists/* \\\n\t&& curl -SL \"http://www.haproxy.org/download/${HAPROXY_MAJOR}/src/haproxy-${HAPROXY_VERSION}.tar.gz\" -o haproxy.tar.gz \\\n\t&& echo \"${HAPROXY_MD5}  haproxy.tar.gz\" | md5sum -c \\\n\t&& mkdir -p /usr/src/haproxy \\\n\t&& tar -xzf haproxy.tar.gz -C /usr/src/haproxy --strip-components=1 \\\n\t&& rm haproxy.tar.gz \\\n\t&& make -C /usr/src/haproxy \\\n\t\tTARGET=linux2628 \\\n\t\tUSE_PCRE=1 PCREDIR= \\\n\t\tUSE_OPENSSL=1 \\\n\t\tUSE_ZLIB=1 \\\n\t\tall \\\n\t\tinstall-bin \\\n\t&& mkdir -p /usr/local/etc/haproxy \\\n\t&& cp -R /usr/src/haproxy/examples/errorfiles /usr/local/etc/haproxy/errors \\\n\t&& rm -rf /usr/src/haproxy \\\n\t&& apt-get purge -y --auto-remove $buildDeps\n\nRUN apt-get update && apt-get install -y openssl iptables \\\n    && openssl genrsa -out _.marathon.mesos.key 2048 \\\n\t&& openssl req -new -x509 -key _.marathon.mesos.key -out _.marathon.mesos.cert -days 3650 -subj /CN=\\*.marathon.mesos \\\n\t&& cat _.marathon.mesos.key > /haproxy.pem \\\n\t&& cat _.marathon.mesos.cert >> /haproxy.pem && rm -f *marathon.mesos.* \\\n\t&& apt-get purge -y --auto-remove $buildDeps \\\n\t&& rm -rf /var/lib/apt/lists/*\n\nCMD [\"/bin/bash\", \"-c\", \"while true; do ps aux | grep haproxy; sleep 60; done\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y libssl1.0.0 libpcre3 --no-install-recommends && rm -rf /var/lib/apt/lists/*",
+      "buildDeps='curl gcc libc6-dev libpcre3-dev libssl-dev make' \t&& set -x \t&& apt-get update && apt-get install -y $buildDeps --no-install-recommends && rm -rf /var/lib/apt/lists/* \t&& curl -SL \"http://www.haproxy.org/download/${HAPROXY_MAJOR}/src/haproxy-${HAPROXY_VERSION}.tar.gz\" -o haproxy.tar.gz \t&& echo \"${HAPROXY_MD5}  haproxy.tar.gz\" | md5sum -c \t&& mkdir -p /usr/src/haproxy \t&& tar -xzf haproxy.tar.gz -C /usr/src/haproxy --strip-components=1 \t&& rm haproxy.tar.gz \t&& make -C /usr/src/haproxy \t\tTARGET=linux2628 \t\tUSE_PCRE=1 PCREDIR= \t\tUSE_OPENSSL=1 \t\tUSE_ZLIB=1 \t\tall \t\tinstall-bin \t&& mkdir -p /usr/local/etc/haproxy \t&& cp -R /usr/src/haproxy/examples/errorfiles /usr/local/etc/haproxy/errors \t&& rm -rf /usr/src/haproxy \t&& apt-get purge -y --auto-remove $buildDeps",
+      "apt-get update && apt-get install -y openssl iptables     && openssl genrsa -out _.marathon.mesos.key 2048 \t&& openssl req -new -x509 -key _.marathon.mesos.key -out _.marathon.mesos.cert -days 3650 -subj /CN=\\*.marathon.mesos \t&& cat _.marathon.mesos.key > /haproxy.pem \t&& cat _.marathon.mesos.cert >> /haproxy.pem && rm -f *marathon.mesos.* \t&& apt-get purge -y --auto-remove $buildDeps \t&& rm -rf /var/lib/apt/lists/*"
+    ],
+    "workdir": [],
+    "from": "ubuntu-debootstrap:14.04",
+    "env": {
+      "HAPROXY_MAJOR": "1.5",
+      "HAPROXY_VERSION": "1.5.14",
+      "HAPROXY_MD5": "ad9d7262b96ba85a0f8c6acc6cb9edde"
+    },
+    "cmd": "[\"/bin/bash\", \"-c\", \"while true; do ps aux | grep haproxy; sleep 60; done\"]"
+  },
+  "source_repository_url": "https://github.com/SirAlvarex/lodbrok.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/SirAlvarex/lodbrok",
+  "docker_repository": "siralvarex/lodbrok-docker-haproxy",
+  "docker_image": "siralvarex/lodbrok-docker-haproxy",
+  "parameters_schema": {
+    "HAPROXY_MAJOR": {
+      "default": "1.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_VERSION": {
+      "default": "1.5.14",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_MD5": {
+      "default": "ad9d7262b96ba85a0f8c6acc6cb9edde",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "siralvarex/lodbrok-docker-haproxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/siralvarex/lodbrok-docker-haproxy",
+    "https://hub.docker.com/v2/repositories/siralvarex/lodbrok-docker-haproxy",
+    "https://github.com/SirAlvarex/lodbrok.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/siralvarex/lodbrok-docker-haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

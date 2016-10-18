@@ -1,0 +1,118 @@
+{
+  "name": "hacluster Juju charm",
+  "juju_charm_name": "hacluster",
+  "revision": "cs:precise/hacluster-1",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/hacluster",
+    "https://jujucharms.com/hacluster/precise",
+    "https://jujucharms.com/hacluster/precise/1",
+    "https://api.jujucharms.com/v5/hacluster",
+    "https://api.jujucharms.com/v5/precise/hacluster",
+    "https://api.jujucharms.com/v5/precise/hacluster-1"
+  ],
+  "labels": [
+    "Juju charm",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Messaging"
+  ],
+  "info_url": "https://jujucharms.com/hacluster",
+  "package_url": "https://api.jujucharms.com/v5/precise/hacluster-1/archive",
+  "created": "2015-06-17T09:32:10.796Z",
+  "updated": "2015-06-17T09:32:10.796Z",
+  "description": "Corosync Cluster Engine - membership, messaging and quorum\n\nCorosync/Pacemaker\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": true,
+  "juju_charm_series": "precise",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= precise"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/juju-info",
+      "self_resolve": true,
+      "juju_interface": "juju-info",
+      "juju_name": "juju-info",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "cluster_count": {
+      "type": "int",
+      "description": "Number of peer units required to bootstrap cluster services.",
+      "default": 2,
+      "mapping": "charm_option"
+    },
+    "corosync_key": {
+      "type": "string",
+      "description": "This value will become the Corosync authentication key. To generate\na suitable value use:\n.\n  sudo corosync-keygen\n  sudo cat /etc/corosync/authkey | base64 -w 0\n.\nThis configuration element is mandatory and the service will fail on\ninstall if it is not provided.  The value must be base64 encoded.\n",
+      "default": "64RxJNcCkwo8EJYBsaacitUvbQp5AW4YolJi5/2urYZYp2jfLxY+3IUCOaAUJHPle4Yqfy+WBXO0I/6ASSAjj9jaiHVNaxmVhhjcmyBqy2vtPf+m+0VxVjUXlkTyYsODwobeDdO3SIkbIABGfjLTu29yqPTsfbvSYr6skRb9ne0=",
+      "mapping": "charm_option"
+    },
+    "corosync_mcastaddr": {
+      "type": "string",
+      "description": "Multicast IP address to use for exchanging messages over the network.\nIf multiple clusters are on the same bindnetaddr network, this value\ncan be changed.\n",
+      "default": "226.94.1.1",
+      "mapping": "charm_option"
+    },
+    "corosync_pcmk_ver": {
+      "type": "int",
+      "description": "Service version for the Pacemaker service version. This will tell\nCorosync how to start pacemaker\n",
+      "default": 0,
+      "mapping": "charm_option"
+    },
+    "maas_credentials": {
+      "type": "string",
+      "description": "MAAS credentials (required for STONITH).",
+      "default": null,
+      "mapping": "charm_option"
+    },
+    "maas_url": {
+      "type": "string",
+      "description": "MAAS API endpoint (required for STONITH).",
+      "default": null,
+      "mapping": "charm_option"
+    },
+    "stonith_enabled": {
+      "type": "string",
+      "description": "Enable resource fencing (aka STONITH) for every node in the cluster.\nThis requires MAAS credentials be provided and each node's power\nparameters are properly configured in its invenvory.\n",
+      "default": "False",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/hacluster",
+      "juju_interface": "hacluster",
+      "juju_name": "ha",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "juju_peers": {
+    "hanode": {
+      "Name": "hanode",
+      "Role": "peer",
+      "Interface": "hacluster",
+      "Optional": false,
+      "Limit": 1,
+      "Scope": "global"
+    }
+  },
+  "license": "# Overview\n\nThe hacluster subordinate charm provides corosync and pacemaker cluster\nconfiguration for principle charms which support the hacluster, container\nscoped relation.\n\nThe charm will only configure for HA once more that one service unit is\npresent.\n\n# Usage\n\nNOTE: The hacluster subordinate charm requires multicast network support, so\nthis charm will NOT work in ec2 or in other clouds which block multicast\ntraffic.  Its intended for use in MAAS managed environments of physical\nhardware.\n\nTo deploy the charm:\n\n    juju deploy hacluster mysql-hacluster\n\nTo enable HA clustering support (for mysql for example):\n\n    juju deploy -n 2 mysql\n    juju deploy -n 3 ceph\n    juju set mysql vip=\"192.168.21.1\"\n    juju add-relation mysql ceph\n    juju add-relation mysql mysql-hacluster\n\nThe principle charm must have explicit support for the hacluster interface\nin order for clustering to occur - otherwise nothing actually get configured.\n\n# Usage for Charm Authors\n\nThe hacluster interface supports a number of different cluster configuration\noptions.\n\n## Mandatory Relation Data\n\nAll principle charms must provide basic corosync configuration:\n\n    corosync\\_bindiface: The network interface to use for cluster messaging.\n    corosync\\_mcastport: The multicast port to use for cluster messaging.\n\n## Resource Configuration\n\nThe hacluster interface provides support for a number of different ways\nof configuring cluster resources. All examples are provided in python.\n\nNOTE: The hacluster charm interprets the data provided as python dicts; so\nit is also possible to provide these as literal strings from charms written\nin other languages.\n\n### init\\_services\n\nServices which will be managed by pacemaker once the cluster is created:\n\n    init_services = {\n            'res_mysqld':'mysql',\n        }\n\nThese services will be stopped prior to configuring the cluster.\n\n### resources\n\nResources are the basic cluster resources that will be managed by pacemaker.\nIn the mysql charm, this includes a block device, the filesystem, a virtual\nIP address and the mysql service itself:\n\n    resources = {\n        'res_mysql_rbd':'ocf:ceph:rbd',\n        'res_mysql_fs':'ocf:heartbeat:Filesystem',\n        'res_mysql_vip':'ocf:heartbeat:IPaddr2',\n        'res_mysqld':'upstart:mysql',\n        }\n\n### resource\\_params\n\nParameters which should be used when configuring the resources specified:\n\n    resource_params = {\n        'res_mysql_rbd':'params name=\"%s\" pool=\"images\" user=\"%s\" secret=\"%s\"' % \\\n                        (config['rbd-name'], SERVICE_NAME, KEYFILE),\n        'res_mysql_fs':'params device=\"/dev/rbd/images/%s\" directory=\"%s\" '\n                       'fstype=\"ext4\" op start start-delay=\"10s\"' % \\\n                        (config['rbd-name'], DATA_SRC_DST),\n        'res_mysql_vip':'params ip=\"%s\" cidr_netmask=\"%s\" nic=\"%s\"' %\\\n                        (config['vip'], config['vip_cidr'], config['vip_iface']),\n        'res_mysqld':'op start start-delay=\"5s\" op monitor interval=\"5s\"',\n        }\n\n### groups\n\nResources which should be managed as a single set of resource on the same service\nunit:\n\n    groups = {\n        'grp_mysql':'res_mysql_rbd res_mysql_fs res_mysql_vip res_mysqld',\n        }\n\n\n### clones\n\nResources which should run on every service unit participating in the cluster:\n\n    clones = {\n        'cl_haproxy': 'res_haproxy_lsb'\n        }\n\n",
+  "readme": "# Overview\n\nThe hacluster subordinate charm provides corosync and pacemaker cluster\nconfiguration for principle charms which support the hacluster, container\nscoped relation.\n\nThe charm will only configure for HA once more that one service unit is\npresent.\n\n# Usage\n\nNOTE: The hacluster subordinate charm requires multicast network support, so\nthis charm will NOT work in ec2 or in other clouds which block multicast\ntraffic.  Its intended for use in MAAS managed environments of physical\nhardware.\n\nTo deploy the charm:\n\n    juju deploy hacluster mysql-hacluster\n\nTo enable HA clustering support (for mysql for example):\n\n    juju deploy -n 2 mysql\n    juju deploy -n 3 ceph\n    juju set mysql vip=\"192.168.21.1\"\n    juju add-relation mysql ceph\n    juju add-relation mysql mysql-hacluster\n\nThe principle charm must have explicit support for the hacluster interface\nin order for clustering to occur - otherwise nothing actually get configured.\n\n# Usage for Charm Authors\n\nThe hacluster interface supports a number of different cluster configuration\noptions.\n\n## Mandatory Relation Data\n\nAll principle charms must provide basic corosync configuration:\n\n    corosync\\_bindiface: The network interface to use for cluster messaging.\n    corosync\\_mcastport: The multicast port to use for cluster messaging.\n\n## Resource Configuration\n\nThe hacluster interface provides support for a number of different ways\nof configuring cluster resources. All examples are provided in python.\n\nNOTE: The hacluster charm interprets the data provided as python dicts; so\nit is also possible to provide these as literal strings from charms written\nin other languages.\n\n### init\\_services\n\nServices which will be managed by pacemaker once the cluster is created:\n\n    init_services = {\n            'res_mysqld':'mysql',\n        }\n\nThese services will be stopped prior to configuring the cluster.\n\n### resources\n\nResources are the basic cluster resources that will be managed by pacemaker.\nIn the mysql charm, this includes a block device, the filesystem, a virtual\nIP address and the mysql service itself:\n\n    resources = {\n        'res_mysql_rbd':'ocf:ceph:rbd',\n        'res_mysql_fs':'ocf:heartbeat:Filesystem',\n        'res_mysql_vip':'ocf:heartbeat:IPaddr2',\n        'res_mysqld':'upstart:mysql',\n        }\n\n### resource\\_params\n\nParameters which should be used when configuring the resources specified:\n\n    resource_params = {\n        'res_mysql_rbd':'params name=\"%s\" pool=\"images\" user=\"%s\" secret=\"%s\"' % \\\n                        (config['rbd-name'], SERVICE_NAME, KEYFILE),\n        'res_mysql_fs':'params device=\"/dev/rbd/images/%s\" directory=\"%s\" '\n                       'fstype=\"ext4\" op start start-delay=\"10s\"' % \\\n                        (config['rbd-name'], DATA_SRC_DST),\n        'res_mysql_vip':'params ip=\"%s\" cidr_netmask=\"%s\" nic=\"%s\"' %\\\n                        (config['vip'], config['vip_cidr'], config['vip_iface']),\n        'res_mysqld':'op start start-delay=\"5s\" op monitor interval=\"5s\"',\n        }\n\n### groups\n\nResources which should be managed as a single set of resource on the same service\nunit:\n\n    groups = {\n        'grp_mysql':'res_mysql_rbd res_mysql_fs res_mysql_vip res_mysqld',\n        }\n\n\n### clones\n\nResources which should run on every service unit participating in the cluster:\n\n    clones = {\n        'cl_haproxy': 'res_haproxy_lsb'\n        }\n\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

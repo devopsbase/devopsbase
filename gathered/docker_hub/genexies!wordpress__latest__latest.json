@@ -1,0 +1,176 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/genexies/wordpress",
+    "repository_url": "https://hub.docker.com/v2/repositories/genexies/wordpress",
+    "tags_url": "https://hub.docker.com/v2/repositories/genexies/wordpress/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/genexies/wordpress/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/genexies/wordpress/autobuild",
+    "user": "genexies",
+    "name": "wordpress",
+    "namespace": "genexies",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 2912,
+    "last_updated": "2016-08-08T12:40:24.577234Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 235659806,
+        "id": 1274680,
+        "repository": 388667,
+        "creator": 225301,
+        "last_updater": 225303,
+        "last_updated": "2016-08-08T12:40:24.170312Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1",
+        "full_size": 215823687,
+        "id": 1524099,
+        "repository": 388667,
+        "creator": 511341,
+        "last_updater": 225303,
+        "last_updated": "2016-08-03T16:37:35.074783Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1_targz",
+        "full_size": 215823298,
+        "id": 4140904,
+        "repository": 388667,
+        "creator": 225303,
+        "last_updater": 225303,
+        "last_updated": "2016-08-03T15:51:47.588139Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "memcache",
+        "full_size": 219758469,
+        "id": 1550028,
+        "repository": 388667,
+        "creator": 511341,
+        "last_updater": 511341,
+        "last_updated": "2015-12-16T10:40:58.150119Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "4.3-apc",
+        "full_size": 200409110,
+        "id": 1430765,
+        "repository": 388667,
+        "creator": 511341,
+        "last_updater": 511341,
+        "last_updated": "2015-11-26T14:26:27.063633Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "4.3-opcache",
+        "full_size": 200409127,
+        "id": 1430766,
+        "repository": 388667,
+        "creator": 511341,
+        "last_updater": 511341,
+        "last_updated": "2015-11-26T14:26:24.419909Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "genexies/docker-wordpress"
+  },
+  "name": "genexies/wordpress Docker container",
+  "description": "Wordpress 4.3 image + custom wp-content by cloning several GIT repositories into /var/www/html",
+  "readme": "# docker-wordpress\nWordpress docker container that allows customizing installed plugins, themes and source code\n\n[![](https://images.microbadger.com/badges/image/genexies/wordpress.svg)](https://microbadger.com/images/genexies/wordpress \"Get your own image badge on microbadger.com\")\n",
+  "dockerfile": "FROM wordpress:4.3-fpm\nMAINTAINER Javier Jerónimo <jcjeronimo@genexies.net>\n#\n# @param[in] ENVIRONMENT        Configuration environment to use:\n#                               wp-config.${ENVIRONMENT}.php will be used.\n#\n# @param[in] REPOSITORIES       Git repositories to clone (each: https including\n#                               credentials in URL)\n#\n# @param[in] DEBUG              If present, all debug options are enabled in\n#                               Wordpress\n#\n# Required to install libapache2-mod-fastcgi\nRUN echo \"deb http://http.us.debian.org/debian jessie main non-free\" >> /etc/apt/sources.list\n\nRUN apt-get update\n\n# Install Supervisor\nRUN apt-get install -y supervisor\nCOPY etc/supervisor/conf.d/supervisord.conf /etc/supervisor/conf.d/supervisord.conf\n\n# Install Git\nRUN apt-get install -y git\n\n# Install wget\nRUN apt-get install -y wget\n\n# Install php-pear\nRUN apt-get install -y php-pear\n\n# Install sudo\nRUN apt-get install -y sudo\n\n# Install OPcache\nRUN docker-php-ext-install opcache\nCOPY opcache.ini /opcache.ini\nRUN cat /opcache.ini >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini\n\n# Download manually, and install using PHP docker scripts...\nRUN cd /usr/src/php/ext && \\\n    wget https://pecl.php.net/get/memcache-2.2.7.tgz && \\\n    tar xvzf memcache-2.2.7.tgz && \\\n    mv memcache-2.2.7 memcache\n\nRUN docker-php-ext-configure memcache && docker-php-ext-install memcache\n\n# Install Apache\nRUN apt-get install -y apache2\nCOPY etc/apache2/apache2.conf /etc/apache2/apache2.conf\n\n# Install FastCGI process\nRUN apt-get install -y php5-fpm\nCOPY usr/local/etc/php-fpm.conf /usr/local/etc/php-fpm.conf\n\n# Apache's MPM module: Event\nRUN apt-get -y install apache2-mpm-event\nRUN a2enmod mpm_event\n\n# Apache's module to communicate with FastCGI process: fastcgi\nRUN apt-get install -y libapache2-mod-fastcgi\nCOPY etc/apache2/conf-available/fastcgi.conf /etc/apache2/conf-available/fastcgi.conf\nRUN a2enconf fastcgi\n\n# Enable Apache modules\nRUN a2enmod rewrite actions\n\n# Our entry-point that fallback to parent's\nCOPY gnx-entrypoint.sh /gnx-entrypoint.sh\nRUN chmod u+x /gnx-entrypoint.sh\nENTRYPOINT [\"/gnx-entrypoint.sh\"]\n\n# Same default parameter to parent's entry-point\nCMD [\"/usr/bin/supervisord\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "echo \"deb http://http.us.debian.org/debian jessie main non-free\" >> /etc/apt/sources.list",
+      "apt-get update",
+      "apt-get install -y supervisor",
+      "apt-get install -y git",
+      "apt-get install -y wget",
+      "apt-get install -y php-pear",
+      "apt-get install -y sudo",
+      "docker-php-ext-install opcache",
+      "cat /opcache.ini >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini",
+      "cd /usr/src/php/ext &&     wget https://pecl.php.net/get/memcache-2.2.7.tgz &&     tar xvzf memcache-2.2.7.tgz &&     mv memcache-2.2.7 memcache",
+      "docker-php-ext-configure memcache && docker-php-ext-install memcache",
+      "apt-get install -y apache2",
+      "apt-get install -y php5-fpm",
+      "apt-get -y install apache2-mpm-event",
+      "a2enmod mpm_event",
+      "apt-get install -y libapache2-mod-fastcgi",
+      "a2enconf fastcgi",
+      "a2enmod rewrite actions",
+      "chmod u+x /gnx-entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "wordpress:4.3-fpm",
+    "maintainer": "Javier Jerónimo <jcjeronimo@genexies.net>",
+    "copy": "gnx-entrypoint.sh /gnx-entrypoint.sh",
+    "entrypoint": "[\"/gnx-entrypoint.sh\"]",
+    "cmd": "[\"/usr/bin/supervisord\"]"
+  },
+  "source_repository_url": "https://github.com/genexies/docker-wordpress.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/genexies/docker-wordpress",
+  "docker_repository": "genexies/wordpress",
+  "docker_image": "genexies/wordpress",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "genexies/wordpress",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/genexies/wordpress",
+    "https://hub.docker.com/v2/repositories/genexies/wordpress",
+    "https://github.com/genexies/docker-wordpress.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Version Control/Git",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/genexies/wordpress",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

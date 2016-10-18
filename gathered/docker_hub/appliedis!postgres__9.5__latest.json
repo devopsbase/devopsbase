@@ -1,0 +1,149 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/appliedis/postgres",
+    "repository_url": "https://hub.docker.com/v2/repositories/appliedis/postgres",
+    "tags_url": "https://hub.docker.com/v2/repositories/appliedis/postgres/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/appliedis/postgres/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/appliedis/postgres/autobuild",
+    "user": "appliedis",
+    "name": "postgres",
+    "namespace": "appliedis",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 80,
+    "last_updated": "2016-09-14T23:25:34.465632Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "9.5",
+        "full_size": 94464283,
+        "id": 2979046,
+        "repository": 682091,
+        "creator": 778669,
+        "last_updater": 778669,
+        "last_updated": "2016-09-14T23:25:34.012216Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 94464299,
+        "id": 2979003,
+        "repository": 682091,
+        "creator": 778669,
+        "last_updater": 778669,
+        "last_updated": "2016-09-14T23:25:26.099605Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "AppliedIS/dockerfiles"
+  },
+  "name": "appliedis/postgres Docker container",
+  "description": "Postgres database server with pgtune support for out-of-the-box optimal configuration.",
+  "readme": "# Applied Information Sciences Dockerfiles\n\nThis repository contains a reference of base images for use by AIS developers. The steps to build and use these images are outlined below.\n\n## Build\n\nAll images should be built with appropriate tags. Fully qualified domain names should also be used to identify the Docker Registry being used to ensure successful pull operations from remote networks. To create a 2.7 tagged Python base image the following command should be used (note trailing period):\n\n```\nsudo docker build -t appliedis/python:2.7 .\n```\n\n## Test\n\nOnce an image is built, it should be tested prior to publishing it to the registry. This can be done using the docker run command. If the Dockerfile contains a CMD statement, verify that the executable defined there is launched. If there is no CMD statement a trailing command can be given to prevent an immediate, silent container shutdown on run. The following two commands demonstrate testing a default CMD, as well as an override.\n\n```\nsudo docker run -it appliedis/python:2.7\nsudo docker run -it appliedis/python:2.7 echo \"Docker CMD override successful\"\n```\n\n## Tagging\n\nIt is worth noting that you can use a more convenient name for testing and then tag the image to the appropriate hostname prior to a push. See docker tag --help for more details on this.\n\nConsistency is key - all directories should track with the image names. All images should be named use lower case letters and dashes, version tags should be set for most specific version we care about. For example, if we wanted to pin to Python 2.7, but wanted flexibility to update to the newest patch release 2.7.10, etc., we would tag as \"python:2.7\". If we didn't care about the minor version we could just tag as \"python:2\". We recommend avoiding the use of the latest tag and always specifying an explicit version tag. Docker defaults to use of latest in all cases where a tag is omitted, which can be problematic when it is desirable to pin to specific release versions.\n\n## Publish / \"push\"\n\nThe only way to publish to a remote registry, other than the official Docker Hub, is to use the hostname of your registry as the first portion of the image name. In our case that hostname is *appliedis*. Since we have already tagged our image during the docker build step, we can just issue the push command against the existing image name.\n\n```\nsudo docker push appliedis/python:2.7\n```\n\n## Usage\n\nOnce an image is pushed to the Docker Registry it can be used from any machine with registry connectivity. You can use the image directly as described in the Test section or extend / override it within a Dockerfile:\n\n```\nFROM appliedis/python:2.7\n\n... your Dockerfile configuration\nCMD [\"python\", \"my-python-script.py\"]\n```\n",
+  "dockerfile": "FROM appliedis/centos-gosu:7\nMAINTAINER Jonathan Meyer <jon@gisjedi.com>\n\n# explicitly set user/group IDs and fix locale for UTF-8 default in postgres\nRUN groupadd -r postgres --gid=995 && useradd -r -g postgres --uid=995 postgres \\\n    && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8\n\nENV LANG en_US.utf8\nENV PG_MAJOR 9.5\nENV PG_MAJOR_SQUASH 95\n\nRUN mkdir /docker-entrypoint-initdb.d\n\nRUN yum install -y \\\n\t\thttp://yum.postgresql.org/$PG_MAJOR/redhat/rhel-7-x86_64/pgdg-centos$PG_MAJOR_SQUASH-$PG_MAJOR-2.noarch.rpm \\\n\t&& yum install -y \\\n\t\tpostgresql$PG_MAJOR_SQUASH-server \\\n\t\tpostgresql$PG_MAJOR_SQUASH-contrib \\\n\t&& yum clean all\n\nRUN mkdir -p /var/run/postgresql && chown -R postgres /var/run/postgresql\n\nENV PATH /usr/pgsql-$PG_MAJOR/bin:$PATH\nENV PGDATA /var/lib/postgresql/data\nVOLUME /var/lib/postgresql/data\n\nCOPY docker-entrypoint.sh /\nCOPY pgtune.py /docker-entrypoint-initdb.d/\n\nRUN chmod +x /docker-entrypoint.sh\n\n# Environment variables that can be specified to override setting defaults:\n#INSTANCE_MEMORY: amount of memory allocated for the PostGres instance use in MBs\n#CONNECTIONS: number of connections allowed concurrently\n#FORCE_PGTUNE: true or false, indicating whether PostGres should be tuned on startup, regardless of existing config\n\nENTRYPOINT [\"/docker-entrypoint.sh\"]\n\nEXPOSE 5432\nCMD [\"postgres\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5432
+    ],
+    "volume": [
+      "/var/lib/postgresql/data"
+    ],
+    "run": [
+      "groupadd -r postgres --gid=995 && useradd -r -g postgres --uid=995 postgres     && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8",
+      "mkdir /docker-entrypoint-initdb.d",
+      "yum install -y \t\thttp://yum.postgresql.org/$PG_MAJOR/redhat/rhel-7-x86_64/pgdg-centos$PG_MAJOR_SQUASH-$PG_MAJOR-2.noarch.rpm \t&& yum install -y \t\tpostgresql$PG_MAJOR_SQUASH-server \t\tpostgresql$PG_MAJOR_SQUASH-contrib \t&& yum clean all",
+      "mkdir -p /var/run/postgresql && chown -R postgres /var/run/postgresql",
+      "chmod +x /docker-entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "appliedis/centos-gosu:7",
+    "maintainer": "Jonathan Meyer <jon@gisjedi.com>",
+    "env": {
+      "LANG": "en_US.utf8",
+      "PG_MAJOR": "9.5",
+      "PG_MAJOR_SQUASH": "95",
+      "PATH": "/usr/pgsql-$PG_MAJOR/bin:$PATH",
+      "PGDATA": "/var/lib/postgresql/data"
+    },
+    "copy": "pgtune.py /docker-entrypoint-initdb.d/",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"postgres\"]"
+  },
+  "source_repository_url": "https://github.com/AppliedIS/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/AppliedIS/dockerfiles",
+  "docker_repository": "appliedis/postgres",
+  "docker_image": "appliedis/postgres",
+  "parameters_schema": {
+    "LANG": {
+      "default": "en_US.utf8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PG_MAJOR": {
+      "default": "9.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PG_MAJOR_SQUASH": {
+      "default": "95",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/usr/pgsql-$PG_MAJOR/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGDATA": {
+      "default": "/var/lib/postgresql/data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5432
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "appliedis/postgres",
+  "revision": "9.5",
+  "uris": [
+    "https://hub.docker.com/r/appliedis/postgres",
+    "https://hub.docker.com/v2/repositories/appliedis/postgres",
+    "https://github.com/AppliedIS/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/appliedis/postgres",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

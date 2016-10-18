@@ -1,0 +1,110 @@
+{
+  "name": "stow Chef cookbook",
+  "chef_cookbook_name": "stow",
+  "revision": "1.0.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/stow",
+    "https://supermarket.chef.io/cookbooks/stow/download",
+    "https://supermarket.chef.io/cookbooks/stow/versions/1.0.2",
+    "https://supermarket.chef.io/cookbooks/stow/versions/1.0.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/stow/versions/1.0.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/stow",
+    "https://supermarket.chef.io/api/v1/cookbooks/stow/versions/1.0.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/stow",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/stow/versions/1.0.2/download",
+  "deprecated": false,
+  "created": "2015-07-03T05:54:01.578Z",
+  "updated": "2016-10-12T15:24:54.618Z",
+  "description": "Installs GNU Stow & provides stow_package resource",
+  "maintainer": {
+    "name": "stevenhaddox",
+    "email": "steven.haddox@gmail.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 326708,
+  "downloads_count_revision": 347,
+  "repository_url": "https://github.com/stevenhaddox/cookbook-stow",
+  "issues_url": "https://github.com/stevenhaddox/cookbook-stow/issues",
+  "chef_source_url": "https://github.com/stevenhaddox/cookbook-stow",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# stow (Chef cookbook)\n\n[![Cookbook Version](https://img.shields.io/cookbook/v/stow.svg)][supermarket]\n[![Build Status](https://img.shields.io/travis/stevenhaddox/cookbook-stow.svg)][travis]\n[![Code Climate](https://codeclimate.com/github/stevenhaddox/cookbook-stow/badges/gpa.svg)][codeclimate]\n\n## Description\n\nA simple chef cookbook to install [GNU stow](https://www.gnu.org/software/stow/)\nvia package management or source if a package is not available.\n\n## Attributes\n\n* `['stow']['path'] = '/usr/local/stow'`\n  path stow command uses for symlinking packages and libraries\n* `['stow']['target'] = nil`\n  target directory for stow managed symlinks, defaults to stow path's parent directory if nil\n* `['stow']['version'] = '2.2.0'`\n  version of stow to install for source installations\n* `['stow']['src_url'] = 'http://ftp.gnu.org/gnu/stow/stow-2.2.0.tar.gz'`\n  URL for latest stow source tarball\n* `['stow']['rpm_url'] = nil # 'http://dl.fedoraproject.org/pub/epel/6/i386/stow-2.2.0-1.el6.noarch.rpm'`\n  Default is nil and uses yum, but you can specify an alternative rpm package by URL\n* `['stow']['deb_url'] = nil # 'http://mirrors.kernel.org/ubuntu/pool/universe/s/stow/stow_2.2.0-2_all.deb'`\n  Default is nil and uses apt, but you can specify an alternative deb package by URL\n\n## Usage\n\nAdd the recipes to the `run_list`, it should probably be towards the beginning:\n\n    \"recipe[stow]\"\n\nConfigure attributes:\n\n    \"stow\" : {\n      \"path\" : \"/opt/local/stow\",\n      \"version\" : \"2.2.0\"\n    }\n\n## Resources Provided\n\nThe stow cookbook provides a `stow_package` resource that can be used as follows:\n\n```ruby\nstow_package 'openssl' do\n  name    'openssl'\n  version '1.0.2d'\n  creates 'bin/openssl' # *Required* relative path to a file your source compiled package creates\n  #action :stow # Also available `:destow`, the default action is `:stow`\n  #destow_existing true # Defaults to `true` and will destow all out of date packages with prefix \"#{name}-+-\"\n  #current_version '1.0.2c' # Destows `current_version` before `version` is stowed; ignored unless `destow_existing` is `false`\nend\n```\n\n*NOTE*: This cookbook expects you to compile your packages with the following prefix convention:  \n`#{node['stow']['path']}/#{package_name}-+-#{version}/`\n\nFor the example above, you would compile `openssl` with the prefix:  \n`--prefix #{node['stow']['path']}/openssl-+-1.0.2d/`\n\nIf your package / library works with the [tar cookbook][tar] there's a very easy way to do this, like so:\n\n```ruby\n# Compile your package via the tar cookbook with proper prefix\ntar_package \"#{tarball_path_or_url}\" do\n  prefix \"#{node['stow']['path']}/#{your_pkg_name}-+-#{your_pkg_version}\"\n  creates \"#{node['stow']['path']}/#{your_pkg_name}-+-#{your_pkg_version}/#{path/to/pkg/file}\"\nend\n\n# Stow your package\nstow_package \"#{your_pkg_name}\" do\n  name    \"#{your_pkg_name}\"\n  version \"#{your_pkg_version}\"\n  creates 'path/to/pkg/file' # Note the relative path vs full path for `tar_package`\nend\n```\n\n## ChefSpec Matchers\n\nA set of ChefSpec matchers is included, for unit testing with ChefSpec. To illustrate:\n\n```ruby\n# Recipe code\nstow_package 'openssl' do\n  name    'openssl'\n  version '1.0.2d'\n  creates 'bin/openssl'\nend\n```\n\n```ruby\n# Spec code\nit 'should stow openssl version 1.0.2d' do\n  expect(chef_run).to stow_package('openssl').with(\n    name:    'openssl',\n    version: '1.0.2d',\n    creates: 'bin/openssl'\n  )\n  # Stow package wraps the execute resource if you want further validation\n  expect(chef_run).to run_execute('stow_openssl-1.0.2d')\nend\n```\n\nA matcher for the delete action is also available:\n\n```ruby\n# Recipe code\nstow_package 'openssl' do\n  action  :destow\n  name    'openssl'\n  version '1.0.2c'\n  creates 'bin/openssl'\nend\n```\n\n```ruby\n# Spec code\nit 'should destow package openssl 1.0.2c' do\n  expect(chef_run).to destow_package('openssl').with(\n    action:  :destow,\n    name:    'openssl',\n    version: '1.0.2c',\n    creates: 'bin/openssl'\n  )\n  # Stow package wraps the execute resource if you want further validation\n  expect(chef_run).to run_execute('destow_openssl-1.0.2c')\nend\n```\n\n[supermarket]: https://supermarket.getchef.com/cookbooks/stow\n[travis]: http://travis-ci.org/stevenhaddox/cookbook-stow\n[codeclimate]: https://codeclimate.com/github/stevenhaddox/cookbook-stow\n[tar]: https://supermarket.chef.io/cookbooks/tar\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": "~> 2.7.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": "~> 2.2",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/tar",
+      "revision": "~> 0.6.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum-epel",
+      "revision": "~> 0.6.2",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "stow::default": "Install GNU stow via package or source (if needed)",
+    "stow::source": "Install GNU stow via source installation"
+  }
+}

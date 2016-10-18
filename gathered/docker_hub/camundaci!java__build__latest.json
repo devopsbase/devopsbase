@@ -1,0 +1,127 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/camundaci/java",
+    "repository_url": "https://hub.docker.com/v2/repositories/camundaci/java",
+    "tags_url": "https://hub.docker.com/v2/repositories/camundaci/java/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/camundaci/java/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/camundaci/java/autobuild",
+    "user": "camundaci",
+    "name": "java",
+    "namespace": "camundaci",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 2237,
+    "last_updated": "2016-10-11T20:08:59.807860Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "build",
+        "full_size": 259180143,
+        "id": 3411850,
+        "repository": 742829,
+        "creator": 887262,
+        "last_updater": 887262,
+        "last_updated": "2016-10-11T20:08:59.491471Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "run",
+        "full_size": 48681909,
+        "id": 3411846,
+        "repository": 742829,
+        "creator": 887262,
+        "last_updater": 887262,
+        "last_updated": "2016-10-11T19:58:51.001436Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "camunda-wm/docker-java"
+  },
+  "name": "camundaci/java Docker container",
+  "description": "Docker images to build and run Java applications.",
+  "readme": "# camundaci/java\n\nDocker images to build and run java applications.\n\n## Docker Hub\n\nThe images are automatically build by Docker Hub\n[camundaci/java](https://hub.docker.com/r/camundaci/java).\n\n\n## Usage\n\nThere are two images `camundaci/java:build`, to build an app using maven, and\n`camundaci/java:run`, to run a fat jar with all dependencies.\n\n### Build\n\nIn a maven project with a root pom.xml you can create a `Dockerfile.build` file:\n\n```\nFROM camundaci/java:build\n```\n\nand run\n\n```\ndocker build -t build-my-app -f Dockerfile.build .\ndocker run --name my-packaged-app build-my-app\n```\n\nThis will add your src code to the docker image and on run execute\n`mvn clean package` in it.\n\nAfter that you can simple copy the packaged artifact from the container\nand remove it:\n\n```\ndocker cp my-packaged-app:/app/target target\ndocker rm -f -v my-packaged-app\n```\n\n### Run\n\nIn a maven project which contains a target folder with the build\nfat jar (`target/app-VERSION-fat.jar`) you can create a `Dockerfile.run` file:\n\n```\nFROM camundaci/java:run\n\nEXPOSE 8080\n```\n\nWhen you build the image the fat jar is copied into the image\n\n```\ndocker build -t my-app -f Dockerfile.run .\n```\n\nThe app can then be run\n\n```\ndocker run -d --name app -p 8080:8080 my-app\n```\n\nThis will just start the jar file. Additional arguments for the application\ncan be append to the `docker run` command.\n",
+  "dockerfile": "FROM ubuntu:16.04\n\nWORKDIR /app\n\n# install required tools\nRUN apt-get update && \\\n    apt-get install -y --no-install-recommends openjdk-8-jdk maven curl ca-certificates bzip2 git && \\\n    curl -sfL https://deb.nodesource.com/setup_6.x | bash && \\\n    apt-get install -y --no-install-recommends nodejs && \\\n    apt-get clean && \\\n    rm -rf /var/cache/* /var/lib/apt/lists/* && \\\n    useradd -m app\n\n# install phantomjs\nENV PHANTOMJS_VERSION=2.1.1\nRUN curl -sfL https://github.com/Medium/phantomjs/releases/download/v${PHANTOMJS_VERSION}/phantomjs-${PHANTOMJS_VERSION}-linux-x86_64.tar.bz2 | \\\n        tar xjf - -C /opt phantomjs-${PHANTOMJS_VERSION}-linux-x86_64/bin && \\\n    ln -s /opt/phantomjs-${PHANTOMJS_VERSION}-linux-x86_64/bin/* /bin\n\n# configure npm\nRUN npm config --global set progress false && \\\n    npm config --global set color false && \\\n    npm config --global set loglevel info && \\\n    npm config --global set cache /app/.npm\n\n# configure maven\nADD settings.build.xml /home/app/.m2/settings.xml\n\n# add build script\nADD build.sh /app/build.sh\n\n# on build copy current directory and extract dependencies\nONBUILD COPY . /app\nONBUILD RUN chown -R app:app /app /home/app/.m2\nONBUILD USER app\n\n# execute build script by default\nCMD [\"/app/build.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "settings.build.xml",
+        "dest": "/home/app/.m2/settings.xml"
+      },
+      {
+        "source": "build.sh",
+        "dest": "/app/build.sh"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update &&     apt-get install -y --no-install-recommends openjdk-8-jdk maven curl ca-certificates bzip2 git &&     curl -sfL https://deb.nodesource.com/setup_6.x | bash &&     apt-get install -y --no-install-recommends nodejs &&     apt-get clean &&     rm -rf /var/cache/* /var/lib/apt/lists/* &&     useradd -m app",
+      "curl -sfL https://github.com/Medium/phantomjs/releases/download/v${PHANTOMJS_VERSION}/phantomjs-${PHANTOMJS_VERSION}-linux-x86_64.tar.bz2 |         tar xjf - -C /opt phantomjs-${PHANTOMJS_VERSION}-linux-x86_64/bin &&     ln -s /opt/phantomjs-${PHANTOMJS_VERSION}-linux-x86_64/bin/* /bin",
+      "npm config --global set progress false &&     npm config --global set color false &&     npm config --global set loglevel info &&     npm config --global set cache /app/.npm"
+    ],
+    "workdir": [
+      "/app"
+    ],
+    "from": "ubuntu:16.04",
+    "env": {
+      "PHANTOMJS_VERSION": "2.1.1"
+    },
+    "onbuild": "USER app",
+    "cmd": "[\"/app/build.sh\"]"
+  },
+  "source_repository_url": "https://github.com/camunda-wm/docker-java.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/camunda-wm/docker-java",
+  "docker_repository": "camundaci/java",
+  "docker_image": "camundaci/java",
+  "parameters_schema": {
+    "PHANTOMJS_VERSION": {
+      "default": "2.1.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "camundaci/java",
+  "revision": "build",
+  "uris": [
+    "https://hub.docker.com/r/camundaci/java",
+    "https://hub.docker.com/v2/repositories/camundaci/java",
+    "https://github.com/camunda-wm/docker-java.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Style/Virtualization Level/Application",
+    "Type/Devopsware/Build"
+  ],
+  "info_url": "https://hub.docker.com/r/camundaci/java",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

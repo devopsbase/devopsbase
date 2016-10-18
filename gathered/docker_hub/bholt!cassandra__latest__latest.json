@@ -1,0 +1,129 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/bholt/cassandra",
+    "repository_url": "https://hub.docker.com/v2/repositories/bholt/cassandra",
+    "tags_url": "https://hub.docker.com/v2/repositories/bholt/cassandra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/bholt/cassandra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/bholt/cassandra/autobuild",
+    "user": "bholt",
+    "name": "cassandra",
+    "namespace": "bholt",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 708,
+    "last_updated": "2016-06-22T18:57:34.628535Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 663078093,
+        "id": 1807532,
+        "repository": 495202,
+        "creator": 21016,
+        "last_updater": 21016,
+        "last_updated": "2016-06-22T18:57:34.096256Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.3",
+        "full_size": 618146334,
+        "id": 2072204,
+        "repository": 495202,
+        "creator": 21016,
+        "last_updater": 21016,
+        "last_updated": "2016-03-20T00:47:14.561361Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "2.2.4",
+        "full_size": 679287134,
+        "id": 2072356,
+        "repository": 495202,
+        "creator": 21016,
+        "last_updater": 21016,
+        "last_updated": "2016-03-07T02:13:04.919388Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "bholt/owl"
+  },
+  "name": "bholt/cassandra Docker container",
+  "description": "Cassandra image with configuration changes for my experiments.",
+  "readme": "# Owl\n[![Circle CI](https://circleci.com/gh/bholt/owl.svg?style=svg)](https://circleci.com/gh/bholt/owl)\n\nTwitter clone in Phantom.\n\nThis is my test project to evaluate Phantom for use in Disciplined Inconsistency.\n",
+  "dockerfile": "#######################################################\n# Cassandra image, customized to run Scala server, too.\n#\n# (based on https://github.com/docker-library/cassandra/blob/master/2.2/Dockerfile)\n#######################################################\nFROM cassandra:3.3\nMAINTAINER Brandon Holt <holt.bg@gmail.com>\n\n# Manually download and install latest scala and sbt.\nRUN apt-get remove -y scala-library scala; \\\n    apt-get update && \\\n    apt-get install -y inetutils-ping wget && \\\n    wget http://www.scala-lang.org/files/archive/scala-2.11.7.deb && \\\n    dpkg -i scala-2.11.7.deb && \\\n    wget http://dl.bintray.com/sbt/debian/sbt-0.13.9.deb && \\\n    dpkg -i sbt-0.13.9.deb\n\n# Fix java certs & pre-install latest sbt versionk\nRUN update-ca-certificates -f && sbt version\n\nRUN apt-get install -y ssh rsync git openjdk-8-jdk apt-transport-https\n\n# ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64\nRUN update-alternatives --install \"/usr/bin/javac\" \"javac\" \"/usr/lib/jvm/java-8-openjdk-amd64/bin/javac\" 1 && \\\n    update-alternatives --install \"/usr/bin/java\" \"java\" \"/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java\" 1 && \\\n    update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java && \\\n    update-alternatives --set javac /usr/lib/jvm/java-8-openjdk-amd64/bin/javac\n\nRUN mkdir -p /src; \\\n    git clone https://github.com/bholt/owl.git /src/owl && \\\n    cd /src/owl && \\\n    sbt compile test:compile\n\n# override some configurations\n# ADD conf/cassandra.yaml /etc/cassandra/cassandra.yaml\nRUN sed -ri \"s/(listen_address:)/# \\1/\" /etc/cassandra/cassandra.yaml &&\\\n    sed -ri \"s/# (listen_interface:).*$/\\1 eth0/\" /etc/cassandra/cassandra.yaml &&\\\n    sed -ri \"s/(rpc_address:)/# \\1/\" /etc/cassandra/cassandra.yaml &&\\\n    sed -ri \"s/# (rpc_interface:).*$/\\1 eth0/\" /etc/cassandra/cassandra.yaml &&\\\n    sed -ri \"s/(enable_user_defined_functions:) false/\\1 true/\" /etc/cassandra/cassandra.yaml &&\\\n    sed -ri \"s/(read_request_timeout_in_ms:).*$/\\1 10000/\" /etc/cassandra/cassandra.yaml &&\\\n    sed -ri \"s/(range_request_timeout_in_ms:).*$/\\1 20000/\" /etc/cassandra/cassandra.yaml &&\\\n    sed -ri \"s/(write_request_timeout_in_ms:).*$/\\1 10000/\" /etc/cassandra/cassandra.yaml &&\\\n    sed -ri \"s/(counter_write_request_timeout_in_ms:).*$/\\1 20000/\" /etc/cassandra/cassandra.yaml\n\n# Override with my own version of docker-entrypoint that doesn't overwrite addresses (uses interface eth0 instead)\nADD docker-entrypoint.sh /docker-entrypoint.sh\n\n# 7000: intra-node communication\n# 7001: TLS intra-node communication\n# 7199: JMX\n# 9042: CQL\n# 9160: thrift service\nEXPOSE 7000 7001 7199 9042 9160\n\nENTRYPOINT [\"/docker-entrypoint.sh\"]\nCMD [\"cassandra\", \"-f\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "docker-entrypoint.sh",
+        "dest": "/docker-entrypoint.sh"
+      }
+    ],
+    "expose": [
+      7000
+    ],
+    "volume": [],
+    "run": [
+      "apt-get remove -y scala-library scala;     apt-get update &&     apt-get install -y inetutils-ping wget &&     wget http://www.scala-lang.org/files/archive/scala-2.11.7.deb &&     dpkg -i scala-2.11.7.deb &&     wget http://dl.bintray.com/sbt/debian/sbt-0.13.9.deb &&     dpkg -i sbt-0.13.9.deb",
+      "update-ca-certificates -f && sbt version",
+      "apt-get install -y ssh rsync git openjdk-8-jdk apt-transport-https",
+      "update-alternatives --install \"/usr/bin/javac\" \"javac\" \"/usr/lib/jvm/java-8-openjdk-amd64/bin/javac\" 1 &&     update-alternatives --install \"/usr/bin/java\" \"java\" \"/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java\" 1 &&     update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java &&     update-alternatives --set javac /usr/lib/jvm/java-8-openjdk-amd64/bin/javac",
+      "mkdir -p /src;     git clone https://github.com/bholt/owl.git /src/owl &&     cd /src/owl &&     sbt compile test:compile",
+      "sed -ri \"s/(listen_address:)/# \\1/\" /etc/cassandra/cassandra.yaml &&    sed -ri \"s/# (listen_interface:).*$/\\1 eth0/\" /etc/cassandra/cassandra.yaml &&    sed -ri \"s/(rpc_address:)/# \\1/\" /etc/cassandra/cassandra.yaml &&    sed -ri \"s/# (rpc_interface:).*$/\\1 eth0/\" /etc/cassandra/cassandra.yaml &&    sed -ri \"s/(enable_user_defined_functions:) false/\\1 true/\" /etc/cassandra/cassandra.yaml &&    sed -ri \"s/(read_request_timeout_in_ms:).*$/\\1 10000/\" /etc/cassandra/cassandra.yaml &&    sed -ri \"s/(range_request_timeout_in_ms:).*$/\\1 20000/\" /etc/cassandra/cassandra.yaml &&    sed -ri \"s/(write_request_timeout_in_ms:).*$/\\1 10000/\" /etc/cassandra/cassandra.yaml &&    sed -ri \"s/(counter_write_request_timeout_in_ms:).*$/\\1 20000/\" /etc/cassandra/cassandra.yaml"
+    ],
+    "workdir": [],
+    "from": "cassandra:3.3",
+    "maintainer": "Brandon Holt <holt.bg@gmail.com>",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"cassandra\", \"-f\"]"
+  },
+  "source_repository_url": "https://github.com/bholt/owl.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/bholt/owl",
+  "docker_repository": "bholt/cassandra",
+  "docker_image": "bholt/cassandra",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        7000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "bholt/cassandra",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/bholt/cassandra",
+    "https://hub.docker.com/v2/repositories/bholt/cassandra",
+    "https://github.com/bholt/owl.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/bholt/cassandra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

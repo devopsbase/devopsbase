@@ -1,0 +1,111 @@
+{
+  "name": "storage Juju charm",
+  "juju_charm_name": "storage",
+  "revision": "cs:precise/storage-7",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/storage",
+    "https://jujucharms.com/storage/precise",
+    "https://jujucharms.com/storage/precise/7",
+    "https://api.jujucharms.com/v5/storage",
+    "https://api.jujucharms.com/v5/precise/storage",
+    "https://api.jujucharms.com/v5/precise/storage-7"
+  ],
+  "labels": [
+    "Juju charm",
+    "file-servers",
+    "Binding/Region/Europe/EU",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Test",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store"
+  ],
+  "info_url": "https://jujucharms.com/storage",
+  "package_url": "https://api.jujucharms.com/v5/precise/storage-7/archive",
+  "created": "2016-01-22T08:32:00.135Z",
+  "updated": "2016-01-22T08:32:00.135Z",
+  "description": "Storage subordinate charm to help you persist data.\n\nGeneric storage charm subordinate.  Intended to aid in making charms\neasier to interface with external storage solutions without having\nto speak and understand each type.  Presents a single mount point on\nthe unit, and communicates that back to your service through the data\nrelation.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": true,
+  "juju_charm_series": "precise",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= precise"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/volume-request",
+      "self_resolve": true,
+      "juju_interface": "volume-request",
+      "juju_name": "block-storage",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/block-storage",
+      "self_resolve": true,
+      "juju_interface": "block-storage",
+      "juju_name": "data",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/mount",
+      "self_resolve": true,
+      "juju_interface": "mount",
+      "juju_name": "nfs",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "device_timeout": {
+      "type": "int",
+      "description": "Max time to wait for a device, in seconds.\n",
+      "default": 50,
+      "mapping": "charm_option"
+    },
+    "provider": {
+      "type": "string",
+      "description": "The backend storage provider.  Will be mounted at root, and\ncan be one of, local, block-storage-broker or nfs.  If you set to\nblock-storage-broker, you should provide a suitable value for\nvolume_size.\n",
+      "default": "local",
+      "mapping": "charm_option"
+    },
+    "root": {
+      "type": "string",
+      "description": "The root path where external directories will be mounted.",
+      "default": "/srv/data",
+      "mapping": "charm_option"
+    },
+    "volume_label": {
+      "type": "string",
+      "description": "The volume label to use. If not specified, a label of \"$(unit)\n$(availability zone) volume\" will be automatically requested from\nblock-storage-broker.\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "volume_map": {
+      "type": "string",
+      "description": "YAML map as e.g. \"{postgres/0: vol-0000010, postgres/1: vol-0000016}\".\nA service unit to specific block storage volume-id that should be\nattached to each unit. This requires that provider is set to\nblock-storage-broker and that volume-ids specified match a listing\nfrom nova volume-list. If a related unit does not have a volume-id\nspecified, a new volume of volume_size will be created for that unit.\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "volume_size": {
+      "type": "int",
+      "description": "The volume size in GB to request from the block-storage-broker.\n",
+      "default": 5,
+      "mapping": "charm_option"
+    }
+  },
+  "license": "Subordinate Storage Charm\n-------------------------\n\nThis charm aims to allow storage to be mounted and consumed in your juju\nenvironment.  Simply attach this charm to any that supports the \"block-storage\"\ninterface, and the charmed application will start writing data into the provided\nstorage.\n\n\nProvider-Specific Features\n--------------------------\n\n```NOTE:``` This charm has a dependency on provider-specific metadata (like instance id).\nIf using the \"block-storage-broker\" relation to mount stroage from the cloud, you will\nbe limited to:\n\n * Amazon Web Services\n * Openstack\n\nOther cloud providers are planned for the future, and patches are certainly welcome.\n\n```NOTE2:``` If using this charm to mount filesystems over NFS, provider-specific limitations\ndo not exist.\n\nSample Deployment\n-----------------\n\n    juju deploy <principal charm>\n    juju deploy storage --config <my_storage_config.yaml>\n    juju add-relation <principal_charm> storage\n\nSample Data Relation\n--------------------\n\nThe Storage charm is designed to make your life easier as a charm author.\nImplementing the data relation is very straightforward.\n\nSample Metadata:\n\n    data:\n        interface: block-storage\n        scope: container\n        optional: true\n\nSample Joined Hook:\n\n    #!/bin/bash\n    relation-set mountpoint=/mnt/mydata\n\nSample Changed Hook:\n\n    #!/bin/bash\n    mount=`relation-get mountpoint`\n    if [ -z \"$mount\" ] ; then\n        juju-log \"wait for related service to start\"\n        exit 0\n    fi\n    service my_service stop\n    change_my_service_to_use_mount $mount\n    service my_service start\n\n\nTODO\n----\n * Support other providers\n * Support relating to other charms via mount, ceph-client, etc.\n * Support config changes?\n",
+  "readme": "Subordinate Storage Charm\n-------------------------\n\nThis charm aims to allow storage to be mounted and consumed in your juju\nenvironment.  Simply attach this charm to any that supports the \"block-storage\"\ninterface, and the charmed application will start writing data into the provided\nstorage.\n\n\nProvider-Specific Features\n--------------------------\n\n```NOTE:``` This charm has a dependency on provider-specific metadata (like instance id).\nIf using the \"block-storage-broker\" relation to mount stroage from the cloud, you will\nbe limited to:\n\n * Amazon Web Services\n * Openstack\n\nOther cloud providers are planned for the future, and patches are certainly welcome.\n\n```NOTE2:``` If using this charm to mount filesystems over NFS, provider-specific limitations\ndo not exist.\n\nSample Deployment\n-----------------\n\n    juju deploy <principal charm>\n    juju deploy storage --config <my_storage_config.yaml>\n    juju add-relation <principal_charm> storage\n\nSample Data Relation\n--------------------\n\nThe Storage charm is designed to make your life easier as a charm author.\nImplementing the data relation is very straightforward.\n\nSample Metadata:\n\n    data:\n        interface: block-storage\n        scope: container\n        optional: true\n\nSample Joined Hook:\n\n    #!/bin/bash\n    relation-set mountpoint=/mnt/mydata\n\nSample Changed Hook:\n\n    #!/bin/bash\n    mount=`relation-get mountpoint`\n    if [ -z \"$mount\" ] ; then\n        juju-log \"wait for related service to start\"\n        exit 0\n    fi\n    service my_service stop\n    change_my_service_to_use_mount $mount\n    service my_service start\n\n\nTODO\n----\n * Support other providers\n * Support relating to other charms via mount, ceph-client, etc.\n * Support config changes?\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

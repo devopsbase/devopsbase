@@ -1,0 +1,386 @@
+{
+  "name": "apache2 Juju charm",
+  "juju_charm_name": "apache2",
+  "revision": "cs:trusty/apache2-20",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/apache2",
+    "https://jujucharms.com/apache2/trusty",
+    "https://jujucharms.com/apache2/trusty/20",
+    "https://api.jujucharms.com/v5/apache2",
+    "https://api.jujucharms.com/v5/trusty/apache2",
+    "https://api.jujucharms.com/v5/trusty/apache2-20"
+  ],
+  "labels": [
+    "Juju charm",
+    "app-servers",
+    "Binding/Provider/Amazon/RDS",
+    "Mode/Executable/Script",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Style/Virtualization Level/Hardware/Hypervisor/Paravirtualization",
+    "Type/Devopsware/Build/Java/Ant",
+    "Type/Devopsware/Integration",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Store",
+    "Type/Middleware/User Management"
+  ],
+  "info_url": "https://jujucharms.com/apache2",
+  "package_url": "https://api.jujucharms.com/v5/trusty/apache2-20/archive",
+  "created": "2016-04-07T16:11:33.351Z",
+  "updated": "2016-04-07T16:11:33.351Z",
+  "description": "Apache HTTP Server metapackage\n\nThe Apache Software Foundation's goal is to build a secure, efficient\nand extensible HTTP server as standards-compliant open source\nsoftware. The result has long been the number one web server on the\nInternet.  It features support for HTTPS, virtual hosting, CGI, SSI,\nIPv6, easy scripting and database integration, request/response\nfiltering, many flexible authentication schemes, and more.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/http",
+      "self_resolve": true,
+      "juju_interface": "http",
+      "juju_name": "balancer",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/syslog",
+      "self_resolve": true,
+      "juju_interface": "syslog",
+      "juju_name": "logging",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/http",
+      "self_resolve": true,
+      "juju_interface": "http",
+      "juju_name": "reverseproxy",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/apache-vhost-config",
+      "self_resolve": true,
+      "juju_interface": "apache-vhost-config",
+      "juju_name": "vhost-config",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/http",
+      "self_resolve": true,
+      "juju_interface": "http",
+      "juju_name": "website-cache",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "apt-key-id": {
+      "type": "string",
+      "description": "A PGP key id.  This is used with PPA and the source option to import a PGP public key for verifying repository signatures. This value must match the PPA for apt-source.",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "apt-source": {
+      "type": "string",
+      "description": "From where to install packages. This is the PPA source line. Note that due to a bug in software-properties add-apt-repository cannot add the ondrej/apache2 ppa, so the default value here is a full sources line.",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "config_change_command": {
+      "type": "string",
+      "description": "The command to run whenever config has changed. Accepted values are\n\"reload\" or \"restart\" - any other value will mean neither is executed\nafter a config change (which may be desired, if you're running a\nproduction server and would rather handle these out of band). Note:\nsome variables like the mpm settings require a restart to go into effect.\n",
+      "default": "reload",
+      "mapping": "charm_option"
+    },
+    "disable_modules": {
+      "type": "string",
+      "description": "List of modules to disable",
+      "default": "status autoindex",
+      "mapping": "charm_option"
+    },
+    "enable_modules": {
+      "type": "string",
+      "description": "List of modules to enable",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "extra_packages": {
+      "type": "string",
+      "description": "List of extra packages to be installed (e.g. commercial GeoIP package)",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "lb_balancer_timeout": {
+      "type": "int",
+      "description": "How long the backends in mod_proxy_balancer will timeout, in seconds\n",
+      "default": 60,
+      "mapping": "charm_option"
+    },
+    "logrotate_count": {
+      "type": "int",
+      "description": "The number of days we want to retain logs for",
+      "default": 365,
+      "mapping": "charm_option"
+    },
+    "logrotate_dateext": {
+      "type": "boolean",
+      "description": "Use daily extension like YYYMMDD instead of simply adding a number\n",
+      "default": true,
+      "mapping": "charm_option"
+    },
+    "logrotate_rotate": {
+      "type": "string",
+      "description": "daily, weekly, monthly, or yearly?",
+      "default": "daily",
+      "mapping": "charm_option"
+    },
+    "mpm_maxclients": {
+      "type": "int",
+      "description": "Add desc",
+      "default": 2048,
+      "mapping": "charm_option"
+    },
+    "mpm_maxrequestsperchild": {
+      "type": "int",
+      "description": "Add desc",
+      "default": 0,
+      "mapping": "charm_option"
+    },
+    "mpm_maxsparethreads": {
+      "type": "int",
+      "description": "Add desc",
+      "default": 75,
+      "mapping": "charm_option"
+    },
+    "mpm_minsparethreads": {
+      "type": "int",
+      "description": "Add desc",
+      "default": 25,
+      "mapping": "charm_option"
+    },
+    "mpm_serverlimit": {
+      "type": "int",
+      "description": "Add desc",
+      "default": 128,
+      "mapping": "charm_option"
+    },
+    "mpm_startservers": {
+      "type": "int",
+      "description": "Add desc",
+      "default": 2,
+      "mapping": "charm_option"
+    },
+    "mpm_threadlimit": {
+      "type": "int",
+      "description": "Add desc",
+      "default": 64,
+      "mapping": "charm_option"
+    },
+    "mpm_threadsperchild": {
+      "type": "int",
+      "description": "Add desc",
+      "default": 64,
+      "mapping": "charm_option"
+    },
+    "mpm_type": {
+      "type": "string",
+      "description": "worker or prefork",
+      "default": "worker",
+      "mapping": "charm_option"
+    },
+    "nagios_check_http_params": {
+      "type": "string",
+      "description": "The parameters to pass to the nrpe plugin check_http.",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "nagios_context": {
+      "type": "string",
+      "description": "Used by the nrpe-external-master subordinate charm. A string that will be prepended to instance name to set the host name in nagios. So for instance the hostname would be something like:\n    juju-postgresql-0\nIf you're running multiple environments with the same services in them this allows you to differentiate between them.\n",
+      "default": "juju",
+      "mapping": "charm_option"
+    },
+    "nagios_servicegroups": {
+      "type": "string",
+      "description": "A comma-separated list of nagios servicegroups. If left empty, the nagios_context will be used as the servicegroup\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "openid_provider": {
+      "type": "string",
+      "description": "Comma seperated list of OpenID providers for authentication.",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "package_status": {
+      "type": "string",
+      "description": "The status of service-affecting packages will be set to this value in the dpkg database. Useful valid values are \"install\" and \"hold\".\n",
+      "default": "install",
+      "mapping": "charm_option"
+    },
+    "server_signature": {
+      "type": "string",
+      "description": "Security setting. Set to one of  On  Off  EMail",
+      "default": "On",
+      "mapping": "charm_option"
+    },
+    "server_tokens": {
+      "type": "string",
+      "description": "Security setting. Set to one of  Full  OS  Minimal  Minor  Major  Prod",
+      "default": "OS",
+      "mapping": "charm_option"
+    },
+    "servername": {
+      "type": "string",
+      "description": "ServerName for vhost, defaults to the units public-address",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "ssl_cert": {
+      "type": "string",
+      "description": "base64 encoded server certificate.  If the keyword 'SELFSIGNED'\nis used, the certificate and key will be autogenerated as\nself-signed.\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "ssl_certlocation": {
+      "type": "string",
+      "description": "Name and location of ssl certificate in charm/data directory.\nIf not found, will ignore.  Basename of this file will be used\nas the basename of the cert rooted at /etc/ssl/certs.  Can\nbe used in conjunction with the ssl_cert parameter to specify\nthe cert as a configuration setting.\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "ssl_chain": {
+      "type": "string",
+      "description": "base64 encoded chain certificates file.  If ssl_cert is\nspecified as SELFSIGNED, this will be ignored.\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "ssl_chainlocation": {
+      "type": "string",
+      "description": "Name and location of the ssl chain file.  Basename of this file\nwill be used as the basename of the chain file rooted at\n/etc/ssl/certs.\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "ssl_cipher_suite": {
+      "type": "string",
+      "description": "List of server cipher suites.",
+      "default": "EECDH+AESGCM+AES128:EDH+AESGCM+AES128:EECDH+AES128:EDH+AES128:ECDH+AESGCM+AES128:aRSA+AESGCM+AES128:ECDH+AES128:DH+AES128:aRSA+AES128:EECDH+AESGCM:EDH+AESGCM:EECDH:EDH:ECDH+AESGCM:aRSA+AESGCM:ECDH:DH:aRSA:HIGH:!MEDIUM:!aNULL:!NULL:!LOW:!3DES:!DSS:!EXP:!PSK:!SRP",
+      "mapping": "charm_option"
+    },
+    "ssl_honor_cipher_order": {
+      "type": "string",
+      "description": "Enable server cipher suite preference.",
+      "default": "On",
+      "mapping": "charm_option"
+    },
+    "ssl_key": {
+      "type": "string",
+      "description": "base64 encoded server certificate key.  If ssl_cert is\nspecified as SELFSIGNED, this will be ignored.\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "ssl_keylocation": {
+      "type": "string",
+      "description": "Name and location of ssl keyfile in charm/data directory.\nIf not found, will ignore.  Basename of this file will be used\nas the basename of the key rooted at /etc/ssl/private.  Can\nbe used in conjuntion with the ssl_key parameter to specify\nthe key as a configuration setting.\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "ssl_protocol": {
+      "type": "string",
+      "description": "SSL Protocols to enable.",
+      "default": "ALL -SSLv2 -SSLv3",
+      "mapping": "charm_option"
+    },
+    "trace_enabled": {
+      "type": "string",
+      "description": "Security setting. Set to one of  On  Off  extended",
+      "default": "On",
+      "mapping": "charm_option"
+    },
+    "use_rsyslog": {
+      "type": "boolean",
+      "description": "Change logging behaviour to log both access and error logs via rsyslog",
+      "default": false,
+      "mapping": "charm_option"
+    },
+    "vhost_http_template": {
+      "type": "string",
+      "description": "Apache vhost template (base64 encoded).",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "vhost_https_template": {
+      "type": "string",
+      "description": "Apache vhost template (base64 encoded).",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "vhost_template_vars": {
+      "type": "string",
+      "description": "Additional custom variables for the vhost templating, in python dict format",
+      "default": "",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/apache-website",
+      "juju_interface": "apache-website",
+      "juju_name": "apache-website",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/local-monitors",
+      "juju_interface": "local-monitors",
+      "juju_name": "local-monitors",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/logs",
+      "juju_interface": "logs",
+      "juju_name": "logs",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/nrpe-external-master",
+      "juju_interface": "nrpe-external-master",
+      "juju_name": "nrpe-external-master",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/http",
+      "juju_interface": "http",
+      "juju_name": "website",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "# Juju charm for Apache\n\nThe Apache Software Foundation's goal is to build a secure,\nefficient and extensible HTTP server as standards-compliant open\nsource software. The result has long been the number one web server\non the Internet.  It features support for HTTPS, virtual hosting,\nCGI, SSI, IPv6, easy scripting and database integration,\nrequest/response filtering, many flexible authentication schemes,\nand more.\n\n## Development\n\n\nThe following steps are needed for testing and development of the\ncharm, but **not** for deployment:\n\n    sudo apt-get install python-software-properties\n    sudo add-apt-repository ppa:chrisjohnston/flake8\n    sudo apt-get update\n    sudo apt-get install python-flake8 python-nose python-coverage \\\n                         python-testtools python-pyasn1 python-pyasn1-modules\n\nTo fetch additional source dependencies and run the tests:\n\n    make build\n\n... will run the unit tests, run flake8 over the source to warn\nabout formatting issues and output a code coverage summary of the\n'hooks.py' module.\n\n## How to deploy the charm\n\nAssuming you have a copy of the charm into a `charms/$distrocodename/apache2`\ndirectory relative to your current directory.\n\n... then to perform a deployment execute the following steps:\n\n    juju deploy --repository=charms local:apache2\n    juju set apache2 \"vhost_http_template=$(base64 < http_vhost.tmpl)\"\n\n\n    # and / or\n    juju set apache2 \"vhost_https_template=$(base64 < https_vhost.tmpl)\"\n\nIf you want a simple `reverseproxy` relation to your services (only\nreally useful if you have a single unit on the other side of the\nrelation):\n\n    juju add-relation apache2:reverseproxy haproxy:website\n    # and / or\n    juju add-relation apache2:reverseproxy squid-reverseproxy:cached-website\n\nAlternatively, you can use the `balancer` relation so that requests\nare load balanced across multiple units of your services. For more information see the section on `Using the balancer relation`:\n\n    juju add-relation apache2:balancer haproxy:website\n    # and / or\n    juju add-relation apache2:balancer squid-reverseproxy:cached-website\n\n## VirtualHost templates\n\nThe charm expects a jinja2 template to be passed in. The variables\nin the template should relate to the services that apache will be\nproxying -- obviously no variables need to be specified if no\nproxying is needed.\n\nVirtual host templates can also be specified via relation.  See the\nvhost-config relation section below for more information.\n\nThe vhost_template_vars config allows for further customisation of the vhost\ntemplates. For example, you can have a single template for a particular\nservice, but use vhost_template_vars to customise it slightly for\ndevel/staging/production environments.\n\n### Using the reverseproxy relation\n\nThe charm will create the service variable, with the `unit_name`,\nwhen the `reverseproxy` relationship is joined and present this to\nthe template at which point the vhost will be generated from the\ntemplate again.  All config settings are also available to the\ntemplate.\n\nFor example to access squid then the `{{ squid }}` variable should\nbe used.  This will be populated with the hostname:port of the squid\nservice. The individual hostname and port can also be accessed via\n`squid_hostname` and `squid_port`.\n\nNote: The service name should be used, not the charm name.  If\n      deploying a charm with a different service name, use that\n      instead.\n\nThe joining charm may set an `all_services` variable which\ncontains a list of services it provides in yaml format (list of\nassociative arrays):\n\n    # ... in haproxy charm, website-relation-joined\n    relation-set all_services=\"\n      - {service_name: gunicorn, service_port: 80}\n      - {service_name: solr, service_port: 8080}\n      - {service_name: my-webapp, service_port: 9090}\n    \"\n\nthen variables for each service would be available to the jinja2\ntemplate in `<juju_service_name>_<sub_service_name>`.  In our example\nabove haproxy contains stanzas named gunicorn, solr and my-webapp.\nThese are accessed as `{{ haproxy_gunicorn }}`, `{{ haproxy_solr }}` and\n`{{ haproxy_mywebapp }}` respectively.  If any unsupported characters\nare in your juju service name or the service names exposed through\n\"all_services\", they will be stripped.\n\nFor example a vhost that will pass all traffic on to an haproxy instance:\n\n    <VirtualHost *:80>\n        ServerName radiotiptop.org.uk\n\n        CustomLog /var/log/apache2/radiotiptop-access.log combined\n        ErrorLog /var/log/apache2/radiotiptop-error.log\n\n        DocumentRoot /srv/radiotiptop/www/root\n\n        ProxyRequests off\n        <Proxy *>\n            Order Allow,Deny\n            Allow from All\n            ErrorDocument 403 /offline.html\n            ErrorDocument 500 /offline.html\n            ErrorDocument 502 /offline.html\n            ErrorDocument 503 /offline.html\n        </Proxy>\n\n        ProxyPreserveHost off\n        ProxyPassReverse / http://{{ haproxy_gunicorn }}/\n\n        RewriteEngine on\n\n        RewriteRule ^/$ /index.html [L]\n        RewriteRule ^/(.*)$ http://{{ haproxy_gunicorn }}/$1 [P,L]\n    </VirtualHost>\n\n### Using the `balancer` relation\n\nUsing the balancer relation will set up named balancers using\nApache's mod_balancer. Each balancer will be named after the\n`sitenames` or `all_services` setting exported from the other side\nof the relation. Requests sent through those balancers will have a\n`X-Balancer-Name` header set, which can be used by the related\nservice to appropriatedly route requests internally.\n\nThe joining charm may set an `all_services` variable which\ncontains a list of services it provides in yaml format (list of\nassociative arrays):\n\n    # ... in haproxy charm, website-relation-joined\n    relation-set all_services=\"\n      - {service_name: gunicorn, service_port: 80}\n      - {service_name: solr, service_port: 8080}\n      - {service_name: my-webapp, service_port: 9090}\n    \"\n\nEach separate service name will cause a new `balancer` definition to be created on the Apache side, like:\n\n  <Proxy balancer://gunicorn>\n    ProxySet lbmethod=byrequests\n    RequestHeader set X-Balancer-Name \"gunicorn\"\n  </Proxy>\n\nFor example a vhost that will pass specific requests to the `gunicorn` service that's defined in haproxy:\n\n    <VirtualHost *:80>\n        ServerName radiotiptop.org.uk\n\n        CustomLog /var/log/apache2/radiotiptop-access.log combined\n        ErrorLog /var/log/apache2/radiotiptop-error.log\n\n        DocumentRoot /srv/radiotiptop/www/root\n\n        ProxyRequests off\n        <Proxy *>\n            Order Allow,Deny\n            Allow from All\n            ErrorDocument 403 /offline.html\n            ErrorDocument 500 /offline.html\n            ErrorDocument 502 /offline.html\n            ErrorDocument 503 /offline.html\n        </Proxy>\n\n        ProxyPreserveHost on\n\n        RewriteEngine on\n\n        RewriteRule ^/$ /index.html [L]\n        RewriteRule ^/(.*)$ balancer://gunicorn/$1 [P,L]\n    </VirtualHost>\n\n### Using the vhost-config relation\n\nThe nice thing about this relation, is as long as a charm support it, deploying\napache as a front-end for a web service should be as simple as establishing the\nrelation.  If you need more details for how to implement this, read on.\n\nThe template files themselves can be specified via this relation.  This makes\ndeployment of your infrastructure simpler, since users no longer need to\nspecify a vhosts config option when using apache2 (though they still can).  A\ncandidate charm should provide a relation on the `apache-vhost-config`\ninterface.  This charm should simply set the following data when relating:\n\n    relation-set vhosts=\"- {port: '443', template: dGVtcGxhdGU=}\\n- {port: '80', template: dGVtcGxhdGU=}\\n\"\n\nNotice the `vhosts` definition is in yaml, the format is simple. `vhosts`\nshould contain a yaml encoded data structure of a list of key value hashes, or\ndictionaries.  In each dictionary, `port` should be set to the port this vhost\nshould listen on, `template` should be set to the base64 encoded template file.\nYou can include as many of these dictionaries as you would like.  If you have\ncolliding port numbers across your juju infrastructure, the results will be a\nbit unpredictable.\n\nFor example, if using python for your relating charm, the code to generate a\nyaml_string for a vhost on port `80` would be similar to this:\n\n    import yaml\n    import base64\n    template = get_template()\n    vhosts = [{\"port\": \"80\", \"template\": base64.b64encode(template)}]\n    yaml_string = yaml.dump(vhosts)\n\nNote, that if you are opening a non-standard port (80 and 443 are opened and\nunderstood by the default install of apache2 in Ubuntu) you will need to\ninstruct Apache to `Listen` on that port in your vhost file.  Something like the\nfollowing will work in your vhost template:\n\n    Listen 8080\n    <VirtualHost *:8080>\n    ...\n    </VirtualHost>\n\n\n#### Relation settings that apache2 provides\n\nWhen your charm relates it will be provided with the following:\n\n * `servername` - The Apache2 servername.  This is typically needed by web\n   applications so they know how to write URLs.\n\n * `ssl_cert` - If you asked for a selfsigned certificate, that cert will\n   be available in this setting as a base64 encoded string.\n\n\n### Using the apache-website relation\n\nThe apache-website relation provides a very flexible way of configuring an\nApache2 website, using subordinate charms.  It can support reverse proxies,\nstatic websites, and probably many other forms.\n\nTo support this relation, a charm must set\n\n * `domain` - The fully-qualified domain name of the site.\n\n * `enabled` - Must be set to 'true' when the web site is ready to be used.\n\n * `site_config` - A vhost configuration block.\n\n * `site_modules` - A list of modules required by the site.  If any of these\n   appear in `disable_modules`, the site will not be enabled.  Otherwise, any\n   required modules will be loaded.\n\n * `ports` - A space-separated list of ports that the site uses.\n\n### Using the logs relation\n\nThe logs relation is for use with a logging subordinate charm. The beaver\nsubordinate can be deployed and related to apache and logstash. Beaver will\ntail apache logs and send the logs to logstash.\n\n## Certs, keys and chains\n\n`ssl_keylocation`, `ssl_certlocation` and `ssl_chainlocation` are\nfile names in the charm `/data` directory.  If found, they will be\ncopied as follows:\n\n  - /etc/ssl/private/<ssl_keylocation>\n  - /etc/ssl/certs/<ssl_certlocation>\n  - /etc/ssl/certs/<ssl_chainlocation>\n\n`ssl_key` and `ssl_cert` can also be specified which are are assumed\nto be base64 encoded.  If specified, they will be written to\nappropriate directories given the values in ssl_keylocation and\nssl_certlocation as listed above.\n\n`ssl_cert` may also be set to SELFSIGNED, which will generate a\ncertificate.  This, of course, is mostly useful for testing and\nstaging purposes.  The generated certifcate/key will be placed\naccording to `ssl_certlocation` and `ssl_keylocation` as listed\nabove.\n\n`ssl_protocol`, `ssl_honor_cipher_order`, and `ssl_cipher_suite` can\nbe used to override SSL/TLS version and the cipher suites supported.\nThese default to what Canonical IS recommends and is using. Before\nmaking any changes, please see the Mozilla Security/Server Side TLS.\n\n## `{enable,disable}_modules`\n\nSpace separated list of modules to be enabled or disabled. If a module to\nbe enabled cannot be found then the charm will attempt to install it.\n\n## OpenId \n\nThe openid_provider option takes a comma seperated list of OpenID\nproviders and places them in /etc/apache2/security/allowed-ops.txt. That\nfile can then be refernced by the allowed-op-list-url option when using\napache_openid\n\n## TODO:\n\n  * Document the use of balancer, nrpe, logging and website-cache\n\n  * Method to deliver site content. This maybe by converting the\n    charm to a subordinate and making it the master charms problem\n\n  * Implement secure method for delivering key.  Juju will likely\n    need to provide this.\n\n  * Tuning. No tuning options are present. Convert apache2.conf to a\n    template and expose config options\n\n  * The all_services variable can be passed as part of the http interface and is\n    optional. However its kind of secret and it would be more obvious if a\n    seperate interface was used like http-allservices.\n",
+  "readme": "# Juju charm for Apache\n\nThe Apache Software Foundation's goal is to build a secure,\nefficient and extensible HTTP server as standards-compliant open\nsource software. The result has long been the number one web server\non the Internet.  It features support for HTTPS, virtual hosting,\nCGI, SSI, IPv6, easy scripting and database integration,\nrequest/response filtering, many flexible authentication schemes,\nand more.\n\n## Development\n\n\nThe following steps are needed for testing and development of the\ncharm, but **not** for deployment:\n\n    sudo apt-get install python-software-properties\n    sudo add-apt-repository ppa:chrisjohnston/flake8\n    sudo apt-get update\n    sudo apt-get install python-flake8 python-nose python-coverage \\\n                         python-testtools python-pyasn1 python-pyasn1-modules\n\nTo fetch additional source dependencies and run the tests:\n\n    make build\n\n... will run the unit tests, run flake8 over the source to warn\nabout formatting issues and output a code coverage summary of the\n'hooks.py' module.\n\n## How to deploy the charm\n\nAssuming you have a copy of the charm into a `charms/$distrocodename/apache2`\ndirectory relative to your current directory.\n\n... then to perform a deployment execute the following steps:\n\n    juju deploy --repository=charms local:apache2\n    juju set apache2 \"vhost_http_template=$(base64 < http_vhost.tmpl)\"\n\n\n    # and / or\n    juju set apache2 \"vhost_https_template=$(base64 < https_vhost.tmpl)\"\n\nIf you want a simple `reverseproxy` relation to your services (only\nreally useful if you have a single unit on the other side of the\nrelation):\n\n    juju add-relation apache2:reverseproxy haproxy:website\n    # and / or\n    juju add-relation apache2:reverseproxy squid-reverseproxy:cached-website\n\nAlternatively, you can use the `balancer` relation so that requests\nare load balanced across multiple units of your services. For more information see the section on `Using the balancer relation`:\n\n    juju add-relation apache2:balancer haproxy:website\n    # and / or\n    juju add-relation apache2:balancer squid-reverseproxy:cached-website\n\n## VirtualHost templates\n\nThe charm expects a jinja2 template to be passed in. The variables\nin the template should relate to the services that apache will be\nproxying -- obviously no variables need to be specified if no\nproxying is needed.\n\nVirtual host templates can also be specified via relation.  See the\nvhost-config relation section below for more information.\n\nThe vhost_template_vars config allows for further customisation of the vhost\ntemplates. For example, you can have a single template for a particular\nservice, but use vhost_template_vars to customise it slightly for\ndevel/staging/production environments.\n\n### Using the reverseproxy relation\n\nThe charm will create the service variable, with the `unit_name`,\nwhen the `reverseproxy` relationship is joined and present this to\nthe template at which point the vhost will be generated from the\ntemplate again.  All config settings are also available to the\ntemplate.\n\nFor example to access squid then the `{{ squid }}` variable should\nbe used.  This will be populated with the hostname:port of the squid\nservice. The individual hostname and port can also be accessed via\n`squid_hostname` and `squid_port`.\n\nNote: The service name should be used, not the charm name.  If\n      deploying a charm with a different service name, use that\n      instead.\n\nThe joining charm may set an `all_services` variable which\ncontains a list of services it provides in yaml format (list of\nassociative arrays):\n\n    # ... in haproxy charm, website-relation-joined\n    relation-set all_services=\"\n      - {service_name: gunicorn, service_port: 80}\n      - {service_name: solr, service_port: 8080}\n      - {service_name: my-webapp, service_port: 9090}\n    \"\n\nthen variables for each service would be available to the jinja2\ntemplate in `<juju_service_name>_<sub_service_name>`.  In our example\nabove haproxy contains stanzas named gunicorn, solr and my-webapp.\nThese are accessed as `{{ haproxy_gunicorn }}`, `{{ haproxy_solr }}` and\n`{{ haproxy_mywebapp }}` respectively.  If any unsupported characters\nare in your juju service name or the service names exposed through\n\"all_services\", they will be stripped.\n\nFor example a vhost that will pass all traffic on to an haproxy instance:\n\n    <VirtualHost *:80>\n        ServerName radiotiptop.org.uk\n\n        CustomLog /var/log/apache2/radiotiptop-access.log combined\n        ErrorLog /var/log/apache2/radiotiptop-error.log\n\n        DocumentRoot /srv/radiotiptop/www/root\n\n        ProxyRequests off\n        <Proxy *>\n            Order Allow,Deny\n            Allow from All\n            ErrorDocument 403 /offline.html\n            ErrorDocument 500 /offline.html\n            ErrorDocument 502 /offline.html\n            ErrorDocument 503 /offline.html\n        </Proxy>\n\n        ProxyPreserveHost off\n        ProxyPassReverse / http://{{ haproxy_gunicorn }}/\n\n        RewriteEngine on\n\n        RewriteRule ^/$ /index.html [L]\n        RewriteRule ^/(.*)$ http://{{ haproxy_gunicorn }}/$1 [P,L]\n    </VirtualHost>\n\n### Using the `balancer` relation\n\nUsing the balancer relation will set up named balancers using\nApache's mod_balancer. Each balancer will be named after the\n`sitenames` or `all_services` setting exported from the other side\nof the relation. Requests sent through those balancers will have a\n`X-Balancer-Name` header set, which can be used by the related\nservice to appropriatedly route requests internally.\n\nThe joining charm may set an `all_services` variable which\ncontains a list of services it provides in yaml format (list of\nassociative arrays):\n\n    # ... in haproxy charm, website-relation-joined\n    relation-set all_services=\"\n      - {service_name: gunicorn, service_port: 80}\n      - {service_name: solr, service_port: 8080}\n      - {service_name: my-webapp, service_port: 9090}\n    \"\n\nEach separate service name will cause a new `balancer` definition to be created on the Apache side, like:\n\n  <Proxy balancer://gunicorn>\n    ProxySet lbmethod=byrequests\n    RequestHeader set X-Balancer-Name \"gunicorn\"\n  </Proxy>\n\nFor example a vhost that will pass specific requests to the `gunicorn` service that's defined in haproxy:\n\n    <VirtualHost *:80>\n        ServerName radiotiptop.org.uk\n\n        CustomLog /var/log/apache2/radiotiptop-access.log combined\n        ErrorLog /var/log/apache2/radiotiptop-error.log\n\n        DocumentRoot /srv/radiotiptop/www/root\n\n        ProxyRequests off\n        <Proxy *>\n            Order Allow,Deny\n            Allow from All\n            ErrorDocument 403 /offline.html\n            ErrorDocument 500 /offline.html\n            ErrorDocument 502 /offline.html\n            ErrorDocument 503 /offline.html\n        </Proxy>\n\n        ProxyPreserveHost on\n\n        RewriteEngine on\n\n        RewriteRule ^/$ /index.html [L]\n        RewriteRule ^/(.*)$ balancer://gunicorn/$1 [P,L]\n    </VirtualHost>\n\n### Using the vhost-config relation\n\nThe nice thing about this relation, is as long as a charm support it, deploying\napache as a front-end for a web service should be as simple as establishing the\nrelation.  If you need more details for how to implement this, read on.\n\nThe template files themselves can be specified via this relation.  This makes\ndeployment of your infrastructure simpler, since users no longer need to\nspecify a vhosts config option when using apache2 (though they still can).  A\ncandidate charm should provide a relation on the `apache-vhost-config`\ninterface.  This charm should simply set the following data when relating:\n\n    relation-set vhosts=\"- {port: '443', template: dGVtcGxhdGU=}\\n- {port: '80', template: dGVtcGxhdGU=}\\n\"\n\nNotice the `vhosts` definition is in yaml, the format is simple. `vhosts`\nshould contain a yaml encoded data structure of a list of key value hashes, or\ndictionaries.  In each dictionary, `port` should be set to the port this vhost\nshould listen on, `template` should be set to the base64 encoded template file.\nYou can include as many of these dictionaries as you would like.  If you have\ncolliding port numbers across your juju infrastructure, the results will be a\nbit unpredictable.\n\nFor example, if using python for your relating charm, the code to generate a\nyaml_string for a vhost on port `80` would be similar to this:\n\n    import yaml\n    import base64\n    template = get_template()\n    vhosts = [{\"port\": \"80\", \"template\": base64.b64encode(template)}]\n    yaml_string = yaml.dump(vhosts)\n\nNote, that if you are opening a non-standard port (80 and 443 are opened and\nunderstood by the default install of apache2 in Ubuntu) you will need to\ninstruct Apache to `Listen` on that port in your vhost file.  Something like the\nfollowing will work in your vhost template:\n\n    Listen 8080\n    <VirtualHost *:8080>\n    ...\n    </VirtualHost>\n\n\n#### Relation settings that apache2 provides\n\nWhen your charm relates it will be provided with the following:\n\n * `servername` - The Apache2 servername.  This is typically needed by web\n   applications so they know how to write URLs.\n\n * `ssl_cert` - If you asked for a selfsigned certificate, that cert will\n   be available in this setting as a base64 encoded string.\n\n\n### Using the apache-website relation\n\nThe apache-website relation provides a very flexible way of configuring an\nApache2 website, using subordinate charms.  It can support reverse proxies,\nstatic websites, and probably many other forms.\n\nTo support this relation, a charm must set\n\n * `domain` - The fully-qualified domain name of the site.\n\n * `enabled` - Must be set to 'true' when the web site is ready to be used.\n\n * `site_config` - A vhost configuration block.\n\n * `site_modules` - A list of modules required by the site.  If any of these\n   appear in `disable_modules`, the site will not be enabled.  Otherwise, any\n   required modules will be loaded.\n\n * `ports` - A space-separated list of ports that the site uses.\n\n### Using the logs relation\n\nThe logs relation is for use with a logging subordinate charm. The beaver\nsubordinate can be deployed and related to apache and logstash. Beaver will\ntail apache logs and send the logs to logstash.\n\n## Certs, keys and chains\n\n`ssl_keylocation`, `ssl_certlocation` and `ssl_chainlocation` are\nfile names in the charm `/data` directory.  If found, they will be\ncopied as follows:\n\n  - /etc/ssl/private/<ssl_keylocation>\n  - /etc/ssl/certs/<ssl_certlocation>\n  - /etc/ssl/certs/<ssl_chainlocation>\n\n`ssl_key` and `ssl_cert` can also be specified which are are assumed\nto be base64 encoded.  If specified, they will be written to\nappropriate directories given the values in ssl_keylocation and\nssl_certlocation as listed above.\n\n`ssl_cert` may also be set to SELFSIGNED, which will generate a\ncertificate.  This, of course, is mostly useful for testing and\nstaging purposes.  The generated certifcate/key will be placed\naccording to `ssl_certlocation` and `ssl_keylocation` as listed\nabove.\n\n`ssl_protocol`, `ssl_honor_cipher_order`, and `ssl_cipher_suite` can\nbe used to override SSL/TLS version and the cipher suites supported.\nThese default to what Canonical IS recommends and is using. Before\nmaking any changes, please see the Mozilla Security/Server Side TLS.\n\n## `{enable,disable}_modules`\n\nSpace separated list of modules to be enabled or disabled. If a module to\nbe enabled cannot be found then the charm will attempt to install it.\n\n## OpenId \n\nThe openid_provider option takes a comma seperated list of OpenID\nproviders and places them in /etc/apache2/security/allowed-ops.txt. That\nfile can then be refernced by the allowed-op-list-url option when using\napache_openid\n\n## TODO:\n\n  * Document the use of balancer, nrpe, logging and website-cache\n\n  * Method to deliver site content. This maybe by converting the\n    charm to a subordinate and making it the master charms problem\n\n  * Implement secure method for delivering key.  Juju will likely\n    need to provide this.\n\n  * Tuning. No tuning options are present. Convert apache2.conf to a\n    template and expose config options\n\n  * The all_services variable can be passed as part of the http interface and is\n    optional. However its kind of secret and it would be more obvious if a\n    seperate interface was used like http-allservices.\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

@@ -1,0 +1,126 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/compass/haproxy-confd",
+    "repository_url": "https://hub.docker.com/v2/repositories/compass/haproxy-confd",
+    "tags_url": "https://hub.docker.com/v2/repositories/compass/haproxy-confd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/compass/haproxy-confd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/compass/haproxy-confd/autobuild",
+    "user": "compass",
+    "name": "haproxy-confd",
+    "namespace": "compass",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 160,
+    "last_updated": "2016-10-13T23:18:17.585937Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 11580004,
+        "id": 2428114,
+        "repository": 600522,
+        "creator": 14527,
+        "last_updater": 14527,
+        "last_updated": "2016-10-13T23:18:17.255322Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "xcompass/haproxy-confd"
+  },
+  "name": "compass/haproxy-confd Docker container",
+  "description": "HAProxy combined with confd for HTTP load balancing with SSL offloading",
+  "readme": "HAProxy combined with confd for HTTP load balancing\n===================================================\n\nThis is based on yaronr/haproxy-confd and cstpdk/haproxy-confd\n\n* HAProxy 1.6.x with confd 0.12.0-alpha\n* Uses zero-downtime reconfiguration (e.g - instead of harpy reload, which will drop all connections, will gradually transfer new connections to the new config)\n* Added support for url rexeg (not reggae, damn you spell checker) for routing, in addition to the usual hostname pattern\n* Added validation for existence of keys in backing kv store, to prevent failures\n* Used official Alpine HAProxy as base to reduce the size of the image\n* Added multiple domain support\n* Added SSL/HTTPS support\n* Added tests\n\n## Usage\n\n### Setup\nCreate the paths allowing confd to find the services:\n```bash\netcdctl mkdir \"/services\"\netcdctl mkdir \"/tcp-services\"\netcdctl mkdir \"/config\"\n```\n\nDepending on your needs, create one or more services or tcp-services.\nFor instance, to create an http service with domain *example.org*  and load balancing on servers *1.2.3.4:80* (we'll call it *nodeA*) and *2.3.4.5:80* (called *nodeB*), run these commands:\n```bash\netcdctl mkdir \"/services/example.org\"\netcdctl set \"/services/example.org/upstreams/nodeA\" \"1.2.3.4:80\"\netcdctl set \"/services/example.org/upstreams/nodeB\" \"2.3.4.5:80\"\n```\n\n### Enable SSL/HTTP support\n\n```bash\netcdctl mkdir \"/config/services\"\netcdctl set \"/config/services/enable_ssl\" \"true\"\netcdctl set \"/services/example.org/scheme\" \"https\"\n```\nPossible values for scheme are: http (default), https, http-and-https. If scheme is https, all traffic to http for the domain will be redirected to https.\n\nAdd pem certs/keys to keys directory to be mounted to the container.\n\n### Start Container\nStart the container making sure to expose port 80 on the host machine\n\n```bash\ndocker run -e ETCD_NODE=http://172.17.42.1:2379 -p 1000:1000 -p 80:80 -p 443:443 -v `pwd`/keys:/keys compass/haproxy-confd\n```\n\n\nTo *add an upstream node*, let's say *nodeB2*, *2.3.4.5:90*, you just have to run this, and the configuration should safely be updated !\n```bash\netcdctl set \"/services/example.org/upstreams/nodeB2\" \"2.3.4.5:90\"\n```\n\nTo *remove an upstream server*, let's say ... *nodeB2* (added by mistake ?), just run\n```bash\netcdctl rm \"/services/myapp/upstreams/nodeB2\"\n```\n\nTo *remove a service*, and so a directory, you must type\n```bash\netcdctl rmdir \"/services/example.org\"\n```\n\nThe commands for a tcp-service are the same but with *tcp-services* instead of *services*\n\n",
+  "dockerfile": "FROM haproxy:alpine\n\nMAINTAINER Pan Luo <pan.luo@ubc.ca>\n\nENV ETCD_NODE http://172.17.0.1:2379\nENV confd_ver 0.12.0-alpha3\nENV KEY_PREFIX \"\"\n\nRUN apk add --no-cache --update openssl bash\n\nRUN wget -t 5 https://github.com/kelseyhightower/confd/releases/download/v${confd_ver}/confd-${confd_ver}-linux-amd64 -O /bin/confd && \\\n    chmod +x /bin/confd\n\nRUN /usr/sbin/addgroup haproxy && /usr/sbin/adduser -D -H -S -G haproxy haproxy\n\n# Expose ports.\nEXPOSE 80 443\n\nENTRYPOINT [\"/entrypoint.sh\"]\nCMD [\"-watch\"]\n\nADD entrypoint.sh /entrypoint.sh\nRUN chmod +x /entrypoint.sh\n\nADD confd /etc/confd\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "entrypoint.sh",
+        "dest": "/entrypoint.sh"
+      },
+      {
+        "source": "confd",
+        "dest": "/etc/confd"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apk add --no-cache --update openssl bash",
+      "wget -t 5 https://github.com/kelseyhightower/confd/releases/download/v${confd_ver}/confd-${confd_ver}-linux-amd64 -O /bin/confd &&     chmod +x /bin/confd",
+      "/usr/sbin/addgroup haproxy && /usr/sbin/adduser -D -H -S -G haproxy haproxy",
+      "chmod +x /entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "haproxy:alpine",
+    "maintainer": "Pan Luo <pan.luo@ubc.ca>",
+    "env": {
+      "ETCD_NODE": "http://172.17.0.1:2379",
+      "confd_ver": "0.12.0-alpha3",
+      "KEY_PREFIX": "\"\""
+    },
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"-watch\"]"
+  },
+  "source_repository_url": "https://github.com/xcompass/haproxy-confd.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/xcompass/haproxy-confd",
+  "docker_repository": "compass/haproxy-confd",
+  "docker_image": "compass/haproxy-confd",
+  "parameters_schema": {
+    "ETCD_NODE": {
+      "default": "http://172.17.0.1:2379",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "confd_ver": {
+      "default": "0.12.0-alpha3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KEY_PREFIX": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "compass/haproxy-confd",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/compass/haproxy-confd",
+    "https://hub.docker.com/v2/repositories/compass/haproxy-confd",
+    "https://github.com/xcompass/haproxy-confd.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/compass/haproxy-confd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

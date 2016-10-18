@@ -1,0 +1,130 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/frodenas/rabbitmq",
+    "repository_url": "https://hub.docker.com/v2/repositories/frodenas/rabbitmq",
+    "tags_url": "https://hub.docker.com/v2/repositories/frodenas/rabbitmq/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/frodenas/rabbitmq/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/frodenas/rabbitmq/autobuild",
+    "user": "frodenas",
+    "name": "rabbitmq",
+    "namespace": "frodenas",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 6,
+    "pull_count": 269016,
+    "last_updated": "2016-07-20T22:48:42.860032Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "3.3",
+        "full_size": 193789247,
+        "id": 46653,
+        "repository": 38458,
+        "creator": 25001,
+        "last_updater": 25001,
+        "last_updated": "2016-07-20T22:48:38.859418Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 188219696,
+        "id": 46660,
+        "repository": 38458,
+        "creator": 25001,
+        "last_updater": 25001,
+        "last_updated": "2015-11-30T00:17:45.517407Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "3.5",
+        "full_size": 188219704,
+        "id": 1142654,
+        "repository": 38458,
+        "creator": 25001,
+        "last_updater": 25001,
+        "last_updated": "2015-11-30T00:17:20.664807Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "frodenas/docker-rabbitmq"
+  },
+  "name": "frodenas/rabbitmq Docker container",
+  "description": "A Docker Image for RabbitMQ",
+  "readme": "# RabbitMQ Dockerfile\n\nA Dockerfile that produces a Docker Image for [RabbitMQ](https://www.rabbitmq.com/).\n\n## RabbitMQ version\n\nThe `master` branch currently hosts RabbitMQ 3.5.\n\nDifferent versions of RabbitMQ are located at the github repo [branches](https://github.com/frodenas/docker-rabbitmq/branches).\n\n## Usage\n\n### Build the image\n\nTo create the image `frodenas/rabbitmq`, execute the following command on the `docker-rabbitmq` folder:\n\n```\n$ docker build -t frodenas/rabbitmq .\n```\n\n### Run the image\n\nTo run the image and bind to host port 5672:\n\n```\n$ docker run -d --name rabbitmq -p 5672:5672 frodenas/rabbitmq\n```\n\nIf you want also to expose the RabbitMQ Management interface, you will need also to expose port 15672:\n\n```\n$ docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 frodenas/rabbitmq\n```\n\nThe first time you run your container, a new user `rabbitmq` with all privileges will be created with a random password.\nTo get the password, check the logs of the container by running:\n\n```\ndocker logs <CONTAINER_ID>\n```\n\nYou will see an output like the following:\n\n```\n========================================================================\nRabbitMQ User: \"rabbitmq\"\nRabbitMQ Password: \"8psfzXmp6t23rKr6\"\nRabbitMQ Virtual Host: \"/\"\n========================================================================\n```\n\n#### Credentials\n\nIf you want to preset credentials instead of a random generated ones, you can set the following environment variables:\n\n* `RABBITMQ_USERNAME` to set a specific username\n* `RABBITMQ_PASSWORD` to set a specific password\n* `RABBITMQ_VHOST` to set a specific Virtual Host\n\nOn this example we will preset our custom username and password:\n\n```\n$ docker run -d \\\n    --name rabbitmq \\\n    -p 5672:5672 \\\n    -e RABBITMQ_USERNAME=myusername \\\n    -e RABBITMQ_PASSWORD=mypassword \\\n    -e RABBITMQ_VHOST=myvhost \\\n    frodenas/rabbitmq\n```\n\n## Copyright\n\nCopyright (c) 2014 Ferran Rodenas. See [LICENSE](https://github.com/frodenas/docker-rabbitmq/blob/master/LICENSE) for details.\n",
+  "dockerfile": "FROM frodenas/ubuntu\nMAINTAINER Ferran Rodenas <frodenas@gmail.com>\n\n# Install RabbitMQ 3.5\nRUN DEBIAN_FRONTEND=noninteractive && \\\n    cd /tmp && \\\n    wget http://www.rabbitmq.com/rabbitmq-signing-key-public.asc && \\\n    apt-key add rabbitmq-signing-key-public.asc && \\\n    echo \"deb http://www.rabbitmq.com/debian/ testing main\" | tee /etc/apt/sources.list.d/rabbitmq.list && \\\n    apt-get update && \\\n    apt-get install -y --force-yes rabbitmq-server=3.5.6-1 && \\\n    rabbitmq-plugins enable rabbitmq_management && \\\n    service rabbitmq-server stop && \\\n    apt-get clean && \\\n    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n# Add scripts\nADD scripts /scripts\nRUN chmod +x /scripts/*.sh\nRUN touch /.firstrun\n\n# Command to run\nENTRYPOINT [\"/scripts/run.sh\"]\nCMD [\"\"]\n\n# Expose listen port\nEXPOSE 5672\nEXPOSE 15672\n\n# Expose our log volumes\nVOLUME [\"/var/log/rabbitmq\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "scripts",
+        "dest": "/scripts"
+      }
+    ],
+    "expose": [
+      5672,
+      15672
+    ],
+    "volume": [
+      "[\"/var/log/rabbitmq\"]"
+    ],
+    "run": [
+      "DEBIAN_FRONTEND=noninteractive &&     cd /tmp &&     wget http://www.rabbitmq.com/rabbitmq-signing-key-public.asc &&     apt-key add rabbitmq-signing-key-public.asc &&     echo \"deb http://www.rabbitmq.com/debian/ testing main\" | tee /etc/apt/sources.list.d/rabbitmq.list &&     apt-get update &&     apt-get install -y --force-yes rabbitmq-server=3.5.6-1 &&     rabbitmq-plugins enable rabbitmq_management &&     service rabbitmq-server stop &&     apt-get clean &&     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "chmod +x /scripts/*.sh",
+      "touch /.firstrun"
+    ],
+    "workdir": [],
+    "from": "frodenas/ubuntu",
+    "maintainer": "Ferran Rodenas <frodenas@gmail.com>",
+    "entrypoint": "[\"/scripts/run.sh\"]",
+    "cmd": "[\"\"]"
+  },
+  "source_repository_url": "https://github.com/frodenas/docker-rabbitmq.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/frodenas/docker-rabbitmq",
+  "docker_repository": "frodenas/rabbitmq",
+  "docker_image": "frodenas/rabbitmq",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5672,
+        15672
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "frodenas/rabbitmq",
+  "revision": "3.3",
+  "uris": [
+    "https://hub.docker.com/r/frodenas/rabbitmq",
+    "https://hub.docker.com/v2/repositories/frodenas/rabbitmq",
+    "https://github.com/frodenas/docker-rabbitmq.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/frodenas/rabbitmq",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

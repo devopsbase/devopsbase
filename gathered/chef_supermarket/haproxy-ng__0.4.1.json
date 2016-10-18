@@ -1,0 +1,82 @@
+{
+  "name": "haproxy-ng Chef cookbook",
+  "chef_cookbook_name": "haproxy-ng",
+  "revision": "0.4.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/haproxy-ng",
+    "https://supermarket.chef.io/cookbooks/haproxy-ng/download",
+    "https://supermarket.chef.io/cookbooks/haproxy-ng/versions/0.4.1",
+    "https://supermarket.chef.io/cookbooks/haproxy-ng/versions/0.4.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/haproxy-ng/versions/0.4.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/haproxy-ng",
+    "https://supermarket.chef.io/api/v1/cookbooks/haproxy-ng/versions/0.4.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Networking",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/haproxy-ng",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/haproxy-ng/versions/0.4.1/download",
+  "deprecated": false,
+  "created": "2015-02-03T14:16:00.097Z",
+  "updated": "2015-12-04T23:03:47.618Z",
+  "description": "modern, resource-driven cookbook for managing haproxy",
+  "maintainer": {
+    "name": "nathwill",
+    "email": "nath.e.will@gmail.com"
+  },
+  "license": "apache2",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 11,
+  "downloads_count": 9340534,
+  "downloads_count_revision": 142928,
+  "repository_url": "https://github.com/nathwill/chef-haproxy-ng",
+  "issues_url": "https://github.com/nathwill/chef-haproxy-ng/issues",
+  "chef_source_url": "https://github.com/nathwill/chef-haproxy-ng",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# haproxy-ng cookbook  [![Build Status](https://travis-ci.org/nathwill/chef-haproxy-ng.svg?branch=master)](https://travis-ci.org/nathwill/chef-haproxy-ng)\n\nA resource-driven cookbook for configuring [HAProxy](http://www.haproxy.org/).\n\nCookbook builds on 2 core resources:\n\n- `haproxy_instance`: the \"parent\" resource, which maps to a complete configuration and (probably) a running haproxy daemon\n- `haproxy_proxy`: the \"core\" proxy resource, which maps to a specific proxy\n\nAdditional resources `haproxy_peers`, `haproxy_userlist`, `haproxy_frontend`, \n`haproxy_backend`, `haproxy_defaults`, and `haproxy_listen` extend the `haproxy_proxy` \nresource with additional validation for common configuration keywords for their respective \nproxy types.\n\nSuggested background reading:\n\n- [The Fine Manual](http://cbonte.github.io/haproxy-dconv/configuration-1.5.html)\n- This README, the modules in `libraries/00_helpers.rb`, and the individual resources/providers\n- the test target and example wrapper cookbook: 'test/fixtures/cookbooks/my-lb'\n- the consul-template powered example wrapper cookbook:  'test/fixtures/cookbooks/my-consul-lb'\n\n## Recipes\n\n### haproxy-ng::default\n\nConfigures a default instance, 'haproxy_instance[haproxy]', and corresponding \n'haproxy' service via the `config`, `tuning`, and `proxies` cookbook attributes \n(which are mapped onto the corresponding resource attributes).\n\nThis recipe also provides a useful example of using the provided helper, \n`Haproxy::Helpers#proxy`, to map a list of proxies to their corresponding \nresources in the resource collection. It also illustrates the recommended \npattern of proxying service reloads through a validating execute resource. \n\nSee wrapper cookbook example at 'test/fixtures/cookbooks/my-lb'.\n\n### haproxy-ng::install\n\nInstalls haproxy via the `node['haproxy']['install_method']` method.\nSupports 'package', 'source', and 'ppa'.\n\n### haproxy-ng::service\n\nConfigures a default-named (\"haproxy\") service resource.\n \nUseful for typical installs running a single haproxy daemon under the default \n'haproxy' service name. Service providers, or those running multiple haproxy \ndaemons on a single host will most likely want to configure a service instance \nper haproxy_instance.\n\n## Attributes\n\n\n|Attribute|Description|Default|\n|---------|-----------|-------|\n|install_method|One of: 'package', 'source', 'ppa'|`package`|\n|proxies|Array of proxy names for the default haproxy_instance[haproxy]|[]|\n|config|global config of resource haproxy_instance[haproxy]|See `attributes/default.rb`|\n|tuning|global tuning of resource haproxy_instance[haproxy]|See `attributes/default.rb`|\n\nAnd more! (see `attributes/*.rb`)\n\n## Resources\n\n### haproxy_instance\n\nThe \"parent\" resource. Maps 1-to-1 with a generated haproxy config file, \nand most likely to a running service.\n\n|Attribute|Description|Default|\n|---------|-----------|-------|\n|verify|whether to perform resource whitelist validation|true|\n|config|global keywords for process mgmt|`['daemon']`|\n|tuning|global keywords for performance|`['maxconn 256']`|\n|debug|global keyword for debugging ('debug', 'quiet')|`nil`|\n|proxies|array of proxies, see `default` recipe for example|[]|\n\n### haproxy_proxy\n\nThe simplest proxy representation and base class for the other\nproxy resources (peers, userlist, defaults, frontend, backend, listen).\n\n|Attribute|Description|Default|\n|---------|-----------|-------|\n|verify|whether to perform resource whitelist validation|true|\n|type|String denoting proxy type. (defaults, frontend, backend, listen, peers, userlist)|nil|\n|config|array of keywords, validated against specified type|[]|\n\n### haproxy_peers\n\nMaps to a peers block in haproxy configuration. Not actually a proxy,\nbut treating it like one is useful for code reusability. Don't judge me.\n\n|Attribute|Description|Default|\n|---------|-----------|-------|\n|verify|whether to perform resource whitelist validation|true|\n|peers|array of hashes. each hash requires 'name', 'config' keys|[]|\n|config|array of peers keywords. validated against whitelist|[]|\n\n### haproxy_userlist\n\nMaps to a userlist block in haproxy configuration. Also not actually a proxy, \nas such.\n\n|Attribute|Description|Default|\n|---------|-----------|-------|\n|verify|whether to perform resource whitelist validation|true|\n|groups|array of hashes. hashes require 'name', 'config' keys|[]|\n|users|array of hashes. hashes require 'name', 'config' keys|[]|\n|config|array of userlist keywords, validated against whitelist|[]|\n\n### haproxy_defaults\n\nMaps to a 'defaults' block in haproxy configuration. Convention\nsuggests that resource names be capitalized (e.g. haproxy_defaults[HTTP]).\n\n|Attribute|Description|Default|\n|---------|-----------|-------|\n|verify|whether to perform resource whitelist validation|true|\n|mode|specifies listener mode (http, tcp, health)|nil|\n|default_backend|argument to `default_backend` keyword|nil|\n|balance|desired balancing algo (see docs for permitted values)|nil|\n|source|argument to source keyword|nil|\n|config|array of defaults keywords, validated against whitelist|[]|\n\n### haproxy_frontend\n\nMaps to a frontend block in the instance configuration, \nand typically to one or more listening ports or sockets.\n\n|Attribute|Description|Default|\n|---------|-----------|-------|\n|verify|whether to perform resource whitelist validation|true|\n|mode|specifies listener mode (http, tcp, health)|nil|\n|acls|array of hashes, each requiring 'name', 'criterion' keys|[]|\n|description|string describing proxy|nil|\n|bind|args to `bind` keyword|nil|\n|default_backend|argument to `default_backend` keyword|nil|\n|use_backends|array of hashes, each requiring 'backend', 'condition', keys|[]|\n|config|array of frontend keywords, validated against whitelist|[]|\n\n### haproxy_backend\n\nMaps to a backend configuration block in haproxy configuration.\n\n|Attribute|Description|Default|\n|---------|-----------|-------|\n|verify|whether to perform resource whitelist validation|true|\n|mode|specifies listener mode (http, tcp, health)|nil|\n|acls|array of hashes, each requiring 'name', 'criterion' keys|[]|\n|description|string describing proxy|nil|\n|balance|desired balancing algo (see docs for permitted values)|nil|\n|source|string specifying args to source keyword|nil|\n|servers|array of hashes, each requiring 'name', 'address', 'port' keys. 'config' key optional|[]|\n|config|array of backend keywords, validated against whitelist|[]|\n\n### haproxy_listen\n\nMaps to a listen configuration block, combines frontend and backend config\nblocks into a single proxy. Less flexible, but more concise. Typically used\nfor tcp-mode proxies with a 1:1 frontend:backend mapping.\n\n|Attribute|Description|Default|\n|---------|-----------|-------|\n|verify|whether to perform resource whitelist validation|true|\n|mode|specifies listener mode (http, tcp, health)|nil|\n|acls|array of hashes, each requiring 'name', 'criterion' keys|[]|\n|description|string describing proxy|nil|\n|balance|desired balancing algo (see docs for permitted values)|nil|\n|source|string specifying args to source keyword|nil|\n|servers|array of hashes, each requiring 'name', 'address', 'port' keys. 'config' key optional|[]|\n|bind|args to `bind` keyword|nil|\n|default_backend|argument to `default_backend` keyword|nil|\n|use_backends|array of hashes, each requiring 'backend', 'condition', keys|[]|\n|config|array of listen keywords, validated against whitelist|[]|\n\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

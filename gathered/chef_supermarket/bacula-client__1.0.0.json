@@ -1,0 +1,111 @@
+{
+  "name": "bacula-client Chef cookbook",
+  "chef_cookbook_name": "bacula-client",
+  "revision": "1.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/bacula-client",
+    "https://supermarket.chef.io/cookbooks/bacula-client/download",
+    "https://supermarket.chef.io/cookbooks/bacula-client/versions/1.0.0",
+    "https://supermarket.chef.io/cookbooks/bacula-client/versions/1.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/bacula-client/versions/1.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/bacula-client",
+    "https://supermarket.chef.io/api/v1/cookbooks/bacula-client/versions/1.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Mode/CLI"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/bacula-client",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/bacula-client/versions/1.0.0/download",
+  "deprecated": false,
+  "created": "2015-05-26T12:07:58.318Z",
+  "updated": "2016-09-16T10:14:26.983Z",
+  "description": "Installs/Configures bacula-client",
+  "maintainer": {
+    "name": "kasen",
+    "email": "pyudin@parallels.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 357808,
+  "downloads_count_revision": 129830,
+  "repository_url": "https://github.com/parallels-cookbooks/bacula-client",
+  "issues_url": "https://github.com/parallels-cookbooks/bacula-client/issues",
+  "chef_source_url": "https://github.com/parallels-cookbooks/bacula-client",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# bacula-client cookbook\n\n## Description\nThe cookbook for installation bacula-client. You should use cookbook bacula-server to install a server.\n\nThis cookbook uses [windows](https://supermarket.chef.io/cookbooks/windows) cookbook as dependency. This can break your recipes if you use native `windows_package` resource.\n\n## Requirements\n### Cookbooks\n- [apt](https://supermarket.chef.io/cookbooks/apt)\n- [build-essential](https://supermarket.chef.io/cookbooks/build-essential)\n- [windows](https://supermarket.chef.io/cookbooks/windows)\n\n### Platforms\nThe following platforms are supported and tested uder test kitchen:\n\n- Centos 6\n- Ubuntu 14.04\n- Windows server 2012 r2\n\nThis cookbook tested with bacula version 5.0 and 5.2.\n\n## Attributes\n|Attribute | Description | Type | Default|\n|----------|-------------|------|--------|\n|node['bacula']['databag_name']|Name of data bag where keeps bacula sensitive information. See below for format of data bag.|String |'bacula'|\n|node['bacula']['databag_item']|Name of item of data bag.|String|'bacula'|\n|node['bacula']['client']['cache']|Path of directory in which bacula will keep temporary backup files before send this files to a server.|String|'/var/cache/backup'|\n|node['bacula']['client']['director_name']|Name of bacula director. It must be same as attribute on the bacula server.|String|'bacula-dir'|\n|node['bacula']['client']['working_directory']|Path of the working directory.|String|platform-specific|\n|node['bacula']['client']['pid_directory']|Path of the pid directory.|String|platform-specific|\n|node['bacula']['client']['scripts']|Path of the directory in which bacula-client lwrp will be create scripts.|String|platform-specific|\n|node['bacula']['client']['version']|Version of bacula package. **It is important to know that Bacula does not work if packets from different branches. For example: bacula-dir version 5.0 does not work with bacula-fd version 5.2.**|String|platform-specific|\n\n## Recipes\n- default.rb - install bacula-fd daemon.\n\n## Resources/Providers\nThe purpose o resources in this cookbook to make the settings backups of different things in the same way. Actually you can make a backup of anything throught the resource `p_bacula_backup`.\n\n### backup\nThis is the main resource. It is inherited by all other resources.\n\n#### Actions\n\n- :create: create backup job.\n\n#### Attribute Parameters\n\n|Attribute|Description|Type|Default|\n|---------|-----------|----|-------|\n|run|The attributes indicates when to run the backup job. It is array what containing strings. Format strings is the same format as the Run directive in the configuration schedule and can be found [here](http://www.bacula.org/5.2.x-manuals/en/main/main/Configuring_Director.html#SECTION001450000000000000000)|Array||\n|files|List of files that need backup|Array|[]|\n|prejob_script|Name of script what will be ran before job|String||\n|postjob_script|Name of script what will be ran after job|String||\n|options|Job options. Detailed description is [here](http://www.bacula.org/5.2.x-manuals/en/main/main/Configuring_Director.html#SECTION001470000000000000000)|hash|{ signature: 'MD5', compression: 'GZIP' }|\n|exclude|List of files that will be excluded from backup|Array||\n\n**All of these attributess are present in all other resources.**\n\n### backup_database\nGeneric resource for backup databases. With it you can make a backup of any database. For this you need to create prejob_script, which put your backup to `node['bacula']['client']['cache']/#{resource.name}.sql`. In fact this resource doesn't create prejob_script, unlike resources p_bacula_backup_mysql and p_bacula_backup_pg, so you must create this script your own. Because the script is not created, attributes that relate to database is not used.\n\n#### Actions\n- :create: create backup job.\n\n#### Attribute Parameters\n|Attribute|Description|Type|Default|\n|---------|-----------|----|-------|\n|host|Database host|String||\n|port|Database port|Integer||\n|user|Database user who is allowed to do the backup|String||\n|password|Password for backup user|String||\n|database|Name of database which will be backuped|String||\n|backup_options|Options which will be passed to the backup utility|Array||\n\n**All of these attributess are present in all other resources related databases.**\n\n### backup_mysql\nResource for backup mysql database. This resource is a wrapper around `backup_database` and has all the same attributes. It takes attributes and passes it to mysqlbackup in prejob_script.\n\n### backup_pg\nResource for backup postgresql database. This resource is a wrapper around `backup_database` and has all the same attributes. It takes attributes and passes it to pg_dump in prejob_script.\n\n### backup_chef\nResource uses `knife-ec-backup` ruby gem for backup chef server. It may to work only on the server where chef installed.\n\n#### Actions\n- :create: create backup job.\n\n\n### backup_stash\nResource uses stash DIY backup.\n\n#### Actions\n- :create: create backup job.\n\n\n### backup_systemstate\nThe resource for backup a system state of a windows server. This resource works only on a windows server. It is wrapper under `wbadmin` command.\n\n#### Actions\n- :create: create backup job.\n\n#### Attribute Parameters\n\n|Attribute|Description|Type|Default|\n|---------|-----------|----|-------|\n|files|This parameter is required. It specifies where `wbadmin` will backup a system state. In reality only pass the name of disk. `wbadmin` always saves backup in a directory X:\\WindowsImageBackup, where X is a parameter passed into `-targetBackup` argument. Summarized: you must always pass a path like X:\\WindowsImageBackup, where you may change only name of disk.|Array||\n\n### Examples\n\n- Backup the directory without subdir.\n\n```\nbackup_files 'directory' do\n  run ['Full mon at 3:00',\n       'Incremental tue-sat at 3:00']\n  files ['/directory']\n  exclude ['/directory/tmp']\nend\n```\n\n- Backup mysql database.\n\n```\nbackup_mysql 'mysql_database' do\n  run ['Full mon at 3:00']\n  host '127.0.0.1'\n  port 3306\n  user 'root'\n  password 'secret'\n  backup_options ['-q']\nend\n```\n- Backup postgresql database.\n\n```\nbackup_pg 'postgresql' do\n  run ['Full mon at 3:00']\n  host '127.0.0.1'\n  port 5432\n  user 'root'\n  password 'secret'\nend\n```\n\n- Backup chef server.\n\n```\nbackup_chef 'chefserver' do\n  run ['Full mon at 3:00']\nend\n```\n\n- Backup stash server.\n\n```\nbackup_stash 'stash' do\n  run ['Full mon at 3:00']\nend\n```\n\n- Backup a system state of the windows server.\n\n```\nbackup_systemstate 'system' do\n  run ['Full mon at 3:00']\n  files ['C:\\WindowsImageBackup']\nend\n```\n\n## Usage\n### How it works\nWhen you include client or default recipe in your wrapper, recipe installs bacula file daemon(client) and configures it.\n\nResources/Provides doesn't make backups, it just create pre and post job scripts, what runs by bacula. Also recipe sets node attribute with backup configuration.\n\nTo configure clients director recipe uses the chef search. It first deletes all files related with nodes are no longer search. Then recipe searches nodes on the role specified in the attribute `node['bacula']['director']['clients_role']`, gets attribute `node['bacula']['client']['backups']` and makes jobs according to them.\n\nWith this in mind, you must run chef-client after each addition backup lwrp or put chef-client in crontab for automation service discovery.\n\n## Data bag\nData bag example:\n\n```\n{\n  \"id\": \"bacula\",\n  \"fd_password\": \"fd_password\",\n  \"db_password\": \"bacula\",\n  \"db_user\": \"bacula\",\n  \"postgres_root_password\": \"postgres\",\n  \"console_password\": \"console_password\",\n  \"sd_password\": \"sd_password\"\n}\n```\n\nAuthors\n---\n- Author:: Pavel Yudin (pyudin@parallels.com)\n\n\n\n\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "windows",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/windows",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

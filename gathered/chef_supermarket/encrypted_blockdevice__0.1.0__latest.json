@@ -1,0 +1,106 @@
+{
+  "name": "encrypted_blockdevice Chef cookbook",
+  "chef_cookbook_name": "encrypted_blockdevice",
+  "revision": "0.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/encrypted_blockdevice",
+    "https://supermarket.chef.io/cookbooks/encrypted_blockdevice/download",
+    "https://supermarket.chef.io/cookbooks/encrypted_blockdevice/versions/0.1.0",
+    "https://supermarket.chef.io/cookbooks/encrypted_blockdevice/versions/0.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/encrypted_blockdevice/versions/0.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/encrypted_blockdevice",
+    "https://supermarket.chef.io/api/v1/cookbooks/encrypted_blockdevice/versions/0.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/encrypted_blockdevice",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/encrypted_blockdevice/versions/0.1.0/download",
+  "deprecated": false,
+  "created": "2016-01-21T17:34:19.140Z",
+  "updated": "2016-01-21T17:39:51.579Z",
+  "description": "A cookbook and LWRPs to manage block device encryption, offering many options for different scenarios.",
+  "maintainer": {
+    "name": "atrull",
+    "email": "encrypted_blockdevice.cookbooks.alex@trull.org"
+  },
+  "license": "Apache v2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 253,
+  "downloads_count_revision": 253,
+  "repository_url": "https://github.com/atrull/encrypted_blockdevice_cookbook",
+  "issues_url": "https://github.com/atrull/encrypted_blockdevice_cookbook/issues",
+  "chef_source_url": "https://github.com/atrull/encrypted_blockdevice_cookbook",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nThis cookbook contains an LWRP to manage individual encrypted block devices using the cryptsetup package.\n\nAdditionaly it contains a LWRP to create one or more encrypted block devices according to override attributes instead of recipe contents.\n\nThere are two types of storage possible: device storage and file storage.\n\nBoth types of storage get mapped back to the name of the encrypted block device given.\n\nWhen this cookbook is run by a recipe, the default behaviour is to attempt to create the encrypted block devices from the encrypted_blockdevices key/attributes. See the Usage section and example recipe for how to use this key, and a few options on the attributes.\n\nThere are four kinds of `keystore` available, giving differing levels of security and bootability:\n\n* `discard` Provides a one-time use block device with a randomly-generated key kept in RAM. Data will not be recoverable after reboot or cryptdisks shutdown/restart.\n\n* `vault` Stores the key for the block device in a vault-encrypted databag on the chef server. When the cookbook/chef runs after reboot, the block device will be decrypted and mounted.\n\n* `databag` Stores the key for the block device in a normal databag on the chef server. When the cookbook/chef runs after reboot, the block device will be decrypted and mounted.\n\n* `local` Stores a local (on the filesystem - such as /etc/secrets/device.key) randomly-generated key file. This will be mounted by the system using the crypttab on reboot.\n\nThese modes are ordered from most secure (and hard to recover) to least secure (and easily recoverable).\n\nKeystore Caveats\n================\n\n* In `discard` mode you must be absolutely sure you can lose the local copy of the data - backups are absolutely critical in this mode.\n\n* In `vault` and `databag` mode we will use the Chef API as a keystore - this means the data should be recoverable once chef has run after a reboot, unless the key is delete from the chef server.\n\nYou should create the \"encrypted_blockdevice_keystore\" databag so that items can be put into it by this cookbook. This databag's name is set in the cookbook attributes and can be changed, but the items are named according to a pattern based upon the node name and device. Your node names must always be uniquely generated to avoid collisions/key sharing !\n\n* In `local` mode, the key is kept in a file on the local filesystem, if the key is available after reboot, the data should be recoverable without intervention before chef runs.\n\nConventional wisdom and Cryptographic common sense is that you should not keep the keys for secrets next to the secrets they protect, consequently a `local` keystore with `keyfile` is not recommended when your secrets are dangerous if compromised.\n\nOther Caveats\n=============\n\nThe author of this cookbook believes cookbooks should not overlap in behaviour or ability. Each cookbook should do one thing and do it well.\n\nConsequently this cookbook explicitely does not create filesystems themselves - all it does is encrypt underlying blocks and present them at an unencrypted location for use - you should use the filesystem cookbook to make use of the unencrypted location.\n\nWe include some examples that combine this cookbook with the filesystem cookbook below.\n\nRequirements\n============\n\n## Platform\n\n* Ubuntu 12.04 (original dev target in 2013)\n* Ubuntu 14.04 (dev target in 2016)\n* Probably other recent distros with the same tools (rhel releases have been partly tested).\n\n## Packages\n* The cryptsetup package, by one name or another.\n* Openssl for key generation.\n\n## Special Chef Permissions (to get past the 403 permission denied on databag upload)\n* knife acl add group clients containers data create,update,delete\n* knife acl add client 'hostname1,hostname2' container clients read\n* knife group add client 'hostname1,hostname2' admins\n\nWe do not call the package manager directly, but use the chef 'package' abstraction. Attributes are provided to manage the package and service name if they differ.\n\nMain Attributes\n===============\n\n##### `encrypted_blockdevices`\nHash of encrypted_blockdevices to setup.\n##### `node[:encrypted_blockdevices]` keys:\nEach encrypted block device's key is the `label`: This explains each key in a filesystems entry. The label should probably not exceed 12 characters.\n\nWe also let you use your own top-level key if you want - see the default recipe and example recipes.\n\nCookbook Attributes:\n\n##### `node[:encrypted_blockdevice][:keystore_databag_name]` = \"encrypted_blockdevice_keystore\"\nThe name of the encrypted blockdevice keystore to use, if the keystore is of the databag type.\n\n##### `node[:encrypted_blockdevice][:cryptsetup_package]` = \"cryptsetup\"\n##### `node[:encrypted_blockdevice][:cryptdisks_service]` = \"cryptdisks\"\nThe following attributes are good for debian and ubuntu - they are provided for extension to other distros.\n\n\nBacking Location Options\n========================\n\n##### `device`\nPath to the device to create the filesystem upon.\n##### `file`\nPath to the file-backed storage to be used for a loopback device. If the `file` is not present it will be created, a size is needed if you want to have a device larger than 100 Megabytes.\n\nKeystore Options\n================\n\n##### `keystore` discard|vault|databag|local\nKey store to use for creating the filesystem's key.\n##### `admins` johnny,sarah\nChef admins of the vault keystore - only to be used with the vault keystore.. not databag.\n##### `keyfile` /path/to/secret\nFile location to use for creating the filesystem's key in `local` keystore mode.\n\nEncryption Options\n==================\n\n##### `keylength` the encryption key's length (default: 1024)\nUsed when the key is generated.\n##### `cipher` the cipher to use. (default \"aes-cbc-essiv:sha256\")\nUsed when the filesystem is encrypted for us.\n\nFile Backing Options\n====================\n\n##### `size` 10000\nThe size in Megabytes, only used for `file` Backed storage.\n##### `sparse` Boolean (default: true)\nSparse file creation, used by the `file` storage, by default we use this for speed, but you may not want that. Set to false in that case.\n\nOther Options\n=============\n\n##### `cryptsetup_args` cryptsetup arguments to use. (default \"create\") - when not \"create\" we reverse the device/name order given to the cryptsetup command.\nCan be used to specify additional or different arguments. Recent versions of cryptsetup this should be changed to \"open -type type\" where type is luks, plain, loopaes and tcrypt. See the cryptsetup man page.\n\nRecipes\n=======\n## default\nThis recipe will install the package, start the service and make available in encrypted form any block devices found at the expected key (encrypted_blockdevices)\n\n## example\nThis represents an example of creating a few small encrypted filesystems, or using the create_all_from_key LWRP on a different key information.\n\nUsage: Direct Resource/Provider\n===============================\n\n    include_recipe \"encrypted_blockdevice\"\n\n    encrypted_blockdevice \"cryptfs\" do\n      size 1000\n      file \"/mnt/cryptfs.file\"\n      keystore \"local\"\n      keyfile \"/etc/secrets/cryptfs.key\"\n      action :create\n    end\n\n    include_recipe \"filesystem\"\n\n    filesystem \"cryptfs\" do\n      fstype \"ext4\"\n      mount \"/mnt/cryptfs\"\n      noenable true\n    end\n\nUsage: Attribute Key\n====================\n\nRunlist: `encrypted_blockdevice`\n\n````JSON\n{\n  \"encrypted_blockdevices\": {\n    \"raidcrypt\": {\n      \"device\": \"/dev/md0\",\n      \"keystore\": \"vault\",\n      \"admins\" : \"alex\"\n    },\n    \"local\": {\n      \"file\": \"/local.file\",\n      \"keystore\": \"local\",\n      \"keyfile\": \"/etc/secrets/local.key\",\n      \"size\": 10000\n    },\n    \"supersecret\": {\n      \"file\": \"/mnt/notsparse.file\",\n      \"sparse\": false,\n      \"keystore\": \"discard\",\n      \"size\": 1000\n    }\n  }\n}\n````\n\nGetting a usable filesystem\n===========================\n\nIf you want filesystems, use the filesystem cookbook with the filesystems key:\n\nRunlist: `encrypted_blockdevice, filesystem`\n\n````JSON\n{\n  \"encrypted_blockdevices\": {\n    \"raidcrypt\": {\n      \"device\": \"/dev/md0\",\n      \"keystore\": \"vault\",\n      \"admins\" : \"alex\"\n    }\n  },\n  \"filesystems\": {\n    \"raidcrypt\": {\n      \"device\": \"/dev/mapper/raidcrypt\",\n      \"fstype\": \"xfs\",\n      \"mount\": \"/mnt\"\n    }\n  }\n}\n````\n\nLinks\n=====\n\n* Cookbook Development\nhttps://github.com/atrull/encrypted_blockdevice_cookbook\n\n* Cryptsetup Development\nhttp://code.google.com/p/cryptsetup/\n\nLicense and Authors\n===================\nAuthor - Databag and Vault pieces and current mainainer:\nAlex Trull (@AlexanderTrull) partly on behalf of Medidata Solutions.\nOriginal Author/Sponsor: Neil Schelly (@neilschelly)\nCopyright 2013, Dyn, Inc (@DynInc)\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,  \nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "xenserver",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef-vault",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "parameters": {
+    "node[:encrypted_blockdevices]": {
+      "description": "Encrypted block devices to be created",
+      "type": "hash",
+      "required": "recommended",
+      "choice": [],
+      "calculated": false,
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    }
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "name": "java-management Chef cookbook",
+  "chef_cookbook_name": "java-management",
+  "revision": "1.0.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/java-management",
+    "https://supermarket.chef.io/cookbooks/java-management/download",
+    "https://supermarket.chef.io/cookbooks/java-management/versions/1.0.2",
+    "https://supermarket.chef.io/cookbooks/java-management/versions/1.0.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/java-management/versions/1.0.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/java-management",
+    "https://supermarket.chef.io/api/v1/cookbooks/java-management/versions/1.0.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Type/Middleware/Runtime/Java",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/java-management",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/java-management/versions/1.0.2/download",
+  "deprecated": false,
+  "created": "2013-04-09T00:43:42.000Z",
+  "updated": "2014-10-01T22:22:03.479Z",
+  "description": "Java Management Cookbook",
+  "maintainer": {
+    "name": "bflad",
+    "email": "bflad@wharton.upenn.edu"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 2137625,
+  "downloads_count_revision": 1261318,
+  "repository_url": "https://github.com/bflad/chef-java-management/",
+  "issues_url": "https://github.com/bflad/chef-java-management/",
+  "chef_source_url": "https://github.com/bflad/chef-java-management/",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# chef-java-management [![Build Status](https://secure.travis-ci.org/bflad/chef-java-management.png?branch=master)](http://travis-ci.org/bflad/chef-java-management)\n\n## Description\n\nCookbook for Java Management and Monitoring (JMX, trusted certificates, SNMP, etc.)\n\n## Requirements\n\n### Platforms\n\n* CentOS 6\n* RedHat 6\n\n### Cookbooks\n\nRequired [Opscode Cookbooks](https://github.com/opscode-cookbooks/)\n\n* [java](https://github.com/opscode-cookbooks/java/)\n\n## Attributes\n\nThese attributes are under the `node['java-management']` namespace.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\nenableThreadContentionMonitoring | Enables thread contention monitoring | Boolean | false\ngroup | Group for file permissions | String | bin\nowner | Owner for file permissions | String | nobody\n\n### JMX Attributes\n\nThese attributes are under the `node['java-management']['jmxremote']` namespace.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\naccess_file | Custom JMX access file location | String | nil\nauthenticate | Require authentication to access JMX | Boolean | true\nlocal_only | Allow local management agent to accept only local connection requests | Boolean | true\nlogin_config | Custom JMX login configuration | String | nil\npassword_file | Custom JMX password configuration file location | String | nil\nport | Port for JMX, _required_ for enabling JMX | Fixnum | nil\nssl | RMI monitoring SSL | Boolean | true\nssl_config_file | RMI monitoring SSL configuration file location | String | nil\nssl_enabled_cipher_suites | Comma-separated list of SSL/TLS cipher suites to enable | String | nil\nssl_enabled_protocols | Comma-separated list of SSL/TLS protocol versions to enable | String | nil\nssl_need_client_auth| Require client authentication for SSL/TLS RMI Server Socket Factory | Boolean | false\nregistry_ssl | SSL/TLS protected RMI registry | Boolean | false\n\n### SNMP Attributes\n\nThese attributes are under the `node['java-management']['snmp']` namespace.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\nacl | Require ACL for SNMP access | Boolean | true\nacl_file | Custom SNMP ACL file location | String | nil\ninterface | Interface where SNMP agent will bind | String | \"localhost\"\nport | Port for SNMP, _required_ for enabling SNMP | Fixnum | nil\ntrap | Port for SNMP traps | Fixnum | 162\n\n### Truststore Attributes\n\nThese attributes are under the `node['java-management']['truststore']` namespace.\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\ncertificate_files | Trusted certificates files | Array of Hashes | []\ndata_bag | Trusted certificate data bag name | String | \"java_truststore\"\nstorepass | Java truststore password | String | \"changeit\"\n\n## Data Bags\n\n### JMX/SNMP Management Encrypted Data Bag\n\n`java/management` encrypted data bag:\n\n* `['roles']` - _required_ if you enable default JMX configuration\n  * `['name']` - JMX role name\n  * `['access']` - \"readonly\"/\"readwrite\"\n  * `['password']` - password for role\n* `['acls']` - _required_ if you enable default SNMP configuration\n  * `['communities']` - array of SNMP community names\n  * `['access']` - \"read-only\"/\"read-write\"\n  * `['managers']` - array of hostnames/CIDR addresses with access\n* `['traps']`\n  * `['trap-community']` - SNMP trap community name\n  * `['hosts']` - array of hostnames/CIDR addresses to send SNMP traps\n\n### Truststore Data Bag\n\n`node['java-management']['truststore']['data_bag']` data bag (defaults to `java_truststore`), with data bag items:\n  * `['id']` - Trusted certificate alias\n  * `['certificate']` - Trusted certificate contents\n  * Other options as accepted by truststore_certificate LWRP\n\n## Recipes\n\n* `recipe[java-management]` Empty recipe for LWRPs\n* `recipe[java-management::management]` Configures Java JMX and SNMP\n* `recipe[java-management::truststore]` Configures Java truststore\n\n## LWRPs\n\n### java_management_truststore_certificate\n\nImport trusted certificate into Java truststore\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\nfile | _required_ Certificate path | String | N/A\nkeystore | Keystore path | String | `#{node['java']['java_home']}/jre/lib/security/cacerts`\nkeytool | keytool path | String | `#{node['java']['java_home']}/jre/bin/keytool`\nstorepass | Keystore password | String | `#{node['java-management']['truststore']['storepass']}`\n\nExample:\n\n    java_management_truststore_certificate \"alias\" do\n      file \"/path/to/certificate\"\n    end\n\n## Usage\n\n### Add Trusted Certificates ###\n\nIf the certificate files are already on the filesystem:\n\n* Add `{certalias => options}` to `node['java-management']['truststore']['certificate_files']`\n  * `options` (as a String) certificate file location\n  * `options` (as a Hash)\n    * `file` _required_ certificate file location\n    * Other options accepted by truststore_certificate LWRP\n\nIf you'd like to use data bag items (data bag defined by `node['java-management']['truststore']['data_bag']`):\n\n* `knife data bag create java_truststore my_cert`\n* Create _at least_ `certificate` attribute with certificate contents and save\n\nIf you'd like to use the LWRP directly:\n\n    java_management_truststore_certificate \"alias\" do\n      file \"/path/to/certificate\"\n    end\n\n### Password secured remote JMX setup without SSL\n\n* `knife data bag create java`\n* `knife data bag edit java management --secret-file=path/to/secret`\n* Set `['roles']` with at least one role in encrypted data bag\n* Set `node['java-management']['local_only']` attribute to false\n* Set `node['java-management']['port']` attribute\n* Set `node['java-management']['ssl']` attribute to false\n* Add `recipe[java-management::management]` to run_list\n* Configure JAVA_OPTS to include _one_ of the following:\n  * __recommended__ `-Dcom.sun.management.config.file` (example:\n  `=$JAVA_HOME/jre/lib/management/management.properties`)\n  * `-Dcom.sun.management.jmxremote.port`\n* Restart Java service and watch for configuration errors\n\n### ACL secured remote SNMP \n\n* `knife data bag create java`\n* `knife data bag edit java management --secret-file=path/to/secret`\n* Set `['acls']` with at least one ACL in encrypted data bag\n* Set `node['java-management']['interface']` attribute to \"0.0.0.0\"\n* Set `node['java-management']['port']` attribute\n* Add `recipe[java-management::management]` to run_list\n* Configure JAVA_OPTS to include _one_ of the following:\n  * __recommended__ `-Dcom.sun.management.config.file` (example:\n  `=$JAVA_HOME/jre/lib/management/management.properties`)\n  * `-Dcom.sun.management.snmp.port`\n* Restart Java service and watch for configuration errors\n\n## Testing and Development of this Cookbook\n\nHere's how you can quickly get testing or developing against the cookbook thanks to [Vagrant](http://vagrantup.com/) and [Berkshelf](http://berkshelf.com/).\n\n    gem install bundler --no-ri --no-rdoc\n    git clone ssh://git@github.com:bflad/chef-java-management.git\n    cd java-management\n    bundle install\n    bundle exec vagrant up BOX # BOX being centos6 or ubuntu1204\n\nYou can then SSH into the running VM using the `vagrant ssh` command.\nThe VM can easily be stopped and deleted with the `vagrant destroy`\ncommand. Please see the official [Vagrant documentation](http://vagrantup.com/v1/docs/commands.html)\nfor a more in depth explanation of available commands.\n\n## Contributing\n\nPlease use standard Github pull requests and if possible, in combination with testing on the Vagrant boxes.\n\n## License and Author\n\nAuthor:: Brian Flad (<bflad@wharton.upenn.edu>)\n\nCopyright:: 2012-2013\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/java",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "java-management": "Empty recipe",
+    "java-management::management": "Java Management",
+    "java-management::truststore": "Java Truststore Management"
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/luciddreamz/httpd-container",
+    "repository_url": "https://hub.docker.com/v2/repositories/luciddreamz/httpd-container",
+    "tags_url": "https://hub.docker.com/v2/repositories/luciddreamz/httpd-container/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/luciddreamz/httpd-container/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/luciddreamz/httpd-container/autobuild",
+    "user": "luciddreamz",
+    "name": "httpd-container",
+    "namespace": "luciddreamz",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 13,
+    "last_updated": "2016-09-19T14:23:27.477033Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 180012831,
+        "id": 4925516,
+        "repository": 925856,
+        "creator": 85959,
+        "last_updater": 85959,
+        "last_updated": "2016-09-19T14:23:22.123580Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "luciddreamz/httpd-container"
+  },
+  "name": "luciddreamz/httpd-container Docker container",
+  "description": "CentOS 7 HTTPD container image",
+  "readme": "Apache HTTP 2.4 Server\n======================\n\nThe `rhscl/httpd-24-rhel7` image provides an Apache HTTP 2.4 Server. The image can be used as a base image for other applications based on Apache HTTP web server.\n\nTo pull the `rhscl/httpd-24-rhel7` image, run the following command as root:\n```\ndocker pull registry.access.redhat.com/rhscl/httpd-24-rhel7\n```\n\nConfiguration\n-------------\n\nThe Apache HTTP Server container image supports the following configuration variable, which can be set by using the `-e` option with the docker run command:\n\n|    Variable name        |    Description                            |\n| :---------------------- | ----------------------------------------- |\n|  `HTTPD_LOG_TO_VOLUME1` | By default, httpd logs into standard output, so the logs are accessible by using the docker logs command. When `HTTPD_LOG_TO_VOLUME` is set, httpd logs into `/var/log/httpd24`, which can be mounted to host system using the Docker volumes. |\n",
+  "dockerfile": "FROM openshift/base-centos7\n\n# RHSCL httpd24 image.\n#\n# Volumes:\n#  * /opt/rh/httpd24/root/var/www - Datastore for httpd\n#  * /var/log/httpd24 - Storage for logs when $HTTPD_LOG_TO_VOLUME is set\n# Environment:\n#  * $HTTPD_LOG_TO_VOLUME (optional) - When set, httpd will log into /var/log/httpd24\n\n# Labels consumed by Red Hat build service\nLABEL io.k8s.description=\"Platform for running httpd or building httpd-based application\" \\\n      io.k8s.display-name=\"httpd 2.4.18\" \\\n      io.openshift.expose-services=\"8080:http\" \\\n      io.openshift.expose-services=\"8443:https\" \\\n      io.openshift.tags=\"builder,httpd,httpd24\"\n\n\nEXPOSE 80\nEXPOSE 443\nEXPOSE 8080\nEXPOSE 8443\n\nENV HTTPD_CONFIGURATION_PATH=/opt/app-root/etc/httpd.d\n\nCOPY run-*.sh /usr/local/bin/\nRUN mkdir -p /var/lib/httpd24\nCOPY ./contrib/ /var/lib/httpd24/\nCOPY ./s2i/bin/ $STI_SCRIPTS_PATH\nCOPY ./contrib/ /opt/app-root\n\nRUN yum install -y yum-utils gettext hostname && \\\n    yum install -y centos-release-scl epel-release && \\\n    INSTALL_PKGS=\"nss_wrapper bind-utils httpd24 httpd24-mod_ssl\" && \\\n    yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \\\n    rpm -V $INSTALL_PKGS && \\\n    yum clean all\n\n# When bash is started non-interactively, to run a shell script, for example it\n# looks for this variable and source the content of this file. This will enable\n# the SCL for all scripts without need to do 'scl enable'.\nENV BASH_ENV=/var/lib/httpd24/scl_enable \\\n    ENV=/var/lib/httpd24/scl_enable \\\n    PROMPT_COMMAND=\". /var/lib/httpd24/scl_enable\"\n\nRUN mkdir -p /opt/app-root/etc/httpd.d && \\\n    chmod -R a+rwx /opt/rh/httpd24/root/etc/httpd/conf && \\\n    chmod -R a+rwx /opt/rh/httpd24/root/etc/httpd/conf.d && \\\n    chmod -R a+r   /etc/pki/tls/certs/localhost.crt && \\\n    chmod -R a+r   /etc/pki/tls/private/localhost.key && \\\n    chmod -R a+rwx /opt/app-root/etc && \\\n    chmod -R a+rwx /opt/rh/httpd24/root/var/run/httpd && \\\n    chown -R 1001:0 /opt/app-root\n\nVOLUME [\"/opt/rh/httpd24/root/var/www\"]\nVOLUME [\"/var/log/httpd24\"]\n\nUSER 1001\n\nENTRYPOINT [\"/usr/local/bin/run-httpd24.sh\"]\nCMD [\"httpd\", \"-DFOREGROUND\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80,
+      443,
+      8080,
+      8443
+    ],
+    "volume": [
+      "[\"/opt/rh/httpd24/root/var/www\"]",
+      "[\"/var/log/httpd24\"]"
+    ],
+    "run": [
+      "mkdir -p /var/lib/httpd24",
+      "yum install -y yum-utils gettext hostname &&     yum install -y centos-release-scl epel-release &&     INSTALL_PKGS=\"nss_wrapper bind-utils httpd24 httpd24-mod_ssl\" &&     yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS &&     rpm -V $INSTALL_PKGS &&     yum clean all",
+      "mkdir -p /opt/app-root/etc/httpd.d &&     chmod -R a+rwx /opt/rh/httpd24/root/etc/httpd/conf &&     chmod -R a+rwx /opt/rh/httpd24/root/etc/httpd/conf.d &&     chmod -R a+r   /etc/pki/tls/certs/localhost.crt &&     chmod -R a+r   /etc/pki/tls/private/localhost.key &&     chmod -R a+rwx /opt/app-root/etc &&     chmod -R a+rwx /opt/rh/httpd24/root/var/run/httpd &&     chown -R 1001:0 /opt/app-root"
+    ],
+    "workdir": [],
+    "from": "openshift/base-centos7",
+    "label": "io.k8s.description=\"Platform for running httpd or building httpd-based application\"       io.k8s.display-name=\"httpd 2.4.18\"       io.openshift.expose-services=\"8080:http\"       io.openshift.expose-services=\"8443:https\"       io.openshift.tags=\"builder,httpd,httpd24\"",
+    "env": {
+      "HTTPD_CONFIGURATION_PATH": "/opt/app-root/etc/httpd.d",
+      "BASH_ENV": "/var/lib/httpd24/scl_enable",
+      "": "",
+      "ENV": "/var/lib/httpd24/scl_enable",
+      "PROMPT_COMMAND": "\"."
+    },
+    "copy": "./contrib/ /opt/app-root",
+    "user": "1001",
+    "entrypoint": "[\"/usr/local/bin/run-httpd24.sh\"]",
+    "cmd": "[\"httpd\", \"-DFOREGROUND\"]"
+  },
+  "source_repository_url": "https://github.com/luciddreamz/httpd-container.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/luciddreamz/httpd-container",
+  "docker_repository": "luciddreamz/httpd-container",
+  "docker_image": "luciddreamz/httpd-container",
+  "parameters_schema": {
+    "HTTPD_CONFIGURATION_PATH": {
+      "default": "/opt/app-root/etc/httpd.d",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BASH_ENV": {
+      "default": "/var/lib/httpd24/scl_enable",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ENV": {
+      "default": "/var/lib/httpd24/scl_enable",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PROMPT_COMMAND": {
+      "default": "\".",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80,
+        443,
+        8080,
+        8443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "luciddreamz/httpd-container",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/luciddreamz/httpd-container",
+    "https://hub.docker.com/v2/repositories/luciddreamz/httpd-container",
+    "https://github.com/luciddreamz/httpd-container.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image",
+    "Type/Infrastructure/Operating System/Linux/CentOS"
+  ],
+  "info_url": "https://hub.docker.com/r/luciddreamz/httpd-container",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,150 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/scrapinghub/kibana",
+    "repository_url": "https://hub.docker.com/v2/repositories/scrapinghub/kibana",
+    "tags_url": "https://hub.docker.com/v2/repositories/scrapinghub/kibana/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/scrapinghub/kibana/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/scrapinghub/kibana/autobuild",
+    "user": "scrapinghub",
+    "name": "kibana",
+    "namespace": "scrapinghub",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 51,
+    "last_updated": "2016-09-30T07:41:03.458334Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 119795948,
+        "id": 129808,
+        "repository": 146717,
+        "creator": 3819,
+        "last_updater": 3819,
+        "last_updated": "2016-09-30T07:41:03.098782Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "v3.1.2",
+        "full_size": 109793601,
+        "id": 129806,
+        "repository": 146717,
+        "creator": 3819,
+        "last_updater": 520120,
+        "last_updated": "2015-11-14T16:17:25.601663Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "scrapinghub/docker-kibana"
+  },
+  "name": "scrapinghub/kibana Docker container",
+  "description": "",
+  "readme": "docker-kibana\n=============\n\nKibana webapp.  This container is designed to run behind an elb with SSL offloading.  Port 80 redirects urls\nto https if the X-Forwarded-Proto header is \"https\".\n\nThe following environment variables can be used to configure the container:\n\n      KIBANA_SECURE       Can be set to \"false\" to disable ssl redirect\n      KIBANA_USER         Basic auth username, default is kibana\n      KIBANA_PASSWORD     Basic auth password, default is kibana\n\nThis container requires a link to an elasticsearch container using the \"es\" alias (see command line below).\n\nThis container can be built using:\n\n      docker build -t balsamiq/docker-kibana .\n\nFor an elasticsearch container named \"elasticsearch\", this container can be run using:\n\n      docker run -p 80:80 --link elasticsearch:es balsamiq/docker-kibana\n\nTo run locally (without ssl offloading on an elb) you need to set SSL_REDIRECT to false as follows:\n\n      docker run -p 80:80 -e KIBANA_SECURE=false --link elasticsearch:es balsamiq/docker-kibana\n",
+  "dockerfile": "FROM ubuntu:trusty\nMAINTAINER Luis Arias <luis@balsamiq.com>\n\nRUN apt-get update && apt-get -y upgrade\nRUN apt-get -y install wget nginx-full apache2-utils supervisor\n\nWORKDIR /opt\nRUN wget --no-check-certificate -O- https://download.elastic.co/kibana/kibana/kibana-4.1.2-linux-x64.tar.gz | tar xvfz -\nRUN mkdir /etc/kibana # This is where the htpasswd file is placed by the run script\n\nADD kibana /etc/nginx/sites-available/kibana\nADD kibana-secure /etc/nginx/sites-available/kibana-secure\nRUN rm /etc/nginx/sites-enabled/*\nRUN echo \"daemon off;\" >> /etc/nginx/nginx.conf\n\nENV KIBANA_SECURE true\nENV KIBANA_USER kibana\nENV KIBANA_PASSWORD kibana\n\nEXPOSE 80\n\nADD supervisord.conf /etc/supervisor/conf.d/kibana.conf\n\nADD run ./run\nRUN chmod +x ./run\nCMD ./run\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "kibana",
+        "dest": "/etc/nginx/sites-available/kibana"
+      },
+      {
+        "source": "kibana-secure",
+        "dest": "/etc/nginx/sites-available/kibana-secure"
+      },
+      {
+        "source": "supervisord.conf",
+        "dest": "/etc/supervisor/conf.d/kibana.conf"
+      },
+      {
+        "source": "run",
+        "dest": "./run"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get -y upgrade",
+      "apt-get -y install wget nginx-full apache2-utils supervisor",
+      "wget --no-check-certificate -O- https://download.elastic.co/kibana/kibana/kibana-4.1.2-linux-x64.tar.gz | tar xvfz -",
+      "mkdir /etc/kibana # This is where the htpasswd file is placed by the run script",
+      "rm /etc/nginx/sites-enabled/*",
+      "echo \"daemon off;\" >> /etc/nginx/nginx.conf",
+      "chmod +x ./run"
+    ],
+    "workdir": [
+      "/opt"
+    ],
+    "from": "ubuntu:trusty",
+    "maintainer": "Luis Arias <luis@balsamiq.com>",
+    "env": {
+      "KIBANA_SECURE": "true",
+      "KIBANA_USER": "kibana",
+      "KIBANA_PASSWORD": "kibana"
+    },
+    "cmd": "./run"
+  },
+  "source_repository_url": "https://github.com/scrapinghub/docker-kibana.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/scrapinghub/docker-kibana",
+  "docker_repository": "scrapinghub/kibana",
+  "docker_image": "scrapinghub/kibana",
+  "parameters_schema": {
+    "KIBANA_SECURE": {
+      "default": "true",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIBANA_USER": {
+      "default": "kibana",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIBANA_PASSWORD": {
+      "default": "kibana",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "scrapinghub/kibana",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/scrapinghub/kibana",
+    "https://hub.docker.com/v2/repositories/scrapinghub/kibana",
+    "https://github.com/scrapinghub/docker-kibana.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/API"
+  ],
+  "info_url": "https://hub.docker.com/r/scrapinghub/kibana",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

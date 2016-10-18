@@ -1,0 +1,135 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/nepalez/ruby",
+    "repository_url": "https://hub.docker.com/v2/repositories/nepalez/ruby",
+    "tags_url": "https://hub.docker.com/v2/repositories/nepalez/ruby/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/nepalez/ruby/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/nepalez/ruby/autobuild",
+    "user": "nepalez",
+    "name": "ruby",
+    "namespace": "nepalez",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 7,
+    "pull_count": 404,
+    "last_updated": "2015-10-11T16:21:18.788772Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 181554622,
+        "id": 39973,
+        "repository": 46325,
+        "creator": 77559,
+        "last_updater": 77559,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "nepalez/dockerfiles"
+  },
+  "name": "nepalez/ruby Docker container",
+  "description": "The container includes Ubuntu 14.04 + MRI Ruby 2.1.2 + Rubygems + Bundler",
+  "readme": "",
+  "dockerfile": "# The container includes:\n#\n# * Ubuntu 14.04\n# * MRI Ruby 2.1.2\n# * Bundler\n#\n\nFROM ubuntu:14.04\nMAINTAINER Andrew Kozin <andrew.kozin@gmail.com>\n\n# ==============================================================================\n# Ubuntu Linux 14.04 with postgres client\n# ==============================================================================\n\n# Ignore APT warnings about not having a TTY\nENV DEBIAN_FRONTEND noninteractive\n\n# Ensure UTF-8 locale\nRUN locale-gen en_US.UTF-8\nENV LANG       en_US.UTF-8\nENV LC_ALL     en_US.UTF-8\nRUN dpkg-reconfigure locales\n\n# Install build dependencies\nRUN apt-get update -qq && \\\n    apt-get install -y -qq \\\n      build-essential \\\n      ca-certificates \\\n      curl \\\n      libcurl4-openssl-dev \\\n      libffi-dev \\\n      libgdbm-dev \\\n      libpq-dev \\\n      libreadline6-dev \\\n      libssl-dev \\\n      libtool \\\n      libxml2-dev \\\n      libxslt-dev \\\n      libyaml-dev \\\n      postgresql-client-9.3 \\\n      software-properties-common \\\n      wget \\\n      zlib1g-dev\n\n# ==============================================================================\n# Ruby with postgres support\n# ==============================================================================\n\n# Set $PATH so that non-login shells will see the Ruby binaries\nENV PATH $PATH:/opt/rubies/ruby-2.1.2/bin\n\n# Add PostgreSQL Global Development Group apt source\nRUN echo \"deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main\" \\\n    > /etc/apt/sources.list.d/pgdg.list\n\n# Add PGDG repository key\nRUN wget -qO - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc \\\n    | apt-key add -\n\n# Install MRI Ruby 2.1.2\nRUN curl -O http://ftp.ruby-lang.org/pub/ruby/2.1/ruby-2.1.2.tar.gz && \\\n    tar -zxvf ruby-2.1.2.tar.gz && \\\n    cd ruby-2.1.2 && \\\n    ./configure --disable-install-doc && \\\n    make && \\\n    make install && \\\n    cd .. && \\\n    rm -r ruby-2.1.2 ruby-2.1.2.tar.gz && \\\n    echo 'gem: --no-document' > /usr/local/etc/gemrc\n\n# ==============================================================================\n# Rubygems, Bundler and Foreman\n# ==============================================================================\n\n# Install rubygems and bundler\nADD http://production.cf.rubygems.org/rubygems/rubygems-2.3.0.tgz /tmp/\nRUN cd /tmp && \\\n    tar -zxf /tmp/rubygems-2.3.0.tgz && \\\n    cd /tmp/rubygems-2.3.0 && \\\n    ruby setup.rb && \\\n    /bin/bash -l -c 'gem install bundler --no-rdoc --no-ri' && \\\n    echo \"gem: --no-ri --no-rdoc\" > ~/.gemrc\n\n# Clean up APT and temporary files when done\nRUN apt-get clean -qq && \\\n    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n# Define working directory\nWORKDIR /app\n\n# Set bash as a default process\nCMD [\"bash\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "http://production.cf.rubygems.org/rubygems/rubygems-2.3.0.tgz",
+        "dest": "/tmp/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "locale-gen en_US.UTF-8",
+      "dpkg-reconfigure locales",
+      "apt-get update -qq &&     apt-get install -y -qq       build-essential       ca-certificates       curl       libcurl4-openssl-dev       libffi-dev       libgdbm-dev       libpq-dev       libreadline6-dev       libssl-dev       libtool       libxml2-dev       libxslt-dev       libyaml-dev       postgresql-client-9.3       software-properties-common       wget       zlib1g-dev",
+      "echo \"deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main\"     > /etc/apt/sources.list.d/pgdg.list",
+      "wget -qO - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc     | apt-key add -",
+      "curl -O http://ftp.ruby-lang.org/pub/ruby/2.1/ruby-2.1.2.tar.gz &&     tar -zxvf ruby-2.1.2.tar.gz &&     cd ruby-2.1.2 &&     ./configure --disable-install-doc &&     make &&     make install &&     cd .. &&     rm -r ruby-2.1.2 ruby-2.1.2.tar.gz &&     echo 'gem: --no-document' > /usr/local/etc/gemrc",
+      "cd /tmp &&     tar -zxf /tmp/rubygems-2.3.0.tgz &&     cd /tmp/rubygems-2.3.0 &&     ruby setup.rb &&     /bin/bash -l -c 'gem install bundler --no-rdoc --no-ri' &&     echo \"gem: --no-ri --no-rdoc\" > ~/.gemrc",
+      "apt-get clean -qq &&     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+    ],
+    "workdir": [
+      "/app"
+    ],
+    "from": "ubuntu:14.04",
+    "maintainer": "Andrew Kozin <andrew.kozin@gmail.com>",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "LANG": "",
+      "": "en_US.UTF-8",
+      "LC_ALL": "",
+      "PATH": "$PATH:/opt/rubies/ruby-2.1.2/bin"
+    },
+    "cmd": "[\"bash\"]"
+  },
+  "source_repository_url": "https://github.com/nepalez/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/nepalez/dockerfiles",
+  "docker_repository": "nepalez/ruby",
+  "docker_image": "nepalez/ruby",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "en_US.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LC_ALL": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:/opt/rubies/ruby-2.1.2/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "nepalez/ruby",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/nepalez/ruby",
+    "https://hub.docker.com/v2/repositories/nepalez/ruby",
+    "https://github.com/nepalez/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Mode/Executable/Bundle",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu"
+  ],
+  "info_url": "https://hub.docker.com/r/nepalez/ruby",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

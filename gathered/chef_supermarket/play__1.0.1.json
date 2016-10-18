@@ -1,0 +1,69 @@
+{
+  "name": "play Chef cookbook",
+  "chef_cookbook_name": "play",
+  "revision": "1.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/play",
+    "https://supermarket.chef.io/cookbooks/play/download",
+    "https://supermarket.chef.io/cookbooks/play/versions/1.0.1",
+    "https://supermarket.chef.io/cookbooks/play/versions/1.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/play/versions/1.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/play",
+    "https://supermarket.chef.io/api/v1/cookbooks/play/versions/1.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/play",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/play/versions/1.0.1/download",
+  "deprecated": false,
+  "created": "2015-12-11T20:48:42.051Z",
+  "updated": "2016-08-22T22:35:44.908Z",
+  "description": "Installs/Configures Play distribution binary as a service.",
+  "maintainer": {
+    "name": "dhoer",
+    "email": "dennis.hoer@gmail.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 716,
+  "downloads_count_revision": 241,
+  "repository_url": "https://github.com/dhoer/chef-play",
+  "issues_url": "https://github.com/dhoer/chef-play/issues",
+  "chef_source_url": "https://github.com/dhoer/chef-play",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Play Cookbook\n\n[![Cookbook Version](http://img.shields.io/cookbook/v/play.svg?style=flat-square)][cookbook]\n[![Build Status](http://img.shields.io/travis/dhoer/chef-play.svg?style=flat-square)][travis]\n\n[cookbook]: https://supermarket.chef.io/cookbooks/play\n[travis]: https://travis-ci.org/dhoer/chef-play\n\nInstalls Play 2.2+ distribution artifact,\n[created by the dist or universal:packageZipTarball task](https://www.playframework.com/documentation/2.5.x/Production#Using-the-dist-task), \nand configures it as a service.\n\nIt is recommended that you include a `application.conf.erb` template file within the distribution artifact to configure \nenvironment specific variables like application secret.  \n \nTo include the .erb file in your distribution artifact, copy `application.conf` file and paste it as \n`application.conf.erb` in the same directory. Then replace the environment specific values with variables. \n\nFor example, replace `play.crypto.secret = \"changeme\"` with `play.crypto.secret = \"<%= @secret %>\"` in \n`application.conf.erb` file, then pass the variable and its value using `conf_variables` \nattribute. The variable names in template must match variable names passed into `conf_variables`.\n  \nSo if `application.conf.erb` contained:\n\n```ruby\nplay.crypto.secret = \"<%= @secret %>\"\n```\n\nAnd Play recipe was called with:\n\n```ruby\nnode.set['play']['servicename'] = 'servicename'\nnode.set['play']['source'] = 'https://example.com/dist/myapp-1.0.0.zip'\nnode.set['play']['conf_variables'] = { secret: 'abcdefghijk' }\ninclude_recipe 'play'\n```\n\nThis would then result in creating/replacing `application.conf` file with:\n\n```ruby\nplay.crypto.secret = \"abcdefghijk\"\n```\n\nAlso Note\n\n* Leaving `conf_variable` empty will skip template processing and use configuration defined in `conf_path`\n* The `conf_template` path can also be external from distribution artifact \n\n## Requirements\n\n- Java (must be installed outside this cookbook)\n- Chef 11+\n\n### Platforms\n\n- Centos/RedHat\n- Ubuntu \n\n### Cookbooks\n\n- ark\n\n## Usage\n\nSee [play_test](https://github.com/dhoer/chef-play/blob/master/test/fixtures/cookbooks/play_test/recipes/default.rb)\ncookbook for an example using play cookbook to install distribution artifacts as a service.\n\n### Attributes\n\nThe attributes descriptions are for both resource and recipe e.g., `servicename` or `node['play']['servicename']`.\n\n* `servicename` - Service name to run as.  Defaults to name of resource block.\n* `source` - URI to archive (zip, tar.gz, or tgz) or directory path to exploded archive. \n* `checksum` - The SHA-256 checksum of the file. Use to prevent resource from re-downloading a file. \nWhen  local file matches the checksum, the chef-client will not download it.\n* `project_name` - Used to identify start script executable.  Defaults to project name derived from standalone \ndistribution filename, if not provided.\n* `version` - Version of application.  Defaults to version derived from standalone distribution filename, if \nnot provided. Not needed if source is a directory.\n* `user` - User to run service as.  Default `play`.\n* `args` - Array of additional configuration arguments.  Default `[]`. \n* `conf_variables` - Hash of application configuration variables required by .erb template. Leave empty\nto not process conf_template and use application configuration defined in conf_path.  Default `{}`.\n* `conf_template` - Path to configuration template.  Path can be relative, or if the template file is outside dist \npath, absolute.  If template file not found, no template processing will occur. \nDefault `conf/application.conf.erb`.\n* `conf_path` - Path to application configuration file. Path can be relative, or if the config file is outside \nstandalone distribution, absolute. Default `conf/application.conf`.\n* `pid_dir` - The pid directory. Default `/var/run/play`.\n\n### Examples\n\nExamples below are using resource, but you can use the default recipe to do the same thing as well.\n\n\n#### Install a standalone distribution as service from local file and generate application.conf\n\n```ruby\nplay 'servicename' do\n  source 'file:///var/chef/cache/myapp-1.0.0.zip'\n  conf_variables(\n    secret: 'mysecret'\n    langs: %w(en fr)\n  )\n  args([\n    '-Dhttp.port=8080',\n    '-J-Xms128m',\n    '-J-Xmx512m',\n    '-J-server'\n  ])\n  action :install\nend\n```\n\nThe application configuration defined in conf_path will be created or replaced by template defined in conf_template.\n\n#### Install exploded standalone distribution as service and don't generate application.conf\n\n```ruby\nplay 'sample_service' do\n  source '/var/local/mysample'\n  project_name 'sample'\n  args([\n    '-Dhttp.port=8080',\n    '-J-Xms128m',\n    '-J-Xmx512m',\n    '-J-server'\n  ])\n  action :install\nend\n```\n\nSince no conf_variables are passed, the application configuration defined in conf_path will be used.\n\n## ChefSpec Matchers\n\nThis cookbook includes custom [ChefSpec](https://github.com/sethvargo/chefspec) matchers you can use to test your \nown cookbooks.\n\nExample Matcher Usage\n\n```ruby\nexpect(chef_run).to install_play('servicename').with(\n  source: 'https://github.com/dhoer/play-java-sample/releases/download/1.0/play-java-sample-1.0.zip',\n  conf_variables: {\n    secret: 'abcdefghijk'\n  }\n)\n```\n      \nCookbook Matchers\n\n- install_play(name)\n\n## Getting Help\n\n- Ask specific questions on [Stack Overflow](http://stackoverflow.com/questions/tagged/chef-play).\n- Report bugs and discuss potential features in [Github issues](https://github.com/dhoer/chef-play/issues).\n\n## Contributing\n\nPlease refer to [CONTRIBUTING](https://github.com/dhoer/chef-play/blob/master/CONTRIBUTING.md).\n\n## License\n\nMIT - see the accompanying [LICENSE](https://github.com/dhoer/chef-play/blob/master/LICENSE.md) file for \ndetails.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ark",
+      "revision": "~> 0.9",
+      "self_resolve": true
+    }
+  ]
+}

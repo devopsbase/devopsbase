@@ -1,0 +1,110 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/byteflair/httpd-multihost",
+    "repository_url": "https://hub.docker.com/v2/repositories/byteflair/httpd-multihost",
+    "tags_url": "https://hub.docker.com/v2/repositories/byteflair/httpd-multihost/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/byteflair/httpd-multihost/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/byteflair/httpd-multihost/autobuild",
+    "user": "byteflair",
+    "name": "httpd-multihost",
+    "namespace": "byteflair",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 24,
+    "last_updated": "2016-06-14T15:56:52.068357Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 104036400,
+        "id": 3419116,
+        "repository": 743825,
+        "creator": 235371,
+        "last_updater": 235371,
+        "last_updated": "2016-06-14T15:56:51.478759Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Byteflair/docker-httpd-multihost"
+  },
+  "name": "byteflair/httpd-multihost Docker container",
+  "description": "An Apache httpd server ready to override and with working samples of HTTP/S and Reverse Proxy server",
+  "readme": "# Intro\n\nThis image is an apache2 server prepared to serve multi domain environments. This is, hosts which serve multiple websites under different domain names.\n\nThis image is intended to be deployed in front of other web sites, application servers or any other service provided over the web via HTTP/HTTPS that are running on the same (or different) host(s) but you want to serve under different domains or subdomains.\n\nThis image exposes ports 80 and 443 to support both HTTP and HTTPS standard ports.\n\n# Getting started\n\nThis image takes the following arguments:\n\n* a server root volume\n* a document root volume\n* a log volume\n\nThis image provides simple mechanisms to add new sites, enable and disable sites. It provides 3 sample configurations:\n\n* default: the default configuration that comes with apache HTTP server which serves as fallback for any request that was not mapped to a known site. The document root folder has been modified to serve content in /var/www/default\n* foo: an HTTP site for foo.com serving contents from /var/www/foo\n* bar: an HTTPS site for bar.com serving contents from /var/www/bar\n* realbar: an HTTP site served via a reverse proxy from the real bar.com\n\nTo test the image:\n\n1. Run it withour overriding configuration.\n2. In your host machine edit `/etc/hosts` and append `foo.com`, `bar.com` and `realbar.com` site to the line that maps your loopback interface to localhost: `127.0.0.1 localhost foo.com bar.com realbar.com`.\n3. Open a browser and try the following URLs:\n    \n    1. `http://localhost`, you should see a welcome page indicating you are visiting the default site.\n    2. `http://foo.com`, you should see a welcome page indicating you are visiting thhe foo site.\n    3. `http://bar.com`, you should see a welcome page indicating you are visiting the default site. This is because bar site is only served over HTTPS.\n    4. `https://bar.com`, now you should see the welcome page indicating you are visiting bar site.\n    5. `http://realbar.com`, now you should see the real `bar.com` site on the internet.\n\nAll sample commands assume that the container is run under the `apache` name.\n\n## Running the image without overriding configuration\n\nThis mode is only intended for you to check the correct instalation of the image. It will serve you to test the working samples.\n\n```bash\n    docker run --name apache -p 80:80 -p 443:443 -d byteflair/httpd-multihost\n```\n\n## Running the image without overriding configuration but with volumes\n\nConfiguration (Server Root) and content (Content Root) volumes will be created and you will be able to manipulate configuration and content on the fly.\n\n```bash\n    docker run --name apache -p 80:80 -p 443:443 -v /etc/apache2 -v /var/www -v /var/log/apache2 -d byteflair/httpd-multihost\n```\n\n## Running the image overriding configuration\n\nThe preferred way to run this image. Configuration (Server Root) and content (Content Root) volumes will be created at your specifiec location. You can also override the content of these volumes by specifying non empty folders. Maximun flexibility and convenience.\n\n```bash\n    docker run --name apache -p 80:80 -p 443:443 -v /route-to-your-config:/etc/apache2 -v /route-to-your-content:/var/www -v /route-to-your-logs:/var/log/apache2 -d byteflair/httpd-multihost\n```\n\n## Adding a new site\n\nWhen following the instructions to add a new site, you will need to modify apache configuration files. Depending on how you run the container you will have to modify these files from within the container or from the host system via volumes.\n\nIn case you run the container without using volumes, files are not directly accessible from the host. We suggest you use `docker cp` to copy configuration files from the container to the host, make necessary modifications and copy them back to the container. Or you can connect to the container and run a bash terminal `docker exec -ti apache bash` and then edit or create the necessary files with `vi`.\n\nIf you choose to run the image using volumes but without mapping them to specific host folders, you will need to locate where those volumes are hosted. For example, issue the following command to know where the `/etc/apache2` folder is hosted:\n\n```bash\n   docker inspect -f '{{range $a := .Mounts}}{{if eq .Destination \"/etc/apache2\"}}{{.Source}}{{end}}{{end}}' apache\n```\nIf you run the image using explicitly mapped volumes, you can directly modify files from your mapped folders.\n\n### Create a virtual host file to serve static content from a folder\n\nTo add `mysite.com` and serve content from '/var/www/mysite.com':\n\n1. Copy `/etc/apache2/sites-available/000-default.conf` to `/etc/apache2/sites-available/mysite.com.conf`\n2. Edit ServerName to match your desired domain name `mysite.com`.\n3. Edit the DocumentRoot to match the folder `/var/www/mysite.com`.\n4. Create the `/var/www/mysite.com` folder.\n5. Add a sample HTML file on `/var/www/mysite.com`.\n6. Enable de new site as explained below\n7. Restart the container\n8. In your host machine edit `/etc/hosts` and append your site to the line that mpas your loopback interface to localhost: `127.0.0.1 localhost mysite.com`\n9. Open your browser and type: `http://mysite.com`. Your sample HTML page should be served.\n\n### Create a virtual host file to serve dynamic content from an application server\n\nIn this context we consider an application server any software capable serving dynamic content over HTTP/HTTPS.\n\nIn this case, our container will act as a reverse proxy and it will be your responsibility to provide the application server container or component.\n\n## Enabling a site\n\nTo enable a site  issue the following command:\n\n```bash\n\tdocker exec apache a2ensite <site-name>\n```\n\nÀfter enabling the site, you will need to restart the container for the changes to take effect.\n\n```bash\n   docker restart apache\n```\n\n## Disabling a site\n\nTo disable a site  issue the following command:\n\n```bash\n\tdocker exec apache a2dissite <site-name>\n```\n\nÀfter disabling the site, you will need to restart the container for the changes to take effect.\n\n```bash\n   docker restart apache\n```",
+  "dockerfile": "FROM ubuntu:15.10\n\nRUN  apt-get update \\\n  && apt-get upgrade -y --no-install-recommends\n\nRUN apt-get update \\\n && apt-get install -y --no-install-recommends \\\n    openssl\n\nRUN apt-get update \\\n && apt-get install -y --no-install-recommends \\\n    apache2\n\nRUN rm -Rf /var/www/html \\\n && rm -f /apache2/sites-enabled/000-default.conf \\\n && rm -f /apache2/sites-available/000-default.conf\n\n#Copy configuration and content for deault site, foo.com (http sample), bar.com (https sample) and real-foo\nADD apache2 /etc/apache2\nADD www /var/www\n\nRUN chmod -R 755 /var/www\n\n\n#Enable SSL support and create a selfsigned certificate for bar.com\nRUN a2enmod proxy proxy_http proxy_html substitute deflate xml2enc rewrite ssl \\\n && mkdir /etc/apache2/ssl \\\n && mkdir /etc/apache2/ssl/bar \\\n && openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/apache2/ssl/bar/bar.key -out /etc/apache2/ssl/bar/bar.crt -subj \"/C=ES/ST=Madrid/L=Madrid/O=Byteflair/OU=Docker Team/CN=bar.com\"\n\n\nEXPOSE 80 443\n\nVOLUME [\"/var/www\", \"/var/log/apache2\", \"/etc/apache2\"]\n\nENTRYPOINT [\"apache2ctl\",\"-DFOREGROUND\",\"-d /etc/apache2\",\"-e INFO\"]",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "apache2",
+        "dest": "/etc/apache2"
+      },
+      {
+        "source": "www",
+        "dest": "/var/www"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/var/www\", \"/var/log/apache2\", \"/etc/apache2\"]"
+    ],
+    "run": [
+      " apt-get update   && apt-get upgrade -y --no-install-recommends",
+      "apt-get update  && apt-get install -y --no-install-recommends     openssl",
+      "apt-get update  && apt-get install -y --no-install-recommends     apache2",
+      "rm -Rf /var/www/html  && rm -f /apache2/sites-enabled/000-default.conf  && rm -f /apache2/sites-available/000-default.conf",
+      "chmod -R 755 /var/www",
+      "a2enmod proxy proxy_http proxy_html substitute deflate xml2enc rewrite ssl  && mkdir /etc/apache2/ssl  && mkdir /etc/apache2/ssl/bar  && openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/apache2/ssl/bar/bar.key -out /etc/apache2/ssl/bar/bar.crt -subj \"/C=ES/ST=Madrid/L=Madrid/O=Byteflair/OU=Docker Team/CN=bar.com\""
+    ],
+    "workdir": [],
+    "from": "ubuntu:15.10",
+    "entrypoint": "[\"apache2ctl\",\"-DFOREGROUND\",\"-d /etc/apache2\",\"-e INFO\"]"
+  },
+  "source_repository_url": "https://github.com/Byteflair/docker-httpd-multihost.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Byteflair/docker-httpd-multihost",
+  "docker_repository": "byteflair/httpd-multihost",
+  "docker_image": "byteflair/httpd-multihost",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "byteflair/httpd-multihost",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/byteflair/httpd-multihost",
+    "https://hub.docker.com/v2/repositories/byteflair/httpd-multihost",
+    "https://github.com/Byteflair/docker-httpd-multihost.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Proxy"
+  ],
+  "info_url": "https://hub.docker.com/r/byteflair/httpd-multihost",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

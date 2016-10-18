@@ -1,0 +1,244 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kino/fedora",
+    "repository_url": "https://hub.docker.com/v2/repositories/kino/fedora",
+    "tags_url": "https://hub.docker.com/v2/repositories/kino/fedora/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kino/fedora/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kino/fedora/autobuild",
+    "user": "kino",
+    "name": "fedora",
+    "namespace": "kino",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 666,
+    "last_updated": "2016-06-21T08:57:39.477615Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "debian8.2",
+        "full_size": 402268073,
+        "id": 1473643,
+        "repository": 426022,
+        "creator": 192169,
+        "last_updater": 192169,
+        "last_updated": "2016-06-21T08:57:39.122255Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "debian8.2-otp",
+        "full_size": 547470501,
+        "id": 1473769,
+        "repository": 426022,
+        "creator": 192169,
+        "last_updater": 192169,
+        "last_updated": "2016-03-03T07:50:23.766098Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "22-otp",
+        "full_size": 602396684,
+        "id": 2184121,
+        "repository": 426022,
+        "creator": 192169,
+        "last_updater": 192169,
+        "last_updated": "2016-03-03T07:34:19.274334Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "ms",
+        "full_size": 745053422,
+        "id": 1453966,
+        "repository": 426022,
+        "creator": 192169,
+        "last_updater": 192169,
+        "last_updated": "2015-12-03T12:20:00.839305Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "otp",
+        "full_size": 705825132,
+        "id": 1464018,
+        "repository": 426022,
+        "creator": 192169,
+        "last_updater": 192169,
+        "last_updated": "2015-12-03T12:09:54.917908Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "ghc",
+        "full_size": 586444975,
+        "id": 1453516,
+        "repository": 426022,
+        "creator": 192169,
+        "last_updater": 192169,
+        "last_updated": "2015-12-03T11:59:38.577504Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "cmus",
+        "full_size": 454131024,
+        "id": 1453446,
+        "repository": 426022,
+        "creator": 192169,
+        "last_updater": 192169,
+        "last_updated": "2015-12-03T11:57:06.828510Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "23",
+        "full_size": 430559662,
+        "id": 1453573,
+        "repository": 426022,
+        "creator": 192169,
+        "last_updater": 192169,
+        "last_updated": "2015-12-03T09:47:13.736883Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "22",
+        "full_size": 327138046,
+        "id": 1453724,
+        "repository": 426022,
+        "creator": 192169,
+        "last_updater": 192169,
+        "last_updated": "2015-12-03T09:40:39.312394Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 430567146,
+        "id": 1453330,
+        "repository": 426022,
+        "creator": 192169,
+        "last_updater": 192169,
+        "last_updated": "2015-12-03T09:14:21.064351Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "kino273/fedora"
+  },
+  "name": "kino/fedora Docker container",
+  "description": "fedora base",
+  "readme": null,
+  "dockerfile": "FROM debian:8.2\n\n# --- build local OS specific ---\nADD ./build-local.sh /tmp/build-local.sh\nRUN  /tmp/build-local.sh\n\n# --- sshd -----------\nRUN (mkdir -p /var/run/sshd; \\\n     yes|ssh-keygen -f /etc/ssh/ssh_host_rsa_key -t rsa -N ''; \\\n     yes|ssh-keygen -f /etc/ssh/ssh_host_ecdsa_key -t ecdsa -N ''; \\\n     yes|ssh-keygen -f /etc/ssh/ssh_host_ed25519_key -t ed25519 -N '')\n\n# --- files ---------------------\nADD magit.el /usr/share/emacs/site-lisp/\nADD dm /usr/local/bin/\nADD copy.sh startservice.sh /usr/local/\n\n# --- worker --------------------\nRUN (useradd -s /bin/bash worker; \\\n     usermod -s /bin/bash root; \\\n     echo 'worker:newpass' | chpasswd; \\\n     echo 'root:newpass' | chpasswd; \\\n     mkdir -p /home/worker)\nADD sudoers /etc/sudoers.d/\n\n# --- user files ----------------\nADD authorized_keys /home/worker/.ssh/\nADD emacs /home/worker/.emacs\nADD bashrc /home/worker/.bashrc\nADD screenrc /home/worker/.screenrc\nADD gitconfig /home/worker/.gitconfig\n\nRUN (chmod 700 /home/worker/.ssh/; \\\n     chmod 600 /home/worker/.ssh/authorized_keys; \\\n     chown -R worker:worker /home/worker)\n\n# -------------------------------\nEXPOSE 22\nCMD [\"/usr/local/startservice.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./build-local.sh",
+        "dest": "/tmp/build-local.sh"
+      },
+      {
+        "source": "magit.el",
+        "dest": "/usr/share/emacs/site-lisp/"
+      },
+      {
+        "source": "dm",
+        "dest": "/usr/local/bin/"
+      },
+      {
+        "source": "copy.sh",
+        "dest": "startservice.sh"
+      },
+      {
+        "source": "sudoers",
+        "dest": "/etc/sudoers.d/"
+      },
+      {
+        "source": "authorized_keys",
+        "dest": "/home/worker/.ssh/"
+      },
+      {
+        "source": "emacs",
+        "dest": "/home/worker/.emacs"
+      },
+      {
+        "source": "bashrc",
+        "dest": "/home/worker/.bashrc"
+      },
+      {
+        "source": "screenrc",
+        "dest": "/home/worker/.screenrc"
+      },
+      {
+        "source": "gitconfig",
+        "dest": "/home/worker/.gitconfig"
+      }
+    ],
+    "expose": [
+      22
+    ],
+    "volume": [],
+    "run": [
+      " /tmp/build-local.sh",
+      "(mkdir -p /var/run/sshd;      yes|ssh-keygen -f /etc/ssh/ssh_host_rsa_key -t rsa -N '';      yes|ssh-keygen -f /etc/ssh/ssh_host_ecdsa_key -t ecdsa -N '';      yes|ssh-keygen -f /etc/ssh/ssh_host_ed25519_key -t ed25519 -N '')",
+      "(useradd -s /bin/bash worker;      usermod -s /bin/bash root;      echo 'worker:newpass' | chpasswd;      echo 'root:newpass' | chpasswd;      mkdir -p /home/worker)",
+      "(chmod 700 /home/worker/.ssh/;      chmod 600 /home/worker/.ssh/authorized_keys;      chown -R worker:worker /home/worker)"
+    ],
+    "workdir": [],
+    "from": "debian:8.2",
+    "cmd": "[\"/usr/local/startservice.sh\"]"
+  },
+  "source_repository_url": "https://github.com/kino273/fedora.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/kino273/fedora",
+  "docker_repository": "kino/fedora",
+  "docker_image": "kino/fedora",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        22
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kino/fedora",
+  "revision": "debian8.2",
+  "uris": [
+    "https://hub.docker.com/r/kino/fedora",
+    "https://hub.docker.com/v2/repositories/kino/fedora",
+    "https://github.com/kino273/fedora.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/kino/fedora",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

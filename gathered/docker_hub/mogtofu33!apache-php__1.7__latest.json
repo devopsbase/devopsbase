@@ -1,0 +1,154 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mogtofu33/apache-php",
+    "repository_url": "https://hub.docker.com/v2/repositories/mogtofu33/apache-php",
+    "tags_url": "https://hub.docker.com/v2/repositories/mogtofu33/apache-php/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mogtofu33/apache-php/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mogtofu33/apache-php/autobuild",
+    "user": "mogtofu33",
+    "name": "apache-php",
+    "namespace": "mogtofu33",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 201,
+    "last_updated": "2016-10-05T01:40:30.672471Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1.7",
+        "full_size": 55878270,
+        "id": 3186718,
+        "repository": 710908,
+        "creator": 197021,
+        "last_updater": 197021,
+        "last_updated": "2016-10-05T01:40:30.325872Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 55878459,
+        "id": 5159909,
+        "repository": 710908,
+        "creator": 197021,
+        "last_updater": 197021,
+        "last_updated": "2016-10-05T01:39:05.890338Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.5",
+        "full_size": 65331064,
+        "id": 3187847,
+        "repository": 710908,
+        "creator": 197021,
+        "last_updater": 197021,
+        "last_updated": "2016-10-05T01:37:30.986044Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Mogtofu33/docker-images"
+  },
+  "name": "mogtofu33/apache-php Docker container",
+  "description": "Apache Php for my Docker Compose Drupal dev project.",
+  "readme": "# Docker Apache/Php7 image for Drupal dev\n\n* Used for https://github.com/Mogtofu33/docker-compose-drupal\n\nBased on my basic Alpine Edge image: https://github.com/Mogtofu33/docker-alpine-edge-base\n\nVery light: 137MB\n\nInclude:\n- Composer\n- Drush\n- Drupal console\n\nVolumes:\n- /www              # Root of your Php app.\n- /var/log/apache2  # Apache logs\n- /var/log/php      # Php logs\n\nNote: Drush alias is supported with an aliases.drushrc.php under /www/drush folder (/app should be a volume with your php code).\n\nIf this file is in your /www/drush folder, you can launch Drush commands from your host:\n* docker exec -it MY_CONTAINER drush @ALIAS DRUSH_CMD\n\nA good method is to add an alias to your host.\n",
+  "dockerfile": "FROM mogtofu33/alpine-base:edge\r\n\r\nMAINTAINER moimog33@gmail.com\r\n\r\n# Set specific uid/gid to web server user to fix permissions issues.\r\n#ENV LOCAL_UID= \\\r\n#    LOCAL_GID=\r\n\r\n# Flag to install specific programs.\r\nENV SETUP_COMPOSER=0\r\nENV SETUP_DRUSH=1\r\nENV SETUP_CONSOLE=1\r\n\r\n# Install Php extensions, Apache and database client/rsync for Drush.\r\n# php7-memcached currently only for arm, waiting https://pkgs.alpinelinux.org/packages?name=php7-memcached\r\nRUN apk add --update \\\r\n    php7 php7-fpm \\\r\n    php7-json php7-zlib php7-xml php7-phar php7-openssl php7-sockets \\\r\n    php7-pdo php7-pdo_mysql php7-mysqlnd php7-mysqli \\\r\n    php7-pdo_pgsql php7-pgsql \\\r\n    php7-iconv php7-mcrypt \\\r\n    php7-curl php7-ctype  php7-bcmath \\\r\n    php7-dom php7-xmlreader php7-ldap \\\r\n    php7-memcached php7-opcache php7-xdebug \\\r\n    php7-redis php7-posix php7-session \\\r\n    php7-intl php7-gd php7-mbstring \\\r\n    php7-apache2 apache2 apache2-ssl apache2-ldap apache-mod-auth-kerb \\\r\n    mysql-client postgresql-client \\\r\n    rsync openssh openssl\r\n\r\n# Fix Php links.\r\nRUN ln -s /usr/bin/php7 /usr/bin/php\r\nRUN ln -s /etc/php7 /etc/php\r\nRUN ln -s /usr/lib/php7 /usr/lib/php\r\n\r\n# Prepare Web root and Apache.\r\nRUN mkdir -p /www && \\\r\n    chown -R apache:www-data /www && \\\r\n    mkdir -p /etc/apache2/vhost && \\\r\n    chown -R apache:www-data /etc/apache2/vhost && \\\r\n    mkdir /run/apache2 && \\\r\n    chown -R apache:www-data /run/apache2\r\n\r\n# Prepare php and apache logs.\r\nRUN mkdir -p /var/log/apache2 && \\\r\n    mkdir -p /var/log/php7 && \\\r\n    chown -R apache:www-data /var/log/apache2 && \\\r\n    chown -R apache:www-data /var/log/php7\r\n\r\n# Clean.\r\nRUN rm -rf /var/cache/apk/*\r\n\r\n# Set Apache and Php config.\r\nCOPY config/httpd.conf /etc/apache2/httpd.conf\r\nCOPY config/vhost.conf /etc/apache2/vhost/vhost.conf\r\nCOPY config/php.ini /etc/php/php.ini\r\n\r\n# Set apache script\r\nCOPY scripts/run.sh /scripts/run.sh\r\nRUN chmod +x /scripts/run.sh\r\n\r\nEXPOSE 80\r\n\r\nVOLUME [\"/www\", \"/etc/apache2/vhost\", /var/log/apache2\"]\r\n\r\nENTRYPOINT [\"/bin/bash\" , \"/scripts/run.sh\"]\r\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/www\", \"/etc/apache2/vhost\", /var/log/apache2\"]"
+    ],
+    "run": [
+      "apk add --update \\",
+      "ln -s /usr/bin/php7 /usr/bin/php",
+      "ln -s /etc/php7 /etc/php",
+      "ln -s /usr/lib/php7 /usr/lib/php",
+      "mkdir -p /www && \\",
+      "mkdir -p /var/log/apache2 && \\",
+      "rm -rf /var/cache/apk/*",
+      "chmod +x /scripts/run.sh"
+    ],
+    "workdir": [],
+    "from": "mogtofu33/alpine-base:edge",
+    "maintainer": "moimog33@gmail.com",
+    "env": {
+      "SETUP_COMPOSER": "0",
+      "SETUP_DRUSH": "1",
+      "SETUP_CONSOLE": "1"
+    },
+    "copy": "scripts/run.sh /scripts/run.sh",
+    "entrypoint": "[\"/bin/bash\" , \"/scripts/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/Mogtofu33/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Mogtofu33/docker-images",
+  "docker_repository": "mogtofu33/apache-php",
+  "docker_image": "mogtofu33/apache-php",
+  "parameters_schema": {
+    "SETUP_COMPOSER": {
+      "default": "0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SETUP_DRUSH": {
+      "default": "1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SETUP_CONSOLE": {
+      "default": "1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mogtofu33/apache-php",
+  "revision": "1.7",
+  "uris": [
+    "https://hub.docker.com/r/mogtofu33/apache-php",
+    "https://hub.docker.com/v2/repositories/mogtofu33/apache-php",
+    "https://github.com/Mogtofu33/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/mogtofu33/apache-php",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

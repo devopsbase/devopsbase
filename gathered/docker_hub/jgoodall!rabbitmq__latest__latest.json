@@ -1,0 +1,120 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jgoodall/rabbitmq",
+    "repository_url": "https://hub.docker.com/v2/repositories/jgoodall/rabbitmq",
+    "tags_url": "https://hub.docker.com/v2/repositories/jgoodall/rabbitmq/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jgoodall/rabbitmq/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jgoodall/rabbitmq/autobuild",
+    "user": "jgoodall",
+    "name": "rabbitmq",
+    "namespace": "jgoodall",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 101,
+    "last_updated": "2015-10-10T17:59:23.871622Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 157218478,
+        "id": 21363,
+        "repository": 17761,
+        "creator": 3329,
+        "last_updater": 3329,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "jgoodall/docker-rabbitmq"
+  },
+  "name": "jgoodall/rabbitmq Docker container",
+  "description": "Docker image for rabbitmq",
+  "readme": "docker-rabbitmq\r\n===============\r\n\r\nDocker image for rabbitmq.\r\n\r\nTo use Docker on a Mac, install docker and boot2docker:\r\n\r\n    brew update\r\n    brew cask install virtualbox\r\n    brew install docker boot2docker\r\n    boot2docker init\r\n    boot2docker up\r\n\r\nTo build the image:\r\n\r\n    docker build -t jgoodall/rabbitmq .\r\n\r\nTo run the rabbitmq container:\r\n\r\n    docker run --name=rabbitmq --rm -e RABBITMQ_PASS=\"mypass\" -p 5672:5672 -p 55672:55672 jgoodall/rabbitmq\r\n\r\nTo forward ports so you can use `rabbitmqadmin` on your Mac, open new terminals and run the following (and leave the terminals running):\r\n\r\n    boot2docker ssh -L 5672:localhost:5672\r\n    boot2docker ssh -L 55672:localhost:55672\r\n\r\nTo run the container in detached mode:\r\n\r\n    rabbitmq=$(docker run --name=rabbitmq -d -e RABBITMQ_PASS=\"mypass\" -p :5672 -p :55672 jgoodall/rabbitmq)\r\n    rmq_port=$(docker port $rabbitmq 5672 | cut -d':' -f2)\r\n    rmq_admin_port=$(docker port $rabbitmq 55672 | cut -d':' -f2)\r\n\r\nTo push this info to `etcd`:\r\n\r\n    etcdctl set /services/rabbitmq/host `hostname`\r\n    etcdctl set /services/rabbitmq/port $rmq_port\r\n    etcdctl set /services/rabbitmq/adminport $rmq_admin_port\r\n\r\nTo connect from your Mac on the command line:\r\n\r\n    rabbitmqadmin -u admin -p mypass -H localhost -P `etcdctl get /services/rabbitmq/adminport` list queues\r\n\r\nTo use the admin web interface, get the port and then open in a browser (http://localhost:port/):\r\n\r\n    etcdctl get /services/rabbitmq/port\r\n",
+  "dockerfile": "FROM ubuntu:14.04\n\nMAINTAINER \"John Goodall <jgoodall@ornl.gov>\"\n\nENV DEBIAN_FRONTEND noninteractive\n\n# Install basics\nRUN apt-get update\nRUN apt-get -qy install supervisor curl git\n\n# Install RabbitMQ\nRUN apt-get install -qy rabbitmq-server pwgen\nRUN rabbitmq-plugins enable rabbitmq_management\nRUN /etc/init.d/rabbitmq-server stop\n\nEXPOSE 5672\nEXPOSE 55672\n \n# Copy local files\nADD run.sh /run.sh\nADD set_rabbitmq_password.sh /set_rabbitmq_password.sh\nADD supervisord-rabbitmq.conf /etc/supervisor/conf.d/rabbitmq.conf\n\nRUN chmod 755 /*.sh\n\nCMD [\"/run.sh\"]",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "run.sh",
+        "dest": "/run.sh"
+      },
+      {
+        "source": "set_rabbitmq_password.sh",
+        "dest": "/set_rabbitmq_password.sh"
+      },
+      {
+        "source": "supervisord-rabbitmq.conf",
+        "dest": "/etc/supervisor/conf.d/rabbitmq.conf"
+      }
+    ],
+    "expose": [
+      5672,
+      55672
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update",
+      "apt-get -qy install supervisor curl git",
+      "apt-get install -qy rabbitmq-server pwgen",
+      "rabbitmq-plugins enable rabbitmq_management",
+      "/etc/init.d/rabbitmq-server stop",
+      "chmod 755 /*.sh"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "\"John Goodall <jgoodall@ornl.gov>\"",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "git://github.com/jgoodall/docker-rabbitmq.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/jgoodall/docker-rabbitmq",
+  "docker_repository": "jgoodall/rabbitmq",
+  "docker_image": "jgoodall/rabbitmq",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5672,
+        55672
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jgoodall/rabbitmq",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jgoodall/rabbitmq",
+    "https://hub.docker.com/v2/repositories/jgoodall/rabbitmq",
+    "git://github.com/jgoodall/docker-rabbitmq.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/jgoodall/rabbitmq",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

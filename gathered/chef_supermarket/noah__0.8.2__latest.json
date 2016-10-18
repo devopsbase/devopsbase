@@ -1,0 +1,244 @@
+{
+  "name": "noah Chef cookbook",
+  "chef_cookbook_name": "noah",
+  "revision": "0.8.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/noah",
+    "https://supermarket.chef.io/cookbooks/noah/download",
+    "https://supermarket.chef.io/cookbooks/noah/versions/0.8.2",
+    "https://supermarket.chef.io/cookbooks/noah/versions/0.8.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/noah/versions/0.8.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/noah",
+    "https://supermarket.chef.io/api/v1/cookbooks/noah/versions/0.8.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/noah",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/noah/versions/0.8.2/download",
+  "deprecated": false,
+  "created": "2011-06-10T04:24:40.000Z",
+  "updated": "2011-06-10T15:11:35.000Z",
+  "description": "Installs Noah",
+  "maintainer": {
+    "name": "lusis",
+    "email": "lusis.org+github.com@gmail.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 2506641,
+  "downloads_count_revision": 1253401,
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Noah cookbook\n================\nThis cookbook has been tested on the following platforms (for installing the server)\n\n* Natty 32-bit Rubygems install\n* Natty 64-bit Rubygems install\n* Lucid 32-bit Vagrant\n* Lucid 64-bit Vagrant\n\nRight now, only the ubuntu-related stuff is really stubbed out. Init script templates for redhat and non-upstart debian need to be written.\nThe init scripts should be resilient enough to get populated with the proper path to the noah binscript. It uses `Gem.bin_path` to get it.\nThe main reason for this is working around system rubies that do stupid crap like dump binaries in `/var/lib/gems/bin` or something.\n\nIf you want to test it, the recipe you want is `noah::server`.\n\nThis will install Noah from rubygems, compile redis from source into a self-contained directory and then create two startup scripts - noah-redis and noah.\n\n# Recipes\n\n- `noah::default`: provides the Noah LWRP\n- `noah::server`: Installs a Noah server\n- `noah::client`: For use with Chef Server. Searches for local Noah server and sets default attributes for clients.\n- `noah::register`: Registers the current node in Noah both as a `Host` primitive and an `Ephemeral` record under `/chef/node_name`\n\n## Client usage\nIf you are running with a Chef server, the best option is to use `noah::client` as the first recipe in your role/run\\_list and `noah::register` as the last recipe in your role/run\\_list\n\n## Search Attribute\nA single attribute is exposed for use in search. By assigning a node with this role, clients can find the local Noah server.\n\n- `server_role`\n\n## Server Attributes\nYou can see the exposed attributes but the key server ones are:\n\n- `redis_version`\n- `redis_port`\n- `noah_port`\n\nIf you're okay with it, the default install dir for everything is /var/lib/noah.\n\n## Client Attributes\nClient attributes are a bit different in how they operate based on the resource you're using\n\n- `timeout`\n- `on_failure`\n- `retry_interval`\n- `noah_host`\n- `noah_port`\n\nYou can read more about what happens with each specific resource below.\n\n## Just the LWRP\nIf you just want to use the LWRP, all you need to do is add `noah::default` as a dependency to your cookbook and include the recipe. This also provides additional methods in your cookbook:\n\n- `noah_get`\n- `noah_search`\n\n# Resources\nThe following resources are exposed by the LWRP:\n\n- `noah_application` - no custom parameters\n- `noah_service` - `host`, `status`\n- `noah_ephemeral` - `data` \n- `noah_configuration` - `data`, `format`\n- `noah_host` - `status`\n- `noah_block`\\* - `data`, `on_failure`\n\nEach of these resource take a common set of parameters in the DSL:\n\n- `noah_host`\n- `noah_port`\n- `retry_interval`\n- `timeout`\n\nThese are pulled from node attributes unless otherwise specified. With the exception of `noah_block`, `timeout` and `retry_interval` only take effect when the Noah server is unreachable. Errors are thrown if the connection to the Noah server times out or Noah returns anything other than a `200` response. Each resource also has a specific set of parameters related to that resource which match up with the Noah attributes\n\nAdditionally, two new methods are available that you can call to lookup information:\n\n- `noah_get`\n- `noah_search`\n\n`noah_get` takes a full URL to a Noah resource and converts the JSON result to a ruby hash. The response is unaltered beyond that. If the response cannot be converted, it assumed to be an ephemeral and served \"raw\".\n`noah_search` takes a Noah object type and an string. This is not a \"real\" search. It simply grabs all objects of the given type and looks for keys that contain the provided string. It is not a replacement for Chef's built in search.\n\n## Blocking\n`noah_block` is a special resource best used for coordinating interaction between client bootstraps. Imaging a use case where a load balancer needs to know all of the application servers. Until those application servers have bootstrapped fully, they will not be available as search results. Using Ephemerals (for now), `noah_block` allows you to \"block\" a portion of a chef-client run until some data is available in Noah. Using the `on_failure` attribute, you can either `:pass`, `:retry` or `:fail` based on the results of Noah query.\n\nTake the following example:\n\n\tnoah_block \"wait for dbmaster\" do\n\t  path            \"http://localhost:5678/ephemerals/foo\"\n\t  timeout         600\n\t  data            \"someval1\"\n\t  retry_interval  5\n\t  on_failure      :pass\n\tend\n\nIn this case, the client run will poll every 5 seconds for 600 seconds until it gets \"someval\" as a response from \"http://localhost:5678/ephemerals/foo\". If Noah is unreachable or it does not get the response it expects, it will simply continue with the rest of the recipe. An `on_failure` value of `:fail` will error out immediately. An `on_failure` value of `:retry` will continue retrying even if Noah is unreachable until the timeout value.\n\nThe exception to a `:pass` is when the data doesn't match. It makes no sense to allow you to continue if there is data there but is not correct. Imagine the scenario where you need the value of the path to be \"go\" but it's \"stop\". If we were to pass from there, we might perform something that should not performed.\n\n**All `noah_block` resource will retry, the `on_failure` guard is to determine how to respond to an error**\n\n# Test Suite\nThere's a small \"test suite\" of recipes included. If you include `noah::test` in your run\\_list, it will perform a series of tests that ensure some basic functionality. The last test to run is for `noah_block` and it's designed to test proper failure. This test suite will fail intentionally at the end if everything is working properly.\n\n# TODO\n- DRY the code out.\n- ??????????\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ],
+  "chef_recipes": {
+    "noah::default": "Provides the Noah LWRP",
+    "noah::server": "Installs the Noah server with self-contained Redis",
+    "noah::client": "Uses search to find local Noah server for client settings",
+    "noah::register": "Provides for self-registration of node in Noah"
+  },
+  "parameters": {
+    "noah": {
+      "display_name": "Noah Server Hash",
+      "description": "Hash of Noah Server Attributes",
+      "type": "hash",
+      "choice": [],
+      "calculated": false,
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "noah/client": {
+      "display_name": "Noah Client Hash",
+      "description": "Hash of Noah Client Attributes",
+      "type": "hash",
+      "choice": [],
+      "calculated": false,
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "noah/server_role": {
+      "display_name": "Server Role",
+      "description": "Role to use in search-based autodiscovery of a Noah server",
+      "default": "noah_server",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "noah/redis_version": {
+      "display_name": "Redis Version",
+      "description": "Version of Redis to use with Noah",
+      "default": "2.2.4",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "noah/redis_port": {
+      "display_name": "Redis Port",
+      "description": "Port number for Redis to bind",
+      "default": "6381",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "noah/port": {
+      "display_name": "Port",
+      "description": "Port number for Noah to bind",
+      "default": "5678",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "noah/user": {
+      "display_name": "User",
+      "description": "System account to run Noah",
+      "default": "noah",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "noah/version": {
+      "display_name": "Noah Version",
+      "description": "Version of Noah to install",
+      "default": "0.8.4",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "noah/home": {
+      "display_name": "Noah Home Directory",
+      "description": "Directory to install Noah. Redis data is stored here.",
+      "default": "/var/lib/noah",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "noah/logdir": {
+      "display_name": "Noah Log Directory",
+      "description": "Directory to use for Noah Logs",
+      "default": "/var/log/noah",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "noah/client/timeout": {
+      "display_name": "Noah Client Timeout",
+      "description": "Time to wait in connecting to Noah (in seconds)",
+      "default": "30",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "noah/client/on_failure": {
+      "display_name": "Noah Client Failure Response",
+      "description": "Client response to failure in connecting to Noah",
+      "default": ":fail",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "noah/client/retry_interval": {
+      "display_name": "Noah Client Retry Interval",
+      "description": "Number of times to retry connection before failing",
+      "default": "5",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "noah/client/noah_host": {
+      "display_name": "Noah Client Default Server",
+      "description": "Host to use as the Noah Server",
+      "default": "localhost",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "noah/client/noah_port": {
+      "display_name": "Noah Client Default Server Port",
+      "description": "Port to use for the default Noah Server",
+      "default": "5678",
+      "choice": [],
+      "calculated": false,
+      "type": "string",
+      "required": "optional",
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    }
+  }
+}

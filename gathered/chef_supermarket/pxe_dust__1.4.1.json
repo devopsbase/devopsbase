@@ -1,0 +1,78 @@
+{
+  "name": "pxe_dust Chef cookbook",
+  "chef_cookbook_name": "pxe_dust",
+  "revision": "1.4.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/pxe_dust",
+    "https://supermarket.chef.io/cookbooks/pxe_dust/download",
+    "https://supermarket.chef.io/cookbooks/pxe_dust/versions/1.4.1",
+    "https://supermarket.chef.io/cookbooks/pxe_dust/versions/1.4.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/pxe_dust/versions/1.4.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/pxe_dust",
+    "https://supermarket.chef.io/api/v1/cookbooks/pxe_dust/versions/1.4.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Style/Virtualization Level/Operating System"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/pxe_dust",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/pxe_dust/versions/1.4.1/download",
+  "deprecated": false,
+  "created": "2011-03-09T18:07:56.000Z",
+  "updated": "2016-02-10T23:16:12.694Z",
+  "description": "Configures local bootstrapping and installing operating systems via PXE booting.",
+  "maintainer": {
+    "name": "jjasghar",
+    "email": "cookbooks@opscode.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": false,
+  "rating": null,
+  "followers_count": 8,
+  "downloads_count": 21595776,
+  "downloads_count_revision": 1199708,
+  "repository_url": "http://github.com/opscode-cookbooks/pxe_dust",
+  "issues_url": "http://github.com/opscode-cookbooks/pxe_dust",
+  "chef_source_url": "http://github.com/opscode-cookbooks/pxe_dust",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nThis cookbook handles local bootstrapping and PXE booting life cycle with 3 recipes:\n\n* **server**: Configures a tftpd server for serving Ubuntu and Debian installers over PXE.\n* **installers**: Downloads the Chef full stack installers and writes out Chef bootstraps.\n* **bootstrap_template**: Builds a template for use with `knife` to take advantage of the locally mirrored content.\n\nRequirements\n============\n\nRequires Chef 10.12 or later since it now uses the full-chef installer.\n\n## Platform:\n\nTested on:\n\n* Ubuntu 10.04-12.04\n* Debian 6.0\n\n## Cookbooks:\n\nRequired: apache2, tftp\n\nOptional (recommended): apt (for `recipe[apt::cacher-ng]`).\n\nDO NOT USE `chef-client::delete-validator` in conjunction with this cookbook, since it uses the validation.pem to help bootstrap new machines.\n\npxe_dust Data Bag\n=================\n\nIn order to manage configuration of machines registering themselves with their Chef Server or Opscode Hosted Chef, we will use the `pxe_dust` data bag.\n\n```\n% knife data bag create pxe_dust\n% knife data bag from file pxe_dust examples/default.json\n```\n\nHere is an example of the default.json:\n\n```json\n{\n    \"id\": \"default\",\n    \"platform\": \"ubuntu\",\n    \"arch\": \"amd64\",\n    \"version\": \"12.04\",\n    \"user\": {\n        \"fullname\": \"Ubuntu\",\n        \"username\": \"ubuntu\",\n        \"crypted_password\": \"$6$Trby4Y5R$bi90k7uYY5ImXe5MWGFW9kel2BnMCcYO9EnwngTFIXKG2/nWcLKTJZ3verMFnpFbITI9.eHwZ.HR1UPeKbCAV1\"\n    }\n}\n```\n\nHere are currently supported options available for inclusion in the `default.json`.:\n\n* `platform`: OS platform for the installer, (ie. 'ubuntu' or 'debian').\n* `arch`: Architecture of the netboot.tar.gz to use as the source of pxeboot images, default is 'amd64'.\n* `interface`: Which interface to install from, default is 'auto'.\n* `version`: Ubuntu version of the netboot.tar.gz to use as the source of pxeboot images and full stack clients, default is '12.04'.\n* `domain`: Default domain for nodes, default is none.\n* `boot_volume_size`: Size of the LVM boot volume to create, default is '30GB'.\n* `packages`: Additional operating system packages to add to the preseed file.\n* `run_list`: Run list for nodes, this value is NOT set as a default and will be passed to all boot types unless explicitly overwritten.\n* `environment`: Environment for nodes, this value is NOT set as a default and will be passed to all boot types unless explicitly overwritten.\n* `netboot_url`: URL of the netboot image to use for OS installation.\n* `bootstrap`: Optional additional bootstrapping configuration.\n    `http_proxy`: HTTP proxy, default is none.\n    `http_proxy_user`: HTTP proxy user, default is none.\n    `http_proxy_pass`: HTTP proxy pass, default is none.\n    `https_proxy`: HTTPS proxy, default is none.\n* `user`:\n    `crypted_password`: SHA512 password for the default user, default 'password'. This may be generated and added to the data bag.\n    `fullname`: Full name of the default user, default 'Ubuntu'.\n    `username`: Username of the default user, default 'ubuntu'.\n* `root`:\n    `crypted_password`: SHA512 password for the root user, default 'password'. This is used on Debian since Ubuntu does not have a root.\n* `external_preseed`: Direct pxeboot clients to an existing (unmanaged by pxe_dust) preseed file.\n\nAdditional data bag items may be used to support booting multiple operating systems. Examples of various Ubuntu and Debian installations are included in the `examples` directory. Important to note is the use of the `addresses` option to support tftp booting by MAC address (this is currently required for not using the default) and the explicit need for a `run_list` and/or an `environment` if one is to be provided.\n\nTemplates\n=========\n\npxelinux.cfg.erb\n-----------\n\nSets the URL to the preseed file, architecture, the domain and which interfaces to use.\n\npreseed.cfg.erb\n---------------\n\nThe preseed file is full of opinions mostly exposed via attributes, you will want to update this. If there is a node providing an apt-cacher-ng caching proxy via `recipe[apt::cacher-ng]`, it is provided in the preseed.cfg. The initial user and password is configured and any additional required packages may be added to the `pxe_dust` data bag items. The preseed finishes by calling the `chef-bootstrap` script.\n\nchef-bootstrap.sh.erb\n---------------------\n\nThis is the `preseed/late_command` that bootstraps the node with Chef via the full stack installer.\n\nRecipes\n=======\n\ndefault\n-------\n\nThe default recipe includes recipe `pxe_dust::server`.\n\nserver\n------\n\n`recipe[pxe_dust::server]` includes the `apache2`, `tftp::server` and `pxe_dust::bootstrap_template` recipes.\n\nThe recipe does the following:\n\n1. Downloads the proper netboot.tar.gzs to boot from.\n2. Untars them to the `['tftp']['directory']` directory.\n3. Instructs the installer prompt to automatically install.\n4. Passes the URL of the preseed.cfgs to the installer.\n5. Uses the preseed.cfg template to pass in any `apt-cacher-ng` caching proxies or other additional settings.\n\ninstallers\n----------\n\nDownloads the full stack installers listed in the `pxe_dust` data bag and writes out the Chef bootstrap templates for the initial chef-client run connecting to the Chef server.\n\nbootstrap_template\n------------------\n\nThis recipe creates a bootstrap template that uses a local `install.sh` that uses the cached full stack installers from the `installers` recipe. It may then be downloaded from\n`http://NODE/pxedust.erb` and put in your `.chef/bootstrap/` directory for use with `knife`.\n\nUsage\n=====\n\nAdd `recipe[pxe_dust]` to a node's or role's run list. Create the `pxe_dust` data bag and update the `defaults.json` item before adding it.\n\nOn an Ubuntu system, the password can be generated by installing the `mkpasswd` package and running:\n\n    mkpasswd -m sha-512\n\nThe default is the hash of the password `ubuntu`, if you'd like to test. This must be set in the `pxe_dust` data bag to a valid sha-512 hash of the password or you will not be able to log in.\n\nThis cookbook does not provide DHCP or bootp to listen for PXE boot requests, this URL will have to be provided by another cookbook or manually. The author had to do this manually on a DD-WRT router.\n\nSide note, for DD-WRT bootp support [this forum post was followed](http://www.dd-wrt.com/phpBB2/viewtopic.php?t=4662). The key syntax was\n\n    dhcp-boot=pxelinux.0,,192.168.1.147\n\nin the section `Additional DNSMasq Options` where the IP address is that of the tftpd server we're configuring here and pxelinux.0 is from the netboot tarball.\n\nIf you do not need PXE booting, you may still want to use the `pxe_dust::installers` and `pxe_dust::bootstrap_template` for bootstrapping nodes (like with LXC or Vagrant).\n\nAttributes\n==========\n\n`node['pxe_dust']['chefversion']` the Chef version that pxe_dust should provide, unset by default which downloads latest\n\nLicense and Author\n==================\n\nAuthor:: Matt Ray <matt@opscode.com>\nAuthor:: Joshua Timberman <joshua@opscode.com>\n\nCopyright:: 2011-2012 Opscode, Inc\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apache2",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/tftp",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "recommends": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 1.3"
+    }
+  ]
+}

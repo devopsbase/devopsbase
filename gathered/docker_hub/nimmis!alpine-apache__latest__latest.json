@@ -1,0 +1,97 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/nimmis/alpine-apache",
+    "repository_url": "https://hub.docker.com/v2/repositories/nimmis/alpine-apache",
+    "tags_url": "https://hub.docker.com/v2/repositories/nimmis/alpine-apache/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/nimmis/alpine-apache/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/nimmis/alpine-apache/autobuild",
+    "user": "nimmis",
+    "name": "alpine-apache",
+    "namespace": "nimmis",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 1820,
+    "last_updated": "2016-09-23T21:39:39.129541Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 5936060,
+        "id": 2077597,
+        "repository": 540733,
+        "creator": 162525,
+        "last_updater": 162525,
+        "last_updated": "2016-09-23T21:39:38.815458Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "nimmis/docker-alpine-apache"
+  },
+  "name": "nimmis/alpine-apache Docker container",
+  "description": "This is a micro docker container  based on Alpine OS and Apache version 2",
+  "readme": "## Alpine microcontainer with Apache2\n\nThis is a micro docker container ![](https://images.microbadger.com/badges/image/nimmis/alpine-apache.svg) based on Alpine OS and Apache version 2.\n\nThere images are build on [nimmis/alpine-micro](https://hub.docker.com/r/nimmis/alpine-micro/) ![](https://images.microbadger.com/badges/image/nimmis/alpine-micro.svg) which are a modified version of Alpine OS with a working init process, cron, logrotate  and syslog. All services are started by runit daemon, for more information about how it works and setup of new services please visit <https://hub.docker.com/r/nimmis/alpine-micro/> for more information.\n\nThe container also have a backup system with cron schedule, number of copies to save etc, for information about the backup system please visit the [README.md for the backupsystem](https://github.com/nimmis/backup/blob/master/README.md)\n\n\n#### starting the container as a daemon\n\n\tdocker run -d --name apache nimmis/alpine-apache\n\nThis will start the container with apache process running, to access the container use\n\n\tdocker exec -ti apache /bin/sh\n\n#### Static web folder\n\nThe images exposes a volume at /web. The structure is\n\n| Directory | Function |\n| --------- | -------- |\n| /web/html | web root |\n| /web/cgi-bin | cgi bin folder |\n| /web/config | apache config directory |\n| /web/logs | apache log directory |\n| /web/internal | internal pages, error pages etc\n\nTo use this start the container with\n\n\tdocker run -d --name -apache -v /path/to/web:/web nimmis/alpine-apache\n\nif the folders are missing they will be created each time the container is started.\n\n#### Accessing apache from outside the container\n\nTo access the webserver from external you can the **-P/-p** paramter, with **-P** the ports 80 and 443 is automaticly exposed and assign a random port.\n\nor use the **-p** command to assign other ports, the syntax is\n\n\t-p <external port on host>:<local port in container>\n\nso to access the apache server port 80 on port 8080 you should use the command\n\n\tdocker run -d --name apache -p 8080:80 nimmis/alpine-apache\n\nor assigning 80->80 and 443->443 use\n\n\tdocker run -d --name apache -p 80:80 -p 443:443 nimmis/alpine-apache\n\n#### Successsful setup\n\nIf everything worked and you where able to expose the correct port and type the correct adress in a webbrowser the following page should appear.\n\n![screenshot](https://github.com/nimmis/docker-alpine-apache/blob/master/images/screenshot.png?raw=true \"Screenshot\")\n",
+  "dockerfile": "FROM nimmis/alpine-micro\n\nMAINTAINER nimmis <kjell.havneskold@gmail.com>\n\nCOPY root/. /\n\nRUN apk update && apk upgrade && \\\n\n    # Make info file about this build\n    printf \"Build of nimmis/alpine-apache, date: %s\\n\"  `date -u +\"%Y-%m-%dT%H:%M:%SZ\"` >> /etc/BUILD && \\\n\n    apk add apache2 libxml2-dev apache2-utils && \\\n    mkdir /web/ && chown -R apache.www-data /web && \\\n   \n    sed -i 's#^DocumentRoot \".*#DocumentRoot \"/web/html\"#g' /etc/apache2/httpd.conf && \\\n    sed -i 's#AllowOverride none#AllowOverride All#' /etc/apache2/httpd.conf && \\\n    sed -i 's#^ServerRoot .*#ServerRoot /web#g'  /etc/apache2/httpd.conf && \\\n    sed -i 's/^#ServerName.*/ServerName webproxy/' /etc/apache2/httpd.conf && \\\n    sed -i 's#^IncludeOptional /etc/apache2/conf#IncludeOptional /web/config/conf#g' /etc/apache2/httpd.conf && \\\n    sed -i 's#PidFile \"/run/.*#Pidfile \"/web/run/httpd.pid\"#g'  /etc/apache2/conf.d/mpm.conf && \\\n    sed -i 's#Directory \"/var/www/localhost/htdocs.*#Directory \"/web/html\" >#g' /etc/apache2/httpd.conf && \\\n    sed -i 's#Directory \"/var/www/localhost/cgi-bin.*#Directory \"/web/cgi-bin\" >#g' /etc/apache2/httpd.conf && \\\n\n    sed -i 's#/var/log/apache2/#/web/logs/#g' /etc/logrotate.d/apache2 && \\\n    sed -i 's/Options Indexes/Options /g' /etc/apache2/httpd.conf && \\\n\n    rm -rf /var/cache/apk/*\n\nVOLUME /web\n\nEXPOSE 80 443\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "/web"
+    ],
+    "run": [
+      "apk update && apk upgrade && "
+    ],
+    "workdir": [],
+    "from": "nimmis/alpine-micro",
+    "maintainer": "nimmis <kjell.havneskold@gmail.com>",
+    "copy": "root/. /"
+  },
+  "source_repository_url": "https://github.com/nimmis/docker-alpine-apache.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/nimmis/docker-alpine-apache",
+  "docker_repository": "nimmis/alpine-apache",
+  "docker_image": "nimmis/alpine-apache",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "nimmis/alpine-apache",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/nimmis/alpine-apache",
+    "https://hub.docker.com/v2/repositories/nimmis/alpine-apache",
+    "https://github.com/nimmis/docker-alpine-apache.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/VM Image/AMI",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/nimmis/alpine-apache",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,174 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/allanlei/python",
+    "repository_url": "https://hub.docker.com/v2/repositories/allanlei/python",
+    "tags_url": "https://hub.docker.com/v2/repositories/allanlei/python/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/allanlei/python/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/allanlei/python/autobuild",
+    "user": "allanlei",
+    "name": "python",
+    "namespace": "allanlei",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1594,
+    "last_updated": "2016-10-14T18:00:26.798090Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "3.5.2-onbuild",
+        "full_size": 34419512,
+        "id": 4307391,
+        "repository": 534362,
+        "creator": 665,
+        "last_updater": 665,
+        "last_updated": "2016-10-14T18:00:26.135505Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.6.0-onbuild",
+        "full_size": 32311437,
+        "id": 4449263,
+        "repository": 534362,
+        "creator": 665,
+        "last_updater": 665,
+        "last_updated": "2016-10-14T17:58:36.520472Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.7.12-onbuild",
+        "full_size": 29701511,
+        "id": 4296938,
+        "repository": 534362,
+        "creator": 665,
+        "last_updater": 665,
+        "last_updated": "2016-10-14T17:57:35.051725Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.7.11-onbuild",
+        "full_size": 20772210,
+        "id": 2042029,
+        "repository": 534362,
+        "creator": 665,
+        "last_updater": 665,
+        "last_updated": "2016-10-14T17:55:18.489355Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.5.1-onbuild",
+        "full_size": 25280757,
+        "id": 2042043,
+        "repository": 534362,
+        "creator": 665,
+        "last_updater": 665,
+        "last_updated": "2016-10-14T17:53:42.713127Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "allanlei/docker-python"
+  },
+  "name": "allanlei/python Docker container",
+  "description": "Python Images",
+  "readme": "# docker-python\n\n## How to Use (2.7.12+, 3.5.2+)\n## Python packages that require external libraries to **build**\nAdd the packages to ```requirements.build.txt```.  Keep in mind this is alpine based image.\n\n## Python packages that require external libraries to **run**\n* Automatically: Libraries automatically be detected and added to the ```.run-deps``` virtual package\n* Manually: Add the packages to ```requirements.run.txt```.  Keep in mind this is alpine based image.\n\n## TODOs\n* During the build, docker will copy ```requirements*.txt```.  It would be better if the specific files are copied over, but the ```COPY``` command fails if the file does not exist\n* Enabling extra Alpine repositories in conjunction with virtual packages\n",
+  "dockerfile": "FROM            python:3.5.2-alpine\nMAINTAINER      Allan Lei<allanlei@helveticode.com>\n\nENV             PYTHONUNBUFFERED True\nENV             PIP_DISABLE_PIP_VERSION_CHECK on\nENV             WORKDIR /usr/src/app/\n\nWORKDIR         $WORKDIR\n# ISSUE: https://github.com/gliderlabs/docker-alpine/issues/205\n# RUN             echo \"@edge-main http://dl-cdn.alpinelinux.org/alpine/edge/main\" >> /etc/apk/repositories && \\\n#                 echo \"@edge-community http://dl-cdn.alpinelinux.org/alpine/edge/community\" >> /etc/apk/repositories && \\\n#                 echo \"@edge-testing http://dl-cdn.alpinelinux.org/alpine/edge/testing\" >> /etc/apk/repositories\n\nRUN             apk --no-cache add --virtual .build-deps \\\n                    build-base \\\n                    openssl-dev \\\n                    libffi-dev \\\n                    zlib-dev && \\\n                pip install --no-cache-dir --use-wheel \\\n                    pyOpenSSL==16.0.0 \\\n                    ndg-httpsclient==0.4.2 \\\n                    pyasn1==0.1.9 \\\n                    pyasn1-modules==0.0.8 \\\n                    pycparser==2.14 \\\n                    cryptography==1.4 \\\n                    cffi==1.7.0 \\\n                    certifi==2016.8.8 && \\\n                scanelf --needed --nobanner --recursive /usr/local \\\n                    | awk '{ gsub(/,/, \"\\nso:\", $2); print \"so:\" $2 }' \\\n                    | sort -u \\\n                    | xargs -r apk info --installed \\\n                    | sort -u \\\n                    | xargs -r apk --no-cache add --virtual .run-deps && \\\n                apk del .build-deps\n\n# ISSUE: https://github.com/docker/docker/issues/13045\nONBUILD COPY    requirements*.txt $WORKDIR\nONBUILD RUN     apk --no-cache add --virtual .build-deps \\\n                    build-base \\\n                    openssl-dev \\\n                    libffi-dev \\\n                    zlib-dev && \\\n                cat requirements.build.txt 2> /dev/null | xargs -r apk --no-cache add --virtual .build-deps && \\\n                pip install --no-cache-dir --use-wheel -r requirements.txt && \\\n                cat requirements.run.txt 2> /dev/null | xargs -r apk --no-cache add --virtual .run-deps && \\\n                scanelf --needed --nobanner --recursive /usr/local \\\n                    | awk '{ gsub(/,/, \"\\nso:\", $2); print \"so:\" $2 }' \\\n                    | sort -u \\\n                    | xargs -r apk info --installed \\\n                    | sort -u \\\n                    | xargs -r apk --no-cache add --virtual .run-deps && \\\n                apk del .build-deps && \\\n                find /usr/local -depth \\\n            \t\t\\( \\\n            \t\t\t\\( -type d -a -name test -o -name tests \\) \\\n            \t\t\t-o \\\n            \t\t\t\\( -type f -a -name '*.pyc' -o -name '*.pyo' \\) \\\n            \t\t\\) -exec rm -rf '{}' + && \\\n                find . -type d -name \"__pycache__\" -exec rm -rf '{}' +\nONBUILD COPY    . $WORKDIR\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "            apk --no-cache add --virtual .build-deps                     build-base                     openssl-dev                     libffi-dev                     zlib-dev &&                 pip install --no-cache-dir --use-wheel                     pyOpenSSL==16.0.0                     ndg-httpsclient==0.4.2                     pyasn1==0.1.9                     pyasn1-modules==0.0.8                     pycparser==2.14                     cryptography==1.4                     cffi==1.7.0                     certifi==2016.8.8 &&                 scanelf --needed --nobanner --recursive /usr/local                     | awk '{ gsub(/,/, \"\\nso:\", $2); print \"so:\" $2 }'                     | sort -u                     | xargs -r apk info --installed                     | sort -u                     | xargs -r apk --no-cache add --virtual .run-deps &&                 apk del .build-deps"
+    ],
+    "workdir": [
+      "        $WORKDIR"
+    ],
+    "from": "           python:3.5.2-alpine",
+    "maintainer": "     Allan Lei<allanlei@helveticode.com>",
+    "env": {
+      "": "",
+      "PYTHONUNBUFFERED": "True",
+      "PIP_DISABLE_PIP_VERSION_CHECK": "on",
+      "WORKDIR": "/usr/src/app/"
+    },
+    "onbuild": "COPY    . $WORKDIR"
+  },
+  "source_repository_url": "https://github.com/allanlei/docker-python.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/allanlei/docker-python",
+  "docker_repository": "allanlei/python",
+  "docker_image": "allanlei/python",
+  "parameters_schema": {
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PYTHONUNBUFFERED": {
+      "default": "True",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PIP_DISABLE_PIP_VERSION_CHECK": {
+      "default": "on",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WORKDIR": {
+      "default": "/usr/src/app/",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "allanlei/python",
+  "revision": "3.5.2-onbuild",
+  "uris": [
+    "https://hub.docker.com/r/allanlei/python",
+    "https://hub.docker.com/v2/repositories/allanlei/python",
+    "https://github.com/allanlei/docker-python.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Mode/Executable/Image"
+  ],
+  "info_url": "https://hub.docker.com/r/allanlei/python",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

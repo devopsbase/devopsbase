@@ -1,0 +1,161 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/icewind1991/php-nginx",
+    "repository_url": "https://hub.docker.com/v2/repositories/icewind1991/php-nginx",
+    "tags_url": "https://hub.docker.com/v2/repositories/icewind1991/php-nginx/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/icewind1991/php-nginx/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/icewind1991/php-nginx/autobuild",
+    "user": "icewind1991",
+    "name": "php-nginx",
+    "namespace": "icewind1991",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 849,
+    "last_updated": "2016-10-15T03:31:28.926726Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "5",
+        "full_size": 246586310,
+        "id": 1682481,
+        "repository": 471933,
+        "creator": 451387,
+        "last_updater": 451387,
+        "last_updated": "2016-10-15T03:31:28.551400Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 250467461,
+        "id": 1682558,
+        "repository": 471933,
+        "creator": 451387,
+        "last_updater": 451387,
+        "last_updated": "2016-10-15T03:22:42.677789Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "7",
+        "full_size": 250467498,
+        "id": 1682762,
+        "repository": 471933,
+        "creator": 451387,
+        "last_updater": 451387,
+        "last_updated": "2016-10-15T03:13:50.789121Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "php5",
+        "full_size": 345833717,
+        "id": 1682478,
+        "repository": 471933,
+        "creator": 451387,
+        "last_updater": 451387,
+        "last_updated": "2016-01-07T14:08:43.958896Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "icewind1991/php-nginx"
+  },
+  "name": "icewind1991/php-nginx Docker container",
+  "description": "Docker image with php using nginx and php-fpm",
+  "readme": "# php-nginx\n\nDocker image with php using nginx and php-fpm\n\n```\ndocker pull icewind1991/php-nginx\n```\n\n## Serving your code\n\nBy default nginx is configured to server code from `/var/www/html`, you can either use a docker volume to place your code there or create a new image with the added code.\n\n## php extensions\n\nThe following php extensions are installed and enabled by default:\n\n- iconv\n- mcrypt\n- zip\n- pdo\n- pdo_pgsql\n- pdo_sqlite\n- pdo_mysql\n- pgsql\n- intl\n- curl\n- mbstring\n- gd\n- apcu\n- opache\n- blackfire (only for php5)\n\nYou can add additional php extensions by using the `docker-php-ext-configure` and `docker-php-ext-install` scripts. (see also the [official docker php docs](https://hub.docker.com/_/php/))\n\n## Customizing nginx \n\nYou can customize the nginx config without having to overwrite the main nginx config by adding a custom `nginx-app.conf` to `/etc/nginx/`\nThis file will be included in the `server` block of the nginx config.",
+  "dockerfile": "FROM php:5-fpm\nMAINTAINER  Robin Appelman <robin@icewind.nl>\n\nRUN DEBIAN_FRONTEND=noninteractive ;\\\n\tapt-get update && \\\n\tapt-get install --assume-yes \\\n\t\tbzip2 \\\n\t\tnginx \\\n\t\tlibaio-dev \\\n\t\twget \\\n\t\tunzip \\\n\t&& rm -rf /var/lib/apt/lists/*\n\n# Oracle instantclient\nRUN wget https://github.com/icewind1991/php-nginx/raw/master/instantclient-basic-linux.x64-12.1.0.2.0.zip -O /tmp/instantclient-basic-linux.x64-12.1.0.2.0.zip \\\n\t&& wget https://github.com/icewind1991/php-nginx/raw/master/instantclient-sdk-linux.x64-12.1.0.2.0.zip -O /tmp/instantclient-sdk-linux.x64-12.1.0.2.0.zip \\\n\t&& wget https://github.com/icewind1991/php-nginx/raw/master/instantclient-sqlplus-linux.x64-12.1.0.2.0.zip -O /tmp/instantclient-sqlplus-linux.x64-12.1.0.2.0.zip \\\n\t&& unzip /tmp/instantclient-basic-linux.x64-12.1.0.2.0.zip -d /usr/local/ \\\n\t&& unzip /tmp/instantclient-sdk-linux.x64-12.1.0.2.0.zip -d /usr/local/ \\\n\t&& unzip /tmp/instantclient-sqlplus-linux.x64-12.1.0.2.0.zip -d /usr/local/ \\\n\t&& ln -s /usr/local/instantclient_12_1 /usr/local/instantclient \\\n\t&& ln -s /usr/local/instantclient/libclntsh.so.12.1 /usr/local/instantclient/libclntsh.so \\\n\t&& ln -s /usr/local/instantclient/sqlplus /usr/bin/sqlplus \\\n\t&& rm /tmp/instantclient-*.zip \\\n\t&& echo 'instantclient,/usr/local/instantclient' | pecl install oci8-2.0.10 \\\n\t&& echo \"extension=oci8.so\" > $PHP_INI_DIR/conf.d/30-oci8.ini\n\n# php exceptions\nRUN apt-get update && apt-get install -y \\\n\t\tlibfreetype6-dev \\\n\t\tlibjpeg62-turbo-dev \\\n\t\tlibmcrypt-dev \\\n\t\tlibpng12-dev \\\n\t\tlibpq5 \\\n\t\tlibpq-dev \\\n\t\tlibsqlite3-dev \\\n\t\tlibcurl4-openssl-dev \\\n\t\tlibicu-dev \\\n\t&& docker-php-ext-install iconv mcrypt zip pdo pdo_pgsql pdo_sqlite pgsql pdo_mysql intl curl mbstring \\\n\t&& docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \\\n\t&& docker-php-ext-install gd \\\n\t&& apt-get remove -y \\\n\t\tlibfreetype6-dev \\\n\t\tlibjpeg62-turbo-dev \\\n\t\tlibmcrypt-dev \\\n\t\tlibpng12-dev \\\n\t\tlibpq-dev \\\n\t\tlibsqlite3-dev \\\n\t\tlibcurl4-openssl-dev \\\n\t\tlibicu-dev \\\n\t&& rm -rf /var/lib/apt/lists/* \\\n\t&& pecl install apcu-4.0.10  \\\n\t&& export VERSION=`php -r \"echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;\"` \\\n    && curl -A \"Docker\" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/${VERSION} \\\n    && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp \\\n    && mv /tmp/blackfire-*.so `php -r \"echo ini_get('extension_dir');\"`/blackfire.so \\\n    && echo \"extension=blackfire.so\\nblackfire.agent_socket=\\${BLACKFIRE_PORT}\" > $PHP_INI_DIR/conf.d/blackfire.ini\n\nRUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer\n    \nADD apcu.ini opcache.ini $PHP_INI_DIR/conf.d/\n\nADD nginx.conf nginx-app.conf /etc/nginx/\n\n\nADD php-fpm.conf /usr/local/etc/\nADD index.php /var/www/html/\n\nADD bootstrap-nginx.sh /usr/local/bin/\n\nEXPOSE 80\n\nENTRYPOINT  [\"bootstrap-nginx.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "apcu.ini",
+        "dest": "opcache.ini"
+      },
+      {
+        "source": "nginx.conf",
+        "dest": "nginx-app.conf"
+      },
+      {
+        "source": "php-fpm.conf",
+        "dest": "/usr/local/etc/"
+      },
+      {
+        "source": "index.php",
+        "dest": "/var/www/html/"
+      },
+      {
+        "source": "bootstrap-nginx.sh",
+        "dest": "/usr/local/bin/"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "DEBIAN_FRONTEND=noninteractive ;\tapt-get update && \tapt-get install --assume-yes \t\tbzip2 \t\tnginx \t\tlibaio-dev \t\twget \t\tunzip \t&& rm -rf /var/lib/apt/lists/*",
+      "wget https://github.com/icewind1991/php-nginx/raw/master/instantclient-basic-linux.x64-12.1.0.2.0.zip -O /tmp/instantclient-basic-linux.x64-12.1.0.2.0.zip \t&& wget https://github.com/icewind1991/php-nginx/raw/master/instantclient-sdk-linux.x64-12.1.0.2.0.zip -O /tmp/instantclient-sdk-linux.x64-12.1.0.2.0.zip \t&& wget https://github.com/icewind1991/php-nginx/raw/master/instantclient-sqlplus-linux.x64-12.1.0.2.0.zip -O /tmp/instantclient-sqlplus-linux.x64-12.1.0.2.0.zip \t&& unzip /tmp/instantclient-basic-linux.x64-12.1.0.2.0.zip -d /usr/local/ \t&& unzip /tmp/instantclient-sdk-linux.x64-12.1.0.2.0.zip -d /usr/local/ \t&& unzip /tmp/instantclient-sqlplus-linux.x64-12.1.0.2.0.zip -d /usr/local/ \t&& ln -s /usr/local/instantclient_12_1 /usr/local/instantclient \t&& ln -s /usr/local/instantclient/libclntsh.so.12.1 /usr/local/instantclient/libclntsh.so \t&& ln -s /usr/local/instantclient/sqlplus /usr/bin/sqlplus \t&& rm /tmp/instantclient-*.zip \t&& echo 'instantclient,/usr/local/instantclient' | pecl install oci8-2.0.10 \t&& echo \"extension=oci8.so\" > $PHP_INI_DIR/conf.d/30-oci8.ini",
+      "apt-get update && apt-get install -y \t\tlibfreetype6-dev \t\tlibjpeg62-turbo-dev \t\tlibmcrypt-dev \t\tlibpng12-dev \t\tlibpq5 \t\tlibpq-dev \t\tlibsqlite3-dev \t\tlibcurl4-openssl-dev \t\tlibicu-dev \t&& docker-php-ext-install iconv mcrypt zip pdo pdo_pgsql pdo_sqlite pgsql pdo_mysql intl curl mbstring \t&& docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \t&& docker-php-ext-install gd \t&& apt-get remove -y \t\tlibfreetype6-dev \t\tlibjpeg62-turbo-dev \t\tlibmcrypt-dev \t\tlibpng12-dev \t\tlibpq-dev \t\tlibsqlite3-dev \t\tlibcurl4-openssl-dev \t\tlibicu-dev \t&& rm -rf /var/lib/apt/lists/* \t&& pecl install apcu-4.0.10  \t&& export VERSION=`php -r \"echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;\"`     && curl -A \"Docker\" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/${VERSION}     && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp     && mv /tmp/blackfire-*.so `php -r \"echo ini_get('extension_dir');\"`/blackfire.so     && echo \"extension=blackfire.so\\nblackfire.agent_socket=\\${BLACKFIRE_PORT}\" > $PHP_INI_DIR/conf.d/blackfire.ini",
+      "curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer"
+    ],
+    "workdir": [],
+    "from": "php:5-fpm",
+    "maintainer": " Robin Appelman <robin@icewind.nl>",
+    "entrypoint": " [\"bootstrap-nginx.sh\"]"
+  },
+  "source_repository_url": "https://github.com/icewind1991/php-nginx.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/icewind1991/php-nginx",
+  "docker_repository": "icewind1991/php-nginx",
+  "docker_image": "icewind1991/php-nginx",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "icewind1991/php-nginx",
+  "revision": "5",
+  "uris": [
+    "https://hub.docker.com/r/icewind1991/php-nginx",
+    "https://hub.docker.com/v2/repositories/icewind1991/php-nginx",
+    "https://github.com/icewind1991/php-nginx.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/icewind1991/php-nginx",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

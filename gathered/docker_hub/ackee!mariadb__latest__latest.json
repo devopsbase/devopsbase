@@ -1,0 +1,160 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/ackee/mariadb",
+    "repository_url": "https://hub.docker.com/v2/repositories/ackee/mariadb",
+    "tags_url": "https://hub.docker.com/v2/repositories/ackee/mariadb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/ackee/mariadb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/ackee/mariadb/autobuild",
+    "user": "ackee",
+    "name": "mariadb",
+    "namespace": "ackee",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 179,
+    "last_updated": "2016-05-12T19:51:19.463551Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 143896993,
+        "id": 1951510,
+        "repository": 519180,
+        "creator": 562210,
+        "last_updater": 562210,
+        "last_updated": "2016-05-12T19:51:15.995247Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "development",
+        "full_size": 116539432,
+        "id": 2219114,
+        "repository": 519180,
+        "creator": 562210,
+        "last_updater": 562210,
+        "last_updated": "2016-04-14T12:35:04.297727Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "cron-backup-container",
+        "full_size": 130299143,
+        "id": 2656798,
+        "repository": 519180,
+        "creator": 562210,
+        "last_updater": 562210,
+        "last_updated": "2016-04-14T12:14:15.091779Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "aws_cli",
+        "full_size": 265209845,
+        "id": 2090493,
+        "repository": 519180,
+        "creator": 562210,
+        "last_updater": 562210,
+        "last_updated": "2016-04-05T17:23:35.240880Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "volumecheck",
+        "full_size": 130344514,
+        "id": 2116387,
+        "repository": 519180,
+        "creator": 562210,
+        "last_updater": 562210,
+        "last_updated": "2016-03-08T15:27:29.961218Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "s3-login-validation",
+        "full_size": 125476237,
+        "id": 2036359,
+        "repository": 519180,
+        "creator": 562210,
+        "last_updater": 562210,
+        "last_updated": "2016-02-25T13:08:17.235844Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "AckeeCZ/mariadb"
+  },
+  "name": "ackee/mariadb Docker container",
+  "description": "MariaDB with IBM Bluemix fixes",
+  "readme": "# Fixes Bluemix permissions problem\n",
+  "dockerfile": "FROM mariadb\n\n# Create fake chown so docker scripts won't fail (ugly)\nRUN mv /bin/chown /bin/chown.disabled && echo '#!/bin/bash' > /bin/chown && echo '/bin/chown.disabled \"$@\"' >> /bin/chown && echo 'exit 0' >> /bin/chown && chmod +x /bin/chown\n\n# multiple entrypoints\nCOPY ackee-entrypoint.sh /ackee-entrypoint.sh\nRUN mv /docker-entrypoint.sh /opt/02-docker-entrypoint.sh && mv /ackee-entrypoint.sh /docker-entrypoint.sh\n\n# switch mysql user to root\nRUN sed -i \"s/= mysql/= root/g\" /etc/mysql/my.cnf\nRUN sed -i \"s/--user=mysql/--user=root/g\" /opt/02-docker-entrypoint.sh\n\n# backups to Amazon S3\nRUN apt-get update && apt-get install -y s3cmd && apt-get install -y cron && rm -rf /var/lib/apt/lists/*\nCOPY s3cfg /root/.s3cfg\nCOPY mysql-backup.sh /opt/01-mysql-backup.sh\nCOPY s3-login-validation.sh /opt/03-s3-login-validation.sh\n\nENV TERM dumb\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "mv /bin/chown /bin/chown.disabled && echo '#!/bin/bash' > /bin/chown && echo '/bin/chown.disabled \"$@\"' >> /bin/chown && echo 'exit 0' >> /bin/chown && chmod +x /bin/chown",
+      "mv /docker-entrypoint.sh /opt/02-docker-entrypoint.sh && mv /ackee-entrypoint.sh /docker-entrypoint.sh",
+      "sed -i \"s/= mysql/= root/g\" /etc/mysql/my.cnf",
+      "sed -i \"s/--user=mysql/--user=root/g\" /opt/02-docker-entrypoint.sh",
+      "apt-get update && apt-get install -y s3cmd && apt-get install -y cron && rm -rf /var/lib/apt/lists/*"
+    ],
+    "workdir": [],
+    "from": "mariadb",
+    "copy": "s3-login-validation.sh /opt/03-s3-login-validation.sh",
+    "env": {
+      "TERM": "dumb"
+    }
+  },
+  "source_repository_url": "https://github.com/AckeeCZ/mariadb.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/AckeeCZ/mariadb",
+  "docker_repository": "ackee/mariadb",
+  "docker_image": "ackee/mariadb",
+  "parameters_schema": {
+    "TERM": {
+      "default": "dumb",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "ackee/mariadb",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/ackee/mariadb",
+    "https://hub.docker.com/v2/repositories/ackee/mariadb",
+    "https://github.com/AckeeCZ/mariadb.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/ackee/mariadb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

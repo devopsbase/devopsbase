@@ -1,0 +1,131 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/geonode/django",
+    "repository_url": "https://hub.docker.com/v2/repositories/geonode/django",
+    "tags_url": "https://hub.docker.com/v2/repositories/geonode/django/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/geonode/django/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/geonode/django/autobuild",
+    "user": "geonode",
+    "name": "django",
+    "namespace": "geonode",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 284,
+    "last_updated": "2016-10-02T03:27:52.259290Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "pycsw21",
+        "full_size": 446140572,
+        "id": 4907512,
+        "repository": 918022,
+        "creator": 1046766,
+        "last_updater": 1046766,
+        "last_updated": "2016-10-02T03:27:51.773812Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 446145797,
+        "id": 4862415,
+        "repository": 918022,
+        "creator": 1046766,
+        "last_updater": 1046766,
+        "last_updated": "2016-10-02T03:14:17.938318Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "geonode",
+        "full_size": 446144881,
+        "id": 4862192,
+        "repository": 918022,
+        "creator": 1046766,
+        "last_updater": 1046766,
+        "last_updated": "2016-10-02T03:00:24.777889Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "GeoNode/django-docker"
+  },
+  "name": "geonode/django Docker container",
+  "description": "Django base image for GeoNode",
+  "readme": null,
+  "dockerfile": "FROM python:2.7.9\nMAINTAINER Ariel Núñez<ariel@terranodo.io>\n\nRUN mkdir -p /usr/src/app\nWORKDIR /usr/src/app\n\n# This section is borrowed from the official Django image but adds GDAL and others\nRUN apt-get update && apt-get install -y \\\n\t\tgcc \\\n\t\tgettext \\\n\t\tpostgresql-client libpq-dev \\\n\t\tsqlite3 \\\n                python-gdal python-psycopg2 \\\n                python-imaging python-lxml \\\n                python-dev libgdal-dev \\\n                python-ldap \\\n                libmemcached-dev libsasl2-dev zlib1g-dev \\\n                python-pylibmc \\\n\t--no-install-recommends && rm -rf /var/lib/apt/lists/*\n\n\nCOPY wait-for-postgres.sh /usr/bin/wait-for-postgres\nRUN chmod +x /usr/bin/wait-for-postgres\n\n# To understand the next section (the need for requirements.txt and setup.py)\n# Please read: https://packaging.python.org/requirements/\n\n# python-gdal does not seem to work, let's install manually the version that is\n# compatible with the provided libgdal-dev\nRUN pip install GDAL==1.10 --global-option=build_ext --global-option=\"-I/usr/include/gdal\"\n\n# Copy the requirements first to avoid having to re-do it when the code changes.\n# Requirements in requirements.txt are pinned to specific version\n# usually the output of a pip freeze\nCOPY requirements.txt /usr/src/app/\nRUN pip install --no-cache-dir -r requirements.txt\n\n# Update the requirements from the local env in case they differ from the pre-built ones.\nONBUILD COPY requirements.txt /usr/src/app/\nONBUILD RUN pip install --no-cache-dir -r requirements.txt\n\nONBUILD COPY . /usr/src/app/\nONBUILD RUN pip install --no-deps --no-cache-dir -e /usr/src/app/\n\nEXPOSE 8000\nCMD [\"python\", \"manage.py\", \"runserver\", \"0.0.0.0:8000\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8000
+    ],
+    "volume": [],
+    "run": [
+      "mkdir -p /usr/src/app",
+      "apt-get update && apt-get install -y \t\tgcc \t\tgettext \t\tpostgresql-client libpq-dev \t\tsqlite3                 python-gdal python-psycopg2                 python-imaging python-lxml                 python-dev libgdal-dev                 python-ldap                 libmemcached-dev libsasl2-dev zlib1g-dev                 python-pylibmc \t--no-install-recommends && rm -rf /var/lib/apt/lists/*",
+      "chmod +x /usr/bin/wait-for-postgres",
+      "pip install GDAL==1.10 --global-option=build_ext --global-option=\"-I/usr/include/gdal\"",
+      "pip install --no-cache-dir -r requirements.txt"
+    ],
+    "workdir": [
+      "/usr/src/app"
+    ],
+    "from": "python:2.7.9",
+    "maintainer": "Ariel Núñez<ariel@terranodo.io>",
+    "copy": "requirements.txt /usr/src/app/",
+    "onbuild": "RUN pip install --no-deps --no-cache-dir -e /usr/src/app/",
+    "cmd": "[\"python\", \"manage.py\", \"runserver\", \"0.0.0.0:8000\"]"
+  },
+  "source_repository_url": "https://github.com/GeoNode/django-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/GeoNode/django-docker",
+  "docker_repository": "geonode/django",
+  "docker_image": "geonode/django",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        8000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "geonode/django",
+  "revision": "pycsw21",
+  "uris": [
+    "https://hub.docker.com/r/geonode/django",
+    "https://hub.docker.com/v2/repositories/geonode/django",
+    "https://github.com/GeoNode/django-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Mode/Executable/Image",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://hub.docker.com/r/geonode/django",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

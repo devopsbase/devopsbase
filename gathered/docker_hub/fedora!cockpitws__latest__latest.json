@@ -1,0 +1,106 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/fedora/cockpitws",
+    "repository_url": "https://hub.docker.com/v2/repositories/fedora/cockpitws",
+    "tags_url": "https://hub.docker.com/v2/repositories/fedora/cockpitws/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/fedora/cockpitws/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/fedora/cockpitws/autobuild",
+    "user": "fedora",
+    "name": "cockpitws",
+    "namespace": "fedora",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1437,
+    "last_updated": "2016-09-18T14:51:55.408425Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 179425638,
+        "id": 223335,
+        "repository": 202635,
+        "creator": 17785,
+        "last_updater": 17785,
+        "last_updated": "2016-09-18T14:51:55.008818Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "fedora-cloud/Fedora-Dockerfiles"
+  },
+  "name": "fedora/cockpitws Docker container",
+  "description": "",
+  "readme": "dockerfiles-fedora-cockpit-ws\n=============================\n\nDocker build file for a privileged container containing cockpit-ws.\n\nThis is to be used on an Atomic host that already contains the\ncockpit-bridge and cockpit-shell packages included.\n\nTo run this priviled container use the 'atomic' command:\n\n    $ sudo atomic run <username>/cockpit-ws\n\nThis container listens on the Cockpit port 9090. This is a privileged\ncontainer, and does not work with port mappings.\n\nTo build this container use the following command:\n\n    $ sudo docker build --rm -t <username>/cockpit-ws .\n\nUpstream for the Docker file is in the 'tools' directory at:\n\nhttps://github.com/cockpit-project/cockpit\n",
+  "dockerfile": "FROM fedora\nMAINTAINER http://fedoraproject.org/wiki/Cloud\n\nRUN dnf -y update && dnf install -y sed openssl && dnf clean all\n\n# A repo where we can find recent Cockpit builds for Fedora\nADD cockpit-preview.repo /etc/yum.repos.d/\n\n# If there are rpm files in the current directory we'll install those,\n# otherwise use cockpit-preview repo. The Dockerfile is a hack around\n# Dockerfile lack of support for branches\nADD cockpit-ws-*.rpm Dockerfile /tmp/\n\n# Again see above ... we do our branching in shell script\nRUN cd /tmp && \\\n  ( ls *.rpm > /dev/null 2> /dev/null && dnf -y install *.rpm || \\\n        dnf -y --enablerepo=cockpit-preview install cockpit-ws ) && \\\n  dnf clean all && rm -f /tmp/*.rpm\n\n# And the stuff that starts the container\nRUN mkdir -p /container && ln -s /host/proc/1 /container/target-namespace\nADD atomic-* /container/\nRUN chmod -v +x /container/atomic-*\n\nLABEL INSTALL /usr/bin/docker run -ti --rm --privileged -v /:/host IMAGE /container/atomic-install\nLABEL UNINSTALL /usr/bin/docker run -ti --rm --privileged -v /:/host IMAGE /cockpit/atomic-uninstall\nLABEL RUN /usr/bin/docker run -d --privileged --pid=host -v /:/host IMAGE /container/atomic-run --local-ssh\n\n# Look ma, no EXPOSE\n\nCMD [\"/container/atomic-run\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "cockpit-preview.repo",
+        "dest": "/etc/yum.repos.d/"
+      },
+      {
+        "source": "cockpit-ws-*.rpm",
+        "dest": "Dockerfile"
+      },
+      {
+        "source": "atomic-*",
+        "dest": "/container/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "dnf -y update && dnf install -y sed openssl && dnf clean all",
+      "cd /tmp &&   ( ls *.rpm > /dev/null 2> /dev/null && dnf -y install *.rpm ||         dnf -y --enablerepo=cockpit-preview install cockpit-ws ) &&   dnf clean all && rm -f /tmp/*.rpm",
+      "mkdir -p /container && ln -s /host/proc/1 /container/target-namespace",
+      "chmod -v +x /container/atomic-*"
+    ],
+    "workdir": [],
+    "from": "fedora",
+    "maintainer": "http://fedoraproject.org/wiki/Cloud",
+    "label": "RUN /usr/bin/docker run -d --privileged --pid=host -v /:/host IMAGE /container/atomic-run --local-ssh",
+    "cmd": "[\"/container/atomic-run\"]"
+  },
+  "source_repository_url": "https://github.com/fedora-cloud/Fedora-Dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/fedora-cloud/Fedora-Dockerfiles",
+  "docker_repository": "fedora/cockpitws",
+  "docker_image": "fedora/cockpitws",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "fedora/cockpitws",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/fedora/cockpitws",
+    "https://hub.docker.com/v2/repositories/fedora/cockpitws",
+    "https://github.com/fedora-cloud/Fedora-Dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/fedora/cockpitws",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

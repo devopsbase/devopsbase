@@ -1,0 +1,115 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/centos/wildfly",
+    "repository_url": "https://hub.docker.com/v2/repositories/centos/wildfly",
+    "tags_url": "https://hub.docker.com/v2/repositories/centos/wildfly/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/centos/wildfly/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/centos/wildfly/autobuild",
+    "user": "centos",
+    "name": "wildfly",
+    "namespace": "centos",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 4,
+    "pull_count": 1452,
+    "last_updated": "2016-10-14T14:40:27.164842Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 291178329,
+        "id": 183707,
+        "repository": 213518,
+        "creator": 67587,
+        "last_updater": 67587,
+        "last_updated": "2016-10-14T14:40:26.791512Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "CentOS/CentOS-Dockerfiles"
+  },
+  "name": "centos/wildfly Docker container",
+  "description": "",
+  "readme": "# WildFly Docker image\n\nThis is an example Dockerfile with [WildFly application server](http://wildfly.org/).\n\n## Usage\n\nTo boot in standalone mode\n\n    docker run -it centos/wildfly\n\nTo boot in domain mode\n\n    docker run -it centos/wildfly /opt/wildfly/bin/domain.sh -b 0.0.0.0 -bmanagement 0.0.0.0\n\n## Application deployment\n\nWith the WildFly server you can [deploy your application in multiple ways](https://docs.jboss.org/author/display/WFLY8/Application+deployment):\n\n1. You can use CLI\n2. You can use the web console\n3. You can use the management API directly\n4. You can use the deployment scanner\n\nThe most popular way of deploying an application is using the deployment scanner. In WildFly this method is enabled by default and the only thing you need to do is to place your application inside of the `deployments/` directory. It can be `/opt/wildfly/standalone/deployments/` or `/opt/wildfly/domain/deployments/` depending on [which mode](https://docs.jboss.org/author/display/WFLY8/Operating+modes) you choose (standalone is default in the `centos/wildfly` image -- see above).\n\nThe simplest and cleanest way to deploy an application to WildFly running in a container started from the `centos/wildfly` image is to use the deployment scanner method mentioned above.\n\nTo do this you just need to extend the `centos/wildfly` image by creating a new one. Place your application inside the `deployments/` directory with the `ADD` command (but make sure to include the trailing slash on the deployment folder path, [more info](https://docs.docker.com/reference/builder/#add)). You can also do the changes to the configuration (if any) as additional steps (`RUN` command).  \n\n[A simple example](https://github.com/goldmann/wildfly-docker-deployment-example) was prepared to show how to do it, but the steps are following:\n\n1. Create `Dockerfile` with following content:\n\n        FROM centos/wildfly\n        ADD your-awesome-app.war /opt/wildfly/standalone/deployments/\n2. Place your `your-awesome-app.war` file in the same directory as your `Dockerfile`.\n3. Run the build with `docker build --tag=wildfly-app .`\n4. Run the container with `docker run -it wildfly-app`. Application will be deployed on the container boot.\n\nThis way of deployment is great because of a few things:\n\n1. It utilizes Docker as the build tool providing stable builds\n2. Rebuilding image this way is very fast (once again: Docker)\n3. You only need to do changes to the base WildFly image that are required to run your application\n\n## Extending the image\n\nTo be able to create a management user to access the administration console create a Dockerfile with the following content\n\n    FROM centos/wildfly\n    RUN /opt/wildfly/bin/add-user.sh admin Admin#70365 --silent\n\nThen you can build the image:\n\n    docker build --tag=centos/wildfly-admin .\n\nRun it:\n\n    docker run -it -p 9990:9990 centos/wildfly-admin\n\nThe administration console should be available at http://localhost:9990.\n\n## Building on your own\n\nYou don't need to do this on your own, because we prepared a trusted build for this repository, but if you really want:\n\n    docker build --rm=true --tag=centos/wildfly .\n\n## Source\nThis source is available at\n[https://github.com/CentOS/CentOS-Dockerfiles/](https://github.com/CentOS/CentOS-Dockerfiles/)\n\nThe original source this is based on can be found at [jboss-dockerfiles](https://github.com/jboss/dockerfiles/tree/master/wildfly).\n\n## Issues\n\nPlease report any issues or file RFEs on [GitHub](https://github.com/jboss/dockerfiles/issues).\n",
+  "dockerfile": "# Use latest Fedora image as the base\nFROM centos:latest\nMAINTAINER http://www.centos.org\n\nLABEL Vendor=\"CentOS\"\nLABEL License=GPLv2\nLABEL Version=8.2.0.Final\n\n\n# Update base image\nRUN yum -y update && yum clean all\n\n# xmlstarlet is useful when modifying attributes/elements\n# saxon can be used to execute configuration transformation using XSLT\n# augeas is a great tool to edit any configuration files (XML too)\n# bsdtar can be used to unpack zip files using pipes\nRUN yum -y install tar java-1.7.0-openjdk-devel saxon \\ \n    augeas bsdtar shadow-utils && yum clean all\n\n# Set the WILDFLY_VERSION env variable\nENV WILDFLY_VERSION 8.2.0.Final\n\n# Create the wildfly user and group\nRUN groupadd -r wildfly -g 433 && useradd -u 431 -r -g wildfly -d /opt/wildfly -s /sbin/nologin -c \"WildFly user\" wildfly\n\n# Create directory to extract tar file to\nRUN mkdir /opt/wildfly-$WILDFLY_VERSION\n\n# Add the WildFly distribution to /opt, and make wildfly the owner of the extracted tar content\nRUN cd /opt && curl http://download.jboss.org/wildfly/$WILDFLY_VERSION/wildfly-$WILDFLY_VERSION.tar.gz | tar zx && chown -R wildfly:wildfly /opt/wildfly-$WILDFLY_VERSION\n\n# Make sure the distribution is available from a well-known place\nRUN ln -s /opt/wildfly-$WILDFLY_VERSION /opt/wildfly && chown -R wildfly:wildfly /opt/wildfly\n\n# Set the JBOSS_HOME env variable\nENV JBOSS_HOME /opt/wildfly\n\n# Expose the ports we're interested in\nEXPOSE 8080 9990\n\n# Run everything below as the wildfly user\nUSER wildfly\n\n# Set the default command to run on boot\n# This will boot WildFly in the standalone mode and bind to all interface\nCMD [\"/opt/wildfly/bin/standalone.sh\", \"-c\", \"standalone-full.xml\", \"-b\", \"0.0.0.0\", \"-bmanagement\", \"0.0.0.0\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "yum -y update && yum clean all",
+      "yum -y install tar java-1.7.0-openjdk-devel saxon \\ ",
+      "groupadd -r wildfly -g 433 && useradd -u 431 -r -g wildfly -d /opt/wildfly -s /sbin/nologin -c \"WildFly user\" wildfly",
+      "mkdir /opt/wildfly-$WILDFLY_VERSION",
+      "cd /opt && curl http://download.jboss.org/wildfly/$WILDFLY_VERSION/wildfly-$WILDFLY_VERSION.tar.gz | tar zx && chown -R wildfly:wildfly /opt/wildfly-$WILDFLY_VERSION",
+      "ln -s /opt/wildfly-$WILDFLY_VERSION /opt/wildfly && chown -R wildfly:wildfly /opt/wildfly"
+    ],
+    "workdir": [],
+    "from": "centos:latest",
+    "maintainer": "http://www.centos.org",
+    "label": "Version=8.2.0.Final",
+    "env": {
+      "WILDFLY_VERSION": "8.2.0.Final",
+      "JBOSS_HOME": "/opt/wildfly"
+    },
+    "user": "wildfly",
+    "cmd": "[\"/opt/wildfly/bin/standalone.sh\", \"-c\", \"standalone-full.xml\", \"-b\", \"0.0.0.0\", \"-bmanagement\", \"0.0.0.0\"]"
+  },
+  "source_repository_url": "https://github.com/CentOS/CentOS-Dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/CentOS/CentOS-Dockerfiles",
+  "docker_repository": "centos/wildfly",
+  "docker_image": "centos/wildfly",
+  "parameters_schema": {
+    "WILDFLY_VERSION": {
+      "default": "8.2.0.Final",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JBOSS_HOME": {
+      "default": "/opt/wildfly",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "centos/wildfly",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/centos/wildfly",
+    "https://hub.docker.com/v2/repositories/centos/wildfly",
+    "https://github.com/CentOS/CentOS-Dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/CentOS",
+    "Type/Middleware/Application Server/WildFly"
+  ],
+  "info_url": "https://hub.docker.com/r/centos/wildfly",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

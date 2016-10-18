@@ -1,0 +1,150 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/densuke/ubuntu-jp-remix",
+    "repository_url": "https://hub.docker.com/v2/repositories/densuke/ubuntu-jp-remix",
+    "tags_url": "https://hub.docker.com/v2/repositories/densuke/ubuntu-jp-remix/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/densuke/ubuntu-jp-remix/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/densuke/ubuntu-jp-remix/autobuild",
+    "user": "densuke",
+    "name": "ubuntu-jp-remix",
+    "namespace": "densuke",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 2661,
+    "last_updated": "2016-10-16T19:10:31.018357Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "vivid",
+        "full_size": 74765747,
+        "id": 69539,
+        "repository": 72799,
+        "creator": 17972,
+        "last_updater": 17972,
+        "last_updated": "2016-10-16T19:10:27.081109Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "trusty",
+        "full_size": 138222868,
+        "id": 69483,
+        "repository": 72799,
+        "creator": 17972,
+        "last_updater": 17972,
+        "last_updated": "2016-10-16T19:08:33.317981Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "utopic",
+        "full_size": 92771542,
+        "id": 69509,
+        "repository": 72799,
+        "creator": 17972,
+        "last_updater": 17972,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 92771535,
+        "id": 69462,
+        "repository": 72799,
+        "creator": 17972,
+        "last_updater": 17972,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "densuke/docker-ubuntu-jp"
+  },
+  "name": "densuke/ubuntu-jp-remix Docker container",
+  "description": "Ubuntu Linuxの日本語remix風味です",
+  "readme": "Ubuntu Linuxに日本語remixで適用されているリポジトリやロケール、タイムゾーンなどを調整したものです。ベースはofficialなubuntuです。\r\n\r\nタグについては、以下のものを準備しています。\r\n\r\n* ``trusty``: trusty tahr(14.04.1)ベース ※いわゆるLTSです\r\n* ``utopic``: utopic unicorn(14.10)ベース\r\n\r\nイメージの更新タイミングは主に以下の3つです\r\n\r\n - 日本時間の月曜日4時過ぎに最新版に更新してくれます(期待)\r\n - リポジトリリンクで張っている[公式ubuntuイメージ](https://registry.hub.docker.com/_/ubuntu/)が更新された時\r\n - Dockerfile(など)を更新した時\r\n\r\nその他、気分次第でいきなりビルドが始まることもあります。\r\n\r\n基本的なところは変えてないため、すでにdensuke/trusty-jpを利用されているイメージであっても、 FROM行を差し替えるだけでそのまま動くはずです。が、保証はいたしませんのでそのつもりで。",
+  "dockerfile": "FROM ubuntu:15.04\nMAINTAINER densuke\n\n# 日付周りを日本語向けに変更します\nRUN cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && \\\n    echo 'Asia/Tokyo' > /etc/timezone && date\n# 日本向けマシンではハードウェアクロックはローカルタイムです\nRUN sed -e 's;UTC=yes;UTC=no;' -i /etc/default/rcS\nRUN dpkg-reconfigure tzdata -f noninteractive\n# ロケールを基本日本語に設定します\nRUN echo 'LC_ALL=ja_JP.UTF-8' > /etc/default/locale && \\\n    echo 'LANG=ja_JP.UTF-8' >> /etc/default/locale && \\\n\t\tlocale-gen ja_JP.UTF-8\n# リポジトリを日本語向けに変更します\nRUN sed -e 's;http://archive;http://jp.archive;' -e  's;http://us\\.archive;http://jp.archive;' -i /etc/apt/sources.list\nRUN [ ! -x /usr/bin/wget ] && apt-get update && \\\n    DEBIAN_FRONTEND=noninteractive apt-get install -y wget && \\\n\t\ttouch /.get-wget\nRUN wget -q https://www.ubuntulinux.jp/ubuntu-ja-archive-keyring.gpg -O- | apt-key add - && \\\n    wget -q https://www.ubuntulinux.jp/ubuntu-jp-ppa-keyring.gpg -O- | apt-key add - && \\\n\t\twget https://www.ubuntulinux.jp/sources.list.d/utopic.list -O- | sed -e 's;utopic;vivid;g' >  /etc/apt/sources.list.d/ubuntu-ja.list\n\n# システムを更新します\nRUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y\n\n# 後始末をします\nRUN [ -f /.get-wget ] && \\\n    DEBIAN_FRONTEND=noninteractive apt-get purge --auto-remove -y wget && \\\n\t\trm -f /.get-wget\nRUN apt-get clean\n\n# デフォルトロケール(変数)を日本語向けに変更しておきます\nENV LC_ALL ja_JP.UTF-8\nENV LANG j_JP.UTF-8\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime &&     echo 'Asia/Tokyo' > /etc/timezone && date",
+      "sed -e 's;UTC=yes;UTC=no;' -i /etc/default/rcS",
+      "dpkg-reconfigure tzdata -f noninteractive",
+      "echo 'LC_ALL=ja_JP.UTF-8' > /etc/default/locale &&     echo 'LANG=ja_JP.UTF-8' >> /etc/default/locale && \t\tlocale-gen ja_JP.UTF-8",
+      "sed -e 's;http://archive;http://jp.archive;' -e  's;http://us\\.archive;http://jp.archive;' -i /etc/apt/sources.list",
+      "[ ! -x /usr/bin/wget ] && apt-get update &&     DEBIAN_FRONTEND=noninteractive apt-get install -y wget && \t\ttouch /.get-wget",
+      "wget -q https://www.ubuntulinux.jp/ubuntu-ja-archive-keyring.gpg -O- | apt-key add - &&     wget -q https://www.ubuntulinux.jp/ubuntu-jp-ppa-keyring.gpg -O- | apt-key add - && \t\twget https://www.ubuntulinux.jp/sources.list.d/utopic.list -O- | sed -e 's;utopic;vivid;g' >  /etc/apt/sources.list.d/ubuntu-ja.list",
+      "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y",
+      "[ -f /.get-wget ] &&     DEBIAN_FRONTEND=noninteractive apt-get purge --auto-remove -y wget && \t\trm -f /.get-wget",
+      "apt-get clean"
+    ],
+    "workdir": [],
+    "from": "ubuntu:15.04",
+    "maintainer": "densuke",
+    "env": {
+      "LC_ALL": "ja_JP.UTF-8",
+      "LANG": "j_JP.UTF-8"
+    }
+  },
+  "source_repository_url": "https://github.com/densuke/docker-ubuntu-jp.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/densuke/docker-ubuntu-jp",
+  "docker_repository": "densuke/ubuntu-jp-remix",
+  "docker_image": "densuke/ubuntu-jp-remix",
+  "parameters_schema": {
+    "LC_ALL": {
+      "default": "ja_JP.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "j_JP.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "densuke/ubuntu-jp-remix",
+  "revision": "vivid",
+  "uris": [
+    "https://hub.docker.com/r/densuke/ubuntu-jp-remix",
+    "https://hub.docker.com/v2/repositories/densuke/ubuntu-jp-remix",
+    "https://github.com/densuke/docker-ubuntu-jp.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Binding/Region/Europe/EU"
+  ],
+  "info_url": "https://hub.docker.com/r/densuke/ubuntu-jp-remix",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

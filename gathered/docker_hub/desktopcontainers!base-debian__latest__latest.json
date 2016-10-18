@@ -1,0 +1,123 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/desktopcontainers/base-debian",
+    "repository_url": "https://hub.docker.com/v2/repositories/desktopcontainers/base-debian",
+    "tags_url": "https://hub.docker.com/v2/repositories/desktopcontainers/base-debian/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/desktopcontainers/base-debian/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/desktopcontainers/base-debian/autobuild",
+    "user": "desktopcontainers",
+    "name": "base-debian",
+    "namespace": "desktopcontainers",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 255,
+    "last_updated": "2016-09-23T21:17:05.916953Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 133995045,
+        "id": 3516384,
+        "repository": 756642,
+        "creator": 919815,
+        "last_updater": 919815,
+        "last_updated": "2016-09-23T21:17:05.358083Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "DesktopContainers/base-debian"
+  },
+  "name": "desktopcontainers/base-debian Docker container",
+  "description": "DesktopContainers Base Image - Debian with MATE Desktop",
+  "readme": "# Debian VNC/Websockify/SSH Desktopcontainers Base Image\n\nA dockerfile that builds debian jessie with VNC, websockify and ssh Server.\n\nThis is build as base image for various desktop applications.\n\nThe applications will be available as VNC, Websockify VNC, SSH or Host X11.\nYou can change the behaviour via environment variables. So the User can decide how he wants to use the application.\n\nBase image: _/debian:jessie\nBecause I want base system which runs nearly everywhere.\n\n# Environment variables and defaults\n\n* __DISABLE\\_SSHD__\n * set this to any value e.g. true to disable SSHD -> Port 22 \n  * _ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -X root@$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' containername) [...]_\n* __DISABLE\\_VNC__\n * set this to any value e.g. true to disable VNC Server -> Port 5901\n* __VNC\\_PASSWORD__\n * default: _debian_ use custom password for VNC\n* __VNC\\_SCREEN\\_RESOLUTION__\n * default: _1280x800_\n* __DISABLE\\_WEBSOCKIFY__\n * set this to any value e.g. true to disable Websockify Server -> Port 80\n\n## Websockify SSL Environment variables and defaults\n\n* __ENABLE\\_SSL__\n * set this to any value e.g. true to enable to enable SSL Websockify Server\n* __SSL\\_ONLY__\n * set this to any value e.g. true to set SSL only for Websockify Server\n* __SSL\\_CERT__\n * default: _/opt/websockify/self.pem_ path to cert with included key\n* __SSL\\_SIZE__ \n * default: _4086_ keysize\n* __SSL\\_DAYS__\n * default: _3650_ ssl cert lifetime in days\n* __SSL\\_SUBJECT__\n * default: _/C=XX/ST=XXXX/L=XXXX/O=XXXX/CN=localhost_ ssl cert subject\n\n# Usage\n\nRun the container with this command:\n\n    docker run -d --name debian-base-system -p 5901:5901 -p 80:80 desktopcontainers/base-debian\n\nConnect to the container.  In the vnc connection string, type this:\n\n\"ipaddress:1\"\n\nThe default password is \"debian\".\n",
+  "dockerfile": "FROM debian:jessie\n\nMAINTAINER MarvAmBass (https://github.com/DesktopContainers)\n\nENV LANG C.UTF-8\n\nENV DEBIAN_FRONTEND noninteractive\nRUN apt-get -q -y update && \\\n    apt-get -q -y install python \\\n                          tightvncserver \\\n                          openssh-server \\\n                          git && \\\n    apt-get -q -y clean && \\\n    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \\\n    sed -i 's/main/main contrib non-free/g' /etc/apt/sources.list; \\\n    \\\n    git clone https://github.com/kanaka/websockify.git /opt/websockify && \\\n    rm -rf /opt/websockify/.git; \\\n    \\\n    touch /var/log/null && \\\n    chmod 444 /var/log/null\n\nADD app-sh.sh /bin/app-sh.sh\nRUN useradd -ms /bin/app-sh.sh app\n\nADD ssh-app.sh /bin/ssh-app.sh\n\nEXPOSE 5901 80 22\n\nADD entrypoint.sh /opt/entrypoint.sh\n\nENTRYPOINT [\"/opt/entrypoint.sh\"]\nCMD [\"/bin/bash\", \"-c\", \"tail -F /var/log/null /home/app/.vnc/*.log\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "app-sh.sh",
+        "dest": "/bin/app-sh.sh"
+      },
+      {
+        "source": "ssh-app.sh",
+        "dest": "/bin/ssh-app.sh"
+      },
+      {
+        "source": "entrypoint.sh",
+        "dest": "/opt/entrypoint.sh"
+      }
+    ],
+    "expose": [
+      5901
+    ],
+    "volume": [],
+    "run": [
+      "apt-get -q -y update &&     apt-get -q -y install python                           tightvncserver                           openssh-server                           git &&     apt-get -q -y clean &&     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* &&     sed -i 's/main/main contrib non-free/g' /etc/apt/sources.list;         git clone https://github.com/kanaka/websockify.git /opt/websockify &&     rm -rf /opt/websockify/.git;         touch /var/log/null &&     chmod 444 /var/log/null",
+      "useradd -ms /bin/app-sh.sh app"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "MarvAmBass (https://github.com/DesktopContainers)",
+    "env": {
+      "LANG": "C.UTF-8",
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "entrypoint": "[\"/opt/entrypoint.sh\"]",
+    "cmd": "[\"/bin/bash\", \"-c\", \"tail -F /var/log/null /home/app/.vnc/*.log\"]"
+  },
+  "source_repository_url": "https://github.com/DesktopContainers/base-debian.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/DesktopContainers/base-debian",
+  "docker_repository": "desktopcontainers/base-debian",
+  "docker_image": "desktopcontainers/base-debian",
+  "parameters_schema": {
+    "LANG": {
+      "default": "C.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5901
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "desktopcontainers/base-debian",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/desktopcontainers/base-debian",
+    "https://hub.docker.com/v2/repositories/desktopcontainers/base-debian",
+    "https://github.com/DesktopContainers/base-debian.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux/Debian"
+  ],
+  "info_url": "https://hub.docker.com/r/desktopcontainers/base-debian",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,118 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/rocoto/couchdb",
+    "repository_url": "https://hub.docker.com/v2/repositories/rocoto/couchdb",
+    "tags_url": "https://hub.docker.com/v2/repositories/rocoto/couchdb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/rocoto/couchdb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/rocoto/couchdb/autobuild",
+    "user": "rocoto",
+    "name": "couchdb",
+    "namespace": "rocoto",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 2325,
+    "last_updated": "2016-01-28T05:41:13.569357Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 134241405,
+        "id": 166155,
+        "repository": 155026,
+        "creator": 239099,
+        "last_updater": 239099,
+        "last_updated": "2016-01-28T05:41:13.114918Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.6.1",
+        "full_size": 150671568,
+        "id": 166152,
+        "repository": 155026,
+        "creator": 239099,
+        "last_updater": 101274,
+        "last_updated": "2015-11-14T13:29:54.795493Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "rocoto/docker-couchdb"
+  },
+  "name": "rocoto/couchdb Docker container",
+  "description": "Debian based: 312.1 MB image",
+  "readme": "# docker-couchdb\n\nYet another `CouchDB` container.\n\n* Built on `Debian`.\n* Currently 312.1 Mb image.\n* Runs as `couchdb` user.\n* Puts all data (databases, views, config files) in a single data volume.\n\n## Installation\n\n```sh\ndocker pull rocoto/couchdb\n```\n\n## Usage\n\n```sh\n# Create data container to hold the data.\ndocker create -v /path/on/host:/data --name couch-data rocoto/couchdb\n# Run database server using volumes from data container.\ndocker run -it -p 5984:5984 --volumes-from couch-data rocoto/couchdb\n```\n\n## Environment Variables\n\nBy default CouchDB starts in _admin party_ mode. To have an admin user\nautomatically created you can use the `COUCHDB_ADMIN_PASSWORD` environment\nvariable.\n\n```sh\ndocker run -it --rm -p 5984:5984 -e COUCHDB_ADMIN_PASSWORD=secret rocoto/couchdb\n```\n\n## File structure in data volume\n\n```\n./\n├── couch.uri\n├── dbs\n│   ├── _replicator.couch\n│   └── _users.couch\n├── etc\n│   ├── default.ini\n│   └── local.ini\n├── log\n│   └── couch.log\n└── views\n```\n",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER Lupo Montero\n\n#\n# Install dependencies, CouchDB from source and cleanup.\n#\n# Fat command for slim image ;-)\n# See: http://mervine.net/notes/docker-tips\n#\nRUN apt-get update \\\n  && apt-get install -y --no-install-recommends \\\n    build-essential \\\n    libicu-dev \\\n    libcurl4-openssl-dev \\\n    libmozjs185-dev \\\n    erlang-base-hipe \\\n    erlang-dev \\\n    erlang-manpages \\\n    erlang-eunit \\\n    erlang-nox \\\n    wget \\\n    sudo \\\n  && wget http://mirror.cc.columbia.edu/pub/software/apache/couchdb/source/1.6.1/apache-couchdb-1.6.1.tar.gz \\\n  && tar xvzf apache-couchdb-* \\\n  && cd apache-couchdb-* && ./configure && make && make install \\\n  && cd - && rm -rf apache-couchdb-* \\\n  && apt-get remove -y \\\n    build-essential \\\n    erlang-dev \\\n    erlang-manpages \\\n    wget \\\n  && apt-get autoremove -y \\\n  && apt-get clean\n\nRUN useradd --system -M \\\n  --home /data \\\n  --shell /bin/bash \\\n  --user-group \\\n  --comment \"CouchDB Administrator\" \\\n  couchdb\n\nADD ./local.ini /local.ini\nADD ./entrypoint.sh /entrypoint.sh\n\nVOLUME [\"/data\"]\nEXPOSE 5984\nENTRYPOINT [\"/entrypoint.sh\"]\nCMD [\"couchdb\"]\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./local.ini",
+        "dest": "/local.ini"
+      },
+      {
+        "source": "./entrypoint.sh",
+        "dest": "/entrypoint.sh"
+      }
+    ],
+    "expose": [
+      5984
+    ],
+    "volume": [
+      "[\"/data\"]"
+    ],
+    "run": [
+      "apt-get update   && apt-get install -y --no-install-recommends     build-essential     libicu-dev     libcurl4-openssl-dev     libmozjs185-dev     erlang-base-hipe     erlang-dev     erlang-manpages     erlang-eunit     erlang-nox     wget     sudo   && wget http://mirror.cc.columbia.edu/pub/software/apache/couchdb/source/1.6.1/apache-couchdb-1.6.1.tar.gz   && tar xvzf apache-couchdb-*   && cd apache-couchdb-* && ./configure && make && make install   && cd - && rm -rf apache-couchdb-*   && apt-get remove -y     build-essential     erlang-dev     erlang-manpages     wget   && apt-get autoremove -y   && apt-get clean",
+      "useradd --system -M   --home /data   --shell /bin/bash   --user-group   --comment \"CouchDB Administrator\"   couchdb"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "Lupo Montero",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"couchdb\"]"
+  },
+  "source_repository_url": "https://github.com/rocoto/docker-couchdb.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/rocoto/docker-couchdb",
+  "docker_repository": "rocoto/couchdb",
+  "docker_image": "rocoto/couchdb",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5984
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "rocoto/couchdb",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/rocoto/couchdb",
+    "https://hub.docker.com/v2/repositories/rocoto/couchdb",
+    "https://github.com/rocoto/docker-couchdb.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Data Store/Document-oriented/CouchDB"
+  ],
+  "info_url": "https://hub.docker.com/r/rocoto/couchdb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

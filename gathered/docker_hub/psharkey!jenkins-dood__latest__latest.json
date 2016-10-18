@@ -1,0 +1,129 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/psharkey/jenkins-dood",
+    "repository_url": "https://hub.docker.com/v2/repositories/psharkey/jenkins-dood",
+    "tags_url": "https://hub.docker.com/v2/repositories/psharkey/jenkins-dood/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/psharkey/jenkins-dood/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/psharkey/jenkins-dood/autobuild",
+    "user": "psharkey",
+    "name": "jenkins-dood",
+    "namespace": "psharkey",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 126,
+    "last_updated": "2016-10-13T21:29:29.680559Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 379446647,
+        "id": 2052916,
+        "repository": 535832,
+        "creator": 433689,
+        "last_updater": 433689,
+        "last_updated": "2016-10-13T21:29:29.076593Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "psharkey/docker"
+  },
+  "name": "psharkey/jenkins-dood Docker container",
+  "description": "Jenkins + DOOD (Docker-Outside-Of-Docker)",
+  "readme": "![alt text](http://4.bp.blogspot.com/-urlgbQdlNho/U0PLqTgTH9I/AAAAAAAALkU/jiax1dIdER4/s1600/Capture+d%E2%80%99e%CC%81cran+2014-04-08+a%CC%80+12.12.37.png)\n# Jenkins + DOOD (Docker-Outside-Of-Docker)\n\nThis Jenkins Docker image provides Docker*ish* capabilities using [Docker-outside-of-Docker ](http://container-solutions.com/running-docker-in-jenkins-in-docker/) (dood), which allows you to run any Docker container in your Jenkins build script. This image creates Docker sibling containers rather than children which would be created if [Docker-In-Docker](http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/) (dind) was used. Some advantages of dood over dind: \n+ **enables sharing of images with host OS** \n  * eliminates storing images multiple times\n  * makes it possible for Jenkins to automate local image creation\n+ eliminate the need for supervisord (which means multiple processes)\n+ eliminates a virtualization layer (lxc)\n+ allows greater flexibility at runtime\n+ **permits the jenkins (sudo)user to run `docker` without the `sudo` prefix**\n\n**The final point is specific to this implementation and provides Docker functions within Jenkins workflows.**\n```groovy\nnode {\n  def maven = docker.image('maven:latest')\n  maven.pull() // make sure we have the latest available from Docker Hub\n  sh 'docker run --rm maven mvn --version'\n}\n```\n**Important note: This image uses the latest Docker distribution and the host's Docker installation must be the same version.**\n\n\nThis Docker image is based on [Continuous Delivery with Docker on Mesos in less than a minute – Part 1](http://container-solutions.com/continuous-delivery-with-docker-on-mesos-in-less-than-a-minute/), [Running Docker in Jenkins (in Docker) ](http://container-solutions.com/running-docker-in-jenkins-in-docker/),  [killercentury/docker-jenkins-dind](https://github.com/killercentury/docker-jenkins-dind) and [jpetazzo/dind](https://registry.hub.docker.com/u/jpetazzo/dind/) instead of the offical [Jenkins](https://registry.hub.docker.com/u/library/jenkins/). Morever, [Docker Compose](https://github.com/docker/compose) is available for launching multiple containers with the CI.\n\nBuild this image (from the directory containing the Dockerfile):\n\n```\ndocker build -t jenkins-dood .\n```\n\nSimple run example:\n\n```\ndocker run --rm -it -p 8080:8080 --name jenkins-dood psharkey/jenkins-dood\n```\n\nRun it with mounted directory from host:\n\n```\ndocker run -d -p 8080:8080 -v /your/path:/var/lib/jenkins --name jenkins-dood psharkey/jenkins-dood\n```\n\nBash function example with additional arguments including:\n+ `-e \"TZ=America/Chicago\"` sets the timezone\n+ -`v $HOME/Workspace/.jenkins/.ssh:/var/lib/jenkins/.ssh` for sharing your ssh key with the container\n+  `-v /dev/urandom:/dev/random` is to deal with entropy [issues](http://stackoverflow.com/questions/26021181/not-enough-entropy-to-support-dev-random-in-docker-containers-running-in-boot2d)\n+ `-v /var/run/docker.sock:/var/run/docker.sock` exposes the Docker daemon socket to this container instead of using [dind](http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/) (Docker In Docker)\n\n \n\nA message is displayed showing the Jenkins URL to open in a browser.\n```bash\njenkins-dood(){\n        x11host\n        LOCAL_PORT=11080\n\n        docker run -d \\\n                -e DISPLAY=$X11HOST:0.0 \\\n                -e \"TZ=America/Chicago\" \\\n                -v $HOME/Workspace/.jenkins/.ssh:/var/lib/jenkins/.ssh \\\n                -v /dev/urandom:/dev/random \\\n                -v /var/run/docker.sock:/var/run/docker.sock \\\n                --name jenkins-dood \\\n                -p $LOCAL_PORT:8080 \\\n                psharkey/jenkins-dood\n\tVBOX_IP=$(docker-machine ip $(docker-machine active))\n\techo \"Jenkins started at: http://$VBOX_IP:$LOCAL_PORT\"\n}\n```\n\nThe `x11_host` helper function simply creates an environment variable using the Docker machine's `HostOnlyCIDR` so the Jenkins container may launch GUI applications. Note: GUI applications will require some additional [setup](https://github.com/docker/docker/issues/8710) to display on the host.\n\n```bash\n# Define a variable to use for the X11 host IP\nx11host(){\n        ACTIVE_MACHINE=$(docker-machine active)\n        X11HOST=$(docker-machine inspect $ACTIVE_MACHINE \\\n                --format={{.Driver.HostOnlyCIDR}} \\\n                | cut -d'/' -f1)\n}\n```\n\nExample output from above run within a bash function named 'jenkins-dood'\n\n```bash\n$ jenkins-dood\njenkins-dood\n569ba93cd7d69a654bcdb97874ea6aa95025a74d4ae92fcb3e620c23676c4d12\nJenkins started at: http://192.168.99.101:11080\n$\n```\n\n**Refer to [psharkey/novnc](https://hub.docker.com/r/psharkey/novnc/) for an alternative X11 configuration.**\n",
+  "dockerfile": "FROM ubuntu:14.04\n\n# Let's start with some basic stuff.\nRUN apt-get update -qq && apt-get install -qqy \\\n\tapt-transport-https \\\n\tca-certificates \\\n\tcurl \\\n\tgit \\\n\tiptables \\\n\tlibxext-dev libxrender-dev libxtst-dev \\\n\tssh-askpass \\ \n\tunzip \\\n\twget \\\n\tzip\n\n# Install Docker from Docker Inc. repositories.\nARG DOCKER_VERSION=1.10.3\nRUN curl -L -O https://get.docker.com/builds/Linux/x86_64/docker-${DOCKER_VERSION}.tgz \\\n\t&& tar zxf docker-${DOCKER_VERSION}.tgz -C /\n\n# Install Docker Compose\nENV DOCKER_COMPOSE_VERSION 1.3.3\nRUN curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose \\\n\t&& chmod +x /usr/local/bin/docker-compose\n\n# Install Jenkins\nENV JENKINS_HOME=/var/lib/jenkins JENKINS_UC=https://updates.jenkins-ci.org HOME=\"/var/lib/jenkins\"\nRUN wget --progress=bar:force -O - https://jenkins-ci.org/debian/jenkins-ci.org.key | apt-key add - \\\n\t&& sh -c 'echo deb http://pkg.jenkins-ci.org/debian binary/ > /etc/apt/sources.list.d/jenkins.list' \\\n\t&& apt-get update && apt-get install -y jenkins \\ \n\t&& apt-get clean \\\n\t&& apt-get purge \\\n\t&& rm -rf /var/lib/apt/lists/*\n\n# Make the jenkins user a sudoer\n# Replace the docker binary with a sudo script\nRUN echo \"jenkins ALL=NOPASSWD: ALL\" >> /etc/sudoers \\\n\t&& mv /usr/local/bin/docker /usr/local/bin/docker.bin \\ \n\t&& printf '#!/bin/bash\\nsudo docker.bin \"$@\"\\n' > /usr/local/bin/docker \\\n\t&& chmod +x /usr/local/bin/docker\n\n# Copy basic configuration into jenkins\nCOPY config.xml credentials.xml hudson.tasks.Ant.xml hudson.tasks.Maven.xml plugins.txt $JENKINS_HOME/\n\n# Install Jenkins plugins from the specified list\n# Install jobs & setup ownership & links\nCOPY plugins.sh /usr/local/bin/plugins.sh \nCOPY jobs/. $JENKINS_HOME/jobs\nRUN chmod +x /usr/local/bin/plugins.sh; sleep 1 \\\n\t&& /usr/local/bin/plugins.sh $JENKINS_HOME/plugins.txt \\\n\t&& chown -R jenkins:jenkins /var/lib/jenkins\n\n# Define the workspace - assuming the path does not contain #\nARG WORKSPACE='${ITEM_ROOTDIR}\\/workspace'\nRUN sed -i -- \"s#\\${ITEM_ROOTDIR}\\/workspace#${WORKSPACE}#\" $JENKINS_HOME/config.xml\n \n# Expose Jenkins default port\nEXPOSE 8080\n\n# Become the jenkins user (who thinks sudo is not needed for docker commands)\nUSER jenkins\nWORKDIR /var/lib/jenkins\n\n# Start the war\nCMD [\"java\", \"-jar\", \"/usr/share/jenkins/jenkins.war\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update -qq && apt-get install -qqy \tapt-transport-https \tca-certificates \tcurl \tgit \tiptables \tlibxext-dev libxrender-dev libxtst-dev \tssh-askpass \\ ",
+      "curl -L -O https://get.docker.com/builds/Linux/x86_64/docker-${DOCKER_VERSION}.tgz \t&& tar zxf docker-${DOCKER_VERSION}.tgz -C /",
+      "curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose \t&& chmod +x /usr/local/bin/docker-compose",
+      "wget --progress=bar:force -O - https://jenkins-ci.org/debian/jenkins-ci.org.key | apt-key add - \t&& sh -c 'echo deb http://pkg.jenkins-ci.org/debian binary/ > /etc/apt/sources.list.d/jenkins.list' \t&& apt-get update && apt-get install -y jenkins \\ ",
+      "echo \"jenkins ALL=NOPASSWD: ALL\" >> /etc/sudoers \t&& mv /usr/local/bin/docker /usr/local/bin/docker.bin \\ ",
+      "chmod +x /usr/local/bin/plugins.sh; sleep 1 \t&& /usr/local/bin/plugins.sh $JENKINS_HOME/plugins.txt \t&& chown -R jenkins:jenkins /var/lib/jenkins",
+      "sed -i -- \"s#\\${ITEM_ROOTDIR}\\/workspace#${WORKSPACE}#\" $JENKINS_HOME/config.xml"
+    ],
+    "workdir": [
+      "/var/lib/jenkins"
+    ],
+    "from": "ubuntu:14.04",
+    "arg": "WORKSPACE='${ITEM_ROOTDIR}\\/workspace'",
+    "env": {
+      "DOCKER_COMPOSE_VERSION": "1.3.3",
+      "JENKINS_HOME": "/var/lib/jenkins",
+      "JENKINS_UC": "https://updates.jenkins-ci.org",
+      "HOME": "\"/var/lib/jenkins\""
+    },
+    "copy": "jobs/. $JENKINS_HOME/jobs",
+    "user": "jenkins",
+    "cmd": "[\"java\", \"-jar\", \"/usr/share/jenkins/jenkins.war\"]"
+  },
+  "source_repository_url": "https://github.com/psharkey/docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/psharkey/docker",
+  "docker_repository": "psharkey/jenkins-dood",
+  "docker_image": "psharkey/jenkins-dood",
+  "parameters_schema": {
+    "DOCKER_COMPOSE_VERSION": {
+      "default": "1.3.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_HOME": {
+      "default": "/var/lib/jenkins",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_UC": {
+      "default": "https://updates.jenkins-ci.org",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "\"/var/lib/jenkins\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "psharkey/jenkins-dood",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/psharkey/jenkins-dood",
+    "https://hub.docker.com/v2/repositories/psharkey/jenkins-dood",
+    "https://github.com/psharkey/docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Integration/Jenkins"
+  ],
+  "info_url": "https://hub.docker.com/r/psharkey/jenkins-dood",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

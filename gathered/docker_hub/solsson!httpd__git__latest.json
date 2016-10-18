@@ -1,0 +1,163 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/solsson/httpd",
+    "repository_url": "https://hub.docker.com/v2/repositories/solsson/httpd",
+    "tags_url": "https://hub.docker.com/v2/repositories/solsson/httpd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/solsson/httpd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/solsson/httpd/autobuild",
+    "user": "solsson",
+    "name": "httpd",
+    "namespace": "solsson",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 186,
+    "last_updated": "2016-09-22T06:40:37.606680Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "git",
+        "full_size": 107408726,
+        "id": 2688061,
+        "repository": 621101,
+        "creator": 359316,
+        "last_updater": 359316,
+        "last_updated": "2016-09-22T06:40:37.112656Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "openidc-1.8.10.1",
+        "full_size": 74445179,
+        "id": 4403517,
+        "repository": 621101,
+        "creator": 359316,
+        "last_updater": 359316,
+        "last_updated": "2016-08-19T04:42:28.542443Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "openidc-1.8.9",
+        "full_size": 77311249,
+        "id": 3483950,
+        "repository": 621101,
+        "creator": 359316,
+        "last_updater": 359316,
+        "last_updated": "2016-06-18T19:29:33.110231Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "openidc",
+        "full_size": 77311199,
+        "id": 2554470,
+        "repository": 621101,
+        "creator": 359316,
+        "last_updater": 359316,
+        "last_updated": "2016-06-18T19:13:56.745610Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "solsson/docker-httpd"
+  },
+  "name": "solsson/httpd Docker container",
+  "description": "Derivatives of the official httpd image",
+  "readme": "# Apache 2 `httpd` images\n\nDerivatives of https://hub.docker.com/_/httpd/. Linux distros' httpd packages introduce config modularity that we don't need in Docker based hosting. The single `conf` folder with `httpd.conf` is more userful here.\n\nThese images are built to https://hub.docker.com/u/solsson/.\n\n## `httpd:openidc`\n\nIncludes https://github.com/pingidentity/mod_auth_openidc/.\n\n## `httpd:letsencrypt`\n\nWas designed for a specific hosting scenario. See limitations+caveats in cert-sync.\n\nThese days we tend to use https://github.com/Reposoft/docker-letsencrypt instead.\n\n## `httpd:git`\n\nPlain https://git-scm.com/book/en/v2/Git-on-the-Server-Smart-HTTP https://git-scm.com/docs/git-http-backend.\nRead-only out of the box (push gets 403).\n```\ngit init --bare git/TestOrg/repo.git\ndocker run -p 80:80 -v $(pwd)/git:/opt/git --name git-http -d solsson/httpd:git\ngit clone http://git-http/git/TestOrg/repo.git\n```\n\nCompiles all of git, but a lot of that can/should be removed.\n\n## more\n\nOther httpd based images in more specific repositories:\n\n * https://github.com/Reposoft/docker-svn/tree/master/httpd\n",
+  "dockerfile": "\nFROM httpd:2.4.23\n\nENV GIT_VERSION 2.9.3\nENV GIT_VERSION_TGZ_URL https://www.kernel.org/pub/software/scm/git/git-$GIT_VERSION.tar.gz\nENV GIT_VERSION_TGZ_SHA1 ae90c4e5008ae10c8a67a51ff3dbea8364d97168\n\nRUN depsRuntime=' \\\n\t\tlibcurl3 \\\n\t\tlibexpat1 \\\n\t\tgettext \\\n\t\tlibssl1.0.0 \\\n\t' \\\n  && depsBuild=' \\\n\t\tcurl ca-certificates \\\n\t\tgcc \\\n\t\tmake \\\n\t\tautoconf \\\n\t\tlibcurl4-gnutls-dev \\\n\t\tlibexpat1-dev \\\n\t\tgettext \\\n\t\tlibz-dev \\\n\t\tlibssl-dev \\\n\t' \\\n\tset -x \\\n\t&& apt-get update \\\n\t&& apt-get install -y --no-install-recommends $depsRuntime \\\n\t&& apt-get install -y --no-install-recommends $depsBuild \\\n\t&& rm -r /var/lib/apt/lists/* \\\n\t&& curl -SL \"$GIT_VERSION_TGZ_URL\" -o git-$GIT_VERSION.tar.gz \\\n\t&& echo \"$GIT_VERSION_TGZ_SHA1 git-$GIT_VERSION.tar.gz\" | sha1sum -c - \\\n\t&& mkdir -p src/git \\\n\t&& tar -xvf git-$GIT_VERSION.tar.gz -C src/git --strip-components=1 \\\n\t&& rm git-$GIT_VERSION.tar.gz* \\\n\t&& cd src/git \\\n\t&& make configure \\\n\t&& ./configure --prefix=/usr \\\n\t&& make all \\\n\t&& make install \\\n\t&& cd ../../ \\\n\t&& rm -r src/git \\\n\t&& apt-get purge -y --auto-remove $depsBuild\n\nEXPOSE 80\n\nRUN sed -i 's|#LoadModule cgid_module|LoadModule cgid_module|' conf/httpd.conf \\\n  && sed -i 's|#LoadModule rewrite_module|LoadModule rewrite_module|' conf/httpd.conf \\\n  && echo \"Include conf/git/*.conf\" >> conf/httpd.conf\n\nADD conf/git.conf /usr/local/apache2/conf/git/\nADD conf/git-readonly.conf /usr/local/apache2/conf/git/\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "conf/git.conf",
+        "dest": "/usr/local/apache2/conf/git/"
+      },
+      {
+        "source": "conf/git-readonly.conf",
+        "dest": "/usr/local/apache2/conf/git/"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "depsRuntime=' \t\tlibcurl3 \t\tlibexpat1 \t\tgettext \t\tlibssl1.0.0 \t'   && depsBuild=' \t\tcurl ca-certificates \t\tgcc \t\tmake \t\tautoconf \t\tlibcurl4-gnutls-dev \t\tlibexpat1-dev \t\tgettext \t\tlibz-dev \t\tlibssl-dev \t' \tset -x \t&& apt-get update \t&& apt-get install -y --no-install-recommends $depsRuntime \t&& apt-get install -y --no-install-recommends $depsBuild \t&& rm -r /var/lib/apt/lists/* \t&& curl -SL \"$GIT_VERSION_TGZ_URL\" -o git-$GIT_VERSION.tar.gz \t&& echo \"$GIT_VERSION_TGZ_SHA1 git-$GIT_VERSION.tar.gz\" | sha1sum -c - \t&& mkdir -p src/git \t&& tar -xvf git-$GIT_VERSION.tar.gz -C src/git --strip-components=1 \t&& rm git-$GIT_VERSION.tar.gz* \t&& cd src/git \t&& make configure \t&& ./configure --prefix=/usr \t&& make all \t&& make install \t&& cd ../../ \t&& rm -r src/git \t&& apt-get purge -y --auto-remove $depsBuild",
+      "sed -i 's|#LoadModule cgid_module|LoadModule cgid_module|' conf/httpd.conf   && sed -i 's|#LoadModule rewrite_module|LoadModule rewrite_module|' conf/httpd.conf   && echo \"Include conf/git/*.conf\" >> conf/httpd.conf"
+    ],
+    "workdir": [],
+    "from": "httpd:2.4.23",
+    "env": {
+      "GIT_VERSION": "2.9.3",
+      "GIT_VERSION_TGZ_URL": "https://www.kernel.org/pub/software/scm/git/git-$GIT_VERSION.tar.gz",
+      "GIT_VERSION_TGZ_SHA1": "ae90c4e5008ae10c8a67a51ff3dbea8364d97168"
+    }
+  },
+  "source_repository_url": "https://github.com/solsson/docker-httpd.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/solsson/docker-httpd",
+  "docker_repository": "solsson/httpd",
+  "docker_image": "solsson/httpd",
+  "parameters_schema": {
+    "GIT_VERSION": {
+      "default": "2.9.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GIT_VERSION_TGZ_URL": {
+      "default": "https://www.kernel.org/pub/software/scm/git/git-$GIT_VERSION.tar.gz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GIT_VERSION_TGZ_SHA1": {
+      "default": "ae90c4e5008ae10c8a67a51ff3dbea8364d97168",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "solsson/httpd",
+  "revision": "git",
+  "uris": [
+    "https://hub.docker.com/r/solsson/httpd",
+    "https://hub.docker.com/v2/repositories/solsson/httpd",
+    "https://github.com/solsson/docker-httpd.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image"
+  ],
+  "info_url": "https://hub.docker.com/r/solsson/httpd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

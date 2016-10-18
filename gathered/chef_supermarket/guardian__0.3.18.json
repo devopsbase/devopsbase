@@ -1,0 +1,83 @@
+{
+  "name": "guardian Chef cookbook",
+  "chef_cookbook_name": "guardian",
+  "revision": "0.3.18",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/guardian",
+    "https://supermarket.chef.io/cookbooks/guardian/download",
+    "https://supermarket.chef.io/cookbooks/guardian/versions/0.3.18",
+    "https://supermarket.chef.io/cookbooks/guardian/versions/0.3.18/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/guardian/versions/0.3.18",
+    "https://supermarket.chef.io/api/v1/cookbooks/guardian",
+    "https://supermarket.chef.io/api/v1/cookbooks/guardian/versions/0.3.18/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/guardian",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/guardian/versions/0.3.18/download",
+  "deprecated": false,
+  "created": "2015-05-11T14:19:31.736Z",
+  "updated": "2016-04-22T17:55:39.132Z",
+  "description": "Installs/Configures guardian",
+  "maintainer": {
+    "name": "rapid7-core",
+    "email": "engineringservices@rapid7.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 1425330,
+  "downloads_count_revision": 232,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Guardian\n========\n\nGuardian is a lightweight authentication proxy for HTTP services.  It allows\nauthenticating existing web applications without needing to modify the\nunderlying application to support authentication.  It currently supports SAML and\nOAuth2, but can be easily extended to support many authentication protocols.\n\n## Suported Protocols/Providers\n* SAML (Tested with [Okta](https://www.okta.com/))\n* OAuth2\n* [Slack](https://slack.com/) (OAuth2 implementation)\n\n## Usage\n\nWe recommend using the [chef cookbook](https://github.com/rapid7/guardian/blob/master/cookbook/)\ncontained in the `cookbook` sub-directory of the source repo to configure Guardian.  This\nsection (except the [Quick Start](#quick-start)) provides an overview of Guardian usage without\nchef.\n\n### Quick start\n\n- Create a SAML 2.0 application in your SAML provider:\n  - **Sign on URL**: https://\\<myhost\\>/_authn/provider/\\<myapp\\>/callback\n  - **Audience URI**: https://\\<myhost\\>\n  - **Request compression**: Compressed\n- Configure the Guardian chef cookbook attributes (see\n  [examples](https://github.com/rapid7/guardian/blob/master/cookbook/README.md#usage))\n  - **guardian.router.downstream** (URL of your application)\n    - **protocol**: https:\n    - **hostname**: \\<myhost\\>\n    - **port**: 443\n  - **guardian.router.routes** (protected routes for your application):\n    - **/path1.hostname**: localhost\n    - **/path1.port**: 8080\n    - **/path2.hostname**: someotherlocalapp.local\n    - **/path2.port**: 80\n  - **guardian.authn.providers** (SAML provider information)\n    - **name**: \\<myapp\\>\n    - **strategy**: SAML\n    - **certificate**: your SAML provider's certificate\n    - **params.entryPoint**: the single sign-on URL from your SAML provider\n    - **params.issuer**: the issuer URL from your SAML provider\n    - **params.identifierFormat**: urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified\n- Run the chef cookbook (recipe: guardian::default)\n\n### Identity Provider\n\nGuardian supports pluggable protocols and several identity providers.  Use the\nfollowing sections to configure your identity provider with one of these protocols.\n\n#### SAML 2.0\n\nIn your SAML provider, create a new SAML 2.0 application.  Provide the following information\nabout your application (NOTE: your provider may have different names for these):\n\n* **Single sign on URL / SAML Assertion Customer Service (ACS) URL**:   The Guardian callback URL.\n  Append `/_authn/provider/\\<myapp\\>/callback` to your application's URL.  In this URL, `\\<myapp\\>`\n  is a custom name for your application that you'll refer to when configuring Guardian.  For\n  example:\n  \n  ```\n  https://foo.example.com/_authn/provider/examplepp/callback\n  ```\n  \n  The SAML assertion is sent to this url with a HTTP POST.\n* **Audience URI / SP Entity ID**: The URL of your application.\n* **Request compression**: Compressed\n\nGather the following information from your SAML provider:\n\n* **Entity ID / Issuer**: The unique URI for your identity provider.  Guardian will only accept\n  SAML assertions from this ID.\n* **Single sign-on URL**: The SSO endpoint that Guardian will send authentication requests to.\n* **Public X.509 Certificate**: A PEM encoded SSL certifacte for your identity provider.  Guardian\n  will validate incoming SAML assertions with this certificate.\n\n#### OAuth2\n\nTODO.\n\n### Installation\n\nWe recommend you use the [chef cookbook](https://github.com/rapid7/guardian/blob/master/cookbook/)\nto install Guardian.  To install manually follow these steps:\n\n1. Install NodeJS and NPM\n2. Install Redis\n3. Install MySQL\n4. Create a `guardian` user\n5. Clone the guardian repository from GitHub and change ownership to the guardian user.\n6. Run `npm install` as the guardian user from the root of the cloned repository.\n\n### Configuration\n\nGuardian requires several configuration files.  By default configuration files are located\nin the `conf` folder in the Guardian installation directory.  You may override this with the\n`-c` parameter to the Guardian binaries.\n\n#### authn.json\n\nConfigures one or more identity providers.\n\n##### SAML\n\nSAML providers should contain the following parameters:\n\n* **name**: A unique name for the provider\n* **stategy**: SAML\n* **certificate**: A file containing the identity providers X.509 certificate\n* **defaultRoute**: The URL to redirect to after authentication if no return path\n  is set (defaults to '/')\n* **params.issuer**: The Entity ID / Issuer from the identity provider\n* **params.identifierFormat**:  The name ID format used by the identity provider.\n  This is usually `urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified`.\n* **params.entryPoint**: The Single Sign-On URL for the identity provider\n\nExample SAML configuration:\n```json\n{\n  \"authn\": {\n    \"providers\": {\n      \"exampleapp\": {\n        \"name\": \"My SAML Provider\",\n        \"strategy\": \"SAML\",\n        \"certificate\": \"/etc/guardian/my-idp-cert.pem\",\n        \"params\": {\n          \"issuer\": \"http://my-idp-uri/\",\n          \"identifierFormat\": \"urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified\",\n          \"entryPoint\": \"https://my-idp-host/my-idp-single-signon-url\"\n        }\n      }\n    }\n  }\n}\n```\n\n#### router.json\n\nConfigures the upstream web application that Guardian is proxying.\n\n##### Downstream\nGuardian rewrites redirects from the upstream application to use the Guardian\nURL (similar to Nginx's [proxy_redirect](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_redirect)\ndirective).  The downstream configuration section contains the browser visible URL for\nyour application.\n\nConfiguration parameters are defined in NodeJS's\n[url.format](https://nodejs.org/api/url.html#url_url_format_urlobj) method.\n\n##### Routes\nRoutes define one or more proxy end points.  The configuration is keyed by the URL\npath.  For each path, Guardian will reverse proxy the request to the given URL.\n\nConfiguration parameters are defined in NodeJS's\n[url.format](https://nodejs.org/api/url.html#url_url_format_urlobj) method.\n\n##### Example router configuration\n```json\n{\n  \"router\": {\n    \"downstream\": {\n      \"protocol\": \"https:\",\n      \"hostname\": \"foo.example.com\",\n      \"port\": 443\n    },\n    \"routes\": {\n      \"/service1\": {\n        \"hostname\": \"service1.example.com\",\n        \"port\": 8080\n      },\n      \"/service2\": {\n        \"hostname\": \"localhost\",\n        \"port\": 8080\n      }\n    }\n  }\n}\n```\n\n\n#### site.json\n\nGlobal site configuration.  Currently an empty JSON hash:\n\n```json\n{}\n```\n\n#### session.json\n\nConfigures the session provider.  Currently an empty JSON hash:\n\n```json\n{}\n```\n\n\n### Running\n\nGuardian runs on port 9002 by default.  In normal installations another webserver (or load\nbalancer) sits in front of Guardian and proxies requests to the Guardian port.\n\nGuardian spawns several dameon processes to perform authentication and proxy requests.  The\n[chef cookbook](https://github.com/rapid7/guardian/blob/master/cookbook/) will create these\nservices.  If you installed manually you'll need to run these daemons on\nyour own (or create a service for them).  All daemons are found in Guardian's `bin` directory.\n\n* **guardian-authn**: Listens on port 9002 for http requests.  Authenticates requests and proxies them\n  to guardian-router.\n* **guardian-session**: Maintains authenticated sessions.\n* **guardian-router**: Proxies requests to the underlying web application.\n\n## Supported Platforms\n* Ubuntu 14.04\n\n## Maintainers\n* John Manero (john_manero@rapid7.com, john.manero@gmail.com)\n* Ryan Hass (ryan_hass@rapid7.com)\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 12.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/database",
+      "revision": "~> 4.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/mysql",
+      "revision": "~> 6.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/mysql2_chef_gem",
+      "revision": "~> 1.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/redisio",
+      "revision": "~> 2.3",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/logrotate",
+      "revision": "~> 1.9.2",
+      "self_resolve": true
+    }
+  ]
+}

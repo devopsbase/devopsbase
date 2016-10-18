@@ -1,0 +1,179 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mikroways/rancher-haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/mikroways/rancher-haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/mikroways/rancher-haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mikroways/rancher-haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mikroways/rancher-haproxy/autobuild",
+    "user": "mikroways",
+    "name": "rancher-haproxy",
+    "namespace": "mikroways",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 1286,
+    "last_updated": "2016-10-07T13:04:36.488642Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1.1.2",
+        "full_size": 17307312,
+        "id": 5304965,
+        "repository": 846820,
+        "creator": 452244,
+        "last_updater": 452244,
+        "last_updated": "2016-10-07T13:04:35.954164Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 17307314,
+        "id": 4237358,
+        "repository": 846820,
+        "creator": 452244,
+        "last_updater": 452244,
+        "last_updated": "2016-10-07T13:02:28.860681Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.1.1",
+        "full_size": 17301093,
+        "id": 4585709,
+        "repository": 846820,
+        "creator": 452244,
+        "last_updater": 452244,
+        "last_updated": "2016-08-30T19:05:11.979463Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.1.0",
+        "full_size": 17301084,
+        "id": 4262710,
+        "repository": 846820,
+        "creator": 452244,
+        "last_updater": 452244,
+        "last_updated": "2016-08-11T14:47:05.499623Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.0.0",
+        "full_size": 13476400,
+        "id": 4237211,
+        "repository": 846820,
+        "creator": 452244,
+        "last_updater": 452244,
+        "last_updated": "2016-08-09T17:33:04.146413Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Mikroways/rancher-haproxy"
+  },
+  "name": "mikroways/rancher-haproxy Docker container",
+  "description": "HAProxy load-balancer dynamically configured based on rancher-metadata",
+  "readme": "# Dynamic HA-Proxy based on rancher metadata\n\nThis image starts an ha-proxy that reads rancher-metadata so it autoconfigures a\ndefault load balancer based on labels on other stacks.\n\nThe idea is forked from https://github.com/rawmind0/rancher-vamp-haproxy\n\n## How it works\n\n* Create your custom stack as usual\n* Add labels to those containers to be proxied. You need to define two labels:\n  * **io.rancher_haproxy.exposed_port**: port number to be proxied. This is\n    where your internal service is listening\n  * **io.rancher_haproxy.server_names**: dns domain names for this service. More\n    than one DNS domain name must be separated with comma\n  * **io.rancher_haproxy.force_ssl.<FQDN>:**: force specific domain to use ssl.\n    Set this label to **true**\n\n### Sample stack that will be proxied:\n\n```yml\nnginx:\n  labels:\n    io.rancher_haproxy.exposed_port: 80\n    io.rancher_haproxy.server_names: example.net,www.example.net\n    io.rancher_haproxy.force_ssl.www.example.net: true\n  image: nginx\n```\n\nThe above example will configure a reverse proxy:\n\n* Accept connections to http://example.net and http://www.example.net\n* Connections on http://www.example.net will be redirected to use https\n\n## Runing the load balancer\n\nA sample docker-compose.yml considering SSL support will be:\n\n```yml\nlb:\n  ports:\n  - 80:80/tcp\n  labels:\n    io.rancher.scheduler.global: 'true'\n    io.rancher.container.pull_image: always\n  tty: true\n  image: mikroways/rancher-haproxy:1.1.0\n  stdin_open: true\nssl:\n  ports:\n  - 443:80\n  labels:\n    io.rancher.loadbalancer.ssl.ports: '443'\n  tty: true\n  image: rancher/load-balancer-service\n  links:\n  - lb:lb\n  stdin_open: true\n```\n\nYou must configure a default rancher load balancer that only accept connections\nover SSL and redirects them to lb\n",
+  "dockerfile": "FROM rawmind/rancher-base:0.0.2-1\nMAINTAINER Christian Rodriguez <chrodriguez@gmail.com>\n\nENV VAMP_HOME /opt/vamp\n# Install haproxy\nRUN set -ex && \\\n    apk --update add iptables iproute2 libnl3-cli musl-dev linux-headers curl gcc pcre-dev make zlib-dev openssl-dev && \\\n    mkdir /usr/src && \\\n    curl -fL http://www.haproxy.org/download/1.6/src/haproxy-1.6.7.tar.gz | tar xzf - -C /usr/src && \\\n    cd /usr/src/haproxy-1.6.7 && \\\n    make TARGET=linux2628 USE_PCRE=1 USE_ZLIB=1 USE_OPENSSL=1 && \\\n    make install-bin && \\\n    cd .. && \\\n    mkdir -p /opt/vamp/errorfiles && \\\n    cp -pr /usr/src/haproxy-1.6.7/examples/errorfiles/* /opt/vamp/errorfiles && \\\n    rm -rf /usr/src/haproxy-1.6.7 && \\\n    apk del musl-dev linux-headers curl gcc pcre-dev make zlib-dev && \\\n    apk add musl pcre zlib && \\\n    rm /var/cache/apk/*\n\n# Add confd tmpl and toml\nADD confd/*.toml /etc/confd/conf.d/\nADD confd/*.tmpl /etc/confd/templates/\n\n# Add monit conf for services\nADD monit/*.conf /etc/monit/conf.d/\n\n# Add start.sh\nADD start.sh /usr/bin/\nADD haproxy.sh /usr/bin/\nRUN chmod +x /usr/bin/*.sh\nRUN adduser haproxy -D -h /opt/vamp && mkdir /opt/vamp/chroot && chown -R haproxy /opt/vamp\n\nWORKDIR ${VAMP_HOME}\n\nENTRYPOINT [\"/usr/bin/start.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "confd/*.toml",
+        "dest": "/etc/confd/conf.d/"
+      },
+      {
+        "source": "confd/*.tmpl",
+        "dest": "/etc/confd/templates/"
+      },
+      {
+        "source": "monit/*.conf",
+        "dest": "/etc/monit/conf.d/"
+      },
+      {
+        "source": "start.sh",
+        "dest": "/usr/bin/"
+      },
+      {
+        "source": "haproxy.sh",
+        "dest": "/usr/bin/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "set -ex &&     apk --update add iptables iproute2 libnl3-cli musl-dev linux-headers curl gcc pcre-dev make zlib-dev openssl-dev &&     mkdir /usr/src &&     curl -fL http://www.haproxy.org/download/1.6/src/haproxy-1.6.7.tar.gz | tar xzf - -C /usr/src &&     cd /usr/src/haproxy-1.6.7 &&     make TARGET=linux2628 USE_PCRE=1 USE_ZLIB=1 USE_OPENSSL=1 &&     make install-bin &&     cd .. &&     mkdir -p /opt/vamp/errorfiles &&     cp -pr /usr/src/haproxy-1.6.7/examples/errorfiles/* /opt/vamp/errorfiles &&     rm -rf /usr/src/haproxy-1.6.7 &&     apk del musl-dev linux-headers curl gcc pcre-dev make zlib-dev &&     apk add musl pcre zlib &&     rm /var/cache/apk/*",
+      "chmod +x /usr/bin/*.sh",
+      "adduser haproxy -D -h /opt/vamp && mkdir /opt/vamp/chroot && chown -R haproxy /opt/vamp"
+    ],
+    "workdir": [
+      "${VAMP_HOME}"
+    ],
+    "from": "rawmind/rancher-base:0.0.2-1",
+    "maintainer": "Christian Rodriguez <chrodriguez@gmail.com>",
+    "env": {
+      "VAMP_HOME": "/opt/vamp"
+    },
+    "entrypoint": "[\"/usr/bin/start.sh\"]"
+  },
+  "source_repository_url": "https://github.com/Mikroways/rancher-haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Mikroways/rancher-haproxy",
+  "docker_repository": "mikroways/rancher-haproxy",
+  "docker_image": "mikroways/rancher-haproxy",
+  "parameters_schema": {
+    "VAMP_HOME": {
+      "default": "/opt/vamp",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mikroways/rancher-haproxy",
+  "revision": "1.1.2",
+  "uris": [
+    "https://hub.docker.com/r/mikroways/rancher-haproxy",
+    "https://hub.docker.com/v2/repositories/mikroways/rancher-haproxy",
+    "https://github.com/Mikroways/rancher-haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/VM Image/AMI",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/mikroways/rancher-haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

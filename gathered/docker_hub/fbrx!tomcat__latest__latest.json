@@ -1,0 +1,176 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/fbrx/tomcat",
+    "repository_url": "https://hub.docker.com/v2/repositories/fbrx/tomcat",
+    "tags_url": "https://hub.docker.com/v2/repositories/fbrx/tomcat/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/fbrx/tomcat/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/fbrx/tomcat/autobuild",
+    "user": "fbrx",
+    "name": "tomcat",
+    "namespace": "fbrx",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 1620,
+    "last_updated": "2016-09-25T17:14:17.821977Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 83808356,
+        "id": 1635856,
+        "repository": 462038,
+        "creator": 114097,
+        "last_updater": 114097,
+        "last_updated": "2016-09-25T17:14:17.372526Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9",
+        "full_size": 83808368,
+        "id": 1776483,
+        "repository": 462038,
+        "creator": 114097,
+        "last_updater": 114097,
+        "last_updated": "2016-09-25T17:13:33.333242Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "7",
+        "full_size": 82999700,
+        "id": 1776557,
+        "repository": 462038,
+        "creator": 114097,
+        "last_updater": 114097,
+        "last_updated": "2016-09-25T17:12:51.328952Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "6",
+        "full_size": 79285826,
+        "id": 1776547,
+        "repository": 462038,
+        "creator": 114097,
+        "last_updater": 114097,
+        "last_updated": "2016-09-25T17:12:05.776664Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "8",
+        "full_size": 83722539,
+        "id": 1776563,
+        "repository": 462038,
+        "creator": 114097,
+        "last_updater": 114097,
+        "last_updated": "2016-09-25T17:11:11.320680Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "fBrx/dockerimages"
+  },
+  "name": "fbrx/tomcat Docker container",
+  "description": "Minimal Tomcat image based on Alpine Linux",
+  "readme": "# fbrx/tomcat\n\n## Description\n\nThis is a minimal docker image containing an Apache Tomcat Web Container, based on Alpine Linux. All additional content (docs, default apps, windows executables) is removed to make the image as lightweight as possible. \n\n## Usage\n\nYou can use this image as a base image (```FROM fbrx/tomcat```) to run your web app on Apache Tomcat. Simply copy the desired war-file (as war or the exploded directory) to /opt/apache-tomcat-<TOMCAT_VERSION>/. The current working dir is the installation directory of tomcat, so you can just add ```ADD my-sample-app.war webapps/``` to your Dockerfile.\n\nSample Dockerfile:\n```\nFROM fbrx/tomcat\n\nADD my-sample-app.war webapps/\n```\n\n## Ports\n\nThe image exposes two ports:\n* ```8080``` - the default http port\n* ```8009``` - the JMX connector port\n",
+  "dockerfile": "FROM anapsix/alpine-java:jdk8\nMAINTAINER Florian Brüssel <florian@florian-m.net>\t\n\n#add openssl for https download\nRUN apk add --update openssl && \\\n    rm -rf /var/cache/apk/* /tmp/*\n\n# set version info for desired tomcat version\nENV TC_MAJOR 9\nENV TC_VERSION 9.0.0.M10\n\n# calculate download url\nENV TC_URL https://www.apache.org/dist/tomcat/tomcat-$TC_MAJOR/v$TC_VERSION/bin/apache-tomcat-$TC_VERSION.tar.gz\n\n# download and verify tomcat\nWORKDIR /opt\nRUN wget $TC_URL && \\\n\twget $TC_URL.sha1 && \\\n\tsha1sum -cw apache-tomcat-$TC_VERSION.tar.gz.sha1\n\n# install tomcat to /opt/apache-tomcat\nRUN\ttar -xzf apache-tomcat-$TC_VERSION.tar.gz && \\\n\tmv apache-tomcat-$TC_VERSION apache-tomcat\n\t\n# remove unnecessary components\nRUN\trm -f apache-tomcat/bin/*.bat && \\\n\trm -rf apache-tomcat/webapps/docs && \\\n\trm -rf apache-tomcat/webapps/examples && \\\n\trm -rf apache-tomcat/webapps/manager && \\\n\trm -rf apache-tomcat/webapps/host-manager && \\\n\trm -f apache-tomcat-$TC_VERSION.*\n\t\n#improve tomcat startup performance by setting non blocking random generator\nRUN echo \"CATALINA_OPTS=-Djava.security.egd=file:/dev/./urandom\" > apache-tomcat/bin/setenv.sh && \\\n\tchmod a+x apache-tomcat/bin/setenv.sh\n\nWORKDIR /opt/apache-tomcat\n\n# expose http and jmx ports\nEXPOSE 8080 8009\n\n# run tomcat by default\nCMD [\"/opt/apache-tomcat/bin/catalina.sh\", \"run\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "apk add --update openssl &&     rm -rf /var/cache/apk/* /tmp/*",
+      "wget $TC_URL && \twget $TC_URL.sha1 && \tsha1sum -cw apache-tomcat-$TC_VERSION.tar.gz.sha1",
+      "echo \"CATALINA_OPTS=-Djava.security.egd=file:/dev/./urandom\" > apache-tomcat/bin/setenv.sh && \tchmod a+x apache-tomcat/bin/setenv.sh"
+    ],
+    "workdir": [
+      "/opt",
+      "/opt/apache-tomcat"
+    ],
+    "from": "anapsix/alpine-java:jdk8",
+    "maintainer": "Florian Brüssel <florian@florian-m.net>\t",
+    "env": {
+      "TC_MAJOR": "9",
+      "TC_VERSION": "9.0.0.M10",
+      "TC_URL": "https://www.apache.org/dist/tomcat/tomcat-$TC_MAJOR/v$TC_VERSION/bin/apache-tomcat-$TC_VERSION.tar.gz"
+    },
+    "cmd": "[\"/opt/apache-tomcat/bin/catalina.sh\", \"run\"]"
+  },
+  "source_repository_url": "https://github.com/fBrx/dockerimages.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/fBrx/dockerimages",
+  "docker_repository": "fbrx/tomcat",
+  "docker_image": "fbrx/tomcat",
+  "parameters_schema": {
+    "TC_MAJOR": {
+      "default": "9",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TC_VERSION": {
+      "default": "9.0.0.M10",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TC_URL": {
+      "default": "https://www.apache.org/dist/tomcat/tomcat-$TC_MAJOR/v$TC_VERSION/bin/apache-tomcat-$TC_VERSION.tar.gz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "fbrx/tomcat",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/fbrx/tomcat",
+    "https://hub.docker.com/v2/repositories/fbrx/tomcat",
+    "https://github.com/fBrx/dockerimages.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/fbrx/tomcat",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

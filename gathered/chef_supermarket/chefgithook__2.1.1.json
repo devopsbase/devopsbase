@@ -1,0 +1,58 @@
+{
+  "name": "chefgithook Chef cookbook",
+  "chef_cookbook_name": "chefgithook",
+  "revision": "2.1.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/chefgithook",
+    "https://supermarket.chef.io/cookbooks/chefgithook/download",
+    "https://supermarket.chef.io/cookbooks/chefgithook/versions/2.1.1",
+    "https://supermarket.chef.io/cookbooks/chefgithook/versions/2.1.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/chefgithook/versions/2.1.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/chefgithook",
+    "https://supermarket.chef.io/api/v1/cookbooks/chefgithook/versions/2.1.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Version Control/Git"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/chefgithook",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/chefgithook/versions/2.1.1/download",
+  "deprecated": false,
+  "created": "2015-04-07T20:00:25.813Z",
+  "updated": "2016-02-08T18:24:23.669Z",
+  "description": "Installs/Configures chefgithook",
+  "maintainer": {
+    "name": "eherot",
+    "email": "eric.herot@evertrue.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 464725,
+  "downloads_count_revision": 222604,
+  "repository_url": "https://github.com/evertrue/chefgithook-cookbook",
+  "issues_url": "https://github.com/evertrue/chefgithook-cookbook/issues",
+  "chef_source_url": "https://github.com/evertrue/chefgithook-cookbook",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# chefgithook cookbook\n\nThis sets up a very simple Sinatra server that listens for GitHub Web Hook\ncalls about your Chef repo and automatically uploads any updated assets\nto your Chef server.\n\n# Requirements\n\n- A [GitHub](http://github.com) account\n- A [Chef](http://www.chef.io) account\n\nWe have only tested this with Hosted Chef, but there is no reason it should not\nalso work with Enterprise Chef and Open Source Chef.\n\n# Chef Account Setup\n\nChefGitHook requires an admin account on the chef server.  Note that, at least\nwith Hosted Chef (and probably Enterprise Chef), it is not sufficient to create\na new client and grant it lots of privileges, you must actually create a new\n\"user\" for use with this tool.\n\nThe Chef user/client/node name is configurable but it is set to `gitupdater` by default.\n\n# Server Setup\n\n- Allow connections from the GitHub IPs (listed on their website) to port\n6969 (configurable, below) on the node running this cookbook.\n\n# Usage\n\nAdd this to a wrapper cookbook or a run list and configure a few of the\nnecessary attributes and you should be good to go.\n\n# S3 Bucket Setup\n\nChefGitHook expects your chef credentials to be in an S3 bucket (specified in a required attribute below).  By default they should be stored in `/keys/chefgithook`.\n\n## Files\n\nThe following files are required:\n\n- `chefupdater_id_rsa` - The private key with permission to access your git repo.\n- `client.pem` - The client key for the Chef admin user account\n- `YOUR_VALIDATOR_FILE.pem` - The validator key, where YOUR_VALIDATOR_FILE should be replaced by your **validation_client_name** (configurable in a required attribute below).\n\n## IAM Permission Setup\n\nIt is strongly recommended that you configure some security around the key\nbucket so as to prevent it from being accessible to anyone other than the\nChefGitHook user.  The following IAM security policy should be sufficient to\nprovide restricted access to the proper S3 bucket:\n\n```json\n{\n  \"Statement\": [\n    {\n      \"Sid\": \"StmtListBuckets\",\n      \"Action\": [\n        \"s3:ListAllMyBuckets\",\n        \"s3:ListBucket\"\n      ],\n      \"Effect\": \"Allow\",\n      \"Resource\": [ \"arn:aws:s3:::*\" ]\n    },\n    {\n      \"Sid\": \"StmtFileAccess\",\n      \"Action\": \"s3:GetObject*\",\n      \"Effect\": \"Allow\",\n      \"Resource\": [\n        \"arn:aws:s3:::YOUR_BUCKET_NAME/keys/chefgithook/*\"\n      ]\n    }\n  ]\n}\n```\n\n**Be sure to replace YOUR_BUCKET_NAME with your actual bucket name**\n\n## AWS Credentials Data Bag format:\n\n```json\n{\n  \"id\": \"aws_credentials\",\n  \"chefgithook\": {\n    \"access_key_id\": \"YOUR_ACCESS_KEY_ID\",\n    \"secret_access_key\": \"YOUR_SECRET_KEY\"\n  }\n}\n```\n\n# Attributes\n\nRequired:\n\n- `['chefgithook']['knife']['validation_client_name']` - Your Chef validation client name\n- `['chefgithook']['s3']['bucket']` - S3 Bucket where your Chef credentials are located\n- `['chefgithook']['chef_repo']` - The GitHub repo where your Chef assets live\n\nOptional:\n\n- `['chefgithook']['knife']['node_name']` - The Chef admin user account name (default: 'gitupdater')\n- `['chefgithook']['home']` - The home directory of the daemon account\n- `['chefgithook']['s3']['path']` - Path within the S3 bucket where credentials files live (default: '/keys/chefgithook')\n- `['chefgithook']['s3']['key_source']['data_bag']` - S3 API Key Data Bag (default: 'secrets')\n- `['chefgithook']['s3']['key_source']['data_bag_item']` -  S3 API Key Data Bag Item (default: 'aws_credentials')\n- `['chefgithook']['s3']['key_source']['data_bag_item_key']` - S3 API Key Data Bag Item Hash Key (default: 'chefgithook')\n- `['chefgithook']['user']` - UNIX user account for the daemon (default: 'chefupdater')\n- `['chefgithook']['group']` - UNIX group for the daemon (default: 'chefupdater')\n- `['chefgithook']['chef_repo_tag']` - The tag or hash to pull from the Chef Git Repo (default: 'master')\n- `['chefgithook']['sinatra']['port']` - The port where the Sinatra daemon listens (default: 6969)\n\n# Author\n\nAuthor:: EverTrue, Inc. (<eric.herot@evertrue.com>)\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/runit",
+      "revision": "~> 1.5",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/s3_file",
+      "revision": "~> 2.5",
+      "self_resolve": true
+    }
+  ]
+}

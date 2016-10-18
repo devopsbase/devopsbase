@@ -1,0 +1,47 @@
+{
+  "name": "attribute-validator Chef cookbook",
+  "chef_cookbook_name": "attribute-validator",
+  "revision": "0.3.5",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/attribute-validator",
+    "https://supermarket.chef.io/cookbooks/attribute-validator/download",
+    "https://supermarket.chef.io/cookbooks/attribute-validator/versions/0.3.5",
+    "https://supermarket.chef.io/cookbooks/attribute-validator/versions/0.3.5/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/attribute-validator/versions/0.3.5",
+    "https://supermarket.chef.io/api/v1/cookbooks/attribute-validator",
+    "https://supermarket.chef.io/api/v1/cookbooks/attribute-validator/versions/0.3.5/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/attribute-validator",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/attribute-validator/versions/0.3.5/download",
+  "deprecated": false,
+  "created": "2013-11-12T22:51:02.000Z",
+  "updated": "2015-10-14T05:40:47.390Z",
+  "description": "Enforces attribute validation rules using the chef-attribute-validator gem.",
+  "maintainer": {
+    "name": "clintoncwolfe",
+    "email": "clinton@omniti.com"
+  },
+  "license": "BSD (3-clause)",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 2,
+  "downloads_count": 6540890,
+  "downloads_count_revision": 301,
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# attribute-validator cookbook\n\nA Chef cookbook that applies validation rules to the node attributes during a chef run.  The cookbook itself is rather small; most of the guts are in a gem named 'chef-attribute-validator'.\n\n# Why would I possibly want that?\n\nAttribute merging is *hard*.  It's very easy to accidentally override something (in a role, node, environment, third-order-dependent cookbook....), or fat-finger a attribute name, or have a change in another cookbook stomp on your attributes.  I wanted something industrial-strength that would provide early warning when an attribute was missing, spurious, or had an incoherent value.\n\nI also wanted the cookbook that cares about the validation to be able to define the rules in a simple way, and make it easy to have as much or as little validation as you want to implement.  \n\n# Requirements\n\nRequires the chef-attribute-validator gem installed to the Chef client's gem store.  This cookbook will install it automatically if it is not present.\n\n# Usage\n\n## Writing Rules\n\nBasically, you define rules in node attributes.  A typical use case comes up when you're creating a new cookbook.  Naturally, you expose certain \"knobs\" as node attributes, which the user of your cookbook can set in any number of ways - application or wrapper cookbooks attribute files, roles, even environments.  You'd like to catch missing or invalid attribute values before you try to converge using them, and throw a meaningful error (something better than \"No such method [] for nil:NilClass\", for example).\n\nSo, to define rules, add a series of hashes in your cookbook attributes.  Each rule has a path, which optionally includes wildcards; the path is then used to select which attributes to apply the rule's checks.  Checks include things like type, presence, regex, and so one; the list is growing, see https://github.com/clintoncwolfe/chef-attribute-validator for the latest.\n\nHere is how to make sure that your feature flags really are booleans, and not 0, 1, \"true\", etc.\n\n     default['attribute-validator']['rules']['some-rule'] = {\n        'path' => '/my-cookbook/feature_*/enabled',\n        'type' => 'boolean',\n     }\n\n\n## Enforcing rules via recipes\n\nTo enforce the rules, include one of the two recipes in your runlist, or directly in your runlist.\n\nMost people will want this one, which will check for invalid attributes and abort the run before any* resources are actually converged:\n\n   include_recipe \"attribute-validator::compile-time-check\"\n\n* It is possible to converge a resource at compile-time; this is common for setting up package repos, installing gems, etc.  Those resources may still fire, depending on where the compile-time-check recipe is in the runlist.\n\nAlternatively, if you want the run to converge up until reaching your cookbook, and then abort if anything is invalid, you can use:\n\n   include_recipe \"attribute-validator::converge-time-check\"\n\nThis tends to be messier, but that may be OK.\n\n## Calling the Gem Directly\n\nIf you'd like to have more control over how violations are handled, you can call the gem directly.\n\n\n    # In a recipe or LWRP\n    include_recipe \"attribute-validator::install\"\n    violations = Chef::Attribute::Validator.new(node).validate_all\n\nFor details on the contents of violations, as well as other method calls allowing you to validate rules one at a time, see https://github.com/clintoncwolfe/chef-attribute-validator .\n\n# Attributes\n\n\nRule definitions occur under default['attribute-validator']['rules'][...] like this:\n\n     default['attribute-validator']['rules'][some-rule] = {\n        'path' => '/my-cookbook/feature_*/enabled',\n        # Checks like type, regex, looks_like, min_children, present, etc \n        ...\n     }\n\n     default['attribute-validator']['rules'][another-rule] = { ... }\n\nThe cookbook also exposes a few settings of its own:\n\n      default['attribute-validator']['fail-action'] = 'error'\n\nThe default is 'error', which will raise an exception if any violations are found, halting the chef run.  You may also provide 'warn', which will issue a warning to the chef log for each violation found, but allow the run t continue.\n     \n# Recipes\n\n## No default.\n\nThis cookbook has no default recipe.\n\n## attribute-validator::compile-time-check\n\nCalls the install recipe, then calls validate_all at compile time; if nonzero violations are found, throws an exception, which halts the run.\n\n## attribute-validator::converge-time-check\n\nCalls the install recipe, then calls validate_all at convergence time (inside a ruby block); if nonzero violations are found, throws an exception, which halts the run.\n\n## attribute-validator::install\n\nUtility recipe; installs and loads the chef-attribute-validator gem at compile-time.\n\n# Bugs, Limitations, Misfeatures, Whinges, Roadmap\n\n## Reporting Issues\n\nPlease report issues by opening a github issue at https://github.com/clintoncwolfe/attribute-validator .  You're a thorough person who knows how important it is to give back to the community, so of course you'll be sending along a pull requst with a failing test, and another pull request with a fix.  That's just who you are, you're not bragging.  \n\n## Outstanding Bogs\n\nNone known.\n\n## Roadmap\n\n### Add support for reading rules from metadata.rb attribute DSL entries\n\nBecause nothing enforces that now.\n\n### Handler support?\n\nAdd support for sending violations via a handler, to ... somewhere?\n\n# Author\n\nClinton Wolfe\n\n## Contributing\n\n1. Fork it (https://github.com/clintoncwolfe/attribute-validator)\n2. Create your feature branch (`git checkout -b my-new-feature`)\n3. Commit your changes (`git commit -am 'Add some feature'`)\n4. Push to the branch (`git push origin my-new-feature`)\n5. Create new Pull Request at (https://github.com/clintoncwolfe/attribute-validator)\n",
+  "chef_recipes": {
+    "install": "Installs chef-attribute-validator gem to chef ruby gemstore",
+    "compile-time-check": "Enforces attribute validation rules at compile time",
+    "converge-time-check": "Enforces attribute validation rules at convergence time"
+  }
+}

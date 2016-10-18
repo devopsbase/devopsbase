@@ -1,0 +1,59 @@
+{
+  "name": "portage_snapshot Chef cookbook",
+  "chef_cookbook_name": "portage_snapshot",
+  "revision": "0.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/portage_snapshot",
+    "https://supermarket.chef.io/cookbooks/portage_snapshot/download",
+    "https://supermarket.chef.io/cookbooks/portage_snapshot/versions/0.1.0",
+    "https://supermarket.chef.io/cookbooks/portage_snapshot/versions/0.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/portage_snapshot/versions/0.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/portage_snapshot",
+    "https://supermarket.chef.io/api/v1/cookbooks/portage_snapshot/versions/0.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Package Management",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Image",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/portage_snapshot",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/portage_snapshot/versions/0.1.0/download",
+  "deprecated": false,
+  "created": "2013-10-19T15:18:56.000Z",
+  "updated": "2013-10-19T15:18:57.000Z",
+  "description": "Install a portage snapshot from a remote HTTP server",
+  "maintainer": {
+    "name": "erikmack",
+    "email": "erikmack@gmail.com"
+  },
+  "license": "Affero GPL v3",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 1255521,
+  "downloads_count_revision": 1255521,
+  "repository_url": "https://github.com/erikmack/chef-portage-snapshot",
+  "issues_url": "https://github.com/erikmack/chef-portage-snapshot",
+  "chef_source_url": "https://github.com/erikmack/chef-portage-snapshot",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "portage_snapshot Cookbook\n=========================\nInstall a portage snapshot from a remote HTTP server.\n\nGentoo, more than other distros, makes it easy to have a \"frozen\nrepository\" of packages.  This is important in the data center, when\nyou want some guarantee that your server deployments are deterministic.\nIn other words, the same system can be built a month from now that\nyou built today.  We're adjusting Gentoo's \"rolling release\"\ncapability so that it rolls at an appropriate tempo for your business.\n\nYou will no longer \"emerge --sync\" on these systems.\n\nThis cookbook:\n\n1. downloads a portage snapshot tarball with checksum\n1. confirms the checksum\n1. extracts the archive to a directory that can hold multiple snapshots\n1. maybe backs up your original system PORTDIR (if the location conflicts)\n1. symlinks your PORTDIR to the latest snapshot\n1. sets the PORTDIR value in make.conf\n\nThe symlink setup maximizes the resilience of the cookbook and also\nmakes it easy to roll back to an old snapshot if the new one makes\nproblems.\n\nIt is up to you to pre-place an archive/checksum where they can be\ndownloaded over HTTP (e.g. CloudFiles, CloudFront, standard web hosting).  \nThough it's possible (and useful for testing), you\nmustn't link directly to a Gentoo mirror because snapshots are only\nmirrored for a week.\n\nNote that if your DISTDIR and PKGDIR are under PORTDIR, then the\nsymlink change will orphan those old files, and the cleaning feature (below) may \neventually delete them.  This can be a natural way\nto keep old stuff from accumulating unboundedly.  If you're not okay with this,\njust change your DISTDIR and PKGDIR to be outside of PORTDIR. \n\nA cleaning feature, enabled by default, deletes all but the newest\nthree snapshots.  This keeps the recipe from filling your disk over\ntime with snapshots.  At this time, \"newest\" is determined by sorting\nthe directories under the snapshots directory and taking the latest\nones, which requires that your basename is in a date-sortable format\n(e.g.  portage-20131009) like Gentoo publishes them.\n\nRequirements\n------------\nportage_snapshot requires the portage cookbook by Vasily Mikhaylichenko\nhttps://github.com/lxmx/chef-portage.\n\nAttributes\n----------\n#### portage_snapshot::default\n<table>\n  <tr>\n    <th>Key</th>\n    <th>Type</th>\n    <th>Description</th>\n    <th>Default</th>\n  </tr>\n  <tr>\n    <td><tt>['portage_snapshot'][:archive_basename]</tt></td>\n    <td>String</td>\n    <td>The date-sortable snapshot name.</td>\n    <td><tt>'portage-20131009'</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['portage_snapshot'][:archive_suffix]</tt></td>\n    <td>String</td>\n    <td>archive_basename + archive_suffix = short file name</td>\n    <td><tt>'.tar.xz'</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['portage_snapshot'][:base_url]</tt></td>\n    <td>String</td>\n    <td>Where to download the snapshot, excluding the /filename</td>\n    <td><tt>'http://myfiles.example.org'</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['portage_snapshot'][:portdir]</tt></td>\n    <td>String</td>\n    <td>The filesystem location where the portage tree should live</td>\n    <td><tt>'/usr/portage'</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['portage_snapshot'][:snapshots_dir]</tt></td>\n    <td>String</td>\n    <td>A place to keep snapshots</td>\n    <td><tt>'/var/portage_snapshots'</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['portage_snapshot'][:clean_old_snapshots]</tt></td>\n    <td>Boolean</td>\n    <td>Whether to delete old snapshots to set an upper bound on disk usage</td>\n    <td><tt>true</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['portage_snapshot'][:keep_n_newest_snapshots]</tt></td>\n    <td>Integer</td>\n    <td>How many snapshots to keep if :clean_old_snapshots is true</td>\n    <td><tt>3</tt></td>\n  </tr>\n</table>\n\nUsage\n-----\n#### portage_snapshot::default\nInclude `portage_snapshot` in your node's `run_list`, and\nspecify the URL and snapshot basename for the download.\n\n```json\n{\n  \"name\":\"my_node\",\n  \"normal\" : {\n    \"portage_snapshot\" : {\n      \"base_url\" : \"http://mycdn.example.org/foobucket\",\n      \"archive_basename\" : \"portage-20131009\"\n    }\n  },\n  \"run_list\": [\n    \"recipe[portage_snapshot]\"\n  ]\n}\n```\n\nTodo\n----\n- Cleaning check could determine \"newest\" snapshots from first \n  field in metadata/timestamp.x instead of sorting dir names.\n  Use a ruby block for this not bash\n- Check gpg signature (can be disabled)\n- Allow disabling checksum download/check\n\nContributing\n------------\nPull requests, patches, issues, e-mails welcome.\n\nLicense and Authors\n-------------------\nAffero GPL v3\n\nErik Mackdanz\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "gentoo",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/portage",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

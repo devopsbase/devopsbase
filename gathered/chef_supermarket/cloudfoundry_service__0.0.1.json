@@ -1,0 +1,67 @@
+{
+  "name": "cloudfoundry_service Chef cookbook",
+  "chef_cookbook_name": "cloudfoundry_service",
+  "revision": "0.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/cloudfoundry_service",
+    "https://supermarket.chef.io/cookbooks/cloudfoundry_service/download",
+    "https://supermarket.chef.io/cookbooks/cloudfoundry_service/versions/0.0.1",
+    "https://supermarket.chef.io/cookbooks/cloudfoundry_service/versions/0.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/cloudfoundry_service/versions/0.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/cloudfoundry_service",
+    "https://supermarket.chef.io/api/v1/cookbooks/cloudfoundry_service/versions/0.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Operating Systems & Virtualization",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Cloud Platform/Cloud Foundry"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/cloudfoundry_service",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/cloudfoundry_service/versions/0.0.1/download",
+  "deprecated": false,
+  "created": "2012-12-24T11:18:02.000Z",
+  "updated": "2013-01-26T23:57:04.000Z",
+  "description": "Base cookbook for cloudfoundry service cookbooks",
+  "maintainer": {
+    "name": "andreacampi",
+    "email": "andrea.campi@zephirworks.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 2,
+  "downloads_count": 15212209,
+  "downloads_count_revision": 1267634,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nbasic functionality for writing cookbooks that manage services in a\n[Cloud Foundry](http://www.cloudfoundry.org) installation.\n\nUnless you are creating or modifying a cookbook, there is nothing interesting\nin here.\n\nRequirements\n============\n\nCookbooks\n---------\n\n* cloudfoundry\n* logrotate\n* rbenv\n\nPlatform\n--------\n\n* Ubuntu\n\nTested on:\n\n* Ubuntu 10.04\n* Ubuntu 12.04\n\nAttributes\n==========\n\nThis cookbooks defines common attributes that are used by its own recipes and resources, as well as by the actual services cookbooks.\n\nThe following attributes are user-configurable:\n\n* `node['cloudfoundry_service']['install_path']` - The directory where sources for each service will be installed. Defaults to \"/srv/vcap-srv\"\n* `node['cloudfoundry_service']['repo']` - The URL to a git repository containing the sources for all the services. If you wish to make changes to the source code, you can fork this repository and change this attribute to point to your own fork. Defaults to \"https://github.com/cloudfoundry/vcap-services.git\"\n* `node['cloudfoundry_service']['reference']` - A reference to a commit (the SHA1 or a branch name) to deploy. Defaults to \"ac31866f8568593d8499ad07c5a74ae7ed527aa4\"\n* `node['cloudfoundry_service']['base_dir']` - Path to the directory used by services to store private data. Default is `/var/vcap/services`.\n* `node['cloudfoundry_service']['lock_dir']` - Path to the directory used by services to store locks. Default is `/var/vcap/sys`.\n\nResources/Providers\n===================\n\ncloudfoundry\\_service\\_component\n--------------------------------\n\nManages the installation, configuration and execution of a component of a CloudFoundry service.\n\nMost services have different components: pretty much all of them have a `gateway`, most have a `node`\nand some will have additional lifecycle components.\n\nBy default, it uses the `cloudfoundry_service_install` resource to install the service from git;\nsee its documentation (below) for more information. It is possible to opt-out and handle the\ninstallation with other means by setting the `install` attribute to false.\n\n# Actions:\n\n* `:create` - installs and configures the given service component;\n* `:enable` - configures the given service component to start automatically at boot;\n* `:start` - starts the given service component;\n* `:restart` - restarts the given service component.\n\n# Attribute parameters\n\n- `name`: name attribute. The name of the service component. This will be used to derive the default value for other attribute;\n- `service_name`: the name of the service, e.g. `mongodb` for the MongoDB service;\n- `install`: if false, the service component will not be installed automatically; it will need to be installed explicitly. Defaults to true.\n- `config_dir`: path to a directory that will contain the configuration files for the service component; it will be created if it does not exist. Defaults to `node['cloudfoundry']['config_dir']`;\n- `data_dir`: path to a directory that will runtime data for the service component; it will be created if it does not exist. Defaults to `File.join(node['cloudfoundry_service']['base_dir'], service_name)`;\n- `user`: the user that will own the installed files. Defaults to `node['cloudfoundry']['user']`;\n- `pid_dir`: path to a directory that will hold pid files for the service. Defaults to `node['cloudfoundry']['pid_dir']`;\n- `pid_dir`: path to a directory that will hold log files for the service. Defaults to `node['cloudfoundry']['log_dir']`;\n- `lock_dir`: path to a directory that will hold lock files for the service. Defaults to `node['cloudfoundry_service']['lock_dir']`;\n- `init_service_name`: the name of the `init` (Upstart) service that will be created. Defaults to `#{cloudfoundry}_name`;\n- `base_path`: path to a directory that will contain the installation of all the services; if `install` is specifiied, it will be created if it does not exist. Defaults to `node['cloudfoundry_service']['install_path']}`;\n- `subdirectory`: name of a subdirectory of `base_path` that will contain the installation of this services; if `install` is specifiied, it will be created if it does not exist. Defaults to `name`;\n- `extra_args`: extra arguments to add to the service component invokation.\n\nExamples:\n\n    cloudfoundry_service_component \"mysql_node\" do\n      service_name  \"mysql\"\n    end\n\n    cloudfoundry_service_component \"mysql_gateway\" do\n      service_name  \"mysql\"\n    end\n\ncloudfoundry\\_service\\_install\n------------------------------\n\nManages the installation of a CloudFoundry service.\n\nAt the time of this writing, services are distributed only in source form as part of the\n`vcap-services` git repository; this resource checks out the git repository only once regardless\nof the number of services that are installed.\n\nWhen the content of the repository changes, it will automatically perform any task that is\nrequired to updated all the services running on a node. In particular, it will restart every\nservice that is installed from that repository, since there is no way of detecting changes in a\nsingle service.\n\nConversely, if the content of the repository did not change, Bundler will not be run and no\nservice will be restarted unless the directories created by Bundler don't exist.\nIn other words, if you make other changes (deinstall a gem, or make manual changes) you need to\neither run `bundle` manually or delete the `#{path}/bundle` directory.\n\nWarning: the current version of this resource strongly assumes this particular layout; as a\nconsequence, installing different services to unrelated directories is not supported at this time.\n\n# Actions:\n\n* `:update` - updates the installation of the given service.\n\n# Attribute parameters\n\n- `name`: name attribute. The name of the service you wish to install. This will be used to derive the default value for other attribute;\n- `base_path`: path to a directory that will contain the installation of all the services; it will be created if it does not exist. Defaults to `node['cloudfoundry_service']['install_path']`;\n- `subdirectory`: name of a subdirectory of `base_path` that will contain the installation of this services; it will be created if it does not exist. Defaults to `name`;\n- `path`: path to a directory that will contain the installation of this services; it will be created if it does not exist. Note: at this time it *must* be a subdirectory of `base_path`; Defaults to `#{base_path}/#{subdirectory}`;\n- `user`: the user that will own the installed files. Defaults to `node['cloudfoundry']['user']`;\n- `repository`: the URL to a git repository containing the sources for all the services. Defaults to `node['cloudfoundry_service']['repo']`;\n- `reference`: a reference to a commit (the SHA1 or a branch name) to deploy. Defaults to `node['cloudfoundry_service']['reference']`;\n- `enable_submodules`: if true, any submodules for the repository will by updated as well. This must be true when using the default repository; only change if you know what you are doing. Defaults to `true`;\n- `depth`: if not nil, it will limit the depth of the git checkout to the given value; this may speed up the deployment. Defaults to `10`;\n- `ruby_version`: the version of Ruby that will be used to run Bundler. Defaults to `node['cloudfoundry']['ruby_1_9_2_version']`;\n- `ruby_path`: the path to a Ruby interpreter that will be used to run Bundler. Defaults to the `rbenv` installation of Ruby version `node['cloudfoundry']['ruby_1_9_2_version']`.\n\nUsage\n=====\n\n\nLicense and Author\n==================\n\nAuthor:: Andrea Campi (<andrea.campi@zephirworks.om.com>)\nAuthor:: Trotter Cashion (<cashion@gmail.com>)\n\nCopyright:: 2012 ZephirWorks\nCopyright:: 2012 Trotter Cashion\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/cloudfoundry",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/logrotate",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/rbenv",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

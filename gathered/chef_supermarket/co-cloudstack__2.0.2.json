@@ -1,0 +1,82 @@
+{
+  "name": "co-cloudstack Chef cookbook",
+  "chef_cookbook_name": "co-cloudstack",
+  "revision": "2.0.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/co-cloudstack",
+    "https://supermarket.chef.io/cookbooks/co-cloudstack/download",
+    "https://supermarket.chef.io/cookbooks/co-cloudstack/versions/2.0.2",
+    "https://supermarket.chef.io/cookbooks/co-cloudstack/versions/2.0.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/co-cloudstack/versions/2.0.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/co-cloudstack",
+    "https://supermarket.chef.io/api/v1/cookbooks/co-cloudstack/versions/2.0.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Operating Systems & Virtualization",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Cloud Platform/CloudStack"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/co-cloudstack",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/co-cloudstack/versions/2.0.2/download",
+  "deprecated": true,
+  "created": "2013-11-29T18:54:06.000Z",
+  "updated": "2015-02-07T14:40:40.663Z",
+  "description": "Installs/Configures co-cloudstack",
+  "maintainer": {
+    "name": "pdion891",
+    "email": "pdion@cloudops.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 3602585,
+  "downloads_count_revision": 1200822,
+  "chef_replacement": {
+    "url": "https://supermarket.chef.io/api/v1/cookbooks/cloudstack"
+  },
+  "repository_url": "https://github.com/cloudops/cookbook_co-cloudstack",
+  "issues_url": "https://github.com/cloudops/cookbook_co-cloudstack",
+  "chef_source_url": "https://github.com/cloudops/cookbook_co-cloudstack",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "co-cloudstack Cookbook\n======================\n\nInstall and configure Apache Cloudstack cloud orchestrator. This cookbook currently support only Redhat based distributions of Linux.\nThis Chef cookbook install Cloudstack based on RPMs and executes folowing steps:\n\n1. Update yum repo\n2. Install RPMs\n3. Create and initialize database\n4. Generate admin account api keys `recipe[co-cloudstack::admin-apikey]`\n5. Download system VM template\n6. Configure and export NFS Secondary storage if local\n\nCurrently tested on CentOs 6.x x86_64.\n\n\nOriginaly this cookbook as not been developped to work with the [community mysql cookbook](http://community.opscode.com/cookbooks/mysql). Warning: this cookbook provide passwords in clear text as attributes.\n\n\nAbout Apache Cloudstack\n=======================\n\nMore info on: http://cloudstack.apache.org/\n\nRequirements\n------------\n\nThe following cookbooks are direct dependencies:\n\n- <tt>'co-nfs'</tt> - To configure and export Secondary Storage.\n\n\nAttributes\n----------\n\nAttributes can be customized for securty reason. The cookbook does not support encrypted data bag usage for now.\n\n- <tt>node['cloudstack']['repo']</tt> - yum repo url to use, default: http://cloudstack.apt-get.eu/rhel/4.2/\n- <tt>node['cloudstack']['db']['host']</tt> - cloud mysql host/ip, default = <tt>node['ipaddress']</tt>\n- <tt>node['cloudstack']['db']['user']</tt> - cloud databases mysql user\n- <tt>node['cloudstack']['db']['password']</tt> - cloud databases mysql password\n- <tt>node['cloudstack']['db']['rootusername']</tt> - root mysql user\n- <tt>node['cloudstack']['db']['rootpassword']</tt> - root mysql password\n- <tt>node['cloudstack']['network']['system']['subnet']</tt> - Management network subnet (use for the nfs export) \n- <tt>node['cloudstack']['secondary']['path']</tt> - Local path for the Secondary Storage. default = <tt>/data/secondary</tt>\n\n\nUsage\n-----\n\n##### Create an environment\nThe \"cloudstack-setup-databases\" tool require Mysql to have `allow_remote_root` and `skip-name-resolve` set true to work.\n\n```json\n{\n  \"name\": \"cloudstack-lab\",\n  \"description\": \"Cloudstack env.\",\n  \"default_attributes\": {\n    \"mysql\": {\n      \"allow_remote_root\": \"true\",\n      \"tunable\": {\n        \"skip-name-resolve\": \"true\"\n      }\n    }\n  }\n}\n```\n\n##### Create role\nFor a node that run cloudstack and is dependency (mysql, nfsserver):\n\n```json\n{\n  \"name\": \"co_cloudstack-lab\",\n  \"description\": \"Cloudstack server.\",\n  \"run_list\": [\n    \"recipe[mysql::server]\",\n    \"recipe[co-nfs::server]\",\n    \"recipe[co-cloudstack]\",\n    \"recipe[co-cloudstack::admin-apikey]\",\n    \"recipe[co-cloudmonkey]\"\n  ]\n}\n```\n\n##### bootstrap the node\n\n```bash\nknife bootstrap <your node FQDN or IP> \\\n    -r 'role[co_cloudstack-lab]' \\\n    -E cloudstack-lab \\\n    -x root \\\n    -P <your root password>\n```\n\n##### test it:\nAccess the url: <tt>http://node_ipaddress:8080/client</tt>\n\n\n\nRecipes\n-------\n\n#### co-cloudstack::default\nThe default recipe will install apache cloudstack version based on the yum repo define in <tt>node['cloudstack']['repo']</tt>. the default recipe will include all sub recipes of co-cloudstack except the co-cloudstack::admin-apikey. \n\ninclude `co-cloudstack` in your node's `run_list`:\n\n```json\n{\n  \"name\":\"my_node\",\n  \"run_list\": [\n    \"recipe[co-cloudstack]\"\n  ]\n}\n```\n\n#### co-cloudstack::admin-apikey\nco-cloudstack::admin-apikey must add to the run_list of the node in order to generate admin account api_key and secret_key. The recipe will enable and use the integration api port to generage keys to admin account.\n\n*co-cloudstack::admin-apikey will not disable the integration.api.port* once the chef-run is completed.\n\n#### co-cloudstack::sys-tmpl\nco-cloudstack::sys-tmpl will download system template VM's in the Secondary Storage path define in <tt>node['cloudstack']['secondary']['path']</tt>. By default the process will download system template VMs for XenServer, KVM and VMware. Once the download is completed, the recipe will add <tt>tags:template_uploaded</tt> to the node so templates will not be redownloaded every chef run. Also, if another node have the <tt>tags:template_uploaded</tt> within the environment of the node, it will not download system template VMs because the cookbook consider to be a peer of the other cloudstack server in is environment.\n\nDefault system templates:\n```ruby\ndefault['cloudstack']['hypervisor_tpl'] = {\n  \"xenserver\" => \"http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2\", \n  \"vmware\" => \"http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova\",\n  \"kvm\" => \"http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2\"\n}\n```\n\n#### co-cloudstack::init-db\nThis recipe is automatically run by the co-cloudstack::default recipe. It will create and initialize the cloudstack databases using the <tt>/usr/bin/cloudstack-setup-databases</tt> tool. Once the database is initialize the recipe will add <tt>tags:db_init</tt> to the node to not re-execute cloudstack-setup-databases every chef run. If another host in the node environment have the <tt>tags:db_init</tt>, cloudstack-setup-databases will not be executed because the cookbook consider to be a peer of the other cloudstack server in is environment.\n\n#### co-cloudstack::secondary-local-nfs\nThis recipe will run recipe co-nfs::export only if <tt>node['cloudstack']['secondary']['host'] == node[\"ipaddress\"]</tt> to export the secondary storage as NFS.\n\n#### co-cloudstack::vhd-util\nThis recipe download the tool vhd-util required to manage XenServer hosts that is not included in cloudstack RPMs.\n\n\n\nKnow issues and limitations\n---------------------------\n\n#### sudoers\nCloudstack require sudoers access so if you managed sudoers with Chef you need to add this in your configuration:\n<tt>/etc/sudoers</tt>\n```\ncloud ALL =NOPASSWD : ALL\n```\n#### integration.api.port\nThe integration.api.port is not disabled once the admin keys are generated.\n\n##### Primary Storage\nYou still have to configure a Primary storage for your zone. If you use LocalStorage on hypervisor, you will have to update Service offering for System VM and enable use of localstorage for systemVMs. <tt>system.vm.use.local.storage = true</tt>\n\n##### Upgrade of Cloudstack\nThis cookbook does not support Upgrade action for cloudstack RPMs.\n\n\nLicense and Authors\n-------------------\n- Authors:: Pierre-Luc Dion (<pdion@cloudops.com>)\n\n```text\nCopyright:: Copyright (c) 2014 CloudOps.com\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/co-nfs",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "co-cloudstack::default": "Installs and configures Apache Cloudstack",
+    "co-cloudstack::admin-apikey": "Generate api and secret keys of admin account and store them in attributes",
+    "co-cloudstack::init-db": "Create and Initialized Cloudstack databases",
+    "co-cloudstack::secondary-local-nfs": "run recipe nfs::export if secondary storage is local",
+    "co-cloudstack::sys-tmpl": "Download system VM templates",
+    "co-cloudstack::usage": "install and makesure only one cloudstack-usage daemon is running",
+    "co-cloudstack::vhd-util": "Download vhd-util scripts (no-redist license)"
+  }
+}

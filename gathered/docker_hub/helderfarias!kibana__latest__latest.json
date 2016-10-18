@@ -1,0 +1,118 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/helderfarias/kibana",
+    "repository_url": "https://hub.docker.com/v2/repositories/helderfarias/kibana",
+    "tags_url": "https://hub.docker.com/v2/repositories/helderfarias/kibana/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/helderfarias/kibana/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/helderfarias/kibana/autobuild",
+    "user": "helderfarias",
+    "name": "kibana",
+    "namespace": "helderfarias",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 9,
+    "last_updated": "2016-10-11T21:33:20.950227Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 159514479,
+        "id": 5380786,
+        "repository": 972222,
+        "creator": 98036,
+        "last_updater": 98036,
+        "last_updated": "2016-10-11T21:33:19.300929Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "helderfarias/dockers"
+  },
+  "name": "helderfarias/kibana Docker container",
+  "description": "Kibana + HAProxy",
+  "readme": "dockers\n=======\n\n### Build\n  https://coderwall.com/p/s4ofoq/docker-why-i-prefer-alpine-as-base-instead-of-ubuntu\n  http://www.blang.io/posts/2015-04_golang-alpine-build-golang-binaries-for-alpine-linux/\n",
+  "dockerfile": "FROM kibana:4.6.1\n\nRUN apt-get update \\\n    && apt-get -y install libssl1.0.0 --no-install-recommends \\\n    && apt-get -y install libc6-dev libpcre3-dev libssl-dev \\\n    && apt-get -y install supervisor \\\n    && apt-get -y install curl make \\\n    && rm -rf /var/lib/apt/lists/*\n\nENV HAPROXY_MAJOR 1.5\nENV HAPROXY_VERSION 1.5.11\nENV HAPROXY_MD5 5500a79d0d2b238d4a1e9749bd0c2cb2\nRUN set -x \\\n\t&& apt-get update && apt-get install -y gcc $buildDeps --no-install-recommends && rm -rf /var/lib/apt/lists/* \\\n\t&& curl -SL \"http://www.haproxy.org/download/${HAPROXY_MAJOR}/src/haproxy-${HAPROXY_VERSION}.tar.gz\" -o haproxy.tar.gz \\\n\t&& echo \"${HAPROXY_MD5}  haproxy.tar.gz\" | md5sum -c \\\n\t&& mkdir -p /usr/src/haproxy \\\n\t&& tar -xzf haproxy.tar.gz -C /usr/src/haproxy --strip-components=1 \\\n\t&& rm haproxy.tar.gz \\\n\t&& make -C /usr/src/haproxy \\\n\t\tTARGET=linux2628 \\\n\t\tUSE_PCRE=1 PCREDIR= \\\n\t\tUSE_OPENSSL=1 \\\n\t\tUSE_ZLIB=1 \\\n\t\tall \\\n\t\tinstall-bin \\\n\t&& mkdir -p /usr/local/etc/haproxy \\\n\t&& cp -R /usr/src/haproxy/examples/errorfiles /usr/local/etc/haproxy/errors \\\n\t&& rm -rf /usr/src/haproxy \\\n        && apt-get -y purge curl make gcc\n\nRUN rm -rf /etc/kibana\nCOPY haproxy.cfg /etc/haproxy/haproxy.cfg\nCOPY supervisor.conf /etc/supervisor/conf.d/supervisor.conf\nCOPY entrypoint.sh /entrypoint.sh\nCOPY kibana.yml /opt/kibana/config/kibana.yml\nRUN chmod +x /entrypoint.sh\n\nVOLUME /etc/kibana\n\nEXPOSE 8080\n\nCMD [\"/entrypoint.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [
+      "/etc/kibana"
+    ],
+    "run": [
+      "apt-get update     && apt-get -y install libssl1.0.0 --no-install-recommends     && apt-get -y install libc6-dev libpcre3-dev libssl-dev     && apt-get -y install supervisor     && apt-get -y install curl make     && rm -rf /var/lib/apt/lists/*",
+      "set -x \t&& apt-get update && apt-get install -y gcc $buildDeps --no-install-recommends && rm -rf /var/lib/apt/lists/* \t&& curl -SL \"http://www.haproxy.org/download/${HAPROXY_MAJOR}/src/haproxy-${HAPROXY_VERSION}.tar.gz\" -o haproxy.tar.gz \t&& echo \"${HAPROXY_MD5}  haproxy.tar.gz\" | md5sum -c \t&& mkdir -p /usr/src/haproxy \t&& tar -xzf haproxy.tar.gz -C /usr/src/haproxy --strip-components=1 \t&& rm haproxy.tar.gz \t&& make -C /usr/src/haproxy \t\tTARGET=linux2628 \t\tUSE_PCRE=1 PCREDIR= \t\tUSE_OPENSSL=1 \t\tUSE_ZLIB=1 \t\tall \t\tinstall-bin \t&& mkdir -p /usr/local/etc/haproxy \t&& cp -R /usr/src/haproxy/examples/errorfiles /usr/local/etc/haproxy/errors \t&& rm -rf /usr/src/haproxy         && apt-get -y purge curl make gcc",
+      "rm -rf /etc/kibana",
+      "chmod +x /entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "kibana:4.6.1",
+    "env": {
+      "HAPROXY_MAJOR": "1.5",
+      "HAPROXY_VERSION": "1.5.11",
+      "HAPROXY_MD5": "5500a79d0d2b238d4a1e9749bd0c2cb2"
+    },
+    "copy": "kibana.yml /opt/kibana/config/kibana.yml",
+    "cmd": "[\"/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/helderfarias/dockers.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/helderfarias/dockers",
+  "docker_repository": "helderfarias/kibana",
+  "docker_image": "helderfarias/kibana",
+  "parameters_schema": {
+    "HAPROXY_MAJOR": {
+      "default": "1.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_VERSION": {
+      "default": "1.5.11",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_MD5": {
+      "default": "5500a79d0d2b238d4a1e9749bd0c2cb2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "helderfarias/kibana",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/helderfarias/kibana",
+    "https://hub.docker.com/v2/repositories/helderfarias/kibana",
+    "https://github.com/helderfarias/dockers.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/helderfarias/kibana",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

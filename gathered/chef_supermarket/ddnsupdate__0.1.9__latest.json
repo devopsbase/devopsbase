@@ -1,0 +1,85 @@
+{
+  "name": "ddnsupdate Chef cookbook",
+  "chef_cookbook_name": "ddnsupdate",
+  "revision": "0.1.9",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/ddnsupdate",
+    "https://supermarket.chef.io/cookbooks/ddnsupdate/download",
+    "https://supermarket.chef.io/cookbooks/ddnsupdate/versions/0.1.9",
+    "https://supermarket.chef.io/cookbooks/ddnsupdate/versions/0.1.9/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/ddnsupdate/versions/0.1.9",
+    "https://supermarket.chef.io/api/v1/cookbooks/ddnsupdate",
+    "https://supermarket.chef.io/api/v1/cookbooks/ddnsupdate/versions/0.1.9/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Image/VM Image/AMI",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Operating System",
+    "Type/Infrastructure/Network/DNS"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/ddnsupdate",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/ddnsupdate/versions/0.1.9/download",
+  "deprecated": false,
+  "created": "2014-09-02T07:38:45.215Z",
+  "updated": "2016-01-19T12:14:35.540Z",
+  "description": "Installs/Configures nsupdate to manage host dynamic dns and other RR",
+  "maintainer": {
+    "name": "vkhatri",
+    "email": "vir.khatri@gmail.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 1434995,
+  "downloads_count_revision": 269,
+  "repository_url": "https://github.com/vkhatri/chef-ddnsupdate",
+  "issues_url": "https://github.com/vkhatri/chef-ddnsupdate/issues",
+  "chef_source_url": "https://github.com/vkhatri/chef-ddnsupdate",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "ddnsupdate Cookbook\n===================\n\n[![Build Status](https://travis-ci.org/vkhatri/chef-ddnsupdate.svg?branch=master)](https://travis-ci.org/vkhatri/chef-ddnsupdate)\n\nThis is a [Chef] cookbook for Managing BIND DNS Resource Records using nsupdate.\n\nThis cookbook was primarily developed to Manage an Internal BIND DNS Domain Dynamic Records for Instances\nin Amazon EC2 infrastructure (where DHCP could not perform DNS Dynamic Records Updates, this\nmight change in the future), but this cookbook is not limited just to Amazon EC2 and could be\nused to manage ant BIND DNS Domain Dynamic Records.\n\nCurrently it supports common RR types `[A PTR CNAME MX]`, more\nfeatures and attributes will be added over time, **feel free to contribute**\nwhat you find missing!\n\n\n## Cookbook Repository\n\nhttps://github.com/vkhatri/chef-ddnsupdate\n\n\n## Supported DDNS Resource Record Types\n\n- A\n- PTR\n- CNAME\n- MX (limited support for MX RR priority)\n\n\n## Cookbook Recipes\n\n- `ddnsupdate::install`   - install bind utils package and setup DDNSSEC Key file\n\n- `ddnsupdate::host`  \t\t- configure nsupdate to manage Host DDNS A & PTR RR\n\n- `ddnsupdate::rr`   \t\t\t- manage DDNS RR via node attribute using LWRP\n\n\n## Cookbook Dependencies\n\nNone\n\n\n## Non-Secure DDNS Update\nDynamic DNS by default requires a name/security key to update DNS.  There are times however when one disables this feature to allow updates without a DDNSSEC key. This feature allows one to turn off the requirement for DDNSSEC.\n\n * `default['ddnsupdate']['no_ddnssec']  # default zone access is controlled by ddnssec` (default: `false`)\n\n## Cookbook rr LWRP\n\n**LWRP - ddnsupdate_rr*\n\nrr LWRP is used to create/delete Dynamic DNS RR.\n\n**LWRP example**\n\n*RR via node attribute:*\n\n    \"default_attributes\": {\n      \"ddnsupdate\": {\n        \"rr\": {\n          \"create\": {\n            \"resource record name\": {\n              \"type\": \"A\",\n              \"value\": [\n                \"resource record ip address 1\",\n                \"resource record ip address 2\"\n              ],\n              \"ttl\": 300 # override default ttl value\n            },\n            \"resource record ip\": {\n              \"type\": \"PTR\",\n              \"value\": [\n                \"resource record name 1\",\n                \"resource record name 2\"\n              ],\n              \"ttl\": 900\n            },\n            \"resource record zone\": {\n              \"type\": \"MX\",\n              \"priority\": 10,\n              \"value\": [\n                \"resource record name\"\n              ]\n            }\n          },\n          \"delete\": {\n            \"resource record name\": {\n              \"type\": \"type\",\n              \"value\": \"resource record value\",\n              \"purge\": false\n            }\n          }\n        }\n      }\n    }\n\n\n*Create a RR using LWRP*\n\n    ddnsupdate_rr rr_name_description\n      option option_name\n    end\n\n*Delete a RR using LWRP*\n\n    ddnsupdate_rr rr_name_description\n      option option_name\n      action :delete\n    end\n\n*Delete a RR with Purge using LWRP*\n\nA RR like A or PTR could point to more than one record value. To delete RR entirely\nset RR attribute `purge`.\n\n    ddnsupdate_rr rr_name_description\n      option option_name\n      purge  true\n      action :delete\n    end\n\n**LWRP Options**\n\nnsupdate Reference: `man nsupdate`\n\nParameters:\n\n- *type (required)*\t\t\t\t\t- RR type, e.g. A PTR CNAME MX\n- *ttl (default: `node.ddnsupdate.ttl`)*\t\t\t\t- RR ttl value\n- *purge (default: false)*\t- delete all RR record values, in conjunction with action :delete\n- *value (default: `[]`, required)*\t\t\t\t- array of RR value(s)\n- *server (default: `node.ddnsupdate.server`)*\t- RR server to create/delete\n- *zone (require)*\t\t\t\t\t\t\t\t- RR zone\n- *priority (default: 10)*\t- MX RR priority\n- *ddnssec_key_file (default: `node.ddnsupdate.ddnssec.file`)*\t- RR ddnssec key file\n- *resolv_conf_file (default: `/etc/resolv.conf`)*\t\t\t\t- resolv conf file\n\n## Cookbook core Attributes\n\n * `default[:ddnsupdate][:server]` (default: `nil`): ddns server, overrides /etc/resolv.conf dns server lookup, required if `default[:ddnsupdate][:use_resolv_conf]` is not set\n * `default[:ddnsupdate][:use_resolv_conf]` (default: `false`): if set, sets `default[:ddnsupdate][:resolv_conf]` & `default[:ddnsupdate][:server]` attributes\n\n        If there is no server ip address configured via attribute\n        default[:ddnsupdate][:server], this attribute will use\n        first nameserver entry from /etc/resolv.conf file.\n\n * `default[:ddnsupdate][:ttl]` (default: `300`): RR TTL value\n\n## Cookbook ddnssec Attributes\n\n * `default[:ddnsupdate][:ddnssec][:manage]` (default: `true`): if true manages bind ddnssec configuration file `node[:ddnsupdate][:ddnssec][:key_file]`\n * `default[:ddnsupdate][:ddnssec][:file]` (default: `/etc/nsupdate.key`): bind ddnssec key configuration file\n * `default[:ddnsupdate][:ddnssec][:name]` (default: `nil`): bind ddnssec key name\n * `default[:ddnsupdate][:ddnssec][:algo]` (default: `HMAC-MD5`): bind ddnssec key algo\n * `default[:ddnsupdate][:ddnssec][:secret]` (default: `nil`): bind dnssec secret\n * `default[:ddnsupdate][:ddnssec][:template_cookbook]` (default: `ddnsupdate`): bind dnssec configuration file template cookbook\n * `default[:ddnsupdate][:ddnssec][:template_source]` (default: `nsupdate.key.erb`): bind dnssec key configuration file template\n\n\n## Cookbook host Attributes\n\n * `default[:ddnsupdate][:host][:manage]` (default: `true`): whether to run ddnsupdate to update dynamic dns record\n * `default[:ddnsupdate][:host][:config]` (default: `/etc/nsupdate`): ddnsupdate host config file\n * `default[:ddnsupdate][:host][:nsupdate_bin]` (default: `/usr/local/bin/host_nsupdate`): host ddnsupdate script location\n * `default[:ddnsupdate][:host][:zone]` (default: `node.domain`): ddnsupdate forward zone, default to `node[:domain]`\n * `default[:ddnsupdate][:host][:reverse_zone]` (default: `nil`, required): ddnsupdate reverse zone, required as it might varies from standard host subnet/network\n * `default[:ddnsupdate][:host][:auto_fqdn_zone]` (default: `true`): use `node['fqdn']` & `node['domain']`\n\n\n## Cookbook host nsupdate crond Attributes\n\n * `default[:ddnsupdate][:host][:manage]` (default: `true`): whether to register node ddns record with dns server, will always setup node ddnsupdate nsupdate scripts\n * `default[:ddnsupdate][:ddnssec][:cron][:host][:minute]` (default: `*/15`): host nsupdate cron schedule minutes interval\n * `default[:ddnsupdate][:ddnssec][:cron][:host][:hour]` (default: `*`): host nsupdate cron schedule hour interval\n * `default[:ddnsupdate][:ddnssec][:cron][:host][:user]` (default: `root`): host nsupdate cron schedule user\n * `default[:ddnsupdate][:ddnssec][:cron][:host][:action]` (default: `create`): crond resource action, set it to delete to prevent cron schedule\n\n\n## Cookbook rr nsupdate Attributes\n\n * `default[:ddnsupdate][:rr][:create]` (default: `{}`): create dynamic dns records via nsupdate\n * `default[:ddnsupdate][:rr][:delete]` (default: `{}`): delete dynamic dns records via nsupdate\n\n    Note: Check & LWRP Examples for advanced attributes.\n\n\n## Cookbook host Recipe Usage\n\nInclude recipe `ddnsupdate::host` to node run_list to manage Host DDNS A & PTR Records.\n\n\n## Cookbook rr Recipe Usage\n\nInclude recipe `ddnsupdate::rr` to a node run_list to manage DDNS RR via node attribute `default[:ddnsupdate][:rr]`.\n\nNote: This recipe does not require to be added to all the nodes, adding to one node or two is sufficient to manage RRs.\n\n\n*RR Create*\n\nCreating a RR is simple, but it is important to point out that RR value is an array and every time a value is added to a RR, it\nwill keep appending it to existing RR.\n\nMay be in future purge will be added to action :create like :delete\n\n\n*RR Delete*\n\nDeleting a RR is also simple. Like action :create, :delete will only delete defined RR(s).\n\n\n*RR Delete with Purge*\n\nTo purge all the RR values completely enable `purge` attribute for RR as defined in the LWRP examples.\n\n\n## Chef role to manage node ddns and RR\n\nBelow Chef role is a sample to manage host and other RR.\n\nThis sample uses first nameserver defined in /etc/resolv.conf file.\n\n    \"default_attributes\": {\n      \"ddnsupdate\": {\n        \"use_resolv_conf\": true,\n\t\t\"ttl\": 300,\n\n        \"ddnssec\": {\n          \"name\": \"internal.domain.com\",\n          \"secret\": \"XYZXYZ.....\"\n\t\t\t\t\t},\n\n        \"host\": {\n          \"reverse_zone\": \"10.in-addr.arpa\"\n        },\n\n        \"rr\": {\n          \"create\": {\n            \"test00.internal.domain.com\": {\n              \"type\": \"A\",\n              \"zone\": \"internal.domain.com\",\n              \"value\": [\n                \"10.0.0.101\",\n                \"10.0.0.102\"\n              ]\n            },\n            \"10.0.0.101\": {\n              \"type\": \"PTR\",\n              \"zone\": \"10.in-addr.arpa\",\n              \"value\": [\n                \"test00.internal.domain.com\"\n              ]\n            },\n            \"10.0.0.102\": {\n              \"type\": \"PTR\",\n              \"zone\": \"10.in-addr.arpa\",\n              \"value\": [\n                \"test00.internal.domain.com\"\n              ]\n            },\n            \"test02.internal.domain.com\": {\n              \"server\": \"10.0.1.2\",\n              \"type\": \"cname\",\n              \"zone\": \"internal.domain.com\",\n              \"value\": [\n                \"test00.internal.domain.com\"\n              ]\n            }\n          },\n          \"delete\": {\n            \"test01.internal.domain.com\": {\n              \"purge\": false,\n              \"type\": \"cname\",\n              \"ttl\": 300,\n              \"zone\": \"internal.domain.com\",\n              \"value\": [\n                \"test00.internal.domain.com\"\n              ]\n            }\n          }\n        }\n      }\n    }\n\n\nTo use a differenet DNS server, update below attributes:\n\n    \"default_attributes\": {\n      \"ddnsupdate\": {\n        \"use_resolv_conf\": false,\n        \"server\": \"10.0.0.1\",\n\t\t\t\t...\n\n\n## Contributing\n\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests (`rake`), ensuring they all pass\n6. Write new resource/attribute description to `README.md`\n7. Write description about changes to PR\n8. Submit a Pull Request using Github\n\n\n## Copyright & License\n\nAuthors:: Virender Khatri and [Contributors]\n\n<pre>\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n</pre>\n\n[Chef]: https://www.getchef.com/chef/\n[Contributors]: https://github.com/vkhatri/chef-ddnsupdate/graphs/contributors\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/cron",
+      "revision": ">= 1.2.0",
+      "self_resolve": true
+    }
+  ]
+}

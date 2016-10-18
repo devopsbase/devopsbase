@@ -1,0 +1,211 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/responsive/wordpress",
+    "repository_url": "https://hub.docker.com/v2/repositories/responsive/wordpress",
+    "tags_url": "https://hub.docker.com/v2/repositories/responsive/wordpress/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/responsive/wordpress/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/responsive/wordpress/autobuild",
+    "user": "responsive",
+    "name": "wordpress",
+    "namespace": "responsive",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 67,
+    "last_updated": "2016-08-23T12:50:26.593556Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "develop",
+        "full_size": 216819879,
+        "id": 2906235,
+        "repository": 669597,
+        "creator": 509989,
+        "last_updater": 509989,
+        "last_updated": "2016-08-23T12:50:26.165755Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "master",
+        "full_size": 216819487,
+        "id": 4438222,
+        "repository": 669597,
+        "creator": 509989,
+        "last_updater": 509989,
+        "last_updated": "2016-08-23T12:19:18.259921Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "release-1.1",
+        "full_size": 216853125,
+        "id": 4437764,
+        "repository": 669597,
+        "creator": 509989,
+        "last_updater": 509989,
+        "last_updated": "2016-08-22T11:52:32.701172Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 215912176,
+        "id": 2906244,
+        "repository": 669597,
+        "creator": 509989,
+        "last_updater": 509989,
+        "last_updated": "2016-05-05T06:38:44.937078Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      }
+    ],
+    "build_name": "responsivestudio/wordpress-docker"
+  },
+  "name": "responsive/wordpress Docker container",
+  "description": "wordpress base image for developing",
+  "readme": "#This is the develop branch\n\n##Merely for testing Docker Hub Automated Build Triggers",
+  "dockerfile": "FROM phusion/baseimage:0.9.18\n\n# Install packages\nENV DEBIAN_FRONTEND noninteractive\nRUN apt-get update && \\\n  apt-get -y install supervisor git apache2 libapache2-mod-php5 mysql-server php5-mysql pwgen php-apc php5-mcrypt && \\\n  echo \"ServerName localhost\" >> /etc/apache2/apache2.conf\n\n# Add image configuration and scripts\nADD start-apache2.sh /start-apache2.sh\nADD start-mysqld.sh /start-mysqld.sh\nADD run.sh /run.sh\nRUN chmod 755 /*.sh\nADD my.cnf /etc/mysql/conf.d/my.cnf\nADD supervisord-apache2.conf /etc/supervisor/conf.d/supervisord-apache2.conf\nADD supervisord-mysqld.conf /etc/supervisor/conf.d/supervisord-mysqld.conf\n\n# Remove pre-installed database\nRUN rm -rf /var/lib/mysql/*\n\n# Add MySQL utils\nADD create_mysql_admin_user.sh /create_mysql_admin_user.sh\nRUN chmod 755 /*.sh\n\n# config to enable .htaccess\nADD apache_default /etc/apache2/sites-available/000-default.conf\nRUN a2enmod rewrite\n\n# Configure /app folder with sample app\nRUN git clone https://github.com/fermayo/hello-world-lamp.git /app\nRUN mkdir -p /app && rm -fr /var/www/html && ln -s /app /var/www/html\n\n#Environment variables to configure php\nENV PHP_UPLOAD_MAX_FILESIZE 1000M\nENV PHP_POST_MAX_SIZE 10M\n\n# Add volumes for MySQL\nVOLUME  [\"/etc/mysql\", \"/var/lib/mysql\" ]\n\n# Install plugins\nRUN apt-get -y install php5-gd wget\\\n    && rm -rf /var/lib/apt/lists/*\n\n# Download latest version of Wordpress into /app\nRUN rm -fr /app && git clone --depth=1 https://github.com/WordPress/WordPress.git /app\n\n# Configure Wordpress to connect to local DB\nADD wp-config.php /app/wp-config.php\n\n# Modify permissions to allow plugin upload\nRUN chown -R www-data:www-data /app/wp-content /var/www/html\n\n# Add database setup script\nADD create_mysql_admin_user.sh /create_mysql_admin_user.sh\nADD create_db.sh /create_db.sh\nRUN chmod +x /*.sh\n\nEXPOSE 80 3306\nCMD [\"/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "start-apache2.sh",
+        "dest": "/start-apache2.sh"
+      },
+      {
+        "source": "start-mysqld.sh",
+        "dest": "/start-mysqld.sh"
+      },
+      {
+        "source": "run.sh",
+        "dest": "/run.sh"
+      },
+      {
+        "source": "my.cnf",
+        "dest": "/etc/mysql/conf.d/my.cnf"
+      },
+      {
+        "source": "supervisord-apache2.conf",
+        "dest": "/etc/supervisor/conf.d/supervisord-apache2.conf"
+      },
+      {
+        "source": "supervisord-mysqld.conf",
+        "dest": "/etc/supervisor/conf.d/supervisord-mysqld.conf"
+      },
+      {
+        "source": "create_mysql_admin_user.sh",
+        "dest": "/create_mysql_admin_user.sh"
+      },
+      {
+        "source": "apache_default",
+        "dest": "/etc/apache2/sites-available/000-default.conf"
+      },
+      {
+        "source": "wp-config.php",
+        "dest": "/app/wp-config.php"
+      },
+      {
+        "source": "create_mysql_admin_user.sh",
+        "dest": "/create_mysql_admin_user.sh"
+      },
+      {
+        "source": "create_db.sh",
+        "dest": "/create_db.sh"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      " [\"/etc/mysql\", \"/var/lib/mysql\" ]"
+    ],
+    "run": [
+      "apt-get update &&   apt-get -y install supervisor git apache2 libapache2-mod-php5 mysql-server php5-mysql pwgen php-apc php5-mcrypt &&   echo \"ServerName localhost\" >> /etc/apache2/apache2.conf",
+      "chmod 755 /*.sh",
+      "rm -rf /var/lib/mysql/*",
+      "chmod 755 /*.sh",
+      "a2enmod rewrite",
+      "git clone https://github.com/fermayo/hello-world-lamp.git /app",
+      "mkdir -p /app && rm -fr /var/www/html && ln -s /app /var/www/html",
+      "apt-get -y install php5-gd wget    && rm -rf /var/lib/apt/lists/*",
+      "rm -fr /app && git clone --depth=1 https://github.com/WordPress/WordPress.git /app",
+      "chown -R www-data:www-data /app/wp-content /var/www/html",
+      "chmod +x /*.sh"
+    ],
+    "workdir": [],
+    "from": "phusion/baseimage:0.9.18",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "PHP_UPLOAD_MAX_FILESIZE": "1000M",
+      "PHP_POST_MAX_SIZE": "10M"
+    },
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "git@bitbucket.org:responsivestudio/wordpress-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/responsivestudio/wordpress-docker",
+  "docker_repository": "responsive/wordpress",
+  "docker_image": "responsive/wordpress",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PHP_UPLOAD_MAX_FILESIZE": {
+      "default": "1000M",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PHP_POST_MAX_SIZE": {
+      "default": "10M",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "responsive/wordpress",
+  "revision": "develop",
+  "uris": [
+    "https://hub.docker.com/r/responsive/wordpress",
+    "https://hub.docker.com/v2/repositories/responsive/wordpress",
+    "git@bitbucket.org:responsivestudio/wordpress-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image"
+  ],
+  "info_url": "https://hub.docker.com/r/responsive/wordpress",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

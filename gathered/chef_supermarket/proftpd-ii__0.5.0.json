@@ -1,0 +1,84 @@
+{
+  "name": "proftpd-ii Chef cookbook",
+  "chef_cookbook_name": "proftpd-ii",
+  "revision": "0.5.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/proftpd-ii",
+    "https://supermarket.chef.io/cookbooks/proftpd-ii/download",
+    "https://supermarket.chef.io/cookbooks/proftpd-ii/versions/0.5.0",
+    "https://supermarket.chef.io/cookbooks/proftpd-ii/versions/0.5.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/proftpd-ii/versions/0.5.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/proftpd-ii",
+    "https://supermarket.chef.io/api/v1/cookbooks/proftpd-ii/versions/0.5.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/proftpd-ii",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/proftpd-ii/versions/0.5.0/download",
+  "deprecated": false,
+  "created": "2016-06-29T15:25:52.623Z",
+  "updated": "2016-07-02T04:14:18.294Z",
+  "description": "Installs/Configures proftpd-ii",
+  "maintainer": {
+    "name": "eitch",
+    "email": "hugo.cisneiros@movile.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 85,
+  "downloads_count_revision": 21,
+  "repository_url": "https://github.com/Movile/chef-proftpd-ii",
+  "issues_url": "https://github.com/Movile/chef-proftpd-ii/issues",
+  "chef_source_url": "https://github.com/Movile/chef-proftpd-ii",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "proftpd-ii Cookbook\n===================\n\nInstalls and configures ProFTPd Server (http://www.proftpd.org/) and some of\nits modules. It also setups configuration like Apache's scripts (\n(eg. `sites-available/`sites-enabled`).\n\nIt provides an LWRP for easily deploying virtualhosts. It's recommended to\nalways use a vhost configuration instead of the default, global configuration.\n\nThe latest and greatest revision of this cookbook will always be available\nat https://github.com/Movile/chef-proftpd-ii\n\nRequirements\n============\n\nCookbooks\n---------\n\nThe following cookbooks are dependencies for this:\n\n* yum-repoforge - needed to install RPM packages for proftpd.\n\nPlatform\n--------\n\nThe following platforms are supported and tested:\n\n* CentOS 6.7\n* CentOS 7.2\n\nChef Server\n-----------\n\nThe recommended chef version is at least >= 11.0\n\nUsage\n=====\n\nTo use the cookbook, you can just add the `default` recipe to the run_list. It\nwill install and configure the daemon. Then you can use attributes or LWRPs to\nconfigure custom values and virtual hosts.\n\n## Helper Recipes\n\n* `ldap.rb` installs the LDAP module, enables it and provides a sample\nconfiguration.\n\n* `sftp.rb` installs the sFTP module, enables it and provides a sample\nconfiguration.\n\n* `example\\_lwrp.rb` provides some examples on using the LWRP resources.\n\nAttributes\n==========\n\nAttributes are documented on `attributes/default.rb` file. This way I don't need\nto duplicate definitions here and there :)\n\nLWRP\n====\n\n## vhost\n\nThis cookbook includes `proftpd\\_vhost` LWRP which facilitates creating a new\nvirtual host. It also contains support for using `notifies`, so you can notify\nthe server to reload after some configuration changes.\n\nFor example, to use the `proftpd\\_vhost`:\n\n```ruby\n# install first\ninclude_recipe 'proftpd-ii'\n\n# a normal ftp site\nproftpd_vhost 'ftp' do\n  enable true\n  port 21\n  notifies :restart, 'service[proftpd]', :delayed\nend\n\n# a tls and ldap-enabled site\nproftpd_vhost 'ldap' do\n  port 990\n  debug_level 10\n  auth_order 'mod_ldap.c'\n\n  tls true\n  tls_required true\n  tls_cert /etc/proftpd/ssl/proftpd.crt.pem\n  tls_key /etc/proftpd/ssl/proftpd.key.pem\n\n  ldap true\n  ldap_use_tls true\n  ldap_server 'ldap.example.com:389'\n  ldap_user_base_dn 'ou=users,dc=example,dc=com'\n  ldap_user_filter '(uid=%u)'\n  ldap_group_base_dn 'ou=groups,dc=example,dc=com'\n  ldap_group_filter '(&(memberUid=%u)(objectclass=posixGroup))' \n  options = {\n    'QueryTimeout' => 30,\n    'ForceGeneratedHomedir' => 'on'\n  }\n  ldap_extra_options options\n\n  notifies :restart, 'service[proftpd]', :delayed\nend\n\n# sftp, if module enabled\nproftpd_vhost 'sftp' do\n  port 2222\n  sftp true\n  notifies :restart, 'service[proftpd]', :delayed\nend\n```\n\nIf you want to configure but not enable the virtual host, you can use\n`enable false` on the LWRP definition.\n\n## module\n\nEnables a module in the configuration.\n\nIt creates a `LoadModule` directive and puts it on `mods-enabled` directory.\nFor example, enabling some custom modules:\n\n```ruby\nproftpd_module 'ldap'\nproftpd_module 'sftp'\n``` \n\nLicense and Author\n==================\n\n- Author:: Hugo Cisneiros (<hugo.cisneiros@movile.com>)\n\nCopyright 2016, Movile\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "rhel",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "oracle",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum-repoforge",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "openresty": "Installs proftpd from package and sets up configuration apache style sites-enabled/sites-available"
+  }
+}

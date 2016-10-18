@@ -1,0 +1,108 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/inetss/django-app",
+    "repository_url": "https://hub.docker.com/v2/repositories/inetss/django-app",
+    "tags_url": "https://hub.docker.com/v2/repositories/inetss/django-app/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/inetss/django-app/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/inetss/django-app/autobuild",
+    "user": "inetss",
+    "name": "django-app",
+    "namespace": "inetss",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 51,
+    "last_updated": "2016-06-24T06:33:36.131185Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 235517471,
+        "id": 2942426,
+        "repository": 677306,
+        "creator": 815146,
+        "last_updater": 815146,
+        "last_updated": "2016-06-24T06:33:35.594661Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "inetss/docker-django-app"
+  },
+  "name": "inetss/django-app Docker container",
+  "description": "Reusable Docker container to run a Django app with nginx and uwsgi",
+  "readme": "# Introduction\n\nThis is a reusable Docker container to run a Django app with nginx and uwsgi.\n\nFeatures:\n\n* Universal Python 2.7, 3.4, 3.5\n* Uses `requirements.txt` for Python\n* Uses Ubuntu 16.04 packages for anything else\n* nginx reverse proxy for `collectstatic` and media folders\n* Links to Postgres and MySQL containers\n* Initializes and migrates database; creates admin on first run\n\n# TL;DR HOWTO\n\n# Step 1: Setup\n\n### Dockerfile\n\n```\nFROM inetss/django-app\n```\n\n### requirements.txt\n\n```\n# apt: libjpeg-dev libpq-dev\n# python: python3.5\nDjango==1.9.5\npsycopg2==2.6.1\n...\n```\n\n### src/manage.py\n\n```\n#!/usr/bin/env python\n\nimport os\nimport sys\n\nos.environ.setdefault(\"DJANGO_SETTINGS_MODULE\", \"app.settings\")\n\nif __name__ == \"__main__\":\n\tfrom django.core.management import execute_from_command_line\n\texecute_from_command_line(sys.argv)\n```\n\n### src/app/settings.py\n\n```\n...\nfrom .local_settings import *\n```\n\n### var/media\n\nPoint `MEDIA_ROOT` here.\n\n### var/static\n\nPoint `STATICFILES_ROOT` here.\n\n## Step 2: Build, run and test\n\n```\n$ docker build -t app .\n$ docker run -d --name app-postgres -e POSTGRES_PASSWORD=secret postgres\n$ docker run --rm -it --name app --link app-postgres:postgres -e DJANGO_DEBUG=1 -v $(pwd)/var/media:/app/var/media -p 8000:80 app\n```\n\nThen open <http://localhost:8000>\n\n# Entrypoint customization\n\nThe following environment variables are accepted:\n\n## `DJANGO_DOCKER_SETTINGS=y`\n\nIf set to \"y\", puts `docker_settings.py` helper near your `settings.py`\n\n## `DJANGO_DOCKER_SETTINGS_FILE=docker_settings.py`\n\nOverrides `docker_settings.py` file name (see `DJANGO_DOCKER_SETTINGS`)\n\n## `DJANGO_LOCAL_SETTINGS_FILE=docker_settings.py`\n\nCreates a symlink from that file to `local_settings.py`\n\nThe actual default is `DJANGO_DOCKER_SETTINGS_FILE`.\n\nIgnored if `DJANGO_DOCKER_SETTINGS` is disabled.\n\n## `DJANGO_LOCAL_SETTINGS_DEST_FILE=local_settings.py`\n\nCreates a symlink from `docker_settings.py` to this file.\n\nIgnored if `DJANGO_DOCKER_SETTINGS` is disabled, or if the file already exists.\n\n## `DJANGO_ADMIN_CREATE=y`\n\nIf there is no users in the database, creates a default admin user. Supports custom `User` models.\n\n## `DJANGO_ADMIN_USERNAME=admin`\n\n## `DJANGO_ADMIN_PASSWORD=admin`\n\n# Django settings customization\n\nIf Docker settings integration is not disabled by `DJANGO_DOCKER_SETTINGS=n`, the following environment variables are additionally accepted:\n\n## `DJANGO_ALLOWED_HOSTS`\n\nComma-separated list that goes into Django `ALLOWED_HOSTS`.\n\n## `DJANGO_DEBUG`\n\nSet to anything non-empty to enable Django `DEBUG`.\n\n## `MEMCACHED_PORT_11211_TCP_ADDR` and friends\n\nDiscovers a link to the official `memcached` Docker container and configures Django `CACHES`.\n\n## `MEMCACHED_LOCATION`\n\nUse [Django memcached location format](https://docs.djangoproject.com/en/1.9/topics/cache/#memcached) (e.g. `server:port`).\n\n## `MYSQL_PORT_3306_TCP_ADDR` and friends\n\nDiscovers a link to the official `mysql` Docker container and configures Django `DATABASES`.\n\n## `MYSQL_HOST`\n\n## `MYSQL_PORT`\n\n## `MYSQL_USER` or `MYSQL_USERNAME`\n\nDefaults to `root`.\n\n## `MYSQL_PASS` or `MYSQL_PASSWORD`\n\n## `MYSQL_DB` or `MYSQL_DATABASE`\n\n## `POSTGRES_PORT_5432_TCP_ADDR` and friends\n\nDiscovers a link to the official `postgres` Docker container and configures Django `DATABASES`.\n\n## `POSTGRES_HOST`\n\n## `POSTGRES_PORT`\n\n## `POSTGRES_USER` or `POSTGRES_USERNAME`\n\nDefaults to `postgres`.\n\n## `POSTGRES_PASS` or `POSTGRES_PASSWORD`\n\n## `POSTGRES_DB` or `POSTGRES_DATABASE`\n\n## `SENTRY_DSN`\n\nSet this to `https://xxx:yyy@sentry.company.org/123` to enable Sentry reporting.\n\n# Custom local Django settings\n\nPlace the config file at your Docker host (e.g. at `/srv/app/config/local_settings.py`):\n\n```\nfrom .settings import *\nfrom .docker_settings import *\n\nEMAIL_HOST = 'mail.company.org'\n```\n\nThen run Docker container with `-v /srv/app/config/local_settings.py:/app/src/app/local_settings.py`\n",
+  "dockerfile": "FROM ubuntu:16.04\n\nENV LANG=en_US.UTF-8\n\nRUN \\\n\tlocale-gen en_US.UTF-8 && \\\n\tapt-get update && \\\n\tDEBIAN_FRONTEND=noninteractive apt-get install -y \\\n\t\tnginx \\\n\t\tpython \\\n\t\tpython-dev \\\n\t\tpython-pip \\\n\t\tpython3 \\\n\t\tpython3-dev \\\n\t\tpython3-pip \\\n\t\tsudo \\\n\t\tsupervisor \\\n\t\tuwsgi \\\n\t\tuwsgi-plugin-python \\\n\t\tuwsgi-plugin-python3 && \\\n\trm -rf /var/lib/apt/lists/*\n\nCOPY supervisor/app.conf /etc/supervisor/conf.d/\nCOPY uwsgi/app.ini /etc/uwsgi/apps-enabled/\nCOPY nginx/app.conf /etc/nginx/sites-enabled/default\nCOPY entrypoint.sh /\nCOPY setup /setup\n\n# Default Ubuntu entrypoint is bash, keep it\nCMD [\"/entrypoint.sh\"]\n\nEXPOSE 80\n\nRUN mkdir -p /app/var/media && chown www-data /app/var/media\nVOLUME /app/var/media\n\n# Rare changes\nONBUILD COPY requirements.* /requirements/\nONBUILD RUN /setup/setup_requirements.sh\n\n# Frequent changes\nONBUILD COPY . /app/\nONBUILD RUN touch /app/var/installed.flag\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "/app/var/media"
+    ],
+    "run": [
+      "\tlocale-gen en_US.UTF-8 && \tapt-get update && \tDEBIAN_FRONTEND=noninteractive apt-get install -y \t\tnginx \t\tpython \t\tpython-dev \t\tpython-pip \t\tpython3 \t\tpython3-dev \t\tpython3-pip \t\tsudo \t\tsupervisor \t\tuwsgi \t\tuwsgi-plugin-python \t\tuwsgi-plugin-python3 && \trm -rf /var/lib/apt/lists/*",
+      "mkdir -p /app/var/media && chown www-data /app/var/media"
+    ],
+    "workdir": [],
+    "from": "ubuntu:16.04",
+    "env": {
+      "LANG": "en_US.UTF-8"
+    },
+    "copy": "setup /setup",
+    "cmd": "[\"/entrypoint.sh\"]",
+    "onbuild": "RUN touch /app/var/installed.flag"
+  },
+  "source_repository_url": "https://github.com/inetss/docker-django-app.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/inetss/docker-django-app",
+  "docker_repository": "inetss/django-app",
+  "docker_image": "inetss/django-app",
+  "parameters_schema": {
+    "LANG": {
+      "default": "en_US.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "inetss/django-app",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/inetss/django-app",
+    "https://hub.docker.com/v2/repositories/inetss/django-app",
+    "https://github.com/inetss/docker-django-app.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/inetss/django-app",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

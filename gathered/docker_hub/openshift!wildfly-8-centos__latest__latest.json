@@ -1,0 +1,125 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/openshift/wildfly-8-centos",
+    "repository_url": "https://hub.docker.com/v2/repositories/openshift/wildfly-8-centos",
+    "tags_url": "https://hub.docker.com/v2/repositories/openshift/wildfly-8-centos/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/openshift/wildfly-8-centos/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/openshift/wildfly-8-centos/autobuild",
+    "user": "openshift",
+    "name": "wildfly-8-centos",
+    "namespace": "openshift",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 6,
+    "pull_count": 39660,
+    "last_updated": "2015-07-22T14:14:03.443233Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 438612586,
+        "id": 22539,
+        "repository": 18075,
+        "creator": 15521,
+        "last_updater": 15521,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "openshift/wildfly-8-centos"
+  },
+  "name": "openshift/wildfly-8-centos Docker container",
+  "description": "DEPRECATED - see openshift/wildfly-81-centos7",
+  "readme": "Wildfly 8 - CentOS Docker image\r\n========================================\r\n\r\nThis image is deprecated, please see [this](https://github.com/openshift/sti-wildfly) instead.\r\n",
+  "dockerfile": "# wildfly-8-standalone\n#\n# This image provides a base for building and running wildfly applications.\n# It builds using maven and runs the resulting artifacts on wildfly 8.1.\n\nFROM openshift/base-centos7\n\nRUN yum install -y --enablerepo=centosplus \\\n    tar unzip bc which lsof java-1.8.0-openjdk java-1.8.0-openjdk-devel && \\\n    yum clean all -y\n\n# Install Maven, Wildfly 8 and sample JEE application\n# The sample application will be built/run if no other source is bind-mounted to mask it.\nRUN (curl -0 http://mirror.sdunix.com/apache/maven/maven-3/3.0.5/binaries/apache-maven-3.0.5-bin.tar.gz | \\\n    tar -zx -C /usr/local) && ln -sf /usr/local/apache-maven-3.0.5/bin/mvn /usr/local/bin/mvn && \\\n    mkdir -p /wildfly && (curl -0 http://download.jboss.org/wildfly/8.1.0.Final/wildfly-8.1.0.Final.tar.gz | \\\n    tar -zx --strip-components=1 -C /wildfly) && mkdir -p /opt/wildfly/source\n\nADD ./wfmodules/ /wildfly/modules/\n\n# Copy the STI scripts from the specific language image to /usr/local/sti\nCOPY ./.sti/bin/ /usr/local/sti\n\n# Default destination of scripts and sources, this is where assemble will look for them\nLABEL io.s2i.destination=/opt/openshift/destination\n# sti_location is deprecated\nENV STI_LOCATION /opt/openshift/destination\n\n# Add sti wildfly customizations\nADD ./wfbin/standalone.conf /wildfly/bin/standalone.conf\nADD ./wfcfg/standalone.xml /wildfly/standalone/configuration/standalone.xml\n\n# Create wildfly group and user, set file ownership to that user.\nRUN groupadd -r wildfly -g 433 && \\\n    useradd -u 431 -r -g wildfly -d /opt/wildfly -s /sbin/nologin -c \"Wildfly user\" wildfly && \\\n    chown -R wildfly:wildfly /wildfly && \\\n    chmod -R go+rw /wildfly/standalone && \\\n    chown -R wildfly:wildfly /opt/wildfly && \\\n    mkdir /opt/openshift/destination && \\\n    chown -R wildfly:wildfly /opt/openshift\n\nENV HOME /opt/wildfly\n\nWORKDIR /opt/wildfly/source\nUSER    wildfly\n\nEXPOSE 8080\n\nCMD [\"usage\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./wfmodules/",
+        "dest": "/wildfly/modules/"
+      },
+      {
+        "source": "./wfbin/standalone.conf",
+        "dest": "/wildfly/bin/standalone.conf"
+      },
+      {
+        "source": "./wfcfg/standalone.xml",
+        "dest": "/wildfly/standalone/configuration/standalone.xml"
+      }
+    ],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "yum install -y --enablerepo=centosplus     tar unzip bc which lsof java-1.8.0-openjdk java-1.8.0-openjdk-devel &&     yum clean all -y",
+      "(curl -0 http://mirror.sdunix.com/apache/maven/maven-3/3.0.5/binaries/apache-maven-3.0.5-bin.tar.gz |     tar -zx -C /usr/local) && ln -sf /usr/local/apache-maven-3.0.5/bin/mvn /usr/local/bin/mvn &&     mkdir -p /wildfly && (curl -0 http://download.jboss.org/wildfly/8.1.0.Final/wildfly-8.1.0.Final.tar.gz |     tar -zx --strip-components=1 -C /wildfly) && mkdir -p /opt/wildfly/source",
+      "groupadd -r wildfly -g 433 &&     useradd -u 431 -r -g wildfly -d /opt/wildfly -s /sbin/nologin -c \"Wildfly user\" wildfly &&     chown -R wildfly:wildfly /wildfly &&     chmod -R go+rw /wildfly/standalone &&     chown -R wildfly:wildfly /opt/wildfly &&     mkdir /opt/openshift/destination &&     chown -R wildfly:wildfly /opt/openshift"
+    ],
+    "workdir": [
+      "/opt/wildfly/source"
+    ],
+    "from": "openshift/base-centos7",
+    "copy": "./.sti/bin/ /usr/local/sti",
+    "label": "io.s2i.destination=/opt/openshift/destination",
+    "env": {
+      "STI_LOCATION": "/opt/openshift/destination",
+      "HOME": "/opt/wildfly"
+    },
+    "user": "   wildfly",
+    "cmd": "[\"usage\"]"
+  },
+  "source_repository_url": "git://github.com/openshift/wildfly-8-centos.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/openshift/wildfly-8-centos",
+  "docker_repository": "openshift/wildfly-8-centos",
+  "docker_image": "openshift/wildfly-8-centos",
+  "parameters_schema": {
+    "STI_LOCATION": {
+      "default": "/opt/openshift/destination",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/opt/wildfly",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "openshift/wildfly-8-centos",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/openshift/wildfly-8-centos",
+    "https://hub.docker.com/v2/repositories/openshift/wildfly-8-centos",
+    "git://github.com/openshift/wildfly-8-centos.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/CentOS",
+    "Type/Middleware/Application Server/WildFly"
+  ],
+  "info_url": "https://hub.docker.com/r/openshift/wildfly-8-centos",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

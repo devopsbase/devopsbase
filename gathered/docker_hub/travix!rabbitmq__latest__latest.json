@@ -1,0 +1,120 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/travix/rabbitmq",
+    "repository_url": "https://hub.docker.com/v2/repositories/travix/rabbitmq",
+    "tags_url": "https://hub.docker.com/v2/repositories/travix/rabbitmq/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/travix/rabbitmq/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/travix/rabbitmq/autobuild",
+    "user": "travix",
+    "name": "rabbitmq",
+    "namespace": "travix",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 90,
+    "last_updated": "2015-11-14T08:05:36.432538Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 193423712,
+        "id": 86095,
+        "repository": 65036,
+        "creator": 100853,
+        "last_updater": 126544,
+        "last_updated": "2015-11-14T08:05:36.074654Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "xivart/docker-rabbitmq"
+  },
+  "name": "travix/rabbitmq Docker container",
+  "description": "",
+  "readme": "## RabbitMQ travix\n\n\nThis repository contains **travix** of [RabbitMQ](http://www.rabbitmq.com/) for [Docker](https://www.docker.com/)'s [automated build](https://registry.hub.docker.com/u/travix/rabbitmq/) published to the public [Docker Hub Registry](https://registry.hub.docker.com/).\n\n\n### Base Docker Image\n\n* [ubuntu:trusty](https://github.com/tianon/docker-brew-ubuntu-core)\n\n\n### Installation\n\n1. Install [Docker](https://www.docker.com/).\n\n2. Download [automated build](https://registry.hub.docker.com/u/travix/rabbitmq/) from public [Docker Hub Registry](https://registry.hub.docker.com/): `docker pull travix/rabbitmq`\n\n   (alternatively, you can build an image from travix: `docker build -t=\"travix/rabbitmq\" https://bitbucket.org/xivart/docker-rabbitmq`)\n\n\n### Usage\n\n#### Run `rabbitmq-server`\n\n    docker run -d -p 5672:5672 -p 15672:15672 travix/rabbitmq\n\n#### Run `rabbitmq-server` w/ persistent shared directories.\n\n    docker run -d -p 5672:5672 -p 15672:15672 -v <log-dir>:/data/log -v <data-dir>:/data/mnesia travix/rabbitmq\n",
+  "dockerfile": "#\n# RabbitMQ Dockerfile\n#\n# https://bitbucket.org/xivart/docker-rabbitmq\n#\n\n# Pull base image\n#FROM ubuntu:trusty\n# ^ official image has broken `su` because of PAM audit feature\n#   The following image has a workaround\nFROM sequenceiq/pam:ubuntu-14.04\n\n# Set container author\nMAINTAINER Frits Vlaanderen\n\n# Add files\nADD bin/rabbitmq-start /usr/local/bin/\nADD bin/rabbitmq-server /usr/lib/rabbitmq/bin/rabbitmq-server\n\n# Install RabbitMQ\nRUN \\\n  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F7B8CEA6056E8E56 \\\n  && echo \"deb http://www.rabbitmq.com/debian/ testing main\" \\\n      > /etc/apt/sources.list.d/rabbitmq.list \\\n  && apt-get update \\\n  && DEBIAN_FRONTEND=noninteractive apt-get install -y rabbitmq-server \\\n  && apt-get clean \\\n  && rm -rf /var/lib/apt/lists/* \\\n  && rabbitmq-plugins enable \\\n      rabbitmq_management \\\n      rabbitmq_shovel \\\n      rabbitmq_shovel_management \\\n      rabbitmq_auth_backend_ldap \\\n  && echo \"[{rabbit, [{loopback_users, []}]}].\" \\\n      > /etc/rabbitmq/rabbitmq.config \\\n  && chmod +x /usr/local/bin/rabbitmq-start \\\n  && chmod +x /usr/lib/rabbitmq/bin/rabbitmq-server\n\n# Define environment variables\nENV RABBITMQ_LOG_BASE /data/log\nENV RABBITMQ_MNESIA_BASE /data/mnesia\n\n# Define mountable directories\nVOLUME [\"/data\"]\n\n# Define working directory\nWORKDIR /data\n\n# Define default command\nCMD [\"rabbitmq-start\"]\n\n# Expose ports\nEXPOSE 5672\nEXPOSE 15672\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "bin/rabbitmq-start",
+        "dest": "/usr/local/bin/"
+      },
+      {
+        "source": "bin/rabbitmq-server",
+        "dest": "/usr/lib/rabbitmq/bin/rabbitmq-server"
+      }
+    ],
+    "expose": [
+      5672,
+      15672
+    ],
+    "volume": [
+      "[\"/data\"]"
+    ],
+    "run": [
+      "  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F7B8CEA6056E8E56   && echo \"deb http://www.rabbitmq.com/debian/ testing main\"       > /etc/apt/sources.list.d/rabbitmq.list   && apt-get update   && DEBIAN_FRONTEND=noninteractive apt-get install -y rabbitmq-server   && apt-get clean   && rm -rf /var/lib/apt/lists/*   && rabbitmq-plugins enable       rabbitmq_management       rabbitmq_shovel       rabbitmq_shovel_management       rabbitmq_auth_backend_ldap   && echo \"[{rabbit, [{loopback_users, []}]}].\"       > /etc/rabbitmq/rabbitmq.config   && chmod +x /usr/local/bin/rabbitmq-start   && chmod +x /usr/lib/rabbitmq/bin/rabbitmq-server"
+    ],
+    "workdir": [
+      "/data"
+    ],
+    "from": "sequenceiq/pam:ubuntu-14.04",
+    "maintainer": "Frits Vlaanderen",
+    "env": {
+      "RABBITMQ_LOG_BASE": "/data/log",
+      "RABBITMQ_MNESIA_BASE": "/data/mnesia"
+    },
+    "cmd": "[\"rabbitmq-start\"]"
+  },
+  "source_repository_url": "git@bitbucket.org:xivart/docker-rabbitmq.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/xivart/docker-rabbitmq",
+  "docker_repository": "travix/rabbitmq",
+  "docker_image": "travix/rabbitmq",
+  "parameters_schema": {
+    "RABBITMQ_LOG_BASE": {
+      "default": "/data/log",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_MNESIA_BASE": {
+      "default": "/data/mnesia",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5672,
+        15672
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "travix/rabbitmq",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/travix/rabbitmq",
+    "https://hub.docker.com/v2/repositories/travix/rabbitmq",
+    "git@bitbucket.org:xivart/docker-rabbitmq.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/travix/rabbitmq",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

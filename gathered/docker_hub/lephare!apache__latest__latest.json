@@ -1,0 +1,143 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/lephare/apache",
+    "repository_url": "https://hub.docker.com/v2/repositories/lephare/apache",
+    "tags_url": "https://hub.docker.com/v2/repositories/lephare/apache/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/lephare/apache/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/lephare/apache/autobuild",
+    "user": "lephare",
+    "name": "apache",
+    "namespace": "lephare",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 2044,
+    "last_updated": "2016-10-10T17:18:53.253595Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 76294235,
+        "id": 805135,
+        "repository": 301976,
+        "creator": 329723,
+        "last_updater": 329724,
+        "last_updated": "2016-10-10T17:18:51.973736Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.2",
+        "full_size": 58977145,
+        "id": 805131,
+        "repository": 301976,
+        "creator": 329723,
+        "last_updater": 329724,
+        "last_updated": "2016-10-10T17:09:08.773320Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2.4",
+        "full_size": 76294200,
+        "id": 805230,
+        "repository": 301976,
+        "creator": 329723,
+        "last_updater": 329724,
+        "last_updated": "2016-10-10T17:02:22.106199Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "lephare/docker-hub"
+  },
+  "name": "lephare/apache Docker container",
+  "description": "Apache container",
+  "readme": "# Docker environment\n\n## Installation\n\nFirst you need to [install Docker and docker-compose](https://docs.docker.com/compose/install/).\n\nCopy the `docker-composer.yml.dist` to `docker-composer.yml` and modify to your need.\n\n## Global environment\n\nThe global environment contains generics containers used by our projects. You have :\n\n    - jwilder/nginx-proxy A nginx proxy that redirect http requests  to the good container based on the domain name.\n    - mariadb A MariaDb container.\n    - postgres A PostgreSQL container.\n    - blackfire A blackfire container for PHP profiling.\n\n\nYou can start theses containers by running :\n\n    $ docker-compose up\n\n### ProTips : dc alias\n\nYou can alias `docker-compose` to `dc` in your bash configuration :\n\n    alias dc=\"docker-compose\"\n\n",
+  "dockerfile": "FROM lephare/debian:jessie\n\nRUN apt-get update && \\\n    apt-get install -y apache2 curl && \\\n    apt-get clean && \\\n    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nEXPOSE 80\n\nENV APACHE_RUN_USER www-data\nENV APACHE_RUN_GROUP www-data\nENV APACHE_LOG_DIR /var/log/apache2\n\nRUN a2dissite 000-default && \\\n    a2enmod proxy proxy_http proxy_fcgi rewrite headers deflate expires && \\\n    curl -sL https://github.com/jwilder/dockerize/releases/download/v0.0.4/dockerize-linux-amd64-v0.0.4.tar.gz | tar xz -C /usr/local/bin && \\\n    chmod +x /usr/local/bin/* && \\\n    mkdir -p /etc/dockerize/templates && \\\n    sed -ri ' \\\n      s!^(\\s*CustomLog)\\s+\\S+!\\1 /proc/self/fd/1!g; \\\n      s!^(\\s*ErrorLog)\\s+\\S+!\\1 /proc/self/fd/2!g; \\\n    ' /etc/apache2/conf-available/* /etc/apache2/sites-available/*\n\nCOPY virtualhost.conf.tpl /etc/dockerize/templates/virtualhost.conf.tpl\n\nENTRYPOINT [\"dockerize\", \"-template\", \"/etc/dockerize/templates/virtualhost.conf.tpl:/etc/apache2/sites-enabled/virtualhost.conf\"]\nCMD usermod -u $DOCKER_USER_ID www-data && /usr/sbin/apache2ctl -D FOREGROUND\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update &&     apt-get install -y apache2 curl &&     apt-get clean &&     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "a2dissite 000-default &&     a2enmod proxy proxy_http proxy_fcgi rewrite headers deflate expires &&     curl -sL https://github.com/jwilder/dockerize/releases/download/v0.0.4/dockerize-linux-amd64-v0.0.4.tar.gz | tar xz -C /usr/local/bin &&     chmod +x /usr/local/bin/* &&     mkdir -p /etc/dockerize/templates &&     sed -ri '       s!^(\\s*CustomLog)\\s+\\S+!\\1 /proc/self/fd/1!g;       s!^(\\s*ErrorLog)\\s+\\S+!\\1 /proc/self/fd/2!g;     ' /etc/apache2/conf-available/* /etc/apache2/sites-available/*"
+    ],
+    "workdir": [],
+    "from": "lephare/debian:jessie",
+    "env": {
+      "APACHE_RUN_USER": "www-data",
+      "APACHE_RUN_GROUP": "www-data",
+      "APACHE_LOG_DIR": "/var/log/apache2"
+    },
+    "copy": "virtualhost.conf.tpl /etc/dockerize/templates/virtualhost.conf.tpl",
+    "entrypoint": "[\"dockerize\", \"-template\", \"/etc/dockerize/templates/virtualhost.conf.tpl:/etc/apache2/sites-enabled/virtualhost.conf\"]",
+    "cmd": "usermod -u $DOCKER_USER_ID www-data && /usr/sbin/apache2ctl -D FOREGROUND"
+  },
+  "source_repository_url": "https://bitbucket.org/lephare/docker-hub.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/lephare/docker-hub",
+  "docker_repository": "lephare/apache",
+  "docker_image": "lephare/apache",
+  "parameters_schema": {
+    "APACHE_RUN_USER": {
+      "default": "www-data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APACHE_RUN_GROUP": {
+      "default": "www-data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APACHE_LOG_DIR": {
+      "default": "/var/log/apache2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "lephare/apache",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/lephare/apache",
+    "https://hub.docker.com/v2/repositories/lephare/apache",
+    "https://bitbucket.org/lephare/docker-hub.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/lephare/apache",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

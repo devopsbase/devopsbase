@@ -1,0 +1,149 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/bradojevic/django-prod",
+    "repository_url": "https://hub.docker.com/v2/repositories/bradojevic/django-prod",
+    "tags_url": "https://hub.docker.com/v2/repositories/bradojevic/django-prod/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/bradojevic/django-prod/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/bradojevic/django-prod/autobuild",
+    "user": "bradojevic",
+    "name": "django-prod",
+    "namespace": "bradojevic",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 392,
+    "last_updated": "2016-08-13T16:20:49.982263Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 220279481,
+        "id": 4301206,
+        "repository": 853462,
+        "creator": 278138,
+        "last_updater": 278138,
+        "last_updated": "2016-08-13T16:20:49.636447Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.9.0",
+        "full_size": 220279566,
+        "id": 4309016,
+        "repository": 853462,
+        "creator": 278138,
+        "last_updater": 278138,
+        "last_updated": "2016-08-13T16:16:15.350878Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "bradojevic/django-prod"
+  },
+  "name": "bradojevic/django-prod Docker container",
+  "description": "Production ready django with nginx+gunicorn managed by supervisor.",
+  "readme": "# django-prod\n\n\nThis is simple django production ready docker container. It contains nginx+gunicorn serving static content and running wsgi server for django project, managed by supervisord.\n\n\n## Simple usage example\n\n~~~~\n# clone django structure for easy start\nmkdir django-prod\ncd django-prod\ngit init\ngit remote add upstream https://github.com/bradojevic/django-prod\ngit pull upstream master\n# run django\ndocker run --name django-app --restart=always -d -p 80:80 -v $(pwd):/opt/app bradojevic/django-prod\n~~~~\n\n## Using it with MYSQL\n\nin settings.py set mysql as your database\n\n~~~~\nDATABASES = {\n    'default': {\n        'ENGINE': 'django.db.backends.mysql',\n        'NAME': os.environ.get('MYSQL_ENV_MYSQL_DATABASE'),\n        'USER': os.environ.get('MYSQL_ENV_MYSQL_USER'),\n        'PASSWORD': os.environ.get('MYSQL_ENV_MYSQL_PASSWORD'),\n        'HOST': os.environ.get('MYSQL_PORT_3306_TCP_ADDR'),\n        'PORT': os.environ.get('MYSQL_PORT_3306_TCP_PORT'),\n    }\n}\n~~~~\n\n~~~~\n# run django\ndocker run --name django-app --restart=always -d -p 80:80 \\\n  -v $(pwd):/opt/app \\\n  -e MYSQL_PORT_3306_TCP_ADDR=172.17.0.1 \\\n  -e MYSQL_ENV_MYSQL_DATABASE='your db name' \\\n  -e MYSQL_ENV_MYSQL_USER='your db user' \\\n  -e MYSQL_ENV_MYSQL_PASSWORD='your db password' \\\n  -e MYSQL_PORT_3306_TCP_PORT=3306 \\\n  bradojevic/django-prod\n~~~~\n\nNote: 172.17.0.1 is my docker host ip, you can find yours using `ifconfig | grep -A 1 docker`.\n\n\n## Customizations\n\nYou should add your git repo as 'origin' remote so something like this\n\n~~~~\ncd django-prod\ngit remote add origin http://your-git-repo\ngit push origin master\n~~~~\n\nNow you could edit `run` command in Makefile to support your needs, and commit this to your git repo.\n",
+  "dockerfile": "FROM django:1.9.2-python2\nMAINTAINER bradojevic@gmail.com\n\nENV NGINX_VERSION 1.6.2-5+deb8u2\nENV GUNICORN_VERSION 19.4.1\nENV SUPERVISOR_VERSION 3.1.0\nENV APP_ROOT /opt/app\n\n# Define working directory.\nRUN mkdir -p ${APP_ROOT}\n# install common tools\nRUN apt-get update && apt-get install -y net-tools curl wget vim git\nRUN pip install --upgrade pip\n# install nginx\nRUN apt-get update && apt-get install -y nginx=${NGINX_VERSION}\nRUN rm /etc/nginx/sites-enabled/default\nRUN ln -s /opt/app/nginx/django_config /etc/nginx/sites-enabled/default\n# install gunicorn\nRUN pip install gunicorn==${GUNICORN_VERSION}\n# install supervisor\nRUN pip install supervisor==${SUPERVISOR_VERSION}\nRUN echo_supervisord_conf > /etc/supervisord.conf\nRUN mkdir -p /etc/supervisord.d\nRUN echo '\\\n[include]\\n\\\nfiles = /etc/supervisord.d/*.conf'\\\n>> /etc/supervisord.conf\nRUN ln -s /opt/app/supervisor/supervisor.conf /etc/supervisord.d/supervisor.conf\n\nWORKDIR ${APP_ROOT}\nVOLUME ['${APP_ROOT}']\n\nEXPOSE 80 443 8080 8000\n\nCMD [\"/usr/local/bin/supervisord\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "['${APP_ROOT}']"
+    ],
+    "run": [
+      "mkdir -p ${APP_ROOT}",
+      "apt-get update && apt-get install -y net-tools curl wget vim git",
+      "pip install --upgrade pip",
+      "apt-get update && apt-get install -y nginx=${NGINX_VERSION}",
+      "rm /etc/nginx/sites-enabled/default",
+      "ln -s /opt/app/nginx/django_config /etc/nginx/sites-enabled/default",
+      "pip install gunicorn==${GUNICORN_VERSION}",
+      "pip install supervisor==${SUPERVISOR_VERSION}",
+      "echo_supervisord_conf > /etc/supervisord.conf",
+      "mkdir -p /etc/supervisord.d",
+      "echo '[include]\\nfiles = /etc/supervisord.d/*.conf'>> /etc/supervisord.conf",
+      "ln -s /opt/app/supervisor/supervisor.conf /etc/supervisord.d/supervisor.conf"
+    ],
+    "workdir": [
+      "${APP_ROOT}"
+    ],
+    "from": "django:1.9.2-python2",
+    "maintainer": "bradojevic@gmail.com",
+    "env": {
+      "NGINX_VERSION": "1.6.2-5+deb8u2",
+      "GUNICORN_VERSION": "19.4.1",
+      "SUPERVISOR_VERSION": "3.1.0",
+      "APP_ROOT": "/opt/app"
+    },
+    "cmd": "[\"/usr/local/bin/supervisord\"]"
+  },
+  "source_repository_url": "https://github.com/bradojevic/django-prod.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/bradojevic/django-prod",
+  "docker_repository": "bradojevic/django-prod",
+  "docker_image": "bradojevic/django-prod",
+  "parameters_schema": {
+    "NGINX_VERSION": {
+      "default": "1.6.2-5+deb8u2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GUNICORN_VERSION": {
+      "default": "19.4.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SUPERVISOR_VERSION": {
+      "default": "3.1.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APP_ROOT": {
+      "default": "/opt/app",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "bradojevic/django-prod",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/bradojevic/django-prod",
+    "https://hub.docker.com/v2/repositories/bradojevic/django-prod",
+    "https://github.com/bradojevic/django-prod.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/bradojevic/django-prod",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

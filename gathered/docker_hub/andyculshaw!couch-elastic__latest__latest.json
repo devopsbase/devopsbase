@@ -1,0 +1,136 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/andyculshaw/couch-elastic",
+    "repository_url": "https://hub.docker.com/v2/repositories/andyculshaw/couch-elastic",
+    "tags_url": "https://hub.docker.com/v2/repositories/andyculshaw/couch-elastic/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/andyculshaw/couch-elastic/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/andyculshaw/couch-elastic/autobuild",
+    "user": "andyculshaw",
+    "name": "couch-elastic",
+    "namespace": "andyculshaw",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 53,
+    "last_updated": "2015-10-20T02:39:38.708872Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 578263257,
+        "id": 166625,
+        "repository": 155272,
+        "creator": 233292,
+        "last_updater": 233292,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "andy-culshaw/docker-images"
+  },
+  "name": "andyculshaw/couch-elastic Docker container",
+  "description": "Couchbase and Elasticsearch",
+  "readme": "Installs Couchbase community version 2.2.0 and Elasticsearch version 0.90.4 and creates a XDCR between the two",
+  "dockerfile": "FROM ubuntu:14.04\nMAINTAINER Andy Culshaw <andy.culshaw@gmail.com>\n\n# Install utilities\nRUN apt-get -qq update\nRUN apt-get -y install curl apt-utils librtmp0 python-pip\n\n# Environment Variables\nENV CB_VERSION\t\t2.2.0\nENV CB_RELEASE_URL\thttp://packages.couchbase.com/releases\nENV CB_PACKAGE\t\tcouchbase-server-community_${CB_VERSION}_x86_64.deb\nENV CB_USERNAME\t\tAdministrator\nENV CB_PASSWORD\t\tcouchbase\nENV ES_PKG_NAME\t\telasticsearch-0.90.4.deb\n\n# Install Couchbase\nRUN curl -LO $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE\nRUN dpkg -i $CB_PACKAGE\nRUN rm $CB_PACKAGE\nRUN ln -s /opt/couchbase/bin/couchbase-cli /usr/local/bin/\nRUN mkdir -p /cb-data/ /cb-index\nRUN chown couchbase:couchbase /cb-data /cb-index\nVOLUME /cb-data\nVOLUME /cb-index\n\n# Install Elasticsearch\nRUN apt-get -y install openjdk-7-jre\nRUN curl -LO https://download.elasticsearch.org/elasticsearch/elasticsearch/$ES_PKG_NAME\nRUN dpkg -i $ES_PKG_NAME\nRUN rm $ES_PKG_NAME\nRUN mkdir /es-data\nRUN chown elasticsearch:elasticsearch /es-data\nVOLUME /es-data\n\n# Elasticsearch Head Plugin\nRUN /usr/share/elasticsearch/bin/plugin -install mobz/elasticsearch-head\nRUN mv /usr/share/elasticsearch/plugins/head /usr/share/elasticsearch/plugins/_site\nRUN mkdir /usr/share/elasticsearch/plugins/head\nRUN mv /usr/share/elasticsearch/plugins/_site /usr/share/elasticsearch/plugins/head\n# Elasticsearch Couchbase Transport Plugin\nRUN /usr/share/elasticsearch/bin/plugin -install transport-couchbase -url http://packages.couchbase.com.s3.amazonaws.com/releases/elastic-search-adapter/1.2.0/elasticsearch-transport-couchbase-1.2.0.zip\nADD elasticsearch.yml /etc/elasticsearch/elasticsearch.yml\n\n# Put start script\nADD couchbase-start /usr/local/bin/\nADD elasticsearch-start /usr/local/bin/\nADD init-script /usr/local/bin/\nRUN chmod +x /usr/local/bin/couchbase-start /usr/local/bin/elasticsearch-start /usr/local/bin/init-script\n\n\n# Expose Couchbase ports\nEXPOSE 4369 8091 8092 21100:21299\n# Expose Elasticsearch ports\nEXPOSE 9091 9200 9300\n\nCMD [\"init-script\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "elasticsearch.yml",
+        "dest": "/etc/elasticsearch/elasticsearch.yml"
+      },
+      {
+        "source": "couchbase-start",
+        "dest": "/usr/local/bin/"
+      },
+      {
+        "source": "elasticsearch-start",
+        "dest": "/usr/local/bin/"
+      },
+      {
+        "source": "init-script",
+        "dest": "/usr/local/bin/"
+      }
+    ],
+    "expose": [
+      4369,
+      9091
+    ],
+    "volume": [
+      "/cb-data",
+      "/cb-index",
+      "/es-data"
+    ],
+    "run": [
+      "apt-get -qq update",
+      "apt-get -y install curl apt-utils librtmp0 python-pip",
+      "curl -LO $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE",
+      "dpkg -i $CB_PACKAGE",
+      "rm $CB_PACKAGE",
+      "ln -s /opt/couchbase/bin/couchbase-cli /usr/local/bin/",
+      "mkdir -p /cb-data/ /cb-index",
+      "chown couchbase:couchbase /cb-data /cb-index",
+      "apt-get -y install openjdk-7-jre",
+      "curl -LO https://download.elasticsearch.org/elasticsearch/elasticsearch/$ES_PKG_NAME",
+      "dpkg -i $ES_PKG_NAME",
+      "rm $ES_PKG_NAME",
+      "mkdir /es-data",
+      "chown elasticsearch:elasticsearch /es-data",
+      "/usr/share/elasticsearch/bin/plugin -install mobz/elasticsearch-head",
+      "mv /usr/share/elasticsearch/plugins/head /usr/share/elasticsearch/plugins/_site",
+      "mkdir /usr/share/elasticsearch/plugins/head",
+      "mv /usr/share/elasticsearch/plugins/_site /usr/share/elasticsearch/plugins/head",
+      "/usr/share/elasticsearch/bin/plugin -install transport-couchbase -url http://packages.couchbase.com.s3.amazonaws.com/releases/elastic-search-adapter/1.2.0/elasticsearch-transport-couchbase-1.2.0.zip",
+      "chmod +x /usr/local/bin/couchbase-start /usr/local/bin/elasticsearch-start /usr/local/bin/init-script"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "Andy Culshaw <andy.culshaw@gmail.com>",
+    "env": {},
+    "cmd": "[\"init-script\"]"
+  },
+  "source_repository_url": "https://github.com/andy-culshaw/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/andy-culshaw/docker-images",
+  "docker_repository": "andyculshaw/couch-elastic",
+  "docker_image": "andyculshaw/couch-elastic",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        4369,
+        9091
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "andyculshaw/couch-elastic",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/andyculshaw/couch-elastic",
+    "https://hub.docker.com/v2/repositories/andyculshaw/couch-elastic",
+    "https://github.com/andy-culshaw/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Document-oriented/Couchbase",
+    "Type/Middleware/Data Store/Document-oriented/HBase",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/andyculshaw/couch-elastic",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

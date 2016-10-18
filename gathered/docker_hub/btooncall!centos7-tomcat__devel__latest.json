@@ -1,0 +1,166 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/btooncall/centos7-tomcat",
+    "repository_url": "https://hub.docker.com/v2/repositories/btooncall/centos7-tomcat",
+    "tags_url": "https://hub.docker.com/v2/repositories/btooncall/centos7-tomcat/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/btooncall/centos7-tomcat/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/btooncall/centos7-tomcat/autobuild",
+    "user": "btooncall",
+    "name": "centos7-tomcat",
+    "namespace": "btooncall",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 97,
+    "last_updated": "2016-05-20T13:30:34.480371Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "devel",
+        "full_size": 250401000,
+        "id": 3030172,
+        "repository": 686665,
+        "creator": 791227,
+        "last_updater": 791227,
+        "last_updated": "2016-05-20T13:30:37.107025Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 226316857,
+        "id": 3014048,
+        "repository": 686665,
+        "creator": 791227,
+        "last_updater": 791227,
+        "last_updated": "2016-05-16T15:28:30.300169Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      }
+    ],
+    "build_name": "btooncall/centos7-tomcat"
+  },
+  "name": "btooncall/centos7-tomcat Docker container",
+  "description": "tomcat with all requirements\n",
+  "readme": "# centos7-tomcat\n\nrun with : docker run -d -P  -p 8080:8080 -p 8088:8088  --env FRPASSWD=&lt;passwd&gt; --env FRLICENSE=&lt;license&gt; --link loghost btooncall/centos7-tomcat\n\ninvestigate ports : docker port &lt;container_id&gt;\n\nwatch logs : docker logs -f &lt;container_id&gt;\n\nshell inside container : docker exec -it &lt;container_id&gt; /bin/bash\n",
+  "dockerfile": "FROM btooncall/centos7:devel\n\nRUN mkdir -p /opt/ 2>/dev/null; \nWORKDIR /opt/\nRUN wget -q http://www.mirrorservice.org/sites/ftp.apache.org/tomcat/tomcat-7/v7.0.69/bin/apache-tomcat-7.0.69.tar.gz; tar xzf /opt/apache-tomcat-7.0.69.tar.gz && rm -f /opt/apache-tomcat-7.0.69.tar.gz\nRUN ln -s /opt/apache-tomcat-7.0.69 /opt/tomcat\n\n# fusionreactor\nRUN mkdir -p /opt/fusionreactor/ && wget -q https://intergral-dl.s3.amazonaws.com/FR/FusionReactor-6.1.2/fusionreactor.jar --output-document=/opt/fusionreactor/fusionreactor.jar \n\nRUN mkdir -p /opt/tomcat/endorsed\n# logstash gelf log4j modification (http://logging.paluch.biz/examples/jul.html)\n# RUN wget -q https://repo1.maven.org/maven2/biz/paluch/logging/logstash-gelf/1.9.0/logstash-gelf-1.9.0.jar --output-document=/opt/tomcat/lib/logstash-gelf-1.9.0.jar\nADD jars/logstash-gelf-1.9.0.jar /opt/tomcat/endorsed/logstash-gelf-1.9.0.jar\n# RUN wget -q http://central.maven.org/maven2/com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar --output-document=/opt/tomcat/lib/json-simple-1.1.1.jar\nADD jars/json-simple-1.1.1.jar /opt/tomcat/endorsed/json-simple-1.1.1.jar\n# RUN wget -q http://central.maven.org/maven2/redis/clients/jedis/2.8.0/jedis-2.8.0.jar --output-document=/opt/tomcat/lib/jedis-2.8.0.jar\nADD jars/jedis-2.8.0.jar /opt/tomcat/endorsed/jedis-2.8.0.jar\n# RUN wget -q http://apache.mirror.anlx.net//commons/pool/binaries/commons-pool2-2.4.2-bin.tar.gz \\\n#      && tar xvzf /opt/commons-pool2-2.4.2-bin.tar.gz commons-pool2-2.4.2/commons-pool2-2.4.2.jar \\\n#      && mv /opt/commons-pool2-2.4.2/commons-pool2-2.4.2.jar /opt/tomcat/lib/ \\\n#      && rmdir -f /opt/commons-pool2-2.4.2\nADD jars/commons-pool2-2.4.2.jar /opt/tomcat/endorsed/commons-pool2-2.4.2.jar\n\nRUN rm -f /opt/tomcat/conf/logging.properties\nADD logging.properties /opt/tomcat/conf/logging.properties\n\n# some basic defaults to be used in setenv.sh\nENV XMX 2560m \nENV XMS 2560m \nENV MaxPermSize 256m\nENV JavaBullhornOptions \"\"\n\n# add environmental variables, startup for fusion reactor and additional modifications.\n# setenv.sh is automatically executed by catalina.sh\nADD setenv.sh /opt/tomcat/bin/setenv.sh\nRUN chmod 755 /opt/tomcat/bin/setenv.sh\n\n# internal ports 8080 is tomcat port, 8088 is default fusion-reactor port\nEXPOSE 8080 8088\n\nENTRYPOINT [ \"/opt/tomcat/bin/catalina.sh\", \"run\" ]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "jars/logstash-gelf-1.9.0.jar",
+        "dest": "/opt/tomcat/endorsed/logstash-gelf-1.9.0.jar"
+      },
+      {
+        "source": "jars/json-simple-1.1.1.jar",
+        "dest": "/opt/tomcat/endorsed/json-simple-1.1.1.jar"
+      },
+      {
+        "source": "jars/jedis-2.8.0.jar",
+        "dest": "/opt/tomcat/endorsed/jedis-2.8.0.jar"
+      },
+      {
+        "source": "jars/commons-pool2-2.4.2.jar",
+        "dest": "/opt/tomcat/endorsed/commons-pool2-2.4.2.jar"
+      },
+      {
+        "source": "logging.properties",
+        "dest": "/opt/tomcat/conf/logging.properties"
+      },
+      {
+        "source": "setenv.sh",
+        "dest": "/opt/tomcat/bin/setenv.sh"
+      }
+    ],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "mkdir -p /opt/ 2>/dev/null; ",
+      "wget -q http://www.mirrorservice.org/sites/ftp.apache.org/tomcat/tomcat-7/v7.0.69/bin/apache-tomcat-7.0.69.tar.gz; tar xzf /opt/apache-tomcat-7.0.69.tar.gz && rm -f /opt/apache-tomcat-7.0.69.tar.gz",
+      "ln -s /opt/apache-tomcat-7.0.69 /opt/tomcat",
+      "mkdir -p /opt/fusionreactor/ && wget -q https://intergral-dl.s3.amazonaws.com/FR/FusionReactor-6.1.2/fusionreactor.jar --output-document=/opt/fusionreactor/fusionreactor.jar ",
+      "mkdir -p /opt/tomcat/endorsed",
+      "rm -f /opt/tomcat/conf/logging.properties",
+      "chmod 755 /opt/tomcat/bin/setenv.sh"
+    ],
+    "workdir": [
+      "/opt/"
+    ],
+    "from": "btooncall/centos7:devel",
+    "env": {
+      "XMX": "2560m",
+      "XMS": "2560m",
+      "MaxPermSize": "256m",
+      "JavaBullhornOptions": "\"\""
+    },
+    "entrypoint": "[ \"/opt/tomcat/bin/catalina.sh\", \"run\" ]"
+  },
+  "source_repository_url": "https://github.com/btooncall/centos7-tomcat.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/btooncall/centos7-tomcat",
+  "docker_repository": "btooncall/centos7-tomcat",
+  "docker_image": "btooncall/centos7-tomcat",
+  "parameters_schema": {
+    "XMX": {
+      "default": "2560m",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "XMS": {
+      "default": "2560m",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MaxPermSize": {
+      "default": "256m",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JavaBullhornOptions": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "btooncall/centos7-tomcat",
+  "revision": "devel",
+  "uris": [
+    "https://hub.docker.com/r/btooncall/centos7-tomcat",
+    "https://hub.docker.com/v2/repositories/btooncall/centos7-tomcat",
+    "https://github.com/btooncall/centos7-tomcat.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/CentOS",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/btooncall/centos7-tomcat",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

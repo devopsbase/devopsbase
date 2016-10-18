@@ -1,0 +1,140 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mattsch/fedora-nzbhydra",
+    "repository_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-nzbhydra",
+    "tags_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-nzbhydra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-nzbhydra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mattsch/fedora-nzbhydra/autobuild",
+    "user": "mattsch",
+    "name": "fedora-nzbhydra",
+    "namespace": "mattsch",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 443,
+    "last_updated": "2016-10-13T16:41:51.290439Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "24",
+        "full_size": 212128157,
+        "id": 3750280,
+        "repository": 478910,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-10-13T16:41:50.914494Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "23",
+        "full_size": 186596480,
+        "id": 1719046,
+        "repository": 478910,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-10-12T17:06:55.209604Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 239080947,
+        "id": 1719093,
+        "repository": 478910,
+        "creator": 42148,
+        "last_updater": 42148,
+        "last_updated": "2016-10-12T17:02:59.401378Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "mattsch/fedora-nzbhydra"
+  },
+  "name": "mattsch/fedora-nzbhydra Docker container",
+  "description": "Fedora NZBHydra",
+  "readme": "# Fedora NZBHydra Docker Container\n\nDocker container for [NZBHydra](https://github.com/theotherp/nzbhydra) using Fedora.\n\n## Usage\n\nCreate with defaults:\n\n```bash\ndocker create -v /path/to/config/dir:/config \\\n    -v /etc/localtime:/etc/localtime:ro \\\n    -p 5075:5075 --name=nzbhydra mattsch/fedora-nzbhydra\n```\n\nCreate with a custom uid/gid for the nzbhydra daemon:\n\n```bash\ndocker create -v /path/to/config/dir:/config \\\n    -v /etc/localtime:/etc/localtime:ro \\\n    -e LUID=1234 -e LGID=1234 \\\n    -p 5075:5075 --name=nzbhydra mattsch/fedora-nzbhydra\n```\n",
+  "dockerfile": "FROM mattsch/fedora-rpmfusion:23\nMAINTAINER Matthew Schick <matthew.schick@gmail.com>\n\n# Install required packages\nRUN dnf install -yq git \\\n                    python \\\n                    python-lxml && \\\n    dnf clean all\n\n# Set uid/gid (override with the '-e' flag), 1000/1000 used since it's the\n# default first uid/gid on a fresh Fedora install\nENV LUID=1000 LGID=1000\n\n# Create the nzbhydra user/group\nRUN groupadd -g $LGID nzbhydra && \\\n    useradd -c 'NZBHydra User' -s /bin/bash -m -d /opt/nzbhydra -g $LGID -u $LUID nzbhydra\n    \n# Grab the installer, do the thing\nRUN git clone -q https://github.com/theotherp/nzbhydra.git /opt/nzbhydra/app && \\\n    chown -R nzbhydra:nzbhydra /opt/nzbhydra\n\n# Need a config and storage volume, expose proper port\nVOLUME /config\nEXPOSE 5075\n\n# Add script to copy default config if one isn't there and start nzbhydra\nCOPY run-nzbhydra.sh /bin/run-nzbhydra.sh\n \n# Run our script\nCMD [\"/bin/run-nzbhydra.sh\"]\n\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5075
+    ],
+    "volume": [
+      "/config"
+    ],
+    "run": [
+      "dnf install -yq git                     python                     python-lxml &&     dnf clean all",
+      "groupadd -g $LGID nzbhydra &&     useradd -c 'NZBHydra User' -s /bin/bash -m -d /opt/nzbhydra -g $LGID -u $LUID nzbhydra",
+      "git clone -q https://github.com/theotherp/nzbhydra.git /opt/nzbhydra/app &&     chown -R nzbhydra:nzbhydra /opt/nzbhydra"
+    ],
+    "workdir": [],
+    "from": "mattsch/fedora-rpmfusion:23",
+    "maintainer": "Matthew Schick <matthew.schick@gmail.com>",
+    "env": {
+      "LUID": "1000",
+      "LGID": "1000"
+    },
+    "copy": "run-nzbhydra.sh /bin/run-nzbhydra.sh",
+    "cmd": "[\"/bin/run-nzbhydra.sh\"]"
+  },
+  "source_repository_url": "https://github.com/mattsch/fedora-nzbhydra.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mattsch/fedora-nzbhydra",
+  "docker_repository": "mattsch/fedora-nzbhydra",
+  "docker_image": "mattsch/fedora-nzbhydra",
+  "parameters_schema": {
+    "LUID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LGID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5075
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mattsch/fedora-nzbhydra",
+  "revision": "24",
+  "uris": [
+    "https://hub.docker.com/r/mattsch/fedora-nzbhydra",
+    "https://hub.docker.com/v2/repositories/mattsch/fedora-nzbhydra",
+    "https://github.com/mattsch/fedora-nzbhydra.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Fedora"
+  ],
+  "info_url": "https://hub.docker.com/r/mattsch/fedora-nzbhydra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,164 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/opentosca/tomcat",
+    "repository_url": "https://hub.docker.com/v2/repositories/opentosca/tomcat",
+    "tags_url": "https://hub.docker.com/v2/repositories/opentosca/tomcat/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/opentosca/tomcat/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/opentosca/tomcat/autobuild",
+    "user": "opentosca",
+    "name": "tomcat",
+    "namespace": "opentosca",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 69,
+    "last_updated": "2016-08-25T13:26:59.866984Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 257921883,
+        "id": 3924284,
+        "repository": 809517,
+        "creator": 758379,
+        "last_updater": 758379,
+        "last_updated": "2016-08-25T13:26:59.421035Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "jojow/opentosca-dockerfiles"
+  },
+  "name": "opentosca/tomcat Docker container",
+  "description": "Dockerized Tomcat, part of OpenTOSCA toolchain",
+  "readme": "# opentosca-dockerfiles\n\nDockerfiles for running the entire OpenTOSCA stack.\n\nThe fastest way to get started is using [docker-compose](https://docs.docker.com/compose/):\n\n    git clone https://github.com/jojow/opentosca-dockerfiles.git\n    cd opentosca-dockerfiles\n    docker-compose up\n\nWait a few seconds, then open:\n\n    http://<HOST>:8080\n\nYou can also run a subset of the OpenTOSCA stack, for example, if you only need Winery:\n\n    docker-compose up winery\n\nHave fun!\n",
+  "dockerfile": "FROM ubuntu:14.04\n\nMAINTAINER Johannes Wettinger, http://github.com/jojow\n\nENV REMOTE_HOSTNAME localhost\n\nENV TOMCAT_VERSION 7.0.30\nENV TOMCAT_URL http://archive.apache.org/dist/tomcat/tomcat-7/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz\nENV TOMCAT_HOME /opt/tomcat\nENV CATALINA_HOME ${TOMCAT_HOME}\nENV TOMCAT_USERNAME tcManager\nENV TOMCAT_PASSWORD 4Syq5MQeedIDzzP6BG7b\n\nENV DOCKERIZE_VERSION 0.2.0\n\nENV DEBIAN_FRONTEND noninteractive\nENV PATH ${PATH}:${TOMCAT_HOME}/bin\n\nADD tomcat-users.xml.tpl /opt/tomcat-users.xml.tpl\n\n# Replace /dev/random by /dev/urandom to avoid blocking\nRUN rm /dev/random && ln -s /dev/urandom /dev/random\n\n# Install dependencies\nRUN apt-get update -y && \\\n    apt-get install -y wget openjdk-7-jdk && \\\n    apt-get clean -y\nRUN wget https://github.com/jwilder/dockerize/releases/download/v${DOCKERIZE_VERSION}/dockerize-linux-amd64-v${DOCKERIZE_VERSION}.tar.gz && \\\n    tar -C /usr/local/bin -xzvf dockerize-linux-amd64-v${DOCKERIZE_VERSION}.tar.gz\n\n# Install Tomcat\nRUN wget ${TOMCAT_URL} -O /tmp/catalina.tar.gz && \\\n    tar -zxf /tmp/catalina.tar.gz -C /opt && \\\n    ln -s /opt/apache-tomcat-${TOMCAT_VERSION} ${TOMCAT_HOME} && \\\n    rm /tmp/catalina.tar.gz && \\\n    rm -rf ${TOMCAT_HOME}/webapps/examples ${TOMCAT_HOME}/webapps/docs && \\\n    rm /dev/random && ln -s /dev/urandom /dev/random\n\nEXPOSE 8080 8778\n\n#CMD [ \"/opt/tomcat/bin/catalina.sh\", \"run\" ]\nCMD echo \"127.0.0.1 $REMOTE_HOSTNAME\" >> /etc/hosts && \\\n    dockerize -template /opt/tomcat-users.xml.tpl:$TOMCAT_HOME/conf/tomcat-users.xml $TOMCAT_HOME/bin/catalina.sh run\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "tomcat-users.xml.tpl",
+        "dest": "/opt/tomcat-users.xml.tpl"
+      }
+    ],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "rm /dev/random && ln -s /dev/urandom /dev/random",
+      "apt-get update -y &&     apt-get install -y wget openjdk-7-jdk &&     apt-get clean -y",
+      "wget https://github.com/jwilder/dockerize/releases/download/v${DOCKERIZE_VERSION}/dockerize-linux-amd64-v${DOCKERIZE_VERSION}.tar.gz &&     tar -C /usr/local/bin -xzvf dockerize-linux-amd64-v${DOCKERIZE_VERSION}.tar.gz",
+      "wget ${TOMCAT_URL} -O /tmp/catalina.tar.gz &&     tar -zxf /tmp/catalina.tar.gz -C /opt &&     ln -s /opt/apache-tomcat-${TOMCAT_VERSION} ${TOMCAT_HOME} &&     rm /tmp/catalina.tar.gz &&     rm -rf ${TOMCAT_HOME}/webapps/examples ${TOMCAT_HOME}/webapps/docs &&     rm /dev/random && ln -s /dev/urandom /dev/random"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "Johannes Wettinger, http://github.com/jojow",
+    "env": {
+      "REMOTE_HOSTNAME": "localhost",
+      "TOMCAT_VERSION": "7.0.30",
+      "TOMCAT_URL": "http://archive.apache.org/dist/tomcat/tomcat-7/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz",
+      "TOMCAT_HOME": "/opt/tomcat",
+      "CATALINA_HOME": "${TOMCAT_HOME}",
+      "TOMCAT_USERNAME": "tcManager",
+      "TOMCAT_PASSWORD": "4Syq5MQeedIDzzP6BG7b",
+      "DOCKERIZE_VERSION": "0.2.0",
+      "DEBIAN_FRONTEND": "noninteractive",
+      "PATH": "${PATH}:${TOMCAT_HOME}/bin"
+    },
+    "cmd": "echo \"127.0.0.1 $REMOTE_HOSTNAME\" >> /etc/hosts &&     dockerize -template /opt/tomcat-users.xml.tpl:$TOMCAT_HOME/conf/tomcat-users.xml $TOMCAT_HOME/bin/catalina.sh run"
+  },
+  "source_repository_url": "https://github.com/jojow/opentosca-dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/jojow/opentosca-dockerfiles",
+  "docker_repository": "opentosca/tomcat",
+  "docker_image": "opentosca/tomcat",
+  "parameters_schema": {
+    "REMOTE_HOSTNAME": {
+      "default": "localhost",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_VERSION": {
+      "default": "7.0.30",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_URL": {
+      "default": "http://archive.apache.org/dist/tomcat/tomcat-7/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_HOME": {
+      "default": "/opt/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CATALINA_HOME": {
+      "default": "${TOMCAT_HOME}",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_USERNAME": {
+      "default": "tcManager",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_PASSWORD": {
+      "default": "4Syq5MQeedIDzzP6BG7b",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DOCKERIZE_VERSION": {
+      "default": "0.2.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "${PATH}:${TOMCAT_HOME}/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "opentosca/tomcat",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/opentosca/tomcat",
+    "https://hub.docker.com/v2/repositories/opentosca/tomcat",
+    "https://github.com/jojow/opentosca-dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/opentosca/tomcat",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

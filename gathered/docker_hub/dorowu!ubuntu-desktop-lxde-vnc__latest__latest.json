@@ -1,0 +1,188 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dorowu/ubuntu-desktop-lxde-vnc",
+    "repository_url": "https://hub.docker.com/v2/repositories/dorowu/ubuntu-desktop-lxde-vnc",
+    "tags_url": "https://hub.docker.com/v2/repositories/dorowu/ubuntu-desktop-lxde-vnc/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dorowu/ubuntu-desktop-lxde-vnc/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dorowu/ubuntu-desktop-lxde-vnc/autobuild",
+    "user": "dorowu",
+    "name": "ubuntu-desktop-lxde-vnc",
+    "namespace": "dorowu",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 69,
+    "pull_count": 24929,
+    "last_updated": "2016-07-29T04:35:54.905531Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 473644570,
+        "id": 10484,
+        "repository": 11121,
+        "creator": 12370,
+        "last_updater": 12370,
+        "last_updated": "2016-07-29T04:35:54.577189Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "release-v1.1",
+        "full_size": 440380840,
+        "id": 3984384,
+        "repository": 11121,
+        "creator": 12370,
+        "last_updater": 12370,
+        "last_updated": "2016-07-25T10:12:31.182941Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "release-v1.0",
+        "full_size": 400594698,
+        "id": 1474063,
+        "repository": 11121,
+        "creator": 12370,
+        "last_updater": 12370,
+        "last_updated": "2015-12-03T09:23:24.255956Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "theme",
+        "full_size": 433482490,
+        "id": 404587,
+        "repository": 11121,
+        "creator": 12370,
+        "last_updater": 12370,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "fcwu/docker-ubuntu-vnc-desktop"
+  },
+  "name": "dorowu/ubuntu-desktop-lxde-vnc Docker container",
+  "description": "Ubuntu with openssh-server and NoVNC on port 6080  ",
+  "readme": "docker-ubuntu-vnc-desktop\n=========================\n\n[![Docker Pulls](https://img.shields.io/docker/pulls/dorowu/ubuntu-desktop-lxde-vnc.svg)](https://hub.docker.com/r/dorowu/ubuntu-desktop-lxde-vnc/)\n[![Docker Stars](https://img.shields.io/docker/stars/dorowu/ubuntu-desktop-lxde-vnc.svg)](https://hub.docker.com/r/dorowu/ubuntu-desktop-lxde-vnc/)\n\nFrom Docker Index\n```\ndocker pull dorowu/ubuntu-desktop-lxde-vnc\n```\n\nBuild yourself\n```\ngit clone https://github.com/fcwu/docker-ubuntu-vnc-desktop.git\ndocker build --rm -t dorowu/ubuntu-desktop-lxde-vnc docker-ubuntu-vnc-desktop\n```\n\nRun\n```\ndocker run -i -t -p 6080:6080 dorowu/ubuntu-desktop-lxde-vnc\n```\n\nBrowse http://127.0.0.1:6080/vnc.html\n\n<img src=\"https://raw.github.com/fcwu/docker-ubuntu-vnc-desktop/master/screenshots/lxde.png\" width=400/>\n\n\nTroubleshooting\n==================\n\n1. boot2docker connection issue, https://github.com/fcwu/docker-ubuntu-vnc-desktop/issues/2\n\n\nLicense\n==================\n\ndesktop-mirror is under the Apache 2.0 license. See the LICENSE file for details.\n",
+  "dockerfile": "FROM ubuntu:14.04.3\nMAINTAINER Doro Wu <fcwu.tw@gmail.com>\n\nENV DEBIAN_FRONTEND noninteractive\nENV HOME /home/ubuntu\n\n# built-in packages\nRUN apt-get update \\\n    && apt-get install -y --force-yes --no-install-recommends software-properties-common curl \\\n    && sudo sh -c \"echo 'deb http://download.opensuse.org/repositories/home:/Horst3180/xUbuntu_16.04/ /' >> /etc/apt/sources.list.d/arc-theme.list\" \\\n    && curl -SL http://download.opensuse.org/repositories/home:Horst3180/xUbuntu_16.04/Release.key | sudo apt-key add - \\\n    && add-apt-repository ppa:fcwu-tw/ppa \\\n    && apt-get update \\\n    && apt-get install -y --force-yes --no-install-recommends \\\n        supervisor \\\n        openssh-server pwgen sudo vim-tiny \\\n        net-tools \\\n        lxde x11vnc xvfb \\\n        gtk2-engines-murrine ttf-ubuntu-font-family \\\n        libreoffice firefox \\\n        fonts-wqy-microhei \\\n        language-pack-zh-hant language-pack-gnome-zh-hant firefox-locale-zh-hant libreoffice-l10n-zh-tw \\\n        nginx \\\n        python-pip python-dev build-essential \\\n        mesa-utils libgl1-mesa-dri \\\n        gnome-themes-standard gtk2-engines-pixbuf gtk2-engines-murrine pinta arc-theme \\\n    && apt-get autoclean \\\n    && apt-get autoremove \\\n    && rm -rf /var/lib/apt/lists/*\n\nADD web /web/\nRUN pip install setuptools wheel && pip install -r /web/requirements.txt\n\n# tini for subreap                                   \nENV TINI_VERSION v0.9.0\nADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /bin/tini\nRUN chmod +x /bin/tini\n\nADD noVNC /noVNC/\nADD nginx.conf /etc/nginx/sites-enabled/default\nADD startup.sh /\nADD supervisord.conf /etc/supervisor/conf.d/\nADD doro-lxde-wallpapers /usr/share/doro-lxde-wallpapers/\nADD gtkrc-2.0 /home/ubuntu/.gtkrc-2.0\n\nEXPOSE 6080\nWORKDIR /root\nENTRYPOINT [\"/startup.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "web",
+        "dest": "/web/"
+      },
+      {
+        "source": "https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini",
+        "dest": "/bin/tini"
+      },
+      {
+        "source": "noVNC",
+        "dest": "/noVNC/"
+      },
+      {
+        "source": "nginx.conf",
+        "dest": "/etc/nginx/sites-enabled/default"
+      },
+      {
+        "source": "startup.sh",
+        "dest": "/"
+      },
+      {
+        "source": "supervisord.conf",
+        "dest": "/etc/supervisor/conf.d/"
+      },
+      {
+        "source": "doro-lxde-wallpapers",
+        "dest": "/usr/share/doro-lxde-wallpapers/"
+      },
+      {
+        "source": "gtkrc-2.0",
+        "dest": "/home/ubuntu/.gtkrc-2.0"
+      }
+    ],
+    "expose": [
+      6080
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update     && apt-get install -y --force-yes --no-install-recommends software-properties-common curl     && sudo sh -c \"echo 'deb http://download.opensuse.org/repositories/home:/Horst3180/xUbuntu_16.04/ /' >> /etc/apt/sources.list.d/arc-theme.list\"     && curl -SL http://download.opensuse.org/repositories/home:Horst3180/xUbuntu_16.04/Release.key | sudo apt-key add -     && add-apt-repository ppa:fcwu-tw/ppa     && apt-get update     && apt-get install -y --force-yes --no-install-recommends         supervisor         openssh-server pwgen sudo vim-tiny         net-tools         lxde x11vnc xvfb         gtk2-engines-murrine ttf-ubuntu-font-family         libreoffice firefox         fonts-wqy-microhei         language-pack-zh-hant language-pack-gnome-zh-hant firefox-locale-zh-hant libreoffice-l10n-zh-tw         nginx         python-pip python-dev build-essential         mesa-utils libgl1-mesa-dri         gnome-themes-standard gtk2-engines-pixbuf gtk2-engines-murrine pinta arc-theme     && apt-get autoclean     && apt-get autoremove     && rm -rf /var/lib/apt/lists/*",
+      "pip install setuptools wheel && pip install -r /web/requirements.txt",
+      "chmod +x /bin/tini"
+    ],
+    "workdir": [
+      "/root"
+    ],
+    "from": "ubuntu:14.04.3",
+    "maintainer": "Doro Wu <fcwu.tw@gmail.com>",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "HOME": "/home/ubuntu",
+      "TINI_VERSION": "v0.9.0"
+    },
+    "entrypoint": "[\"/startup.sh\"]"
+  },
+  "source_repository_url": "git://github.com/fcwu/docker-ubuntu-vnc-desktop.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/fcwu/docker-ubuntu-vnc-desktop",
+  "docker_repository": "dorowu/ubuntu-desktop-lxde-vnc",
+  "docker_image": "dorowu/ubuntu-desktop-lxde-vnc",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/home/ubuntu",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TINI_VERSION": {
+      "default": "v0.9.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        6080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dorowu/ubuntu-desktop-lxde-vnc",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/dorowu/ubuntu-desktop-lxde-vnc",
+    "https://hub.docker.com/v2/repositories/dorowu/ubuntu-desktop-lxde-vnc",
+    "git://github.com/fcwu/docker-ubuntu-vnc-desktop.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu"
+  ],
+  "info_url": "https://hub.docker.com/r/dorowu/ubuntu-desktop-lxde-vnc",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

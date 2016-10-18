@@ -1,0 +1,217 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kieker/tomcat",
+    "repository_url": "https://hub.docker.com/v2/repositories/kieker/tomcat",
+    "tags_url": "https://hub.docker.com/v2/repositories/kieker/tomcat/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kieker/tomcat/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kieker/tomcat/autobuild",
+    "user": "kieker",
+    "name": "tomcat",
+    "namespace": "kieker",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 995,
+    "last_updated": "2016-10-17T04:55:50.227393Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 175484194,
+        "id": 405335,
+        "repository": 236914,
+        "creator": 346237,
+        "last_updater": 346180,
+        "last_updated": "2016-10-17T04:55:49.567390Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "nightly",
+        "full_size": 175561473,
+        "id": 405722,
+        "repository": 236914,
+        "creator": 346237,
+        "last_updater": 346180,
+        "last_updated": "2016-10-17T04:53:22.295390Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.11",
+        "full_size": 171581101,
+        "id": 405312,
+        "repository": 236914,
+        "creator": 346237,
+        "last_updater": 346237,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "kieker-monitoring-docker/tomcat"
+  },
+  "name": "kieker/tomcat Docker container",
+  "description": "",
+  "readme": "# tomcat\n",
+  "dockerfile": "FROM tomcat\n\nMAINTAINER http://kieker-monitoring.net/support/\n\nWORKDIR /opt\n\nCMD [\"/usr/local/tomcat/bin/catalina.sh\", \"run\"]\n\nEXPOSE 8080\n\n# Set folder variables\nENV KIEKER_FOLDER /opt/kieker\nENV KIEKER_AGENT_FOLDER ${KIEKER_FOLDER}/agent\nENV KIEKER_CONFIG_FOLDER ${KIEKER_FOLDER}/config\nENV KIEKER_LOGS_FOLDER ${KIEKER_FOLDER}/logs\nENV KIEKER_WEBAPPS_FOLDER ${KIEKER_FOLDER}/webapps\nENV KIEKER_JPETSTORE_FOLDER ${KIEKER_WEBAPPS_FOLDER}/jpetstore\nENV KIEKER_TOMCAT_METAINF_FOLDER /usr/local/tomcat/lib/META-INF\nENV KIEKER_TOMCAT_WEBAPPS_FOLDER /usr/local/tomcat/webapps\n\n# Set other variables\nENV KIEKER_MONITORING_PROPERTIES kieker.monitoring.properties\nENV KIEKER_JPETSTORE jpetstore\nENV KIEKER_AGENT_JAR agent.jar\nENV KIEKER_AOP aop.xml\n\nCOPY ${KIEKER_JPETSTORE} ${KIEKER_JPETSTORE_FOLDER}\nCOPY ${KIEKER_MONITORING_PROPERTIES} ${KIEKER_CONFIG_FOLDER}/${KIEKER_MONITORING_PROPERTIES}\n# COPY ${KIEKER_AOP} ${KIEKER_CONFIG_FOLDER}/${KIEKER_AOP}\n\nRUN \\\n  mkdir -p ${KIEKER_AGENT_FOLDER} && \\\n  mkdir -p ${KIEKER_LOGS_FOLDER} && \\\n  mkdir -p ${KIEKER_TOMCAT_METAINF_FOLDER}\n  \nENV KIEKER_VERSION 1.11\nENV KIEKER_AGENT_JAR_SRC kieker-${KIEKER_VERSION}-aspectj.jar\nENV KIEKER_AGENT_BASE_URL \"https://search.maven.org/remotecontent?filepath=net/kieker-monitoring/kieker\"\n  \nRUN \\\n  wget -q \"${KIEKER_AGENT_BASE_URL}/${KIEKER_VERSION}/${KIEKER_AGENT_JAR_SRC}\" -O \"${KIEKER_AGENT_FOLDER}/${KIEKER_AGENT_JAR}\" && \\\n  ln -s ${KIEKER_JPETSTORE_FOLDER} ${KIEKER_TOMCAT_WEBAPPS_FOLDER}/${KIEKER_JPETSTORE} && \\\n  # ln -s ${KIEKER_CONFIG_FOLDER}/${KIEKER_AOP} ${KIEKER_TOMCAT_METAINF_FOLDER}/${KIEKER_AOP} && \\\n  sed -i '250i\\'\"export KIEKER_JAVA_OPTS=\\\" \\\n    -javaagent:${KIEKER_AGENT_FOLDER}/${KIEKER_AGENT_JAR} \\\n    -Dkieker.monitoring.configuration=${KIEKER_CONFIG_FOLDER}/${KIEKER_MONITORING_PROPERTIES} \\\n    -Dkieker.monitoring.writer.filesystem.AsyncFsWriter.customStoragePath=${KIEKER_LOGS_FOLDER} \\\n    -Daj.weaving.verbose=true \\\n    -Dkieker.monitoring.skipDefaultAOPConfiguration=true \\\n    \\\"\" /usr/local/tomcat/bin/catalina.sh && \\\n  sed -i '251i\\'\"export JAVA_OPTS=\\\"\\${KIEKER_JAVA_OPTS} \\${JAVA_OPTS}\\\"\" /usr/local/tomcat/bin/catalina.sh\n\nVOLUME [\"/opt/kieker\"]\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [
+      "[\"/opt/kieker\"]"
+    ],
+    "run": [
+      "  mkdir -p ${KIEKER_AGENT_FOLDER} &&   mkdir -p ${KIEKER_LOGS_FOLDER} &&   mkdir -p ${KIEKER_TOMCAT_METAINF_FOLDER}",
+      "  wget -q \"${KIEKER_AGENT_BASE_URL}/${KIEKER_VERSION}/${KIEKER_AGENT_JAR_SRC}\" -O \"${KIEKER_AGENT_FOLDER}/${KIEKER_AGENT_JAR}\" &&   ln -s ${KIEKER_JPETSTORE_FOLDER} ${KIEKER_TOMCAT_WEBAPPS_FOLDER}/${KIEKER_JPETSTORE} &&   # ln -s ${KIEKER_CONFIG_FOLDER}/${KIEKER_AOP} ${KIEKER_TOMCAT_METAINF_FOLDER}/${KIEKER_AOP} &&   sed -i '250i\\'\"export KIEKER_JAVA_OPTS=\\\"     -javaagent:${KIEKER_AGENT_FOLDER}/${KIEKER_AGENT_JAR}     -Dkieker.monitoring.configuration=${KIEKER_CONFIG_FOLDER}/${KIEKER_MONITORING_PROPERTIES}     -Dkieker.monitoring.writer.filesystem.AsyncFsWriter.customStoragePath=${KIEKER_LOGS_FOLDER}     -Daj.weaving.verbose=true     -Dkieker.monitoring.skipDefaultAOPConfiguration=true     \\\"\" /usr/local/tomcat/bin/catalina.sh &&   sed -i '251i\\'\"export JAVA_OPTS=\\\"\\${KIEKER_JAVA_OPTS} \\${JAVA_OPTS}\\\"\" /usr/local/tomcat/bin/catalina.sh"
+    ],
+    "workdir": [
+      "/opt"
+    ],
+    "from": "tomcat",
+    "maintainer": "http://kieker-monitoring.net/support/",
+    "cmd": "[\"/usr/local/tomcat/bin/catalina.sh\", \"run\"]",
+    "env": {
+      "KIEKER_FOLDER": "/opt/kieker",
+      "KIEKER_AGENT_FOLDER": "${KIEKER_FOLDER}/agent",
+      "KIEKER_CONFIG_FOLDER": "${KIEKER_FOLDER}/config",
+      "KIEKER_LOGS_FOLDER": "${KIEKER_FOLDER}/logs",
+      "KIEKER_WEBAPPS_FOLDER": "${KIEKER_FOLDER}/webapps",
+      "KIEKER_JPETSTORE_FOLDER": "${KIEKER_WEBAPPS_FOLDER}/jpetstore",
+      "KIEKER_TOMCAT_METAINF_FOLDER": "/usr/local/tomcat/lib/META-INF",
+      "KIEKER_TOMCAT_WEBAPPS_FOLDER": "/usr/local/tomcat/webapps",
+      "KIEKER_MONITORING_PROPERTIES": "kieker.monitoring.properties",
+      "KIEKER_JPETSTORE": "jpetstore",
+      "KIEKER_AGENT_JAR": "agent.jar",
+      "KIEKER_AOP": "aop.xml",
+      "KIEKER_VERSION": "1.11",
+      "KIEKER_AGENT_JAR_SRC": "kieker-${KIEKER_VERSION}-aspectj.jar",
+      "KIEKER_AGENT_BASE_URL": "\"https://search.maven.org/remotecontent?filepath"
+    },
+    "copy": "${KIEKER_MONITORING_PROPERTIES} ${KIEKER_CONFIG_FOLDER}/${KIEKER_MONITORING_PROPERTIES}"
+  },
+  "source_repository_url": "https://github.com/kieker-monitoring-docker/tomcat.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/kieker-monitoring-docker/tomcat",
+  "docker_repository": "kieker/tomcat",
+  "docker_image": "kieker/tomcat",
+  "parameters_schema": {
+    "KIEKER_FOLDER": {
+      "default": "/opt/kieker",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIEKER_AGENT_FOLDER": {
+      "default": "${KIEKER_FOLDER}/agent",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIEKER_CONFIG_FOLDER": {
+      "default": "${KIEKER_FOLDER}/config",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIEKER_LOGS_FOLDER": {
+      "default": "${KIEKER_FOLDER}/logs",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIEKER_WEBAPPS_FOLDER": {
+      "default": "${KIEKER_FOLDER}/webapps",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIEKER_JPETSTORE_FOLDER": {
+      "default": "${KIEKER_WEBAPPS_FOLDER}/jpetstore",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIEKER_TOMCAT_METAINF_FOLDER": {
+      "default": "/usr/local/tomcat/lib/META-INF",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIEKER_TOMCAT_WEBAPPS_FOLDER": {
+      "default": "/usr/local/tomcat/webapps",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIEKER_MONITORING_PROPERTIES": {
+      "default": "kieker.monitoring.properties",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIEKER_JPETSTORE": {
+      "default": "jpetstore",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIEKER_AGENT_JAR": {
+      "default": "agent.jar",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIEKER_AOP": {
+      "default": "aop.xml",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIEKER_VERSION": {
+      "default": "1.11",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIEKER_AGENT_JAR_SRC": {
+      "default": "kieker-${KIEKER_VERSION}-aspectj.jar",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KIEKER_AGENT_BASE_URL": {
+      "default": "\"https://search.maven.org/remotecontent?filepath",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kieker/tomcat",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/kieker/tomcat",
+    "https://hub.docker.com/v2/repositories/kieker/tomcat",
+    "https://github.com/kieker-monitoring-docker/tomcat.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/kieker/tomcat",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

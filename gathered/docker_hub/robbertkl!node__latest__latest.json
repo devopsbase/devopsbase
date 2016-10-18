@@ -1,0 +1,114 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/robbertkl/node",
+    "repository_url": "https://hub.docker.com/v2/repositories/robbertkl/node",
+    "tags_url": "https://hub.docker.com/v2/repositories/robbertkl/node/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/robbertkl/node/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/robbertkl/node/autobuild",
+    "user": "robbertkl",
+    "name": "node",
+    "namespace": "robbertkl",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1623,
+    "last_updated": "2016-10-15T11:11:56.973716Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 27459452,
+        "id": 1491557,
+        "repository": 432846,
+        "creator": 468779,
+        "last_updater": 468779,
+        "last_updated": "2016-10-15T11:11:56.640444Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "robbertkl/docker-node"
+  },
+  "name": "robbertkl/node Docker container",
+  "description": "Docker container running Node.js",
+  "readme": "# robbertkl/node\n\nDocker container running Node.js:\n\n* Either run it directly with a mounted volume or extend it into an image with your code included\n* Does not expose any ports\n\n## Usage\n\nEither run it directly:\n\n```\ndocker run -d -v <path-to-code>:/usr/src/app -p 80:3000 robbertkl/node\n```\n\nOr extend it:\n\n```\nFROM robbertkl/node\n\nCOPY package.json ./\nRUN npm install\nCOPY . .\n\nEXPOSE 3000\n\n...\n```\n\n## Authors\n\n* Robbert Klarenbeek, <robbertkl@renbeek.nl>\n\n## License\n\nThis repo is published under the [MIT License](http://www.opensource.org/licenses/mit-license.php).\n",
+  "dockerfile": "FROM alpine:latest\nMAINTAINER Robbert Klarenbeek <robbertkl@renbeek.nl>\n\nRUN apk add --no-cache \\\n        ca-certificates \\\n        icu-dev \\\n        libgcc \\\n        libstdc++ \\\n        openssl\n\nRUN VERSION=`wget -qO - https://api.github.com/repos/Yelp/dumb-init/tags | grep \\\"name\\\": | cut -d\\\" -f4 | grep -v [-^] | head -n 1 | sed -E s/^v//` && \\\n    wget -qO /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v${VERSION}/dumb-init_${VERSION}_amd64 && \\\n    chmod +x /usr/local/bin/dumb-init\n\nRUN apk add --no-cache --virtual .build-deps \\\n        make \\\n        gcc \\\n        g++ \\\n        openssl-dev \\\n        linux-headers \\\n        paxctl \\\n        python \\\n        zlib-dev \\\n    && \\\n    VERSION=`wget -qO - https://api.github.com/repos/nodejs/node/tags | grep \\\"name\\\": | cut -d\\\" -f4 | grep -v [-^] | head -n 1 | sed -E s/^v//` && \\\n    wget -O - https://github.com/nodejs/node/archive/v${VERSION}.tar.gz | tar xzf - && \\\n    cd node-${VERSION} && \\\n    export GYP_DEFINES=\"linux_use_gold_flags=0\" && \\\n    ./configure --prefix=/usr --shared-openssl --shared-zlib --with-intl=system-icu && \\\n    make -j2 -C out mksnapshot BUILDTYPE=Release && \\\n    paxctl -cm out/Release/mksnapshot && \\\n    make -j2 && \\\n    make install && \\\n    paxctl -cm /usr/bin/node && \\\n    cd .. && \\\n    rm -rf node-${VERSION} && \\\n    apk del .build-deps\n\nENV NPM_CONFIG_LOGLEVEL=silent \\\n    NODE_ENV=production\n\nRUN mkdir -p /usr/src/app\nWORKDIR /usr/src/app\n\nCMD [ \"dumb-init\", \"node\", \".\" ]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apk add --no-cache         ca-certificates         icu-dev         libgcc         libstdc++         openssl",
+      "VERSION=`wget -qO - https://api.github.com/repos/Yelp/dumb-init/tags | grep \\\"name\\\": | cut -d\\\" -f4 | grep -v [-^] | head -n 1 | sed -E s/^v//` &&     wget -qO /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v${VERSION}/dumb-init_${VERSION}_amd64 &&     chmod +x /usr/local/bin/dumb-init",
+      "apk add --no-cache --virtual .build-deps         make         gcc         g++         openssl-dev         linux-headers         paxctl         python         zlib-dev     &&     VERSION=`wget -qO - https://api.github.com/repos/nodejs/node/tags | grep \\\"name\\\": | cut -d\\\" -f4 | grep -v [-^] | head -n 1 | sed -E s/^v//` &&     wget -O - https://github.com/nodejs/node/archive/v${VERSION}.tar.gz | tar xzf - &&     cd node-${VERSION} &&     export GYP_DEFINES=\"linux_use_gold_flags=0\" &&     ./configure --prefix=/usr --shared-openssl --shared-zlib --with-intl=system-icu &&     make -j2 -C out mksnapshot BUILDTYPE=Release &&     paxctl -cm out/Release/mksnapshot &&     make -j2 &&     make install &&     paxctl -cm /usr/bin/node &&     cd .. &&     rm -rf node-${VERSION} &&     apk del .build-deps",
+      "mkdir -p /usr/src/app"
+    ],
+    "workdir": [
+      "/usr/src/app"
+    ],
+    "from": "alpine:latest",
+    "maintainer": "Robbert Klarenbeek <robbertkl@renbeek.nl>",
+    "env": {
+      "NPM_CONFIG_LOGLEVEL": "silent",
+      "": "",
+      "NODE_ENV": "production"
+    },
+    "cmd": "[ \"dumb-init\", \"node\", \".\" ]"
+  },
+  "source_repository_url": "https://github.com/robbertkl/docker-node.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/robbertkl/docker-node",
+  "docker_repository": "robbertkl/node",
+  "docker_image": "robbertkl/node",
+  "parameters_schema": {
+    "NPM_CONFIG_LOGLEVEL": {
+      "default": "silent",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NODE_ENV": {
+      "default": "production",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "robbertkl/node",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/robbertkl/node",
+    "https://hub.docker.com/v2/repositories/robbertkl/node",
+    "https://github.com/robbertkl/docker-node.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://hub.docker.com/r/robbertkl/node",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

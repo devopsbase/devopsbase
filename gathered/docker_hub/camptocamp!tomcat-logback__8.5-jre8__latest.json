@@ -1,0 +1,127 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/camptocamp/tomcat-logback",
+    "repository_url": "https://hub.docker.com/v2/repositories/camptocamp/tomcat-logback",
+    "tags_url": "https://hub.docker.com/v2/repositories/camptocamp/tomcat-logback/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/camptocamp/tomcat-logback/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/camptocamp/tomcat-logback/autobuild",
+    "user": "camptocamp",
+    "name": "tomcat-logback",
+    "namespace": "camptocamp",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 1043,
+    "last_updated": "2016-10-14T18:47:11.482068Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "8.5-jre8",
+        "full_size": 139989089,
+        "id": 3531021,
+        "repository": 758602,
+        "creator": 442394,
+        "last_updater": 442394,
+        "last_updated": "2016-10-14T18:47:10.810487Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 139989255,
+        "id": 3531026,
+        "repository": 758602,
+        "creator": 442394,
+        "last_updater": 442394,
+        "last_updated": "2016-10-14T18:47:00.402408Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "camptocamp/docker-tomcat-logback"
+  },
+  "name": "camptocamp/tomcat-logback Docker container",
+  "description": "Docker image for tomcat with logback integration",
+  "readme": "# Docker image for tomcat with logback integration\n\nBased on the official tomcat image, but with logs using logback.\n\n\nSome environment variables are available to tune the logs:\n\n* DEFAULT_LOG_LEVEL: Set the default log level.\n* TOMCAT_LOG_LEVEL: Set the tomcat log level.\n* TOMCAT_LOG_TYPE:\n  * `classic` (default): The logs are humane readable. Access logs are going to stdout and the other logs are going to stderr.\n  * `json`: The logs will be formatted in a JSON suitable for logstash. Access logs are going to stdout and the other logs are going to stderr.\n  * `logstash`: The logs will be formatted in a JSON suitable for logstash (@cee) and sent by syslog/UDP. The access logs are going to stdout in json format. More variables are available for this mode:\n    * TOMCAT_LOG_HOST: the target host\n    * TOMCAT_LOG_PORT: the target port\n\nIf you want to change the way things are logged, change the ${CATALINA_HOME}/conf/logback-custom.xml file.\n\nIf your application uses logback/log4j, it is recommended to not ship those libraries with your webapp.\nJust use the ones provided at tomcat level.\n\nOther changes compared the official tomcat image:\n\n* All the default webapps are removed.\n* TLD and JAR scanners are disabled (faster startup).\n* Resources caching is properly configured.\n",
+  "dockerfile": "FROM tomcat:8.5-jre8\nMAINTAINER Camptocamp \"info@camptocamp.com\"\n\nCOPY temp ${CATALINA_HOME}/temp\nRUN echo \"tomcat.util.scan.StandardJarScanFilter.jarsToSkip=*\" >> ${CATALINA_HOME}/conf/catalina.properties && \\\n    echo \"org.apache.catalina.startup.TldConfig.jarsToSkip=*\" >> ${CATALINA_HOME}/conf/catalina.properties && \\\n    echo \"tomcat.util.scan.DefaultJarScanner.jarsToSkip=*\" >> ${CATALINA_HOME}/conf/catalina.properties && \\\n    apt-get update && \\\n    apt-get install -y --no-install-recommends maven openjdk-8-jdk-headless && \\\n    mkdir ${CATALINA_HOME}/extlib && \\\n    (cd temp; mvn dependency:copy-dependencies -DoutputDirectory=${CATALINA_HOME}/extlib/) && \\\n    (cd temp; mvn package && cp target/tomcat-logstash-1.0.jar ${CATALINA_HOME}/extlib/) && \\\n    rm -r temp/target && \\\n    perl -0777 -i -pe 's/(<Valve className=\"org.apache.catalina.valves.AccessLogValve\"[^>]*>)/<Valve className=\"ch.qos.logback.access.tomcat.LogbackValve\" quiet=\"true\"\\/>/s' ${CATALINA_HOME}/conf/server.xml && \\\n    apt-get remove --purge -y maven openjdk-8-jdk-headless && \\\n    apt-get autoremove -y && \\\n    apt-get clean && \\\n    rm -r /var/lib/apt/lists/* ~/.m2 && \\\n    perl -0777 -i -pe 's/<\\/Context>/<Resources cachingAllowed=\"true\" cacheMaxSize=\"102400\"\\/><\\/Context>/' ${CATALINA_HOME}/conf/context.xml\nRUN rm -r ${CATALINA_HOME}/webapps/*\n\nCOPY . ${CATALINA_HOME}\n\nENV DEFAULT_LOG_LEVEL INFO\nENV TOMCAT_LOG_LEVEL INFO\nENV TOMCAT_LOG_TYPE classic\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "echo \"tomcat.util.scan.StandardJarScanFilter.jarsToSkip=*\" >> ${CATALINA_HOME}/conf/catalina.properties &&     echo \"org.apache.catalina.startup.TldConfig.jarsToSkip=*\" >> ${CATALINA_HOME}/conf/catalina.properties &&     echo \"tomcat.util.scan.DefaultJarScanner.jarsToSkip=*\" >> ${CATALINA_HOME}/conf/catalina.properties &&     apt-get update &&     apt-get install -y --no-install-recommends maven openjdk-8-jdk-headless &&     mkdir ${CATALINA_HOME}/extlib &&     (cd temp; mvn dependency:copy-dependencies -DoutputDirectory=${CATALINA_HOME}/extlib/) &&     (cd temp; mvn package && cp target/tomcat-logstash-1.0.jar ${CATALINA_HOME}/extlib/) &&     rm -r temp/target &&     perl -0777 -i -pe 's/(<Valve className=\"org.apache.catalina.valves.AccessLogValve\"[^>]*>)/<Valve className=\"ch.qos.logback.access.tomcat.LogbackValve\" quiet=\"true\"\\/>/s' ${CATALINA_HOME}/conf/server.xml &&     apt-get remove --purge -y maven openjdk-8-jdk-headless &&     apt-get autoremove -y &&     apt-get clean &&     rm -r /var/lib/apt/lists/* ~/.m2 &&     perl -0777 -i -pe 's/<\\/Context>/<Resources cachingAllowed=\"true\" cacheMaxSize=\"102400\"\\/><\\/Context>/' ${CATALINA_HOME}/conf/context.xml",
+      "rm -r ${CATALINA_HOME}/webapps/*"
+    ],
+    "workdir": [],
+    "from": "tomcat:8.5-jre8",
+    "maintainer": "Camptocamp \"info@camptocamp.com\"",
+    "copy": ". ${CATALINA_HOME}",
+    "env": {
+      "DEFAULT_LOG_LEVEL": "INFO",
+      "TOMCAT_LOG_LEVEL": "INFO",
+      "TOMCAT_LOG_TYPE": "classic"
+    }
+  },
+  "source_repository_url": "https://github.com/camptocamp/docker-tomcat-logback.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/camptocamp/docker-tomcat-logback",
+  "docker_repository": "camptocamp/tomcat-logback",
+  "docker_image": "camptocamp/tomcat-logback",
+  "parameters_schema": {
+    "DEFAULT_LOG_LEVEL": {
+      "default": "INFO",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_LOG_LEVEL": {
+      "default": "INFO",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_LOG_TYPE": {
+      "default": "classic",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "camptocamp/tomcat-logback",
+  "revision": "8.5-jre8",
+  "uris": [
+    "https://hub.docker.com/r/camptocamp/tomcat-logback",
+    "https://hub.docker.com/v2/repositories/camptocamp/tomcat-logback",
+    "https://github.com/camptocamp/docker-tomcat-logback.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Integration",
+    "Type/Devopsware/Logging",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/camptocamp/tomcat-logback",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

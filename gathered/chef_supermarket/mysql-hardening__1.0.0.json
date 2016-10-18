@@ -1,0 +1,89 @@
+{
+  "name": "mysql-hardening Chef cookbook",
+  "chef_cookbook_name": "mysql-hardening",
+  "revision": "1.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/mysql-hardening",
+    "https://supermarket.chef.io/cookbooks/mysql-hardening/download",
+    "https://supermarket.chef.io/cookbooks/mysql-hardening/versions/1.0.0",
+    "https://supermarket.chef.io/cookbooks/mysql-hardening/versions/1.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/mysql-hardening/versions/1.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/mysql-hardening",
+    "https://supermarket.chef.io/api/v1/cookbooks/mysql-hardening/versions/1.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/mysql-hardening",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/mysql-hardening/versions/1.0.0/download",
+  "deprecated": false,
+  "created": "2014-07-29T14:27:31.025Z",
+  "updated": "2014-12-23T11:22:41.660Z",
+  "description": "Installs and configures a secure mysql server",
+  "maintainer": {
+    "name": "arlimus",
+    "email": "chris@lollyrock.com"
+  },
+  "license": "Apache v2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 7,
+  "downloads_count": 2154004,
+  "downloads_count_revision": 1169364,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# mysql-hardening (Chef cookbook)\n\n## Description\n\nProvides security configurations for mysql. It is intended to set up production-ready mysql instances that are configured with minimal surface for attackers.\n\nThis cookbook focus security configuration of mysql and reuses the [mysql cookbook](https://github.com/opscode-cookbooks/mysql) for the installation. Therefore you can add this hardening layer on top of your existing mysql configuration in Chef.\n\nWe optimized this cookbook to work with [os-hardening](https://github.com/TelekomLabs/chef-os-hardening) and [ssh-hardening](https://github.com/TelekomLabs/chef-ssh-hardening) without a hassle. It will play well without, but you need to ensure all preconditions like `apt-get update` or `yum update` are met.\n\n## Requirements\n\n* Opscode chef\n\n## Usage\n\nA sample role may look like:\n\n```json\n{\n    \"name\": \"mysql\",\n    \"default_attributes\": { },\n    \"override_attributes\": { },\n    \"json_class\": \"Chef::Role\",\n    \"description\": \"MySql Hardened Server Test Role\",\n    \"chef_type\": \"role\",\n    \"default_attributes\" : {\n      \"mysql\": {\n        \"server_root_password\": \"iloverandompasswordsbutthiswilldo\",\n        \"server_debian_password\": \"iloverandompasswordsbutthiswilldo\"\n      }\n    },\n    \"run_list\": [\n        \"recipe[chef-solo-search]\",\n        \"recipe[apt]\",\n        \"recipe[mysql-hardening::server]\"\n    ]\n}\n```\n\n## Security Options\n\nFurther information is already available at [Deutsche Telekom (German)](http://www.telekom.com/static/-/155996/7/technische-sicherheitsanforderungen-si) and [Symantec](http://www.symantec.com/connect/articles/securing-mysql-step-step) \n\n * default['mysql']['security']['chroot'] - [chroot](http://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_chroot)\n * default['mysql']['security']['safe_user_create'] - [safe-user-create](http://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_safe-user-create)\n * default['mysql']['security']['secure_auth'] - [secure-auth](http://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_secure-auth)\n * default['mysql']['security']['skip_symbolic_links'] - [skip-symbolic-links](http://dev.mysql.com/doc/refman/5.7/en/server-\n    options.html#option_mysqld_symbolic-links)\n * default['mysql']['security']['skip_show_database'] - [skip-show-database](http://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_skip-show-database)\n * default['mysql']['security']['local_infile'] - [local-infile](http://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_local_infile)\n * default['mysql']['security']['allow-suspicious-udfs'] - [allow-suspicious-udfs](https://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_allow-suspicious-udfs)\n * default['mysql']['security']['automatic_sp_privileges'] - [automatic_sp_privileges](https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_automatic_sp_privileges)\n * default['mysql']['security']['secure-file-priv'] - [secure-file-priv](https://dev.mysql.com/doc/refman/5.7/en/server-options.html#option_mysqld_secure-file-priv)\n\n## Security Configuration\n\nThis setup sets the following parameters by default\n\n    user = mysql\n    port = 3306\n    bind-address = X.Y.Z.W\n\n    # via ['mysql']['security']['local_infile']\n    local-infile = 0\n\n    # via ['mysql']['security']['safe_user_create']\n    safe-user-create = 1\n\n    # via ['mysql']['security']['secure_auth']\n    secure-auth = 1\n\n    # via ['mysql']['security']['skip_show_database']\n    skip-show-database\n\n    # via ['mysql']['security']['skip_symbolic_links']\n    skip-symbolic-links\n\n    # via ['mysql']['security']['automatic_sp_privileges']\n    automatic_sp_privileges = 0\n\n    # via ['mysql']['security']['secure-file-priv']\n    secure-file-priv = /tmp\n\n\nAdditionally it ensures that the following parameters are not set\n\n * deactivate old-passwords via `['mysql']['security']['secure_auth']`\n * deactivate allow-suspicious-udfs via `node['mysql']['security']['allow-suspicious-udfs']`\n * skip-grant-tables\n * chroot (instead we prefer AppArmor for Ubuntu)\n\nFurthermore the permission of `/var/lib/mysql` is limited to `mysql` user.\n\n## Tests\n\n```bash\n# Install dependencies\ngem install bundler\nbundle install\n\n# Do lint checks\nbundle exec rake lint\n\n# Fetch tests\nbundle exec thor kitchen:fetch-remote-tests\n\n# fast test on one machine\nbundle exec kitchen test default-ubuntu-1204\n\n# test on all machines\nbundle exec kitchen test\n\n# for development\nbundle exec kitchen create default-ubuntu-1204\nbundle exec kitchen converge default-ubuntu-1204\n```\n    \n## Tested Operating Systems\n\n* Ubuntu 12.04\n* Ubuntu 14.04\n* CentOS 6.4\n* CentOS 6.5\n* Oracle 6.4\n* Oracle 6.5\n* Debain 7\n\n## Contributors + Kudos\n\n* Dominik Richter\n* Christoph Hartmann\n* Patrick Meier\n* Edmund Haselwanter\n\n## License and Author\n\n* Author:: Deutsche Telekom AG\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/mysql",
+      "revision": "> 5.2.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "mysql-hardening::default": "installs a hardened mysql server",
+    "mysql-hardening::server": "installs a hardened mysql server"
+  }
+}

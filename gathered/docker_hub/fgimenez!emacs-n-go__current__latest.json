@@ -1,0 +1,138 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/fgimenez/emacs-n-go",
+    "repository_url": "https://hub.docker.com/v2/repositories/fgimenez/emacs-n-go",
+    "tags_url": "https://hub.docker.com/v2/repositories/fgimenez/emacs-n-go/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/fgimenez/emacs-n-go/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/fgimenez/emacs-n-go/autobuild",
+    "user": "fgimenez",
+    "name": "emacs-n-go",
+    "namespace": "fgimenez",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 5,
+    "pull_count": 3417,
+    "last_updated": "2015-11-14T12:20:41.281107Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "current",
+        "full_size": 303800086,
+        "id": 123295,
+        "repository": 79409,
+        "creator": 126060,
+        "last_updater": 126060,
+        "last_updated": "2015-11-14T12:20:45.392602Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.3.3",
+        "full_size": 295381702,
+        "id": 123287,
+        "repository": 79409,
+        "creator": 126060,
+        "last_updater": 126060,
+        "last_updated": "2015-11-14T12:16:57.008160Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 373126305,
+        "id": 123258,
+        "repository": 79409,
+        "creator": 126060,
+        "last_updater": 126060,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "fgimenez/emacs-n-go"
+  },
+  "name": "fgimenez/emacs-n-go Docker container",
+  "description": "GoLang emacs-based development container",
+  "readme": "This container is meant to run an emacs version configured for GoLang development.\n\nIt downloads the binaries (1.5) and sets up all the required directory structure and environment variables as described in [1] in ubuntu14.04.\n\nThis is based on the go dev container at [2] and the configuration of emacs for go development at [3], thank you guys!\n\nIt includes godep, gocode, goimports, golint, godef and goconvey. If your go source files reside at `/path/to/go/src` then you can spin up the container with:\n\n    docker run -v /path/to/go/src:/workspace/src/github.com/myuser/myproject -i -t fgimenez/emacs-n-go /usr/bin/emacs\n\nYou can also use the `emacs-n-go.sh` script, which spins a goconvey server in `http://127.0.0.1:8080` and executes automatically tests in your working directory (it may require sudo credentials for the docker command):\n\n    ./emacs-n-go.sh /path/to/go/src github.com/myuser/myproject\n\nIf executed without arguments takes the current directory as source and github.com/$USER/<current directory basename> as package\n\n    ./emacs-n-go.sh\n\nHappy coding!\n\n[1] http://golang.org/doc/code.html\n\n[2] https://registry.hub.docker.com/u/tmrudick/go/\n\n[3] http://tleyden.github.io/blog/2014/05/22/configure-emacs-as-a-go-editor-from-scratch/\n",
+  "dockerfile": "FROM ubuntu:15.04\n\nMAINTAINER Federico Gimenez <fgimenez@canonical.com>\n\n# Install packages: wget, git, mercurial and emacs\nRUN apt-get update && \\\n    apt-get install -y wget git mercurial emacs24-nox bzr build-essential && \\\n    apt-get clean\n\n# Download and install the Go\nRUN wget http://golang.org/dl/go1.5.linux-amd64.tar.gz && \\\n    tar -C /usr/local -xzf go1.5.linux-amd64.tar.gz && \\\n    rm go1.5.linux-amd64.tar.gz\n\n# Set the path\nENV PATH $PATH:/usr/local/go/bin:/workspace/bin\n\n# Create a Go workspace directory\nRUN mkdir -p /workspace/bin /workspace/pkg /workspace/src\n\nENV GOPATH /workspace\nENV GOROOT /usr/local/go\n\n# temporary fix for 9fans\nRUN mkdir -p /tmp/9fans.net && \\\n    git clone https://github.com/9fans/go /tmp/9fans.net/go && \\\n    mv /tmp/9fans.net $GOPATH/src && \\\n    go install 9fans.net/go/acme\n\n# install go packages\nRUN go get -u -v github.com/tools/godep && \\\n    go get -u -v github.com/nsf/gocode && \\\n    go get -u -v golang.org/x/tools/cmd/goimports && \\\n    go get -u -v github.com/golang/lint/golint && \\\n    go get -u -v github.com/rogpeppe/godef && \\\n    go get -u -v github.com/smartystreets/goconvey\n  \n# container user\nRUN groupadd -f -g 100 dummy && \\\n    useradd -s /bin/bash -u 1000 -g users dummy && \\\n    mkdir -p /home/dummy && \\\n    chown -R dummy:dummy /home/dummy /workspace\n\n# clone emacs conf\nRUN git clone https://github.com/fgimenez/.emacs.d.git /home/dummy/.emacs.d && \\\n    cd /home/dummy/.emacs.d && \\\n    git checkout origin/go\n\nUSER dummy\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update &&     apt-get install -y wget git mercurial emacs24-nox bzr build-essential &&     apt-get clean",
+      "wget http://golang.org/dl/go1.5.linux-amd64.tar.gz &&     tar -C /usr/local -xzf go1.5.linux-amd64.tar.gz &&     rm go1.5.linux-amd64.tar.gz",
+      "mkdir -p /workspace/bin /workspace/pkg /workspace/src",
+      "mkdir -p /tmp/9fans.net &&     git clone https://github.com/9fans/go /tmp/9fans.net/go &&     mv /tmp/9fans.net $GOPATH/src &&     go install 9fans.net/go/acme",
+      "go get -u -v github.com/tools/godep &&     go get -u -v github.com/nsf/gocode &&     go get -u -v golang.org/x/tools/cmd/goimports &&     go get -u -v github.com/golang/lint/golint &&     go get -u -v github.com/rogpeppe/godef &&     go get -u -v github.com/smartystreets/goconvey",
+      "groupadd -f -g 100 dummy &&     useradd -s /bin/bash -u 1000 -g users dummy &&     mkdir -p /home/dummy &&     chown -R dummy:dummy /home/dummy /workspace",
+      "git clone https://github.com/fgimenez/.emacs.d.git /home/dummy/.emacs.d &&     cd /home/dummy/.emacs.d &&     git checkout origin/go"
+    ],
+    "workdir": [],
+    "from": "ubuntu:15.04",
+    "maintainer": "Federico Gimenez <fgimenez@canonical.com>",
+    "env": {
+      "PATH": "$PATH:/usr/local/go/bin:/workspace/bin",
+      "GOPATH": "/workspace",
+      "GOROOT": "/usr/local/go"
+    },
+    "user": "dummy"
+  },
+  "source_repository_url": "https://github.com/fgimenez/emacs-n-go.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/fgimenez/emacs-n-go",
+  "docker_repository": "fgimenez/emacs-n-go",
+  "docker_image": "fgimenez/emacs-n-go",
+  "parameters_schema": {
+    "PATH": {
+      "default": "$PATH:/usr/local/go/bin:/workspace/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOPATH": {
+      "default": "/workspace",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOROOT": {
+      "default": "/usr/local/go",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "fgimenez/emacs-n-go",
+  "revision": "current",
+  "uris": [
+    "https://hub.docker.com/r/fgimenez/emacs-n-go",
+    "https://hub.docker.com/v2/repositories/fgimenez/emacs-n-go",
+    "https://github.com/fgimenez/emacs-n-go.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/macOS",
+    "Type/Middleware/Runtime/Golang"
+  ],
+  "info_url": "https://hub.docker.com/r/fgimenez/emacs-n-go",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

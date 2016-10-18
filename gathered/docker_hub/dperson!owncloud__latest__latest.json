@@ -1,0 +1,95 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dperson/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/dperson/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/dperson/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dperson/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dperson/owncloud/autobuild",
+    "user": "dperson",
+    "name": "owncloud",
+    "namespace": "dperson",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 9,
+    "pull_count": 1728,
+    "last_updated": "2016-10-10T20:43:20.474317Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 148632628,
+        "id": 52876,
+        "repository": 75544,
+        "creator": 102881,
+        "last_updater": 102881,
+        "last_updated": "2016-10-10T20:43:19.900889Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "dperson/owncloud"
+  },
+  "name": "dperson/owncloud Docker container",
+  "description": "",
+  "readme": "[![logo](https://raw.githubusercontent.com/dperson/owncloud/master/logo.png)](http://owncloud.org/)\n\n# ownCloud\n\nownCloud docker container\n\n# What is ownCloud?\n\nownCloud is a software system for what is commonly termed \"file hosting\". As\nsuch, ownCloud is very similar to the widely used Dropbox, with the primary\ndifference being that ownCloud is free and open-source, and thereby allowing\nanyone to install and operate it without charge on a private server, with no\nlimits on storage space (except for hard disk capacity) or the number of\nconnected clients.\n\n# How to use this image\n\nThis ownCloud container was built with lightppd. It defaults to SQLite for the\nDB ,but you can choose PostgreSQL or MySQL, for more performance.\n\n## Hosting a ownCloud instance on port 8000\n\n    sudo docker run -it --name owncloud -p 8000:80 -d dperson/owncloud\n\nOR with a DB:\n\n    sudo docker run -it --name postgres -d postgres\n    sudo docker run -it --name owncloud --link postgresql:db -p 8000:80 -d \\\n                dperson/owncloud\n\nAND/OR set the host name (important for the WebDAV feature):\n\n    sudo docker run -it -h host.domain.com --name owncloud -p 8000:80 -d \\\n                dperson/owncloud\n\nAND/OR set local storage:\n\n    sudo docker run -it --name owncloud -p 8000:80 \\\n                -v /path/to/owncloud/directory:/var/www/owncloud/data -d \\\n                dperson/owncloud\n\n## Configuration\n\n    sudo docker run -it --rm dperson/owncloud -h\n\n    Usage: owncloud.sh [-opt] [command]\n    Options (fields in '[]' are optional, '<>' are required):\n        -h          This help\n        -p \"<proxy>\" Configure trusted_proxies\n        -t \"\"       Configure timezone\n                    possible arg: \"[timezone]\" - zoneinfo timezone for container\n\n    The 'command' (if provided and valid) will be run instead of owncloud\n\nENVIRONMENT VARIABLES (only available with `docker run`)\n\n * `PROXY` - As above, configure the proxy, IE `172.17.0.11`\n * `TZ` - As above, configure the zoneinfo timezone, IE `EST5EDT`\n * `USERID` - Set the UID for the app user\n * `GROUPID` - Set the GID for the app user\n\n## Examples\n\nAny of the commands can be run at creation with `docker run` or later with\n`docker exec -it owncloud.sh` (as of version 1.3 of docker).\n\n### Setting the Timezone\n\n    sudo docker run -it --name owncloud -d dperson/owncloud -t EST5EDT\n\nOR using `environment variables`\n\n    sudo docker run -it --name owncloud -e TZ=EST5EDT -d dperson/owncloud\n\nWill get you the same settings as\n\n    sudo docker run -it --name owncloud -p 8000:80 -d dperson/owncloud\n    sudo docker exec -it owncloud owncloud.sh -t EST5EDT ls -AlF /etc/localtime\n    sudo docker restart owncloud\n\n# User Feedback\n\n## Issues\n\nIf you have any problems with or questions about this image, please contact me\nthrough a [GitHub issue](https://github.com/dperson/owncloud/issues).",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER David Personette <dperson@gmail.com>\n\n# Install php and ownCloud\nRUN export DEBIAN_FRONTEND='noninteractive' && \\\n    export url='https://download.owncloud.org/community' && \\\n    export version='9.1.1' && \\\n    export sha256sum='a6bf3531ebb7e09a11aaae641bc3af933f339261424782841c64' && \\\n    apt-get update -qq && \\\n    apt-get install -qqy --no-install-recommends ca-certificates curl && \\\n    echo \"deb http://packages.dotdeb.org jessie all\" \\\n                >>/etc/apt/sources.list.d/dotdeb.list && \\\n    curl -Ls https://www.dotdeb.org/dotdeb.gpg | apt-key add - && \\\n    apt-get update -qq && \\\n    apt-get install -qqy --no-install-recommends bzip2 lighttpd openssl \\\n                php7.0-apcu-bc php7.0-bz2 php7.0-cgi php7.0-curl php7.0-gd \\\n                php7.0-gmp php7.0-imagick php7.0-imap php7.0-intl php7.0-json \\\n                php7.0-ldap php7.0-mbstring php7.0-mcrypt php7.0-mysql \\\n                php7.0-opcache php7.0-pgsql php7.0-sqlite3 php7.0-xml \\\n                php7.0-zip smbclient \\\n                $(apt-get -s dist-upgrade|awk '/^Inst.*ecurity/ {print $2}') &&\\\n    echo \"downloading owncloud-${version}.tar.bz2 ...\" && \\\n    curl -LOsC- ${url}/owncloud-${version}.tar.bz2 && \\\n    sha256sum owncloud-${version}.tar.bz2 | grep -q \"$sha256sum\" && \\\n    conf=/etc/lighttpd/lighttpd.conf dir=/etc/lighttpd/conf-available \\\n                header=setenv.add-response-header \\\n                match='(?:\\.htaccess|data|config|db_structure\\.xml|README)' && \\\n    sed -i '/server.errorlog/s|^|#|' $conf && \\\n    sed -i '/server.document-root/s|/html||' $conf && \\\n    sed -i '/mod_rewrite/a\\ \\t\"mod_setenv\",' $conf && \\\n    echo \"\\\\n$header\"' += ( \"X-XSS-Protection\" => \"1; mode=block\" )' >>$conf &&\\\n    echo \"$header\"' += ( \"X-Content-Type-Options\" => \"nosniff\" )' >>$conf && \\\n    echo \"$header\"' += ( \"X-Robots-Tag\" => \"none\" )' >>$conf&& \\\n    echo \"$header\"' += ( \"X-Frame-Options\" => \"SAMEORIGIN\" )' >>$conf && \\\n    echo '\\n$HTTP[\"url\"] =~ \"^/owncloud($|/)\" {' >>$conf && \\\n    echo '\\tdir-listing.activate = \"disable\"\\n}' >>$conf && \\\n    echo '$HTTP[\"url\"] =~ \"^/owncloud/'\"$match\"'\" {' >>$conf && \\\n    echo '\\turl.access-deny = (\"\")\\n}' >>$conf && \\\n    echo '\\nurl.redirect  = (\"^/$\" => \"/owncloud\")' >>$conf && \\\n    sed -i 's|var/log/lighttpd/access.log|tmp/log|' $dir/10-accesslog.conf && \\\n    sed -i '/^#cgi\\.assign/,$s/^#//; /\"\\.pl\"/i\\ \\t\".cgi\"  => \"/usr/bin/perl\",' \\\n                $dir/10-cgi.conf && \\\n    sed -i -e '/CHILDREN/s/[0-9][0-9]*/16/' \\\n                -e '/max-procs/a\\ \\t\\t\"idle-timeout\" => 20,' \\\n                $dir/15-fastcgi-php.conf && \\\n    grep -q 'allow-x-send-file' $dir/15-fastcgi-php.conf || { \\\n        sed -i '/idle-timeout/a\\ \\t\\t\"allow-x-send-file\" => \"enable\",' \\\n                    $dir/15-fastcgi-php.conf && \\\n        sed -i '/\"bin-environment\"/a\\ \\t\\t\\t\"MOD_X_SENDFILE2_ENABLED\" => \"1\",' \\\n                    $dir/15-fastcgi-php.conf; } && \\\n    unset conf dir header match && \\\n    lighttpd-enable-mod accesslog && \\\n    lighttpd-enable-mod fastcgi-php && \\\n    for i in /etc/php/7.0/*/php.ini; do \\\n        sed -i 's|^;*\\(doc_root\\) *=.*|\\1 = \"/var/www\"|' $i; \\\n        sed -i '/php_errors\\.log/s|^;*\\(error_log\\) *=.*|\\1 = /tmp/log|' $i; \\\n        sed -i 's/^;*\\(expose_php\\) *=.*/\\1 = On/' $i; \\\n        sed -i 's/^;*\\(max_execution_time\\) *=.*/\\1 = 3600/' $i; \\\n        sed -i 's/^;*\\(max_input_time\\) *=.*/\\1 = 3600/' $i; \\\n        sed -i 's/^;*\\(output_buffering\\) *=.*/\\1 = 0/' $i; \\\n        sed -i 's/^;*\\(post_max_size\\) *=.*/\\1 = 16G/' $i; \\\n        sed -i 's/^;*\\(upload_max_filesize\\) *=.*/\\1 = 16G/' $i; \\\n        sed -i 's/^;*\\(opcache.enable\\) *=.*/\\1 = 1/' $i; \\\n        sed -i 's/^;*\\(opcache.enable_cli\\) *=.*/\\1 = 1/' $i; \\\n        sed -i 's/^;*\\(opcache.fast_shutdown\\) *=.*/\\1 = 1/' $i; \\\n        sed -i 's/^;*\\(opcache.interned_strings_buffer\\) *=.*/\\1 = 8/' $i; \\\n        sed -i 's/^;*\\(opcache.max_accelerated_files\\) *=.*/\\1 = 4000/' $i; \\\n        sed -i 's/^;*\\(opcache.memory_consumption\\) *=.*/\\1 = 128/' $i; \\\n        sed -i 's/^;*\\(opcache.revalidate_freq\\) *=.*/\\1 = 60/' $i; \\\n    done && \\\n    echo '\\n[apc]\\napc.enable_cli = 1' >>/etc/php/7.0/mods-available/apcu.ini&&\\\n    mkdir -p /run/lighttpd && \\\n    apt-get purge -qqy ca-certificates curl && \\\n    apt-get autoremove -qqy && apt-get clean && \\\n    rm -rf /var/lib/apt/lists/* /tmp/*\nCOPY owncloud.sh /usr/bin/\n\nVOLUME [\"/var/cache/lighttpd\", \"/var/www/owncloud\"]\n\nEXPOSE 80\n\nENTRYPOINT [\"owncloud.sh\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/var/cache/lighttpd\", \"/var/www/owncloud\"]"
+    ],
+    "run": [
+      "export DEBIAN_FRONTEND='noninteractive' &&     export url='https://download.owncloud.org/community' &&     export version='9.1.1' &&     export sha256sum='a6bf3531ebb7e09a11aaae641bc3af933f339261424782841c64' &&     apt-get update -qq &&     apt-get install -qqy --no-install-recommends ca-certificates curl &&     echo \"deb http://packages.dotdeb.org jessie all\"                 >>/etc/apt/sources.list.d/dotdeb.list &&     curl -Ls https://www.dotdeb.org/dotdeb.gpg | apt-key add - &&     apt-get update -qq &&     apt-get install -qqy --no-install-recommends bzip2 lighttpd openssl                 php7.0-apcu-bc php7.0-bz2 php7.0-cgi php7.0-curl php7.0-gd                 php7.0-gmp php7.0-imagick php7.0-imap php7.0-intl php7.0-json                 php7.0-ldap php7.0-mbstring php7.0-mcrypt php7.0-mysql                 php7.0-opcache php7.0-pgsql php7.0-sqlite3 php7.0-xml                 php7.0-zip smbclient                 $(apt-get -s dist-upgrade|awk '/^Inst.*ecurity/ {print $2}') &&    echo \"downloading owncloud-${version}.tar.bz2 ...\" &&     curl -LOsC- ${url}/owncloud-${version}.tar.bz2 &&     sha256sum owncloud-${version}.tar.bz2 | grep -q \"$sha256sum\" &&     conf=/etc/lighttpd/lighttpd.conf dir=/etc/lighttpd/conf-available                 header=setenv.add-response-header                 match='(?:\\.htaccess|data|config|db_structure\\.xml|README)' &&     sed -i '/server.errorlog/s|^|#|' $conf &&     sed -i '/server.document-root/s|/html||' $conf &&     sed -i '/mod_rewrite/a\\ \\t\"mod_setenv\",' $conf &&     echo \"\\\\n$header\"' += ( \"X-XSS-Protection\" => \"1; mode=block\" )' >>$conf &&    echo \"$header\"' += ( \"X-Content-Type-Options\" => \"nosniff\" )' >>$conf &&     echo \"$header\"' += ( \"X-Robots-Tag\" => \"none\" )' >>$conf&&     echo \"$header\"' += ( \"X-Frame-Options\" => \"SAMEORIGIN\" )' >>$conf &&     echo '\\n$HTTP[\"url\"] =~ \"^/owncloud($|/)\" {' >>$conf &&     echo '\\tdir-listing.activate = \"disable\"\\n}' >>$conf &&     echo '$HTTP[\"url\"] =~ \"^/owncloud/'\"$match\"'\" {' >>$conf &&     echo '\\turl.access-deny = (\"\")\\n}' >>$conf &&     echo '\\nurl.redirect  = (\"^/$\" => \"/owncloud\")' >>$conf &&     sed -i 's|var/log/lighttpd/access.log|tmp/log|' $dir/10-accesslog.conf &&     sed -i '/^#cgi\\.assign/,$s/^#//; /\"\\.pl\"/i\\ \\t\".cgi\"  => \"/usr/bin/perl\",'                 $dir/10-cgi.conf &&     sed -i -e '/CHILDREN/s/[0-9][0-9]*/16/'                 -e '/max-procs/a\\ \\t\\t\"idle-timeout\" => 20,'                 $dir/15-fastcgi-php.conf &&     grep -q 'allow-x-send-file' $dir/15-fastcgi-php.conf || {         sed -i '/idle-timeout/a\\ \\t\\t\"allow-x-send-file\" => \"enable\",'                     $dir/15-fastcgi-php.conf &&         sed -i '/\"bin-environment\"/a\\ \\t\\t\\t\"MOD_X_SENDFILE2_ENABLED\" => \"1\",'                     $dir/15-fastcgi-php.conf; } &&     unset conf dir header match &&     lighttpd-enable-mod accesslog &&     lighttpd-enable-mod fastcgi-php &&     for i in /etc/php/7.0/*/php.ini; do         sed -i 's|^;*\\(doc_root\\) *=.*|\\1 = \"/var/www\"|' $i;         sed -i '/php_errors\\.log/s|^;*\\(error_log\\) *=.*|\\1 = /tmp/log|' $i;         sed -i 's/^;*\\(expose_php\\) *=.*/\\1 = On/' $i;         sed -i 's/^;*\\(max_execution_time\\) *=.*/\\1 = 3600/' $i;         sed -i 's/^;*\\(max_input_time\\) *=.*/\\1 = 3600/' $i;         sed -i 's/^;*\\(output_buffering\\) *=.*/\\1 = 0/' $i;         sed -i 's/^;*\\(post_max_size\\) *=.*/\\1 = 16G/' $i;         sed -i 's/^;*\\(upload_max_filesize\\) *=.*/\\1 = 16G/' $i;         sed -i 's/^;*\\(opcache.enable\\) *=.*/\\1 = 1/' $i;         sed -i 's/^;*\\(opcache.enable_cli\\) *=.*/\\1 = 1/' $i;         sed -i 's/^;*\\(opcache.fast_shutdown\\) *=.*/\\1 = 1/' $i;         sed -i 's/^;*\\(opcache.interned_strings_buffer\\) *=.*/\\1 = 8/' $i;         sed -i 's/^;*\\(opcache.max_accelerated_files\\) *=.*/\\1 = 4000/' $i;         sed -i 's/^;*\\(opcache.memory_consumption\\) *=.*/\\1 = 128/' $i;         sed -i 's/^;*\\(opcache.revalidate_freq\\) *=.*/\\1 = 60/' $i;     done &&     echo '\\n[apc]\\napc.enable_cli = 1' >>/etc/php/7.0/mods-available/apcu.ini&&    mkdir -p /run/lighttpd &&     apt-get purge -qqy ca-certificates curl &&     apt-get autoremove -qqy && apt-get clean &&     rm -rf /var/lib/apt/lists/* /tmp/*"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "David Personette <dperson@gmail.com>",
+    "copy": "owncloud.sh /usr/bin/",
+    "entrypoint": "[\"owncloud.sh\"]"
+  },
+  "source_repository_url": "https://github.com/dperson/owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/dperson/owncloud",
+  "docker_repository": "dperson/owncloud",
+  "docker_image": "dperson/owncloud",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dperson/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/dperson/owncloud",
+    "https://hub.docker.com/v2/repositories/dperson/owncloud",
+    "https://github.com/dperson/owncloud.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/dperson/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

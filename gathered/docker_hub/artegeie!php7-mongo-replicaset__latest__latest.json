@@ -1,0 +1,122 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/artegeie/php7-mongo-replicaset",
+    "repository_url": "https://hub.docker.com/v2/repositories/artegeie/php7-mongo-replicaset",
+    "tags_url": "https://hub.docker.com/v2/repositories/artegeie/php7-mongo-replicaset/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/artegeie/php7-mongo-replicaset/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/artegeie/php7-mongo-replicaset/autobuild",
+    "user": "artegeie",
+    "name": "php7-mongo-replicaset",
+    "namespace": "artegeie",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 1647,
+    "last_updated": "2016-10-06T15:03:40.699815Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 376167296,
+        "id": 2489779,
+        "repository": 611411,
+        "creator": 154557,
+        "last_updater": 154557,
+        "last_updated": "2016-10-06T15:03:40.358917Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "ArteGEIE/docker-images"
+  },
+  "name": "artegeie/php7-mongo-replicaset Docker container",
+  "description": "A php7 docker image with mongo and elasticsearch.",
+  "readme": "php-mongo-replicaset\n====================\n\nThis docker container can be used to execute unit tests with a mongodb database (configure with a replicaset).\n\nBy default, command starts mongodb and run phpunit with configuration file into /data/app directory.\nIt is not very elegant because mongo and php are started in the same container but it is easier.\n\nTo build the container\n----------------------\n\n```\n$ docker build -t artegeie/php7-mongo-replicaset .\n```\n\nTo run the container\n--------------------\n\nContainer must be run with privileged mode (due to mongodb) :\n\n```\n$ cd my-symfony2-project/\n$ docker run -it --privileged=true --rm -v `pwd`:/data -w /data artegeie/php7-mongo-replicaset\n```\n",
+  "dockerfile": "FROM php:7.0-cli\n\nADD php/php.ini /usr/local/etc/php/php.ini\n\n# Add 10gen official apt source to the sources list\nRUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927\nRUN echo \"deb http://repo.mongodb.org/apt/debian wheezy/mongodb-org/3.2 main\" | tee /etc/apt/sources.list.d/mongodb-org-3.2.list\n# Install MongoDB and dependencies for intl and zip extensions\nRUN apt-get update && apt-get upgrade -y && apt-get install -y mongodb-org libicu-dev g++ sudo zlib1g-dev git libssl-dev wget\n\nRUN echo \"y\\ny\" | pecl install apcu-beta\nRUN pecl install apcu_bc-beta\nADD php/apcu.ini /usr/local/etc/php/conf.d/apcu.ini\nRUN docker-php-ext-install bcmath mbstring opcache intl pcntl zip\nADD php/opcache.ini /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini\nRUN pecl install mongodb\nADD php/mongodb.ini /usr/local/etc/php/conf.d/mongodb.ini\n\n# install composer\nRUN cd /usr/local/bin/ && curl -sS https://getcomposer.org/installer | php\n\n# This dockerfile is ugly with so many dependencies. Next time, we will use docker composer\nRUN wget -qO - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | sudo apt-key add - && \\\n    echo 'deb http://packages.elasticsearch.org/elasticsearch/2.x/debian stable main' \\\n      | tee /etc/apt/sources.list.d/elasticsearch.list && \\\n    apt-get update && \\\n    apt-get install --no-install-recommends -y elasticsearch openjdk-7-jre-headless && \\\n    /usr/share/elasticsearch/bin/plugin install analysis-icu && \\\n    /usr/share/elasticsearch/bin/plugin install analysis-stempel\n\n# Compact docker\nRUN apt-get clean -y  && rm -rf /tmp/pear/* && rm -rf /var/lib/apt/lists/*\n\nADD sudo/sudoers /etc/sudoers\n\nCMD /usr/bin/mongod --smallfiles --dbpath /var/lib/mongodb/ --replSet rs1 --logpath /var/log/mongodb/mongodb.log --fork && \\\n    /usr/bin/mongo --eval 'rs.initiate();' && \\\n    /data/bin/phpunit -c /data/app/\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "php/php.ini",
+        "dest": "/usr/local/etc/php/php.ini"
+      },
+      {
+        "source": "php/apcu.ini",
+        "dest": "/usr/local/etc/php/conf.d/apcu.ini"
+      },
+      {
+        "source": "php/opcache.ini",
+        "dest": "/usr/local/etc/php/conf.d/docker-php-ext-opcache.ini"
+      },
+      {
+        "source": "php/mongodb.ini",
+        "dest": "/usr/local/etc/php/conf.d/mongodb.ini"
+      },
+      {
+        "source": "sudo/sudoers",
+        "dest": "/etc/sudoers"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927",
+      "echo \"deb http://repo.mongodb.org/apt/debian wheezy/mongodb-org/3.2 main\" | tee /etc/apt/sources.list.d/mongodb-org-3.2.list",
+      "apt-get update && apt-get upgrade -y && apt-get install -y mongodb-org libicu-dev g++ sudo zlib1g-dev git libssl-dev wget",
+      "echo \"y\\ny\" | pecl install apcu-beta",
+      "pecl install apcu_bc-beta",
+      "docker-php-ext-install bcmath mbstring opcache intl pcntl zip",
+      "pecl install mongodb",
+      "cd /usr/local/bin/ && curl -sS https://getcomposer.org/installer | php",
+      "wget -qO - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | sudo apt-key add - &&     echo 'deb http://packages.elasticsearch.org/elasticsearch/2.x/debian stable main'       | tee /etc/apt/sources.list.d/elasticsearch.list &&     apt-get update &&     apt-get install --no-install-recommends -y elasticsearch openjdk-7-jre-headless &&     /usr/share/elasticsearch/bin/plugin install analysis-icu &&     /usr/share/elasticsearch/bin/plugin install analysis-stempel",
+      "apt-get clean -y  && rm -rf /tmp/pear/* && rm -rf /var/lib/apt/lists/*"
+    ],
+    "workdir": [],
+    "from": "php:7.0-cli",
+    "cmd": "/usr/bin/mongod --smallfiles --dbpath /var/lib/mongodb/ --replSet rs1 --logpath /var/log/mongodb/mongodb.log --fork &&     /usr/bin/mongo --eval 'rs.initiate();' &&     /data/bin/phpunit -c /data/app/"
+  },
+  "source_repository_url": "git@github.com:ArteGEIE/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/ArteGEIE/docker-images",
+  "docker_repository": "artegeie/php7-mongo-replicaset",
+  "docker_image": "artegeie/php7-mongo-replicaset",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "artegeie/php7-mongo-replicaset",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/artegeie/php7-mongo-replicaset",
+    "https://hub.docker.com/v2/repositories/artegeie/php7-mongo-replicaset",
+    "git@github.com:ArteGEIE/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/artegeie/php7-mongo-replicaset",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

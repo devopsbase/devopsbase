@@ -1,0 +1,183 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/tozd/postgresql",
+    "repository_url": "https://hub.docker.com/v2/repositories/tozd/postgresql",
+    "tags_url": "https://hub.docker.com/v2/repositories/tozd/postgresql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/tozd/postgresql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/tozd/postgresql/autobuild",
+    "user": "tozd",
+    "name": "postgresql",
+    "namespace": "tozd",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 2574,
+    "last_updated": "2016-10-17T02:54:23.354337Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "9.3",
+        "full_size": 133064426,
+        "id": 1444606,
+        "repository": 213009,
+        "creator": 345635,
+        "last_updater": 169842,
+        "last_updated": "2016-10-17T02:54:22.959597Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9.4",
+        "full_size": 144430060,
+        "id": 1380894,
+        "repository": 213009,
+        "creator": 345635,
+        "last_updater": 169842,
+        "last_updated": "2016-10-17T02:48:02.704530Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9.5",
+        "full_size": 137564275,
+        "id": 3468495,
+        "repository": 213009,
+        "creator": 169842,
+        "last_updater": 169842,
+        "last_updated": "2016-10-17T02:40:33.169653Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 133064401,
+        "id": 181008,
+        "repository": 213009,
+        "creator": 169842,
+        "last_updater": 169842,
+        "last_updated": "2016-10-17T02:34:26.807289Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "tozd/docker-postgresql"
+  },
+  "name": "tozd/postgresql Docker container",
+  "description": "PostgreSQL Docker image.",
+  "readme": "Image providing [PostgreSQL](http://www.postgresql.org/) as a service.\n\nDifferent branches/tags provide different PostgreSQL versions.\n\nYou should make sure you mount data volume (`/var/lib/postgresql`) so that you do not\nlose database data when you are recreating a container. If a volume is empty, image\nwill initialize it at the first startup.\n\nThe intended use of this image is that it is shared between multiple other services\nand that you create databases and users accordingly.\n\nAfter first run, you can connect to the PostgreSQL as an administrator from the inside\nthe container, for example, for a container named `postgresql`:\n\n```\n$ docker exec -t -i postgresql /bin/bash\n$ psql -U postgres postgres\n```\n\nYou can create users:\n\n```\n$ createuser -U postgres -DRS -PE <USERNAME>\n```\n\nYou can create a database:\n\n```\n$ createdb -U postgres -O <USERNAME> <DBNAME>\n```\n\nYou can install PostGIS into your database by connecting to it and running:\n\n```\n> CREATE EXTENSION postgis;\n```\n\nIf you are extending this image, you can add a script `/etc/service/postgresql/run.initialization`\nwhich will be run at a container startup, after the container is initialized, but before the\nPostgreSQL daemon is run.\n\nWhen data volume is initialized at the first startup, you can instruct the image to automatically\ncreate an user and/or a database by passing environment variables to a container:\n\n* `PGSQL_ROLE_1_USERNAME` - username of a user to create\n* `PGSQL_ROLE_1_PASSWORD` - password for the created user\n* `PGSQL_ROLE_1_FLAGS` – any flags at user creation, by default `LOGIN`\n* `PGSQL_DB_1_NAME` – name of a database to be created\n* `PGSQL_DB_1_OWNER` – username of the owner of the database, must be set for database creation to work\n* `PGSQL_DB_1_ENCODING` – encoding for the database, by default `UNICODE`\n* `PGSQL_DB_1_POSTGIS` – if set, PostGIS will be installed in the database\n",
+  "dockerfile": "FROM tozd/runit\n\nEXPOSE 5432/tcp\n\nVOLUME /var/log/postgresql\nVOLUME /var/lib/postgresql\n\nENV PGSQL_ROLE_1_USERNAME=\nENV PGSQL_ROLE_1_PASSWORD=\nENV PGSQL_ROLE_1_FLAGS LOGIN\n\nENV PGSQL_DB_1_NAME=\nENV PGSQL_DB_1_OWNER=\nENV PGSQL_DB_1_ENCODING UNICODE\nENV PGSQL_DB_1_POSTGIS=\n\nRUN apt-get update -q -q && \\\n locale-gen --no-purge en_US.UTF-8 && \\\n update-locale LANG=en_US.UTF-8 && \\\n echo locales locales/locales_to_be_generated multiselect en_US.UTF-8 UTF-8 | debconf-set-selections && \\\n echo locales locales/default_environment_locale select en_US.UTF-8 | debconf-set-selections && \\\n dpkg-reconfigure locales && \\\n apt-get --no-install-recommends --yes --force-yes install postgresql-9.3 postgresql-9.3-postgis-2.1 && \\\n mkdir -m 700 /var/lib/postgresql.orig && \\\n mv /var/lib/postgresql/* /var/lib/postgresql.orig/ && \\\n echo 'mappostgres postgres postgres' >> /etc/postgresql/9.3/main/pg_ident.conf && \\\n echo 'mappostgres root postgres' >> /etc/postgresql/9.3/main/pg_ident.conf && \\\n echo 'host all all 0.0.0.0/0 md5' >> /etc/postgresql/9.3/main/pg_hba.conf && \\\n echo 'hostssl all all 0.0.0.0/0 md5' >> /etc/postgresql/9.3/main/pg_hba.conf && \\\n sed -r -i 's/local\\s+all\\s+postgres\\s+peer/local all postgres peer map=mappostgres/' /etc/postgresql/9.3/main/pg_hba.conf && \\\n echo \"include_dir = 'conf.d'\" >> /etc/postgresql/9.3/main/postgresql.conf\n\nCOPY ./etc /etc\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5432
+    ],
+    "volume": [
+      "/var/log/postgresql",
+      "/var/lib/postgresql"
+    ],
+    "run": [
+      "apt-get update -q -q &&  locale-gen --no-purge en_US.UTF-8 &&  update-locale LANG=en_US.UTF-8 &&  echo locales locales/locales_to_be_generated multiselect en_US.UTF-8 UTF-8 | debconf-set-selections &&  echo locales locales/default_environment_locale select en_US.UTF-8 | debconf-set-selections &&  dpkg-reconfigure locales &&  apt-get --no-install-recommends --yes --force-yes install postgresql-9.3 postgresql-9.3-postgis-2.1 &&  mkdir -m 700 /var/lib/postgresql.orig &&  mv /var/lib/postgresql/* /var/lib/postgresql.orig/ &&  echo 'mappostgres postgres postgres' >> /etc/postgresql/9.3/main/pg_ident.conf &&  echo 'mappostgres root postgres' >> /etc/postgresql/9.3/main/pg_ident.conf &&  echo 'host all all 0.0.0.0/0 md5' >> /etc/postgresql/9.3/main/pg_hba.conf &&  echo 'hostssl all all 0.0.0.0/0 md5' >> /etc/postgresql/9.3/main/pg_hba.conf &&  sed -r -i 's/local\\s+all\\s+postgres\\s+peer/local all postgres peer map=mappostgres/' /etc/postgresql/9.3/main/pg_hba.conf &&  echo \"include_dir = 'conf.d'\" >> /etc/postgresql/9.3/main/postgresql.conf"
+    ],
+    "workdir": [],
+    "from": "tozd/runit",
+    "env": {
+      "PGSQL_ROLE_1_USERNAME": "",
+      "PGSQL_ROLE_1_PASSWORD": "",
+      "PGSQL_ROLE_1_FLAGS": "LOGIN",
+      "PGSQL_DB_1_NAME": "",
+      "PGSQL_DB_1_OWNER": "",
+      "PGSQL_DB_1_ENCODING": "UNICODE",
+      "PGSQL_DB_1_POSTGIS": ""
+    },
+    "copy": "./etc /etc"
+  },
+  "source_repository_url": "https://github.com/tozd/docker-postgresql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/tozd/docker-postgresql",
+  "docker_repository": "tozd/postgresql",
+  "docker_image": "tozd/postgresql",
+  "parameters_schema": {
+    "PGSQL_ROLE_1_USERNAME": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGSQL_ROLE_1_PASSWORD": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGSQL_ROLE_1_FLAGS": {
+      "default": "LOGIN",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGSQL_DB_1_NAME": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGSQL_DB_1_OWNER": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGSQL_DB_1_ENCODING": {
+      "default": "UNICODE",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGSQL_DB_1_POSTGIS": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5432
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "tozd/postgresql",
+  "revision": "9.3",
+  "uris": [
+    "https://hub.docker.com/r/tozd/postgresql",
+    "https://hub.docker.com/v2/repositories/tozd/postgresql",
+    "https://github.com/tozd/docker-postgresql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/tozd/postgresql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

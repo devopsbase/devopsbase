@@ -1,0 +1,127 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/pouzor/alpine-nginx-php-mongo",
+    "repository_url": "https://hub.docker.com/v2/repositories/pouzor/alpine-nginx-php-mongo",
+    "tags_url": "https://hub.docker.com/v2/repositories/pouzor/alpine-nginx-php-mongo/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/pouzor/alpine-nginx-php-mongo/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/pouzor/alpine-nginx-php-mongo/autobuild",
+    "user": "pouzor",
+    "name": "alpine-nginx-php-mongo",
+    "namespace": "pouzor",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 70,
+    "last_updated": "2016-09-06T13:28:38.329203Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 145164121,
+        "id": 4646109,
+        "repository": 893729,
+        "creator": 822645,
+        "last_updater": 822645,
+        "last_updated": "2016-09-06T13:28:37.535796Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "v2",
+        "full_size": 145164069,
+        "id": 4676703,
+        "repository": 893729,
+        "creator": 822645,
+        "last_updater": 822645,
+        "last_updated": "2016-09-06T08:57:25.423372Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Pouzor/alpine-nginx-php-mongo"
+  },
+  "name": "pouzor/alpine-nginx-php-mongo Docker container",
+  "description": "Symfony 2 PHP-FPM Nginx With MongoDB",
+  "readme": "# Symfony 2 PHP-FPM Nginx\n\nNginx and PHP-FPM running together in a docker container.\nThis image is based on `alpine:3.3` with [S6](http://skarnet.org/software/s6/) \nand optimized for Symfony 3.\n\n## Use\n\n### Mounting your project file for development purpose\n\nTo be used in your Symfony 3 folder:  \n`docker run -d --name my-app -p 1337:80 -e SYMFONY_ENV=dev -v $(pwd):/var/www gcanal/alpine-php-nginx .`\n\n### Use bash inside your container\n\n`docker exec -ti -u nginx:www-data -w /var/www my-app bash`\n\n## Build your own\n\n`docker build -t username/alpine-php-nginx .`\n\n## Tweak\n\nTo build a PHP extension from source, just append a `pecl_install` function in `rootfs/sbin/build-php-extensions`.  \nIt take 4 arguments:\n\n`pecl_install $EXT_TYPE $NAME $VERSION $CONFIGURE_ARGS`\n\n- `$EXT_TYPE`: either `extension` or `zend_extension`\n- `$NAME`: The name of your extension\n- `$VERSION`: The version you wish to build\n- `$CONFIGURE_ARGS`: configuration options passed to the  `./configure` script (ex: `--enable-memcache`)\n\n## Modify...\n\n...your `./web/app.php` file to switch between Symfony environments using (drum roll) an environment variable.\n\nFor example:\n\n```php\n<?php\nuse Symfony\\Component\\HttpFoundation\\Request;\n\n/** @var Composer\\Autoload\\ClassLoader $loader */\n$loader = require dirname(__DIR__) . '/app/autoload.php';\n\n$env = getenv('SYMFONY_ENV') ?: 'prod';\n$debug = false;\n\nif (in_array($env, ['dev', 'test'])) {\n    $debug = true;\n    Symfony\\Component\\Debug\\Debug::enable();\n} else {\n    include_once  dirname(__DIR__).'/var/bootstrap.php.cache';\n}\n\n$kernel = new AppKernel($env, $debug);\n$kernel->loadClassCache();\n\n$request = Request::createFromGlobals();\n$response = $kernel->handle($request);\n$response->send();\n$kernel->terminate($request, $response);\n```\n\n## Contribute\n\nThis image can be improved in many ways, feel free to contribute ;)\n",
+  "dockerfile": "FROM alpine:edge\n\nMAINTAINER Guillem CANAL <hello@guillem.ninja> \n\nENV S6VERSION 1.17.2.0\nENV PATH=/.composer/vendor/bin:$PATH\n\nCOPY rootfs /\n\nRUN echo \"@testing http://dl-4.alpinelinux.org/alpine/edge/testing\" >> /etc/apk/repositories \\\n    && apk add --update \\\n    wget \\\n    ca-certificates \\\n    openssh \\\n    nginx \\\n    php5-fpm \\  \n    php5-gd \\\n    php5-exif \\\n    php5-json \\\n    php5-zlib \\\n    php5-bz2 \\\n    php5-bcmath \\\n    php5-xml \\\n    php5-intl \\\n    php5-phar \\\n    php5-openssl \\\n    php5-mcrypt \\\n    php5-dom \\\n    php5-pdo \\\n    php5-mysql \\\n    php5-ctype \\\n    php5-opcache \\\n    php5-memcache \\\n    php5-curl \\\n    su-exec \\\n    openssl-dev \\\n    bash \\\n    git \\\n\n    # Configure PHP\n    && build-php-extensions \\\n\n\n    && echo \"memory_limit=-1\" >> /etc/php5/conf.d/docker.ini \\\n    && echo \"date.timezone=Europe/Paris\" >> /etc/php5/conf.d/docker.ini \\\n    && echo -e \"\\n[XDebug]\\nxdebug.idekey=\\\"docker\\\"\\nxdebug.remote_enable=On\\nxdebug.remote_connect_back=On\\nxdebug.remote_autostart=Off\" >> /etc/php5/conf.d/docker.ini \\\n\n    # Configure SSHD server\n\n    && ssh-keygen -f /etc/ssh/ssh_host_rsa_key -N '' -t rsa \\\n    && echo -e \"Host *\\n\\tStrictHostKeyChecking no\\n\\tUserKnownHostsFile=/dev/null\\n\" > /etc/ssh/ssh_config \\\n\n    # Create docker user\n    \n    && adduser -u 1000 -D -s /bin/ash docker \\\n    && echo \"docker:docker\" | chpasswd \\\n\n    # Install composer\n\n    && php -r \"copy('https://getcomposer.org/installer', 'composer-setup.php');\" \\\n    && php composer-setup.php --install-dir=/sbin --filename=composer \\\n    && php -r \"unlink('composer-setup.php');\" \\\n\n    # Install S6\n\n    && wget https://github.com/just-containers/s6-overlay/releases/download/v${S6VERSION}/s6-overlay-amd64.tar.gz -O /tmp/s6-overlay.tar.gz \\\n    && tar xvfz /tmp/s6-overlay.tar.gz -C / \\\n    && rm -f /tmp/s6-overlay.tar.gz \\\n\n    # Build extensions\n\n\n\n    ## Install global PHP utilities\n\n    && composer global require friendsofphp/php-cs-fixer \\\n    && composer global require phing/phing \\\n    && composer global require sensiolabs/security-checker \\\n\n    # Cleanup\n\n    && rm -r /var/www \\\n    && apk del wget \\\n    && rm -rf /var/cache/apk/* \\\n    && rm -rf /tmp/* \\\n    && rm -rf /root/.composer/cache\n\nVOLUME [\"/var/www\"]\n\n# Expose the ports for nginx\nEXPOSE 80 443 22 9000\n\nENTRYPOINT [ \"/init\" ]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/var/www\"]"
+    ],
+    "run": [
+      "echo \"@testing http://dl-4.alpinelinux.org/alpine/edge/testing\" >> /etc/apk/repositories     && apk add --update     wget     ca-certificates     openssh     nginx     php5-fpm \\  "
+    ],
+    "workdir": [],
+    "from": "alpine:edge",
+    "maintainer": "Guillem CANAL <hello@guillem.ninja> ",
+    "env": {
+      "S6VERSION": "1.17.2.0",
+      "PATH": "/.composer/vendor/bin:$PATH"
+    },
+    "copy": "rootfs /",
+    "entrypoint": "[ \"/init\" ]"
+  },
+  "source_repository_url": "https://github.com/Pouzor/alpine-nginx-php-mongo.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Pouzor/alpine-nginx-php-mongo",
+  "docker_repository": "pouzor/alpine-nginx-php-mongo",
+  "docker_image": "pouzor/alpine-nginx-php-mongo",
+  "parameters_schema": {
+    "S6VERSION": {
+      "default": "1.17.2.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/.composer/vendor/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "pouzor/alpine-nginx-php-mongo",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/pouzor/alpine-nginx-php-mongo",
+    "https://hub.docker.com/v2/repositories/pouzor/alpine-nginx-php-mongo",
+    "https://github.com/Pouzor/alpine-nginx-php-mongo.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Nginx",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB"
+  ],
+  "info_url": "https://hub.docker.com/r/pouzor/alpine-nginx-php-mongo",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

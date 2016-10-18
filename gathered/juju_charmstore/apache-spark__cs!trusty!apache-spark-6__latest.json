@@ -1,0 +1,78 @@
+{
+  "name": "apache-spark Juju charm",
+  "juju_charm_name": "apache-spark",
+  "revision": "cs:trusty/apache-spark-6",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/apache-spark",
+    "https://jujucharms.com/apache-spark/trusty",
+    "https://jujucharms.com/apache-spark/trusty/6",
+    "https://api.jujucharms.com/v5/apache-spark",
+    "https://api.jujucharms.com/v5/trusty/apache-spark",
+    "https://api.jujucharms.com/v5/trusty/apache-spark-6"
+  ],
+  "labels": [
+    "Juju charm",
+    "bigdata",
+    "hadoop",
+    "apache",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Processing"
+  ],
+  "info_url": "https://jujucharms.com/apache-spark",
+  "package_url": "https://api.jujucharms.com/v5/trusty/apache-spark-6/archive",
+  "created": "2015-10-20T22:16:19.747Z",
+  "updated": "2015-10-20T22:16:19.747Z",
+  "description": "Apache Spark is a fast engine for large-scale data processing\n\nApache Spark is a fast and general engine for large-scale data processing.\n\nLearn more at http://spark.apache.org.\n",
+  "maintainer": {
+    "name": "bigdata-charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "bigdata-charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    }
+  ],
+  "parameters": {
+    "resources_mirror": {
+      "type": "string",
+      "description": "URL used to fetch resources (e.g., Hadoop binaries) instead of the\nlocation specified in resources.yaml.\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "spark_execution_mode": {
+      "type": "string",
+      "description": "Options are \"local\" for standalone (no YARN), \"yarn-client\", and\n\"yarn-cluster\".\n",
+      "default": "yarn-client",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/hadoop-plugin",
+      "juju_interface": "hadoop-plugin",
+      "juju_name": "hadoop-plugin",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/spark",
+      "juju_interface": "spark",
+      "juju_name": "spark",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "## Overview\n\n### Spark 1.4.x cluster for YARN & HDFS\nApache Spark™ is a fast and general purpose engine for large-scale data\nprocessing. Key features:\n\n * **Speed**\n\n Run programs up to 100x faster than Hadoop MapReduce in memory, or 10x faster\n on disk. Spark has an advanced DAG execution engine that supports cyclic data\n flow and in-memory computing.\n\n * **Ease of Use**\n\n Write applications quickly in Java, Scala or Python. Spark offers over 80\n high-level operators that make it easy to build parallel apps, and you can use\n it interactively from the Scala and Python shells.\n\n * **General Purpose Engine**\n\n Combine SQL, streaming, and complex analytics. Spark powers a stack of\n high-level tools including Shark for SQL, MLlib for machine learning, GraphX,\n and Spark Streaming. You can combine these frameworks seamlessly in the same\n application.\n\n\n## Usage\nThis charm leverages our pluggable Hadoop model with the `hadoop-plugin`\ninterface. This means that you will need to deploy a base Apache Hadoop cluster\nto run Spark. The suggested deployment method is to use the\n[apache-hadoop-spark](https://jujucharms.com/apache-hadoop-spark/)\nbundle. This will deploy the Apache Hadoop platform with a single Apache Spark\nunit that communicates with the cluster by relating to the\n`apache-hadoop-plugin` subordinate charm:\n\n    juju-quickstart apache-hadoop-spark\n\nAlternatively, you may manually deploy the recommended environment as follows:\n\n    juju deploy apache-hadoop-hdfs-master hdfs-master\n    juju deploy apache-hadoop-yarn-master yarn-master\n    juju deploy apache-hadoop-compute-slave compute-slave\n    juju deploy apache-hadoop-plugin plugin\n    juju deploy apache-spark spark\n\n    juju add-relation yarn-master hdfs-master\n    juju add-relation compute-slave yarn-master\n    juju add-relation compute-slave hdfs-master\n    juju add-relation plugin yarn-master\n    juju add-relation plugin hdfs-master\n    juju add-relation spark plugin\n\nOnce deployment is complete, you can manually load and run Spark batch or\nstreaming jobs in a variety of ways:\n\n * **Spark shell**\n\n Spark’s shell provides a simple way to learn the API, as well as a powerful\n tool to analyze data interactively. It is available in either Scala or Python\n and can be run from the Spark unit as follows:\n\n       juju ssh spark/0\n       spark-shell # for interaction using scala\n       pyspark     # for interaction using python\n\n * **Command line**\n\n SSH to the Spark unit and manually run a spark-submit job, for example:\n\n       juju ssh spark/0\n       spark-submit --class org.apache.spark.examples.SparkPi \\\n        --master yarn-client /usr/lib/spark/lib/spark-examples*.jar 10\n\n * **Apache Zeppelin visual service**\n\n Deploy Apache Zeppelin and relate it to the Spark unit:\n\n       juju deploy apache-zeppelin zeppelin\n       juju add-relation spark zeppelin\n\n Once the relation has been made, access the web interface at\n http://{spark_unit_ip_address}:9090\n\n * **IPyNotebook for Spark**\n\n The IPython Notebook is an interactive computational environment, in which you\n can combine code execution, rich text, mathematics, plots and rich media.\n Deploy IPython Notebook for Spark and relate it to the Spark unit:\n\n       juju deploy apache-spark-notebook notebook\n       juju add-relation spark notebook\n\n Once the relation has been made, access the web interface at\n http://{spark_unit_ip_address}:8880\n\n\n## Configuration\nSpark has three modes of execution: local (standalone), yarn-client, and\nyarn-cluster. The default mode is `yarn-client` and can be changed by setting\nthe `spark_execution_mode` config variable.\n\n * ** Local **\n\n In local mode, Spark uses a Master daemon with one worker thread, which runs\n the executors.\n\n * ** YARN-client **\n\n In yarn-client mode, the driver runs in the client process, and the application\n master is only used for requesting resources from YARN.\n\n * ** YARN-cluster **\n\n In yarn-cluster mode, the Spark driver runs inside an application master\n process which is managed by YARN on the cluster, and the client can go away\n after initiating the application.\n\n\n## Testing the deployment\n\n### Smoke test spark-submit\nSSH to the Spark unit and run the SparkPi test as follows:\n\n    juju ssh spark/0\n    ~/sparkpi.sh\n    exit\n\n### Verify Job History\nVerify the Job History server shows the previous spark-submit test by visiting http://{spark_unit_ip_address}:18080\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Help\n\n- [Juju mailing list](https://lists.ubuntu.com/mailman/listinfo/juju)\n- [Juju community](https://jujucharms.com/community)\n",
+  "readme": "## Overview\n\n### Spark 1.4.x cluster for YARN & HDFS\nApache Spark™ is a fast and general purpose engine for large-scale data\nprocessing. Key features:\n\n * **Speed**\n\n Run programs up to 100x faster than Hadoop MapReduce in memory, or 10x faster\n on disk. Spark has an advanced DAG execution engine that supports cyclic data\n flow and in-memory computing.\n\n * **Ease of Use**\n\n Write applications quickly in Java, Scala or Python. Spark offers over 80\n high-level operators that make it easy to build parallel apps, and you can use\n it interactively from the Scala and Python shells.\n\n * **General Purpose Engine**\n\n Combine SQL, streaming, and complex analytics. Spark powers a stack of\n high-level tools including Shark for SQL, MLlib for machine learning, GraphX,\n and Spark Streaming. You can combine these frameworks seamlessly in the same\n application.\n\n\n## Usage\nThis charm leverages our pluggable Hadoop model with the `hadoop-plugin`\ninterface. This means that you will need to deploy a base Apache Hadoop cluster\nto run Spark. The suggested deployment method is to use the\n[apache-hadoop-spark](https://jujucharms.com/apache-hadoop-spark/)\nbundle. This will deploy the Apache Hadoop platform with a single Apache Spark\nunit that communicates with the cluster by relating to the\n`apache-hadoop-plugin` subordinate charm:\n\n    juju-quickstart apache-hadoop-spark\n\nAlternatively, you may manually deploy the recommended environment as follows:\n\n    juju deploy apache-hadoop-hdfs-master hdfs-master\n    juju deploy apache-hadoop-yarn-master yarn-master\n    juju deploy apache-hadoop-compute-slave compute-slave\n    juju deploy apache-hadoop-plugin plugin\n    juju deploy apache-spark spark\n\n    juju add-relation yarn-master hdfs-master\n    juju add-relation compute-slave yarn-master\n    juju add-relation compute-slave hdfs-master\n    juju add-relation plugin yarn-master\n    juju add-relation plugin hdfs-master\n    juju add-relation spark plugin\n\nOnce deployment is complete, you can manually load and run Spark batch or\nstreaming jobs in a variety of ways:\n\n * **Spark shell**\n\n Spark’s shell provides a simple way to learn the API, as well as a powerful\n tool to analyze data interactively. It is available in either Scala or Python\n and can be run from the Spark unit as follows:\n\n       juju ssh spark/0\n       spark-shell # for interaction using scala\n       pyspark     # for interaction using python\n\n * **Command line**\n\n SSH to the Spark unit and manually run a spark-submit job, for example:\n\n       juju ssh spark/0\n       spark-submit --class org.apache.spark.examples.SparkPi \\\n        --master yarn-client /usr/lib/spark/lib/spark-examples*.jar 10\n\n * **Apache Zeppelin visual service**\n\n Deploy Apache Zeppelin and relate it to the Spark unit:\n\n       juju deploy apache-zeppelin zeppelin\n       juju add-relation spark zeppelin\n\n Once the relation has been made, access the web interface at\n http://{spark_unit_ip_address}:9090\n\n * **IPyNotebook for Spark**\n\n The IPython Notebook is an interactive computational environment, in which you\n can combine code execution, rich text, mathematics, plots and rich media.\n Deploy IPython Notebook for Spark and relate it to the Spark unit:\n\n       juju deploy apache-spark-notebook notebook\n       juju add-relation spark notebook\n\n Once the relation has been made, access the web interface at\n http://{spark_unit_ip_address}:8880\n\n\n## Configuration\nSpark has three modes of execution: local (standalone), yarn-client, and\nyarn-cluster. The default mode is `yarn-client` and can be changed by setting\nthe `spark_execution_mode` config variable.\n\n * ** Local **\n\n In local mode, Spark uses a Master daemon with one worker thread, which runs\n the executors.\n\n * ** YARN-client **\n\n In yarn-client mode, the driver runs in the client process, and the application\n master is only used for requesting resources from YARN.\n\n * ** YARN-cluster **\n\n In yarn-cluster mode, the Spark driver runs inside an application master\n process which is managed by YARN on the cluster, and the client can go away\n after initiating the application.\n\n\n## Testing the deployment\n\n### Smoke test spark-submit\nSSH to the Spark unit and run the SparkPi test as follows:\n\n    juju ssh spark/0\n    ~/sparkpi.sh\n    exit\n\n### Verify Job History\nVerify the Job History server shows the previous spark-submit test by visiting http://{spark_unit_ip_address}:18080\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Help\n\n- [Juju mailing list](https://lists.ubuntu.com/mailman/listinfo/juju)\n- [Juju community](https://jujucharms.com/community)\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

@@ -1,0 +1,135 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/stakater/elasticsearch",
+    "repository_url": "https://hub.docker.com/v2/repositories/stakater/elasticsearch",
+    "tags_url": "https://hub.docker.com/v2/repositories/stakater/elasticsearch/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/stakater/elasticsearch/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/stakater/elasticsearch/autobuild",
+    "user": "stakater",
+    "name": "elasticsearch",
+    "namespace": "stakater",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 329,
+    "last_updated": "2016-10-16T13:38:10.953684Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 346045603,
+        "id": 2805614,
+        "repository": 657666,
+        "creator": 520426,
+        "last_updater": 520426,
+        "last_updated": "2016-10-16T13:38:10.512954Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "stakater/docker-images"
+  },
+  "name": "stakater/elasticsearch Docker container",
+  "description": "Elasticsearch is a powerful open source search and analytics engine that makes data easy to explore.",
+  "readme": "Elasticsearch is a powerful open source search and analytics engine that makes data easy to explore.\n\nElasticsearch is a search server based on Lucene. It provides a distributed, multitenant-capable full-text search engine with a RESTful web interface and schema-free JSON documents.\n\nbased on Ubuntu 14.04 & oracle java 8\n\nRun the latest container with:\n\n`docker run stakater/elasticsearch`\n\n## Advanced\n\nBuild an image:\n`docker build -t stakater/elasticsearch .`\n\nPush an image:\n`sudo docker push stakater/elasticsearch`\n\n_Note_ you might have to login first before you can push the image to docker-hub `sudo docker login`\n\nYou can run the default elasticsearch command simply:\n\n$ docker run -d stakater/elasticsearch elasticsearch\n\nYou can also pass in additional flags to elasticsearch:\n\n$ docker run -d stakater/elasticsearch elasticsearch -Des.node.name=\"TestNode\"\n\nThis image comes with a default set of configuration files for elasticsearch, but if you want to provide your own set of configuration files, you can do so via a volume mounted at /usr/share/elasticsearch/config:\n\n$ docker run -d -v \"$PWD/config\":/usr/share/elasticsearch/config stakater/elasticsearch\n\nThis image is configured with a volume at /usr/share/elasticsearch/data to hold the persisted index data. Use that path if you would like to keep the data in a mounted volume:\n\n$ docker run -d -v \"$PWD/esdata\":/usr/share/elasticsearch/data stakater/elasticsearch\n\nThis image includes EXPOSE 9200 9300 (default http.port), so standard container linking will make it automatically available to the linked containers.\n\nTell elasticsearch container following things:\n1. \n2. This image is configured with a volume at /usr/share/elasticsearch/data to hold the persisted index data. Use that path if you would like to keep the data in a mounted volume\ne.g. \n`-v \"$PWD/esdata\":/usr/share/elasticsearch/data`\n3. ports to expose\n\n`docker run -d -p 9200:9200 -p 9300:9300 stakater/elasticsearch elasticsearch`\n\n\nBasic elastic search queries\n\nhttp://192.168.99.100:9200/_search?pretty\nhttp://192.168.99.100:9200/_template/\n\nhttp://{ELASTIC_SEARCH_HOST}:9200/_search?pretty\nhttp://{ELASTIC_SEARCH_HOST}:9200/_template/\n\nIn other words, in order to search for our movies we can make POST requests to either of the following URLs:\n\nhttp://localhost:9200/_search - Search across all indexes and all types.\nhttp://localhost:9200/movies/_search - Search across all types in the movies index.\nhttp://localhost:9200/movies/movie/_search - Search explicitly for documents of type movie within the movies index.\n\n\n\t\tmanage_template => false\n\t\tindex => \"%{[@metadata][beat]}-%{+YYYY.MM.dd}\"\n\t\tdocument_type => \"%{[@metadata][type]}\"\n\n\nInspiration: https://hub.docker.com/_/elasticsearch/\n\n",
+  "dockerfile": "FROM \t\t\t\t\tstakater/java:oracle-8\nMAINTAINER \t\t\t\tRasheed Amir <rasheed@aurorasolutions.io>\n\n# grab gosu for easy step-down from root\nENV GOSU_VERSION 1.7\nRUN set -x \\\n\t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \\\n\t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \\\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n\t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\n\t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu \\\n\t&& gosu nobody true\n\n# https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-repositories.html\n# https://packages.elasticsearch.org/GPG-KEY-elasticsearch\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4\n\nENV ELASTICSEARCH_MAJOR 2.3\nENV ELASTICSEARCH_VERSION 2.3.1\nENV ELASTICSEARCH_REPO_BASE http://packages.elasticsearch.org/elasticsearch/2.x/debian\n\nRUN echo \"deb $ELASTICSEARCH_REPO_BASE stable main\" > /etc/apt/sources.list.d/elasticsearch.list\n\nRUN set -x \\\n\t&& apt-get update \\\n\t&& apt-get install -y --no-install-recommends elasticsearch=$ELASTICSEARCH_VERSION \\\n\t&& rm -rf /var/lib/apt/lists/*\n\nENV PATH /usr/share/elasticsearch/bin:$PATH\n\nWORKDIR /usr/share/elasticsearch\n\nRUN set -ex \\\n\t&& for path in \\\n\t\t./data \\\n\t\t./logs \\\n\t\t./config \\\n\t\t./config/scripts \\\n\t; do \\\n\t\tmkdir -p \"$path\"; \\\n\t\tchown -R elasticsearch:elasticsearch \"$path\"; \\\n\tdone\n\nCOPY config ./config\n\nVOLUME /usr/share/elasticsearch/data\n\nCOPY docker-entrypoint.sh /\n\nEXPOSE 9200 9300\nENTRYPOINT [\"/docker-entrypoint.sh\"]\nCMD [\"elasticsearch\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      9200
+    ],
+    "volume": [
+      "/usr/share/elasticsearch/data"
+    ],
+    "run": [
+      "set -x \t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \t&& export GNUPGHOME=\"$(mktemp -d)\" \t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu \t&& gosu nobody true",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 46095ACC8548582C1A2699A9D27D666CD88E42B4",
+      "echo \"deb $ELASTICSEARCH_REPO_BASE stable main\" > /etc/apt/sources.list.d/elasticsearch.list",
+      "set -x \t&& apt-get update \t&& apt-get install -y --no-install-recommends elasticsearch=$ELASTICSEARCH_VERSION \t&& rm -rf /var/lib/apt/lists/*",
+      "set -ex \t&& for path in \t\t./data \t\t./logs \t\t./config \t\t./config/scripts \t; do \t\tmkdir -p \"$path\"; \t\tchown -R elasticsearch:elasticsearch \"$path\"; \tdone"
+    ],
+    "workdir": [
+      "/usr/share/elasticsearch"
+    ],
+    "from": "\t\t\t\t\tstakater/java:oracle-8",
+    "maintainer": "\t\t\t\tRasheed Amir <rasheed@aurorasolutions.io>",
+    "env": {
+      "GOSU_VERSION": "1.7",
+      "ELASTICSEARCH_MAJOR": "2.3",
+      "ELASTICSEARCH_VERSION": "2.3.1",
+      "ELASTICSEARCH_REPO_BASE": "http://packages.elasticsearch.org/elasticsearch/2.x/debian",
+      "PATH": "/usr/share/elasticsearch/bin:$PATH"
+    },
+    "copy": "docker-entrypoint.sh /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"elasticsearch\"]"
+  },
+  "source_repository_url": "https://github.com/stakater/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/stakater/docker-images",
+  "docker_repository": "stakater/elasticsearch",
+  "docker_image": "stakater/elasticsearch",
+  "parameters_schema": {
+    "GOSU_VERSION": {
+      "default": "1.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ELASTICSEARCH_MAJOR": {
+      "default": "2.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ELASTICSEARCH_VERSION": {
+      "default": "2.3.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ELASTICSEARCH_REPO_BASE": {
+      "default": "http://packages.elasticsearch.org/elasticsearch/2.x/debian",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/usr/share/elasticsearch/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        9200
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "stakater/elasticsearch",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/stakater/elasticsearch",
+    "https://hub.docker.com/v2/repositories/stakater/elasticsearch",
+    "https://github.com/stakater/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/stakater/elasticsearch",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

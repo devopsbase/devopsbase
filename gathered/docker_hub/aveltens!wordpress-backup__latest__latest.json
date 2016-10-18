@@ -1,0 +1,113 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/aveltens/wordpress-backup",
+    "repository_url": "https://hub.docker.com/v2/repositories/aveltens/wordpress-backup",
+    "tags_url": "https://hub.docker.com/v2/repositories/aveltens/wordpress-backup/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/aveltens/wordpress-backup/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/aveltens/wordpress-backup/autobuild",
+    "user": "aveltens",
+    "name": "wordpress-backup",
+    "namespace": "aveltens",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 7,
+    "pull_count": 944,
+    "last_updated": "2016-10-14T15:08:01.388205Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 71754889,
+        "id": 200235,
+        "repository": 166940,
+        "creator": 77159,
+        "last_updater": 77159,
+        "last_updated": "2016-10-14T15:08:00.796939Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "angelo-v/wordpress-backup"
+  },
+  "name": "aveltens/wordpress-backup Docker container",
+  "description": "Easily backup and restore your WordPress blog.",
+  "readme": "wordpress-backup\n=========\n\nwordpress-backup is a simple [Docker][1] container that helps you backup and restore your WordPress blog.\n\n [1]: https://www.docker.com/\n\n## Quick start\n\nPrecondition: Given you have a WordPress blog and the corresponding MySQL database running in Docker containers. If not, see section \"Migrate your blog to Docker\", to see how to move your existing blog into a Docker container within minutes.\n\n*Step 1*: Create and run a backup container linked to your WordPress and MySQL containers\n\n`docker run --name backup-my-blog --volumes-from=your-wordpress-container --link=your-mysql-container:mysql -d aveltens/wordpress-backup`\n\nReplace the following values according to your system:\n\n`your-wordpress-container`: The name of the Docker container hosting your blog  \n`your-mysql-container`: The name of the Docker container hosting your blogs MySQL database\n\n*Step 2*: Backup your blog\n\n`docker exec backup-my-blog backup`\n\nYep. That's all you need to create a complete backup of your blog HTML pages and database content. The backup is stored in the container, so you won't see any file on your host system for now, but we will come to this later.\n\n*Step 3*: Restore the backup from a specific day\n\n`docker exec backup-my-blog restore 20141114`\n\nReplace 20141114 by the date, you actually made a backup.\n\nAll backups are timestamped with the date of the backup. So your blog can move back to any day in history on that you created a backup. The format of the timestamp is `yyyyMMdd` (4 digit year, 2 digit month, 2 digit day). But I am sure you noticed that already.\n\n## Create and run the backup container\n\nThe Docker image is available on the public Docker hub under the name aveltens/wordpress-backup.\n\nwordpress-backup is a separte container, performing backup and restore operations. The WordPress and MySQL containers of your blog are linked to wordpress-backup, but they are not modified in any way.\n\nTo run a backup container, you use the `docker run` command, linking your WordPress and MySQL containers:\n\n`docker run --name <backup-container-name> --volumes-from=<your-wordpress-container> --link=<your-mysql-container>:mysql -d aveltens/wordpress-backup`\n\nYou have to replace the placeholders:\n\n`<backup-container-name>`: A name of your choice to identify the backup container  \n`<your-wordpress-container>`: The name of the WordPress container  \n`<your-mysql-container>`: The name of your MySQL container  \n\nYou may also specify a volume to be able to access the backup files on the Docker host:\n\n`docker run --name <backup-container-name> -v </host/path/to/backups>:/backups --volumes-from=<your-wordpress-container> --link=<your-mysql-container>:mysql -d aveltens/wordpress-backup`\n\n`</host/path/to/backups>`: an absolute path on the system hosting the containers\n\nAfter creating a backup you find the backup files on that path on your host system.\n\n## Manual backup\n\nTo manually create a backup of your WordPress blog use `docker exec` to run the backup command:\n\n`docker exec <backup-container-name> backup`\n\n`<backup-container-name>`: The name you chose when you created the container with `docker run`.\n\n> Note that `docker exec` requires at leat Docker 1.3.\n\nThis will create two archive files under `/backups` in the container. If you mapped a volume you may see those files in the according directory on your host now. They should be named something like `backup_20141030.sql.bz2` and `backup_20141030.tar.gz`.\n\nThe number within the filenames is a date in the format `yyyyMMdd` (4 digit year, 2 digit month, 2 digit day). This means there can only be one backup per day. If you do multiple backups a day the files will be replaced by the latest backup.\n\n> You do not have to backup manually. See Section \"Automatic backups\".\n\n## Restore\n\nTo restore a backup of your WordPress blog use `docker exec` to run the restore command:\n\n`docker exec <backup-container-name> restore <date>`\n\n`<date>`: The timestamp of the backup to restore, in the format `yyyyMMdd`.\n\n> Note that `docker exec` requires at leat Docker 1.3.\n\nThis will restore the database as well as the HTML content of your WordPress installation.\n\n## Automatic backups\n\nPer default wordpress-backup will automatically create a backup at 03:00 am every day. You can adjust that time by setting a cron expression to the variable BACKUP_TIME when creating the container. E.g. the following statement will create a container that does a backup at 2:00 am every day:\n\n`docker run --name <backup-container-name> --volumes-from=<your-wordpress-container> --link=<your-mysql-container>:mysql -d -e \"BACKUP_TIME=0 2 * * *\" aveltens/wordpress-backup`\n\n## Migrate your blog to Docker\n\nIf your WordPress blog is not yet running in a Docker container, you can migrate it with a few simple steps.\n\n1. Manually back up your database and files\n2. Create WordPress and MySQL containers\n3. Restore your backups to those containers with the help of wordpress-backup\n\n*Step 1:* Manually back up your database and files\n\nUse the following command to back up your blog's HTML contents:\n\n`tar --create --gzip -vv --directory=\"</path/to/wordpress>\" --file=\"</path/to/your/backups>/backup_0.tar.gz\" \"./\"`\n\n...and this command to backup your blog's database:\n\n`mysqldump --add-drop-table -u<wordpress-user> -p <wordpress-db> --password=<wordpress-password> | bzip2 -c > </path/to/your/backups>/backup_0.sql.bz2`\n\nYou have to replace the placeholders in both commands:\n\n`</path/to/wordpress>`: The root directory of your WordPress installation.  \n`</path/to/your/backups>`: The folder where you want to store the backup files.  \n`<wordpress-db>`: The name of the WordPress database.  \n`<wordpress-user>`: The database user that WordPress uses.  \n`<wordpress-password>`: The password of the WordPress database user.  \n\n*Step 2:* \n\nCreate a MySQL container:\n\n`docker run --name wordpress-db -e MYSQL_ROOT_PASSWORD=<root-password> -e MYSQL_USER=wordpress -e MYSQL_PASSWORD=<user-password> -e MYSQL_DATABASE=wordpress -d mysql`\n\nFurther explanation: https://registry.hub.docker.com/_/mysql/\n\nCreate a WordPress container:\n\n`docker run --name wordpress --link wordpress-db:mysql -e WORDPRESS_DB_USER=wordpress -e WORDPRESS_DB_PASSWORD=<user-password> -e WORDPRESS_DB_NAME=wordpress -p 8080:80 -d wordpress`\n\nFurther explanation: https://registry.hub.docker.com/_/wordpress/\n\nYou should have a fresh WordPress installation at `http://localhost:8080/` now. Do not touch it. We will restore your backup in the next step.\n\n*Step 3:* Restore your backups to those containers with the help of wordpress-backup\n\nCreate a wordpress-backup container:\n\n`docker run --name wordpress-backup -v <path/to/your/backups>:/backups --volumes-from=wordpress --link=wordpress-db:mysql -d aveltens/wordpress-backup`\n\n> Replace <path/to/your/backups> with the actual path the backup files have been stored before.\n\n...and finally restore your backup:\n\n`docker exec wordpress-backup restore 0`\n\nThat's it! `http://localhost:8080/` should show your blog now.\n\n## Docker Compose example\n\nYou may configure your containers using Docker Compose, e.g. like this:\n\n_docker-compose.yml:_\n\n    mysql:\n      image: mysql\n      expose:\n       - 3306\n      env_file:\n       - ./mysql.env\n    wordpress:\n      image: wordpress\n      links:\n       - mysql\n      ports:\n       - \"8080:80\"\n      env_file:\n       - ./wordpress.env\n    backup:\n      image: aveltens/wordpress-backup\n      volumes:\n       - backups:/backups\n      volumes_from:\n       - wordpress\n      links:\n       - mysql\n\n_mysql.env:_\n\n    MYSQL_ROOT_PASSWORD=<root-password>\n    MYSQL_DATABASE=wordpress\n    MYSQL_USER=wordpress\n    MYSQL_PASSWORD=<user-password>\n\n_wordpress.env:_\n\n    WORDPRESS_DB_NAME=wordpress\n    WORDPRESS_DB_USER=wordpress\n    WORDPRESS_DB_PASSWORD=<user-password>\n\n## Source Code\n\nThe source code of wordpress-backup can be found at [GitHub](https://github.com/angelo-v/wordpress-backup)\n\n## Contact\n\nPlease contact me for any questions & feedback: angelo.veltens@online.de\n\n## License\n\nThe MIT License (MIT)\n\nCopyright (c) 2015, Angelo Veltens\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n\n",
+  "dockerfile": "FROM ubuntu\n\nMAINTAINER Angelo Veltens <angelo.veltens@online.de>\n\nRUN apt-get update && \\\n    apt-get install mysql-client cron bzip2 -y && \\\n    apt-get clean && \\\n    rm -rf /var/lib/apt/lists/* && \\\n    mkdir /backups\n\nENV BACKUP_TIME 0 3 * * *\n\nCOPY docker-entrypoint.sh /entrypoint.sh\nCOPY backup restore /bin/\n\nVOLUME /backups\n\nENTRYPOINT [\"/entrypoint.sh\"]\n\nCMD [\"cron\", \"-f\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "/backups"
+    ],
+    "run": [
+      "apt-get update &&     apt-get install mysql-client cron bzip2 -y &&     apt-get clean &&     rm -rf /var/lib/apt/lists/* &&     mkdir /backups"
+    ],
+    "workdir": [],
+    "from": "ubuntu",
+    "maintainer": "Angelo Veltens <angelo.veltens@online.de>",
+    "env": {
+      "3": "*",
+      "BACKUP_TIME": "0",
+      "*": "*"
+    },
+    "copy": "backup restore /bin/",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"cron\", \"-f\"]"
+  },
+  "source_repository_url": "https://github.com/angelo-v/wordpress-backup.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/angelo-v/wordpress-backup",
+  "docker_repository": "aveltens/wordpress-backup",
+  "docker_image": "aveltens/wordpress-backup",
+  "parameters_schema": {
+    "3": {
+      "default": "*",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BACKUP_TIME": {
+      "default": "0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "*": {
+      "default": "*",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "aveltens/wordpress-backup",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/aveltens/wordpress-backup",
+    "https://hub.docker.com/v2/repositories/aveltens/wordpress-backup",
+    "https://github.com/angelo-v/wordpress-backup.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Logging"
+  ],
+  "info_url": "https://hub.docker.com/r/aveltens/wordpress-backup",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

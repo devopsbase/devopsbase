@@ -1,0 +1,204 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/aquila/apache",
+    "repository_url": "https://hub.docker.com/v2/repositories/aquila/apache",
+    "tags_url": "https://hub.docker.com/v2/repositories/aquila/apache/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/aquila/apache/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/aquila/apache/autobuild",
+    "user": "aquila",
+    "name": "apache",
+    "namespace": "aquila",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 5602,
+    "last_updated": "2016-10-14T11:13:35.578913Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "xenial",
+        "full_size": 320843702,
+        "id": 4863871,
+        "repository": 507115,
+        "creator": 497152,
+        "last_updater": 497152,
+        "last_updated": "2016-10-14T11:13:34.370687Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 347172982,
+        "id": 1878861,
+        "repository": 507115,
+        "creator": 497152,
+        "last_updater": 497152,
+        "last_updated": "2016-10-13T21:31:29.976891Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.2",
+        "full_size": 347167687,
+        "id": 1878846,
+        "repository": 507115,
+        "creator": 497152,
+        "last_updater": 497152,
+        "last_updated": "2016-10-13T21:31:27.602400Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.1",
+        "full_size": 110880752,
+        "id": 1879947,
+        "repository": 507115,
+        "creator": 497152,
+        "last_updater": 497152,
+        "last_updated": "2016-08-26T23:15:15.901702Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "aquilainsight/docker-apache"
+  },
+  "name": "aquila/apache Docker container",
+  "description": "Apache base image",
+  "readme": "# Aquila Apache Image\n\nThis image contains our basic apache setup with capability for SAML 2.0, mod-security and mod evasive configured.\n\n## Extension points for sub-containers\n\nThis section describes the extension points for sub-containers.\n\n### SSL (required for production)\n\nThis image does not include our production certificates. They should be mounted in the live application using for\nexample the following declaration in your docker-compose file:\n\n```\nversion: \"2\"\n\nservices:\n    apache:\n        volumes:\n          - ssl:/etc/apache2/ssl\n# ...\nvolumes:\n  ssl:\n    external: true\n# ...\n```\n\nIn this case the ssl folder needs to contain: aquila.crt, aquila.key and aquila-intermediate.crt.",
+  "dockerfile": "# aquila/apache\n\nFROM ubuntu:16.04\n\nMAINTAINER Andreas Lang <andreas.lang@aquilainsight.com>\n\nENV TERM=xterm \\\n    APACHE2_SERVER_NAME=ci.aquilainsight.com \\\n    DEBIAN_FRONTEND=noninteractive \\\n    SAML_USER_PROPERTY=\"user\" \\\n    SAML_EMAIL_PROPERTY=\"mail\" \\\n    SAML_DISPLAYNAME_PROPERTY=\"displayname\" \\\n    MOD_SECURITY_ENABLED=\"true\" \\\n    MOD_EVASIVE_ENABLED=\"true\"\n\nRUN apt-get update && apt-get install -y \\\n      apache2 \\\n      clamav \\\n      clamav-daemon \\\n      curl \\\n      gcc \\\n      git \\\n      libapache2-mod-auth-mellon \\\n      libapache2-mod-evasive \\\n      libapache2-mod-security2 \\\n      php7.0 \\\n      php7.0-cli \\\n      python-lxml \\\n      python-six \\\n      vim \\\n      wget \\\n      zip \\\n    && apt-get clean \\\n    && rm -rf /var/lib/apt/lists/* \\\n    && mkdir -p /etc/apache2/ssl\n\nRUN a2enmod env \\\n    evasive \\\n    headers \\\n    rewrite \\\n    security2 \\\n    ssl\n\nCOPY apache/apache2.conf /etc/apache2/apache2.conf\nCOPY apache/ssl-reverse-proxy-generic.conf /etc/apache2/ssl-reverse-proxy-generic.conf\nCOPY apache/reverse-proxy-generic.conf /etc/apache2/reverse-proxy-generic.conf\nCOPY apache/aquilla-ssl.conf /etc/apache2/aquilla-ssl.conf\nCOPY apache/security.conf /etc/apache2/conf-enabled/security.conf\nCOPY apache/modsecurity.conf /etc/modsecurity/modsecurity.conf\nCOPY apache/security2.conf /etc/apache2/mods-available/security2.conf\nCOPY apache/sso.conf /etc/apache2/sso.conf.template\nCOPY sso/mellon_create_metadata.sh /etc/apache2/mellon-sp/\n\nADD apache/owasp-modsecurity-crs-master.tar.gz /opt/owasp-modsecurity-crs-master\n\nRUN a2dissite 000-default \\\n    && cp -r /opt/owasp-modsecurity-crs-master/* /etc/modsecurity/ \\\n    && mv /etc/modsecurity/modsecurity_crs_10_setup.conf.example /etc/modsecurity/modsecurity_crs_10_setup.conf \\\n    && ls /etc/modsecurity/base_rules | xargs -I {} ln -s /etc/modsecurity/base_rules/{} /etc/modsecurity/activated_rules/{} \\\n    && ls /etc/modsecurity/optional_rules | xargs -I {} ln -s /etc/modsecurity/optional_rules/{} /etc/modsecurity/activated_rules/{} \\\n    && mkdir /var/log/mod_evasive \\\n    && chown www-data:www-data /var/log/mod_evasive \\\n    && freshclam \\\n    && cd /opt/owasp-modsecurity-crs-master/util/av-scanning/runAV \\\n    && ./comp \\\n    && ln -s /opt/owasp-modsecurity-crs-master/util/av-scanning/runAV/runAV /bin/runAV \\\n    && mkdir -p /opt/modsecurity/var/upload/ \\\n    && chown www-data:www-data /opt/modsecurity/var/upload/\n\nENV PGPASSFILE=\"/srv/.pgpass\"\nRUN touch $PGPASSFILE \\\n    && chmod 600 $PGPASSFILE \\\n    && chown www-data:www-data $PGPASSFILE  \\\n    && echo \"export PGPASSFILE=$PGPASSFILE\" >>  /etc/apache2/envvars\n\n\nCOPY run-apache.sh /srv/run-apache.sh\nRUN chmod u+x /srv/run-apache.sh \\\n    && ln -sf /dev/stdout /var/log/apache2/access.log \\\n    && ln -sf /dev/stderr /var/log/apache2/error.log\n\nCMD /srv/run-apache.sh\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "apache/owasp-modsecurity-crs-master.tar.gz",
+        "dest": "/opt/owasp-modsecurity-crs-master"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y       apache2       clamav       clamav-daemon       curl       gcc       git       libapache2-mod-auth-mellon       libapache2-mod-evasive       libapache2-mod-security2       php7.0       php7.0-cli       python-lxml       python-six       vim       wget       zip     && apt-get clean     && rm -rf /var/lib/apt/lists/*     && mkdir -p /etc/apache2/ssl",
+      "a2enmod env     evasive     headers     rewrite     security2     ssl",
+      "a2dissite 000-default     && cp -r /opt/owasp-modsecurity-crs-master/* /etc/modsecurity/     && mv /etc/modsecurity/modsecurity_crs_10_setup.conf.example /etc/modsecurity/modsecurity_crs_10_setup.conf     && ls /etc/modsecurity/base_rules | xargs -I {} ln -s /etc/modsecurity/base_rules/{} /etc/modsecurity/activated_rules/{}     && ls /etc/modsecurity/optional_rules | xargs -I {} ln -s /etc/modsecurity/optional_rules/{} /etc/modsecurity/activated_rules/{}     && mkdir /var/log/mod_evasive     && chown www-data:www-data /var/log/mod_evasive     && freshclam     && cd /opt/owasp-modsecurity-crs-master/util/av-scanning/runAV     && ./comp     && ln -s /opt/owasp-modsecurity-crs-master/util/av-scanning/runAV/runAV /bin/runAV     && mkdir -p /opt/modsecurity/var/upload/     && chown www-data:www-data /opt/modsecurity/var/upload/",
+      "touch $PGPASSFILE     && chmod 600 $PGPASSFILE     && chown www-data:www-data $PGPASSFILE      && echo \"export PGPASSFILE=$PGPASSFILE\" >>  /etc/apache2/envvars",
+      "chmod u+x /srv/run-apache.sh     && ln -sf /dev/stdout /var/log/apache2/access.log     && ln -sf /dev/stderr /var/log/apache2/error.log"
+    ],
+    "workdir": [],
+    "from": "ubuntu:16.04",
+    "maintainer": "Andreas Lang <andreas.lang@aquilainsight.com>",
+    "env": {
+      "TERM": "xterm",
+      "": "",
+      "APACHE2_SERVER_NAME": "ci.aquilainsight.com",
+      "DEBIAN_FRONTEND": "noninteractive",
+      "SAML_USER_PROPERTY": "\"user\"",
+      "SAML_EMAIL_PROPERTY": "\"mail\"",
+      "SAML_DISPLAYNAME_PROPERTY": "\"displayname\"",
+      "MOD_SECURITY_ENABLED": "\"true\"",
+      "MOD_EVASIVE_ENABLED": "\"true\"",
+      "PGPASSFILE": "\"/srv/.pgpass\""
+    },
+    "copy": "run-apache.sh /srv/run-apache.sh",
+    "cmd": "/srv/run-apache.sh"
+  },
+  "source_repository_url": "git@bitbucket.org:aquilainsight/docker-apache.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/aquilainsight/docker-apache",
+  "docker_repository": "aquila/apache",
+  "docker_image": "aquila/apache",
+  "parameters_schema": {
+    "TERM": {
+      "default": "xterm",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APACHE2_SERVER_NAME": {
+      "default": "ci.aquilainsight.com",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SAML_USER_PROPERTY": {
+      "default": "\"user\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SAML_EMAIL_PROPERTY": {
+      "default": "\"mail\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SAML_DISPLAYNAME_PROPERTY": {
+      "default": "\"displayname\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MOD_SECURITY_ENABLED": {
+      "default": "\"true\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MOD_EVASIVE_ENABLED": {
+      "default": "\"true\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PGPASSFILE": {
+      "default": "\"/srv/.pgpass\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "aquila/apache",
+  "revision": "xenial",
+  "uris": [
+    "https://hub.docker.com/r/aquila/apache",
+    "https://hub.docker.com/v2/repositories/aquila/apache",
+    "git@bitbucket.org:aquilainsight/docker-apache.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/aquila/apache",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

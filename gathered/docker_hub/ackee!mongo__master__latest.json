@@ -1,0 +1,116 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/ackee/mongo",
+    "repository_url": "https://hub.docker.com/v2/repositories/ackee/mongo",
+    "tags_url": "https://hub.docker.com/v2/repositories/ackee/mongo/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/ackee/mongo/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/ackee/mongo/autobuild",
+    "user": "ackee",
+    "name": "mongo",
+    "namespace": "ackee",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 554,
+    "last_updated": "2016-10-07T11:31:15.634762Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "master",
+        "full_size": 123437572,
+        "id": 5303059,
+        "repository": 528633,
+        "creator": 562210,
+        "last_updater": 562210,
+        "last_updated": "2016-10-07T11:31:14.988836Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 123437574,
+        "id": 2004817,
+        "repository": 528633,
+        "creator": 562210,
+        "last_updater": 562210,
+        "last_updated": "2016-10-01T00:54:25.959795Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "s3-login-validation",
+        "full_size": 117101418,
+        "id": 2128620,
+        "repository": 528633,
+        "creator": 562210,
+        "last_updater": 562210,
+        "last_updated": "2016-02-26T13:57:50.721708Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "AckeeCZ/mongo"
+  },
+  "name": "ackee/mongo Docker container",
+  "description": "MongoDB with fixed Bluemix permissions",
+  "readme": "# Mongo container with persistent volume fixes for IBM Bluemix \n\nThe main goal is to inherit from the official [Mongo](https://github.com/docker-library/mongo) image.\n\nThis image can act as a standalone mongo server or as a node of mongo HA cluster, depending on ENV variables. Authentication is enabled during the setup and default `root` and `myUserAdmin` accounts are created.\n\nFollowing ENV variables must be specified:\n - `MONGO_ROOT_PASSWORD` password of user `root` who has access to all dbs\n - `WT_CACHE` size of WiredTiger cache. Set to 60% of allocated RAM of the constainer - 1 GB. This is needed to specify, as containers don't know their RAM size.\n\nFollowing ENV variables are optional, if set (both) the image acts as a node of a cluster:\n - `REPL_SET_NAME` specifies replica set (name of the cluster)\n - `CLUSTER_KEY` is a shared key that use single nodes of the cluster to authenticate to each other (keep it long)\n",
+  "dockerfile": "FROM mongo:latest\n\n# Create fake chown so docker scripts won't fail on Bluemix (ugly hack ignored)\n#RUN mv /bin/chown /bin/chown.disabled && echo '#!/bin/bash' > /bin/chown && echo '/bin/chown.disabled \"$@\"' >> /bin/chown && echo 'exit 0' >> /bin/chown && chmod +x /bin/chown\n\n# overwrite origin entrypoint\nRUN apt-get update && apt-get install curl lsb-release pwgen\nRUN curl -O https://repo.stackdriver.com/stack-install.sh && bash stack-install.sh --write-gcm\n\nCOPY ackee-entrypoint.sh /ackee-entrypoint.sh\nCOPY setup_mongo.sh /opt/02-setup-mongo.sh\nCOPY setup_stackdriver.sh /opt/03-setup-stackdriver.sh\nRUN mv /entrypoint.sh /opt/04-mongo-entrypoint.sh && mv /ackee-entrypoint.sh /entrypoint.sh\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install curl lsb-release pwgen",
+      "curl -O https://repo.stackdriver.com/stack-install.sh && bash stack-install.sh --write-gcm",
+      "mv /entrypoint.sh /opt/04-mongo-entrypoint.sh && mv /ackee-entrypoint.sh /entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "mongo:latest",
+    "copy": "setup_stackdriver.sh /opt/03-setup-stackdriver.sh"
+  },
+  "source_repository_url": "https://github.com/AckeeCZ/mongo.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/AckeeCZ/mongo",
+  "docker_repository": "ackee/mongo",
+  "docker_image": "ackee/mongo",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "ackee/mongo",
+  "revision": "master",
+  "uris": [
+    "https://hub.docker.com/r/ackee/mongo",
+    "https://hub.docker.com/v2/repositories/ackee/mongo",
+    "https://github.com/AckeeCZ/mongo.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB"
+  ],
+  "info_url": "https://hub.docker.com/r/ackee/mongo",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,107 @@
+{
+  "name": "node-app Juju charm",
+  "juju_charm_name": "node-app",
+  "revision": "cs:oneiric/node-app-0",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/node-app",
+    "https://jujucharms.com/node-app/oneiric",
+    "https://jujucharms.com/node-app/oneiric/0",
+    "https://api.jujucharms.com/v5/node-app",
+    "https://api.jujucharms.com/v5/oneiric/node-app",
+    "https://api.jujucharms.com/v5/oneiric/node-app-0"
+  ],
+  "labels": [
+    "Juju charm",
+    "Type/Middleware/Runtime/JavaScript/Node.js",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Style/Virtualization Level/Application",
+    "Type/Devopsware/Deployment/Juju"
+  ],
+  "info_url": "https://jujucharms.com/node-app",
+  "package_url": "https://api.jujucharms.com/v5/oneiric/node-app-0/archive",
+  "created": "2015-06-17T09:32:24.263Z",
+  "updated": "2015-06-17T09:32:24.263Z",
+  "description": "Deploy a node.js application\n\nDeploy a user-defined node.js application",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "oneiric",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= oneiric"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/mongodb",
+      "self_resolve": true,
+      "juju_interface": "mongodb",
+      "juju_name": "mongodb",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "app_branch": {
+      "type": "string",
+      "description": "Application repository deployment branch",
+      "default": "master",
+      "mapping": "charm_option"
+    },
+    "app_name": {
+      "type": "string",
+      "description": "Application Name",
+      "default": "myapp",
+      "mapping": "charm_option"
+    },
+    "app_port": {
+      "type": "int",
+      "description": "Port where the application will handle requests",
+      "default": 8000,
+      "mapping": "charm_option"
+    },
+    "app_scm": {
+      "type": "string",
+      "description": "Repository type (git/bzr/...)",
+      "default": "git",
+      "mapping": "charm_option"
+    },
+    "app_url": {
+      "type": "string",
+      "description": "Application repository URL",
+      "default": "http://github.com/mmm/testnode.git",
+      "mapping": "charm_option"
+    },
+    "app_user": {
+      "type": "string",
+      "description": "run-as user",
+      "default": "ubuntu",
+      "mapping": "charm_option"
+    },
+    "install_root": {
+      "type": "string",
+      "description": "Install the application in app_name under this directory",
+      "default": "/opt",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/http",
+      "juju_interface": "http",
+      "juju_name": "website",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "\n# juju formula to deploy a user-defined node.js app\n\nThis is an example \n[juju](http://juju.ubuntu.com)\nformula to deploy a user-defined node app\ndirectly from revision control.\n\nThis formula will be maintained with a general set of hooks\nfor various services that can be used with node apps\n(like mongodb).\n\n\n# Using this formula\n\nFirst, edit `config.yaml` to add info about your app.\n\nThen deploy some basic services\n\n    $ juju deploy --repository ~/formulas node-app myapp\n    $ juju deploy --repository ~/formulas mongodb\n    $ juju deploy --repository ~/formulas haproxy\n\nrelate them\n\n    $ juju add-relation mongodb myapp\n    $ juju add-relation myapp haproxy\n\nscale up your app\n\n    $ for i in {1..10}; do\n    $   juju add-unit myapp\n    $ done\n\nopen it up to the outside world\n\n    $ juju expose haproxy\n\nFind the haproxy instance's public URL from \n\n    $ juju status\n\n(or attach it to an elastic IP via the aws console)\nand open it up in a browser.\n\n\n## What the formula does\n\nDuring the `install` hook,\n\n- installs `node`/`npm`\n- clones your node app from the repo specified in `app_repo`\n- runs `npm` if your app contains `package.json`\n- configures networking if your app contains `config/config.js`\n- waits to be joined to a `mongodb` service\n\nwhen related to a `mongodb` service, the formula\n\n- configures db access if your app contains `config/config.js`\n- starts your node app as a service\n\n\n## Formula configuration\n\nConfigurable aspects of the formula are listed in `config.yaml`\nand can be set by either editing the default values directly\nin the yaml file or passing a `myapp.yaml` configuration\nfile during deployment\n\n    $ juju deploy --repository ~/formulas --config ~/myapp.yaml node-app myapp\n\nSome of these parameters are used directly by the formula,\nand some are passed through to the node app using `config/config.js`.\n\n## Application configuration\n\nThe formula looks for `config/config.js` in your app which\nstarts off looking something like this\n\n    module.exports = config = {\n      \"name\" : \"mynodeapp\"\n      ,\"listen_port\" : 8000\n      ,\"mongo_host\" : \"localhost\"\n      ,\"mongo_port\" : 27017\n    }\n\n\nand gets modified with contextually correct configuration information during\neither deployment (via the `install` hook) or relation to another service \n(`relation-changed` hook).\n\nThis config can be used from within\nyour application using snippets like\n\n    ...\n    var config = require('./config/config')\n    ...\n      new mongo.Server(config.mongo_host, config.mongo_port, {}),\n    ...\n    server.listen(config.listen_port);\n    ...\n\n\n\n## Network access\n\nThis formula does not open any public ports itself.\nThe intention is to relate it to a proxy service like\n`haproxy`, which will in turn open port 80 to the outside world.\nThis allows for instant horizontal scalability.\n\nIf your node app is itself a proxy and you want it directly exposed,\nthis can easily be done by adding \n\n    open-port $app_port\n\nto the bottom of the `install` hook, and then once your stack\nis started, you expose\n\n    $ juju expose myapp\n\nit to the outside world.\n\nBy default, juju services within the same environment\ncan talk to each other on any port over\ninternal network interfaces.\n\n\n# Making this work with your node.js app\n\nThis formula makes some strong assumptions\nabout the structure of the node application \n(`config/config.js`) that might not apply to your app.\nPlease treat this formula as a template that \nyou can fork and modify to suit your needs.\n\nThe biggest difference between how the formula\nbehaves for different kind of apps is application\nstartup.  A simple application will want to start\nupon install (startup code goes in the `install` hook),\nwhereas some applications will not want\nto start up until a database has be associated\n(startup code goes in the `db-relation-joined` hooks).\n\n\n# Mirrored\n\nlp:charm/node-app \n",
+  "readme": "\n# juju formula to deploy a user-defined node.js app\n\nThis is an example \n[juju](http://juju.ubuntu.com)\nformula to deploy a user-defined node app\ndirectly from revision control.\n\nThis formula will be maintained with a general set of hooks\nfor various services that can be used with node apps\n(like mongodb).\n\n\n# Using this formula\n\nFirst, edit `config.yaml` to add info about your app.\n\nThen deploy some basic services\n\n    $ juju deploy --repository ~/formulas node-app myapp\n    $ juju deploy --repository ~/formulas mongodb\n    $ juju deploy --repository ~/formulas haproxy\n\nrelate them\n\n    $ juju add-relation mongodb myapp\n    $ juju add-relation myapp haproxy\n\nscale up your app\n\n    $ for i in {1..10}; do\n    $   juju add-unit myapp\n    $ done\n\nopen it up to the outside world\n\n    $ juju expose haproxy\n\nFind the haproxy instance's public URL from \n\n    $ juju status\n\n(or attach it to an elastic IP via the aws console)\nand open it up in a browser.\n\n\n## What the formula does\n\nDuring the `install` hook,\n\n- installs `node`/`npm`\n- clones your node app from the repo specified in `app_repo`\n- runs `npm` if your app contains `package.json`\n- configures networking if your app contains `config/config.js`\n- waits to be joined to a `mongodb` service\n\nwhen related to a `mongodb` service, the formula\n\n- configures db access if your app contains `config/config.js`\n- starts your node app as a service\n\n\n## Formula configuration\n\nConfigurable aspects of the formula are listed in `config.yaml`\nand can be set by either editing the default values directly\nin the yaml file or passing a `myapp.yaml` configuration\nfile during deployment\n\n    $ juju deploy --repository ~/formulas --config ~/myapp.yaml node-app myapp\n\nSome of these parameters are used directly by the formula,\nand some are passed through to the node app using `config/config.js`.\n\n## Application configuration\n\nThe formula looks for `config/config.js` in your app which\nstarts off looking something like this\n\n    module.exports = config = {\n      \"name\" : \"mynodeapp\"\n      ,\"listen_port\" : 8000\n      ,\"mongo_host\" : \"localhost\"\n      ,\"mongo_port\" : 27017\n    }\n\n\nand gets modified with contextually correct configuration information during\neither deployment (via the `install` hook) or relation to another service \n(`relation-changed` hook).\n\nThis config can be used from within\nyour application using snippets like\n\n    ...\n    var config = require('./config/config')\n    ...\n      new mongo.Server(config.mongo_host, config.mongo_port, {}),\n    ...\n    server.listen(config.listen_port);\n    ...\n\n\n\n## Network access\n\nThis formula does not open any public ports itself.\nThe intention is to relate it to a proxy service like\n`haproxy`, which will in turn open port 80 to the outside world.\nThis allows for instant horizontal scalability.\n\nIf your node app is itself a proxy and you want it directly exposed,\nthis can easily be done by adding \n\n    open-port $app_port\n\nto the bottom of the `install` hook, and then once your stack\nis started, you expose\n\n    $ juju expose myapp\n\nit to the outside world.\n\nBy default, juju services within the same environment\ncan talk to each other on any port over\ninternal network interfaces.\n\n\n# Making this work with your node.js app\n\nThis formula makes some strong assumptions\nabout the structure of the node application \n(`config/config.js`) that might not apply to your app.\nPlease treat this formula as a template that \nyou can fork and modify to suit your needs.\n\nThe biggest difference between how the formula\nbehaves for different kind of apps is application\nstartup.  A simple application will want to start\nupon install (startup code goes in the `install` hook),\nwhereas some applications will not want\nto start up until a database has be associated\n(startup code goes in the `db-relation-joined` hooks).\n\n\n# Mirrored\n\nlp:charm/node-app \n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

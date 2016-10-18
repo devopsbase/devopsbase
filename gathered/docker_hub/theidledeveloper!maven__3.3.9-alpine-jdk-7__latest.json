@@ -1,0 +1,180 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/theidledeveloper/maven",
+    "repository_url": "https://hub.docker.com/v2/repositories/theidledeveloper/maven",
+    "tags_url": "https://hub.docker.com/v2/repositories/theidledeveloper/maven/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/theidledeveloper/maven/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/theidledeveloper/maven/autobuild",
+    "user": "theidledeveloper",
+    "name": "maven",
+    "namespace": "theidledeveloper",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 87,
+    "last_updated": "2016-06-08T00:41:02.360858Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "3.3.9-alpine-jdk-7",
+        "full_size": 90696642,
+        "id": 3331346,
+        "repository": 731304,
+        "creator": 7798,
+        "last_updater": 7798,
+        "last_updated": "2016-06-08T00:41:01.369877Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.3.9-jdk-7",
+        "full_size": 270326902,
+        "id": 3331327,
+        "repository": 731304,
+        "creator": 7798,
+        "last_updater": 7798,
+        "last_updated": "2016-06-08T00:40:15.853759Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.3.9-alpine-jdk-8",
+        "full_size": 62992630,
+        "id": 3331314,
+        "repository": 731304,
+        "creator": 7798,
+        "last_updater": 7798,
+        "last_updated": "2016-06-08T00:38:25.911486Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.3.9-jdk-8",
+        "full_size": 262040698,
+        "id": 3331311,
+        "repository": 731304,
+        "creator": 7798,
+        "last_updater": 7798,
+        "last_updated": "2016-06-08T00:37:46.408171Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.3.9-jdk-9",
+        "full_size": 358351898,
+        "id": 3331297,
+        "repository": 731304,
+        "creator": 7798,
+        "last_updater": 7798,
+        "last_updated": "2016-06-08T00:35:07.238481Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "theidledeveloper/docker-maven"
+  },
+  "name": "theidledeveloper/maven Docker container",
+  "description": "Latest maven builds using debian and alpine",
+  "readme": "docker-maven\n============\n\n# Supported tags and respective Dockerfile links\n\n* [3.3.9-jdk-7](https://github.com/theidledeveloper/docker-maven/blob/master/jdk-7/Dockerfile)\n* [3.3.9-alpine-jdk-7](https://github.com/theidledeveloper/docker-maven/blob/master/jdk-7/Dockerfile-alpine)\n* [3.3.9-jdk-8](https://github.com/theidledeveloper/docker-maven/blob/master/jdk-8/Dockerfile)\n* [3.3.9-alpine-jdk-8](https://github.com/theidledeveloper/docker-maven/blob/master/jdk-8/Dockerfile-alpine)\n* [3.3.9-jdk-9](https://github.com/theidledeveloper/docker-maven/blob/master/jdk-9/Dockerfile)\n\n\n# What is Maven?\n\n[Apache Maven](http://maven.apache.org) is a software project management and comprehension tool.\nBased on the concept of a project object model (POM),\nMaven can manage a project's build,\nreporting and documentation from a central piece of information.\n\n\n# How to use this image\n\n## Run a single Maven command\n\nFor many simple projects, you may find it inconvenient to write a complete `Dockerfile`.\nIn such cases, you can run a Maven project by using the Maven Docker image directly,\npassing a Maven command to `docker run`:\n\n```bash\ndocker run -it --rm --name my-maven-project -v \"$(pwd)\":/usr/src/mymaven -w /usr/src/mymaven maven:3.3.9-jdk-7 mvn clean install\n```\n\n\n# Reusing the Maven local repository\n\nThe local Maven repository can be reused across containers by creating a volume and mounting it in `/root/.m2`.\n\n    docker volume create --name maven-repo\n    docker run -it -v maven-repo:/root/.m2 maven mvn archetype:generate # will download artifacts\n    docker run -it -v maven-repo:/root/.m2 maven mvn archetype:generate # will reuse downloaded artifacts\n\n# Packaging a local repository with the image\n\nThe `$MAVEN_CONFIG` dir (default to `/root/.m2`) is configured as a volume so anything copied there in a Dockerfile at build time is lost.\nFor that the dir `/usr/share/maven/ref/` is created, and anything in there will be copied on container startup to `$MAVEN_CONFIG`.\n\nTo create a pre-packaged repository, create a `pom.xml` with the dependencies you need and use this in your `Dockerfile`.\n`/usr/share/maven/ref/settings-docker.xml` is a settings file that changes the local repository to `/usr/share/maven/ref/repository`,\nbut you can use your own settings file as long as it uses `/usr/share/maven/ref/repository` as local repo.\n\n    COPY pom.xml /tmp/pom.xml\n    RUN mvn -B -f /tmp/pom.xml -s /usr/share/maven/ref/settings-docker.xml dependency:resolve\n\nTo add your custom `settings.xml` file to the image use\n\n    COPY settings.xml /usr/share/maven/ref/\n\nFor an example, check the `tests` dir\n\n# Running as non-root\n\nMaven needs the user home to download artifacts to, and if the user does not exist in the image an extra\n`user.home` Java property needs to be set.\n\nFor example, to run as user `1000` mounting the host' Maven repo\n\n```bash\ndocker run -v ~/.m2:/var/maven/.m2 -ti --rm -u 1000 maven mvn -Duser.home=/var/maven archetype:generate\n```\n\n\n# Build the Image\n\nIf you wish to build the images yourself a set of `docker-compose` files have been\nprovided, one each for the different versions and os types.\n\n* [3.3.9-jdk-7](https://github.com/theidledeveloper/docker-maven/blob/master/docker-compose-jdk-7.yml)\n* [3.3.9-alpine-jdk-7](https://github.com/theidledeveloper/docker-maven/blob/master/docker-compose-alpine-jdk-7.yml)\n* [3.3.9-jdk-8](https://github.com/theidledeveloper/docker-maven/blob/master/docker-compose-jdk-8.yml)\n* [3.3.9-alpine-jdk-8](https://github.com/theidledeveloper/docker-maven/blob/master/docker-compose-alpine-jdk-8.yml)\n* [3.3.9-jdk-9](https://github.com/theidledeveloper/docker-maven/blob/master/docker-compose-alpine-jdk-9.yml)\n\nTo build the alpine linux jdk 8 image simply run\n\n```bash\ndocker-compose -f docker-compose-alpine-jdk-8.yml build\n```\n\nChange the argument to -f for the relevant image you wish to build.\n\n\n# User Feedback\n\n## Issues\n\nIf you have any problems with or questions about this image, please contact us\nthrough a [GitHub issue](https://github.com/theidledeveloper/docker-maven/issues).\n\n## Contributing\n\nYou are invited to contribute new features, fixes, or updates, large or small; we are always thrilled to receive pull requests, and do our best to process them as fast as we can.\n\nBefore you start to code, we recommend discussing your plans through a [GitHub issue](https://github.com/theidledeveloper/docker-maven/issues),\nespecially for more ambitious contributions.\nThis gives other contributors a chance to point you in the right direction,\ngive you feedback on your design, and help you find out if someone else is working on the same thing.\n",
+  "dockerfile": "FROM java:openjdk-7-jdk-alpine\nMAINTAINER TheIdleDeveloper\n\nRUN apk upgrade --update-cache --no-cache --available\n\nRUN apk add --update --update-cache --no-cache \\\n      curl \\\n      tar \\\n      bash\n\nENV MAVEN_VERSION 3.3.9\n\nRUN mkdir -p /usr/share/maven /usr/share/maven/ref \\\n  && curl -fsSL http://apache.osuosl.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz \\\n    | tar -xzC /usr/share/maven --strip-components=1 \\\n  && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn\n\nENV MAVEN_HOME /usr/share/maven\nENV MAVEN_CONFIG /root/.m2\nENV COPY_REFERENCE_FILE_LOG $MAVEN_CONFIG/copy_reference_file.log\n\nCOPY mvn-entrypoint.sh /usr/local/bin/mvn-entrypoint.sh\nCOPY settings-docker.xml /usr/share/maven/ref/\n\nVOLUME /root/.m2\n\nENTRYPOINT [\"/usr/local/bin/mvn-entrypoint.sh\"]\nCMD [\"mvn\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "/root/.m2"
+    ],
+    "run": [
+      "apk upgrade --update-cache --no-cache --available",
+      "apk add --update --update-cache --no-cache       curl       tar       bash",
+      "mkdir -p /usr/share/maven /usr/share/maven/ref   && curl -fsSL http://apache.osuosl.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz     | tar -xzC /usr/share/maven --strip-components=1   && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn"
+    ],
+    "workdir": [],
+    "from": "java:openjdk-7-jdk-alpine",
+    "maintainer": "TheIdleDeveloper",
+    "env": {
+      "MAVEN_VERSION": "3.3.9",
+      "MAVEN_HOME": "/usr/share/maven",
+      "MAVEN_CONFIG": "/root/.m2",
+      "COPY_REFERENCE_FILE_LOG": "$MAVEN_CONFIG/copy_reference_file.log"
+    },
+    "copy": "settings-docker.xml /usr/share/maven/ref/",
+    "entrypoint": "[\"/usr/local/bin/mvn-entrypoint.sh\"]",
+    "cmd": "[\"mvn\"]"
+  },
+  "source_repository_url": "https://github.com/theidledeveloper/docker-maven.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/theidledeveloper/docker-maven",
+  "docker_repository": "theidledeveloper/maven",
+  "docker_image": "theidledeveloper/maven",
+  "parameters_schema": {
+    "MAVEN_VERSION": {
+      "default": "3.3.9",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_HOME": {
+      "default": "/usr/share/maven",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAVEN_CONFIG": {
+      "default": "/root/.m2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "COPY_REFERENCE_FILE_LOG": {
+      "default": "$MAVEN_CONFIG/copy_reference_file.log",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "theidledeveloper/maven",
+  "revision": "3.3.9-alpine-jdk-7",
+  "uris": [
+    "https://hub.docker.com/r/theidledeveloper/maven",
+    "https://hub.docker.com/v2/repositories/theidledeveloper/maven",
+    "https://github.com/theidledeveloper/docker-maven.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Build/Java/Maven",
+    "Type/Devopsware/Test",
+    "Type/Infrastructure/Operating System/Linux/Debian"
+  ],
+  "info_url": "https://hub.docker.com/r/theidledeveloper/maven",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

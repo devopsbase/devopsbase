@@ -1,0 +1,178 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/gbevan/ubuntu-foreman",
+    "repository_url": "https://hub.docker.com/v2/repositories/gbevan/ubuntu-foreman",
+    "tags_url": "https://hub.docker.com/v2/repositories/gbevan/ubuntu-foreman/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/gbevan/ubuntu-foreman/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/gbevan/ubuntu-foreman/autobuild",
+    "user": "gbevan",
+    "name": "ubuntu-foreman",
+    "namespace": "gbevan",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 1511,
+    "last_updated": "2016-10-13T22:05:53.719893Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 354526554,
+        "id": 103924,
+        "repository": 99585,
+        "creator": 65400,
+        "last_updater": 65400,
+        "last_updated": "2016-10-13T22:05:53.167752Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "master",
+        "full_size": 192907227,
+        "id": 120860,
+        "repository": 99585,
+        "creator": 65400,
+        "last_updater": 65400,
+        "last_updated": "2015-11-14T16:45:26.180881Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "gbevan/ubuntu-foreman"
+  },
+  "name": "gbevan/ubuntu-foreman Docker container",
+  "description": "Ubuntu based Puppet Foreman with Ansible",
+  "readme": "## Docker project: gbevan/ubuntu-foreman\n\nThis image was put together for training and demo purposes.  If intending any real use of this image, then you\nshould seriously consider persistent volumes for all critical data and configuration.\n\nWith Foreman 1.11 and latest Ansible v2\n\nThe container simply automates instructions at - http://theforeman.org/manuals/1.10/index.html#2.Quickstart\n\n### To use it:\n\n    docker run --restart=always -d -p 443:443 -p 8443:8443 -p 8140:8140 -h hostname.example.com gbevan/ubuntu-foreman\n\n(Optional option --restart=always ensures the container is restarted in the event of failure or restart of the parent server/docker daemon.)\n\n### Monitor the foreman install log, as it completes the installation:\n\n    docker ps | awk '/gbevan\\/ubuntu-foreman/ {print $1}' | xargs docker logs -f\n\n(the awk bit just gets the container id, and only really works if you are running just one container, its just a quick start guide)\n\n\nPoint your browser at https://your-host\n",
+  "dockerfile": "# Build:\n#   docker build -t gbevan/ubuntu-foreman .\n#\n# Run:\n#  docker run -d -p 443:443 -p 8443:8443 -p 8140:8140 -h foreman.example.com gbevan/ubuntu-foreman\n#\n# tail log:\n#   docker ps | awk '/gbevan\\/ubuntu-foreman/ {print $1}' | xargs docker logs -f\n#\n# Point your browser at https://your-host\n#\n# resolve dns issues:\n# /etc/conf/docker\n#  DOCKER_OPTS=\"--dns ip_1 --dns ip_2\"\n#\n# Used the following projects as reference:\n#   riskable/docker-foreman\n#   xnaveira/foreman-docker\n\nFROM ubuntu:14.04\nMAINTAINER Graham Bevan \"graham.bevan@ntlworld.com\"\n\nENV FOREMANVER 1.11\nENV DEBIAN_FRONTEND noninteractive\nENV FOREOPTS --foreman-locations-enabled \\\n        --enable-foreman-compute-ec2 \\\n        --enable-foreman-compute-gce \\\n        --enable-foreman-compute-ovirt \\\n        --enable-foreman-compute-vmware \\\n        --enable-foreman-compute-libvirt \\\n        --enable-foreman-compute-openstack \\\n        --enable-foreman-compute-rackspace \\\n        --enable-puppet \\\n        --puppet-listen=true \\\n        --puppet-show-diff=true \\\n        --puppet-server-envs-dir=/etc/puppet/environments\n\nRUN apt-get update && \\\n    apt-get upgrade -y && \\\n    apt-get -y install ca-certificates wget && \\\n    wget https://apt.puppetlabs.com/puppetlabs-release-trusty.deb && \\\n    dpkg -i puppetlabs-release-trusty.deb && \\\n    apt-get install -y wget aptitude htop vim vim-puppet git traceroute dnsutils && \\\n    echo \"deb http://deb.theforeman.org/ trusty $FOREMANVER\" > /etc/apt/sources.list.d/foreman.list && \\\n    echo \"deb http://deb.theforeman.org/ plugins $FOREMANVER\" >> /etc/apt/sources.list.d/foreman.list && \\\n    wget -q http://deb.theforeman.org/pubkey.gpg -O- | apt-key add - && \\\n    apt-get install -y software-properties-common && \\\n    apt-add-repository ppa:git-core/ppa -y && \\\n    apt-get update && \\\n    apt-get install -y foreman-installer && \\\n    apt-get install -y git python-pip iotop sysstat krb5-user libkrb5-dev python-dev python-jinja2 python-yaml python-paramiko python-httplib2 python-six python-crypto sshpass && \\\n    apt-add-repository ppa:ansible/ansible && \\\n    apt-get update && \\\n    apt-get install -y ansible && \\\n    pip install 'pywinrm>=0.1.1' && \\\n    pip install 'kerberos==1.2.2' && \\\n    echo \"set modeline\" > /root/.vimrc && \\\n    echo \"export TERM=vt100\" >> /root/.bashrc && \\\n    LANG=en_US.UTF-8 locale-gen --purge en_US.UTF-8 && \\\n    echo 'LANG=\"en_US.UTF-8\"\\nLANGUAGE=\"en_US:en\"\\n' > /etc/default/locale && \\\n    dpkg-reconfigure --frontend=noninteractive locales && \\\n    rm -f /usr/share/foreman-installer/checks/hostname.rb && \\\n    export FACTER_fqdn=\"foreman.example.com\" && \\\n    echo \"127.1.1.2  foreman.example.com\" >> /etc/hosts && \\\n    /usr/sbin/foreman-installer $FOREOPTS; \\\n    sed -i -e \"s/START=no/START=yes/g\" /etc/default/foreman\n\nEXPOSE 443\nEXPOSE 8140\nEXPOSE 8443\n\n#CMD ( test ! -f /etc/foreman/.first_run_completed && \\\n#        ( echo \"FIRST-RUN: Please wait while Foreman is installed and configured...\"; \\\n#        /usr/sbin/foreman-installer $FOREOPTS; \\\n#        sed -i -e \"s/START=no/START=yes/g\" /etc/default/foreman; \\\n#        touch /etc/foreman/.first_run_completed \\\n#        ) \\\n#    ); \\\nCMD /etc/init.d/puppet stop && \\\n    /etc/init.d/apache2 stop && \\\n    /etc/init.d/foreman stop && \\\n    /etc/init.d/postgresql stop && \\\n    echo \"sleeping for postgresql to ensure stopped\" && \\\n    sleep 60 && \\\n    /etc/init.d/postgresql start && \\\n    echo \"sleeping for postgresql to ensure started\" && \\\n    sleep 60 && \\\n    /etc/init.d/foreman start && \\\n    /etc/init.d/apache2 start && \\\n    /etc/init.d/puppet start && \\\n    /etc/init.d/foreman-proxy start && \\\n    /usr/sbin/cron && \\\n    foreman-rake permissions:reset && \\\n    /usr/sbin/foreman-rake db:seed && \\\n    service foreman-proxy restart && \\\n    tail -f /var/log/foreman/production.log\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      443,
+      8140,
+      8443
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update &&     apt-get upgrade -y &&     apt-get -y install ca-certificates wget &&     wget https://apt.puppetlabs.com/puppetlabs-release-trusty.deb &&     dpkg -i puppetlabs-release-trusty.deb &&     apt-get install -y wget aptitude htop vim vim-puppet git traceroute dnsutils &&     echo \"deb http://deb.theforeman.org/ trusty $FOREMANVER\" > /etc/apt/sources.list.d/foreman.list &&     echo \"deb http://deb.theforeman.org/ plugins $FOREMANVER\" >> /etc/apt/sources.list.d/foreman.list &&     wget -q http://deb.theforeman.org/pubkey.gpg -O- | apt-key add - &&     apt-get install -y software-properties-common &&     apt-add-repository ppa:git-core/ppa -y &&     apt-get update &&     apt-get install -y foreman-installer &&     apt-get install -y git python-pip iotop sysstat krb5-user libkrb5-dev python-dev python-jinja2 python-yaml python-paramiko python-httplib2 python-six python-crypto sshpass &&     apt-add-repository ppa:ansible/ansible &&     apt-get update &&     apt-get install -y ansible &&     pip install 'pywinrm>=0.1.1' &&     pip install 'kerberos==1.2.2' &&     echo \"set modeline\" > /root/.vimrc &&     echo \"export TERM=vt100\" >> /root/.bashrc &&     LANG=en_US.UTF-8 locale-gen --purge en_US.UTF-8 &&     echo 'LANG=\"en_US.UTF-8\"\\nLANGUAGE=\"en_US:en\"\\n' > /etc/default/locale &&     dpkg-reconfigure --frontend=noninteractive locales &&     rm -f /usr/share/foreman-installer/checks/hostname.rb &&     export FACTER_fqdn=\"foreman.example.com\" &&     echo \"127.1.1.2  foreman.example.com\" >> /etc/hosts &&     /usr/sbin/foreman-installer $FOREOPTS;     sed -i -e \"s/START=no/START=yes/g\" /etc/default/foreman"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "Graham Bevan \"graham.bevan@ntlworld.com\"",
+    "env": {
+      "FOREMANVER": "1.11",
+      "DEBIAN_FRONTEND": "noninteractive",
+      "FOREOPTS": "--foreman-locations-enabled",
+      "": "",
+      "--enable-foreman-compute-ec2": "",
+      "--enable-foreman-compute-ovirt": "",
+      "--enable-foreman-compute-libvirt": "",
+      "--enable-foreman-compute-rackspace": "",
+      "--puppet-listen": "true",
+      "--puppet-show-diff": "true",
+      "--puppet-server-envs-dir": "/etc/puppet/environments"
+    }
+  },
+  "source_repository_url": "https://github.com/gbevan/ubuntu-foreman.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/gbevan/ubuntu-foreman",
+  "docker_repository": "gbevan/ubuntu-foreman",
+  "docker_image": "gbevan/ubuntu-foreman",
+  "parameters_schema": {
+    "FOREMANVER": {
+      "default": "1.11",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FOREOPTS": {
+      "default": "--foreman-locations-enabled",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "--enable-foreman-compute-ec2": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "--enable-foreman-compute-ovirt": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "--enable-foreman-compute-libvirt": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "--enable-foreman-compute-rackspace": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "--puppet-listen": {
+      "default": "true",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "--puppet-show-diff": {
+      "default": "true",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "--puppet-server-envs-dir": {
+      "default": "/etc/puppet/environments",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        443,
+        8140,
+        8443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "gbevan/ubuntu-foreman",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/gbevan/ubuntu-foreman",
+    "https://hub.docker.com/v2/repositories/gbevan/ubuntu-foreman",
+    "https://github.com/gbevan/ubuntu-foreman.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Deployment/Puppet",
+    "Type/Devopsware/Deployment/Ansible",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu"
+  ],
+  "info_url": "https://hub.docker.com/r/gbevan/ubuntu-foreman",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,130 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/morganhjk/mariadb",
+    "repository_url": "https://hub.docker.com/v2/repositories/morganhjk/mariadb",
+    "tags_url": "https://hub.docker.com/v2/repositories/morganhjk/mariadb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/morganhjk/mariadb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/morganhjk/mariadb/autobuild",
+    "user": "morganhjk",
+    "name": "mariadb",
+    "namespace": "morganhjk",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 158,
+    "last_updated": "2015-06-11T23:12:55.348660Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 142891664,
+        "id": 169539,
+        "repository": 156141,
+        "creator": 206900,
+        "last_updater": 206900,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "morganhjk/docker-mariadb"
+  },
+  "name": "morganhjk/mariadb Docker container",
+  "description": "Simple Docker image to run a MariaDB server.",
+  "readme": "# WARNING #\n\nThis README is outdated. Soon to be updated.\n\n# docker-mariadb #\n\nOut-of-the-box Ubuntu image (14.04 LTS Trusty Tahr) set up to run a MariaDB server.\n\n## Building the image ##\n\nIf you don't want to pull the `morganhjk/mariadb` image from the [automated build repository]\n(https://registry.hub.docker.com/u/morganhjk/mariadb/) on the [Docker Hub Registry]\n(https://registry.hub.docker.com/), you can clone the [repository on GitHub]\n(https://github.com/morganhjk/docker-mariadb) and build the image `morganhjk/mariadb`\nlocally by executing the following command inside the docker-mariadb folder:\n\n    docker build -t morganhjk/mariadb .\n\n## Running the image ##\n\nTo run a container with the image, execute the following command:\n\n    docker run -d --name somedb morganhjk/mariadb\n\nThe first time that you run your container, a new user `admin` with all privileges \nwill be created in MariaDB with a random password. To get the password, check the logs\nof the container by running:\n\n    docker logs <CONTAINER_ID>\n\nYou will see something like the following:\n\n    ========================================================================\n    You can now connect to this MariaDB server using:\n     \n        mysql -uadmin -pxVN33tWOhM3u -h<host> -P<port>\n     \n    Please remember to change the above password as soon as possible!\n    MariaDB user 'root' has no password but only allows local connections.\n    ========================================================================\n\nIn this case, `xVN33tWOhM3u` is the password assigned to the MariaDB user `admin`.\n\nDone!\n\n### Setting a specific password for the admin account ###\n\nIf you want to use a preset password instead of a randomly generated one, you can\nset the environment variable `MARIADB_PASS` to your specific password when running the container:\n\n    docker run -d --name somedb -e MARIADB_PASS=\"mypass\" morganhjk/mariadb\n\n### Mounting the database file volume from other containers ###\n\nOne way to persist the database data is to store database files in another container.\nTo do so, first create a container that holds database files:\n\n    docker run --name somedb_data morganhjk/dbdata\n\nThis will create a new container to store MariaDB databases and configuration files. \nYou can specify any name of the container by using the `--name` option, which will be used in the next step.\n\nAfter this you can start your MariaDB image using volumes from the container created above by executing the\nfollowing command:\n\n    docker run -d --name somedb --volumes-from somedb_data morganhjk/mariadb\n\n**credit to http://www.tutum.co**\n",
+  "dockerfile": "FROM ubuntu:trusty\n\n# Set environment variables\nENV DEBIAN_FRONTEND noninteractive\n\n# Install packages\nRUN apt-get update && apt-get install -y software-properties-common\nRUN apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db\nRUN add-apt-repository -y 'deb http://ams2.mirrors.digitalocean.com/mariadb/repo/10.0/ubuntu trusty main'\nRUN apt-get update && apt-get install -y mariadb-server pwgen\n\n# Prepare directories\nRUN mkdir -p /scripts\nRUN mkdir -p /databases\n\n# Add scripts\nADD scripts/run.sh /scripts/run.sh\nADD scripts/do_db_tasks.sh /scripts/do_db_tasks.sh\nADD scripts/create_databases.sh /scripts/create_databases.sh\nADD scripts/create_mariadb_admin_user.sh /scripts/create_mariadb_admin_user.sh\n\n# Change permissions on scripts\nRUN chown -Rf root:root /scripts\nRUN chmod -Rf 755 /scripts\n\n# Change bind address to 0.0.0.0\nRUN sed -i -r 's/bind-address.*$/bind-address = 0.0.0.0/' /etc/mysql/my.cnf\n\n# Workaround for mysql client error message \"TERM environment variable not set\"\nENV TERM dumb\n\n# Expose the mysql port\nEXPOSE 3306\n\n# Run the initial script\nCMD [\"/scripts/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "scripts/run.sh",
+        "dest": "/scripts/run.sh"
+      },
+      {
+        "source": "scripts/do_db_tasks.sh",
+        "dest": "/scripts/do_db_tasks.sh"
+      },
+      {
+        "source": "scripts/create_databases.sh",
+        "dest": "/scripts/create_databases.sh"
+      },
+      {
+        "source": "scripts/create_mariadb_admin_user.sh",
+        "dest": "/scripts/create_mariadb_admin_user.sh"
+      }
+    ],
+    "expose": [
+      3306
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y software-properties-common",
+      "apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db",
+      "add-apt-repository -y 'deb http://ams2.mirrors.digitalocean.com/mariadb/repo/10.0/ubuntu trusty main'",
+      "apt-get update && apt-get install -y mariadb-server pwgen",
+      "mkdir -p /scripts",
+      "mkdir -p /databases",
+      "chown -Rf root:root /scripts",
+      "chmod -Rf 755 /scripts",
+      "sed -i -r 's/bind-address.*$/bind-address = 0.0.0.0/' /etc/mysql/my.cnf"
+    ],
+    "workdir": [],
+    "from": "ubuntu:trusty",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "TERM": "dumb"
+    },
+    "cmd": "[\"/scripts/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/morganhjk/docker-mariadb.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/morganhjk/docker-mariadb",
+  "docker_repository": "morganhjk/mariadb",
+  "docker_image": "morganhjk/mariadb",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TERM": {
+      "default": "dumb",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "morganhjk/mariadb",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/morganhjk/mariadb",
+    "https://hub.docker.com/v2/repositories/morganhjk/mariadb",
+    "https://github.com/morganhjk/docker-mariadb.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/morganhjk/mariadb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

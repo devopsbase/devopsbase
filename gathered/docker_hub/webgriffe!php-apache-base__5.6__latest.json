@@ -1,0 +1,169 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/webgriffe/php-apache-base",
+    "repository_url": "https://hub.docker.com/v2/repositories/webgriffe/php-apache-base",
+    "tags_url": "https://hub.docker.com/v2/repositories/webgriffe/php-apache-base/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/webgriffe/php-apache-base/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/webgriffe/php-apache-base/autobuild",
+    "user": "webgriffe",
+    "name": "php-apache-base",
+    "namespace": "webgriffe",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 5,
+    "pull_count": 2122,
+    "last_updated": "2016-10-15T04:00:14.451834Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "5.6",
+        "full_size": 234905712,
+        "id": 1636829,
+        "repository": 462212,
+        "creator": 91536,
+        "last_updater": 568696,
+        "last_updated": "2016-10-15T04:00:12.562064Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 238679216,
+        "id": 1636728,
+        "repository": 462212,
+        "creator": 91536,
+        "last_updater": 568696,
+        "last_updated": "2016-10-15T03:50:06.852404Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "7.0",
+        "full_size": 238642460,
+        "id": 1636729,
+        "repository": 462212,
+        "creator": 91536,
+        "last_updater": 568696,
+        "last_updated": "2016-10-15T03:34:26.865608Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5.5",
+        "full_size": 234408669,
+        "id": 1648683,
+        "repository": 462212,
+        "creator": 91536,
+        "last_updater": 568696,
+        "last_updated": "2016-10-15T03:24:26.075184Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "webgriffe/docker-php-apache-base"
+  },
+  "name": "webgriffe/php-apache-base Docker container",
+  "description": "Dockerized environment for PHP web development with Apache web server.",
+  "readme": "Base PHP with Apache Docker Container\n=====================================\n\nDockerized environment for PHP web development and Apache web server.\n\nFeatures\n--------\n\n* Ability to set Apache document root through `APACHE_DOC_ROOT` environment variable. Default document root is `/var/www/html`\n* Enabled Apache modules: rewrite\n* Ability to set PHP `date.timezone` through `PHP_TIMEZONE` environment variable. Default timezone is `Europe/Rome`\n* Enabled PHP extensions: gd, mcrypt, intl, mysql, mysqli, pdo_mysql, mbstring, soap, opcache, zip, xls\n* Composer installed globally at `/usr/local/bin/composer`\n* Xdebug PHP extension installed but not enabled\n* Ability to enable xdebug PHP extension through `XDEBUG_ENABLE` environment variable which has to be set to `1`\n* Ability to set xdebug.remote_enable setting through `HOST_IP` environment variable.\n* Blackfire.io Probe installed\n* GIT installed (required by Composer)\n* sSMTP installed (as Mail Transfer Agent for PHP mail function)\n* Ability to set sSMTP mailhub, AuthUser and AuthPass through `SSMTP_MAILHUB`, `SSMTP_AUTH_USER` and `SSMTP_AUTH_PASS` environment variables\n* MySQL CLI Client installed\n\nUsage\n-----\n\nStandalone usage example with host's current working directory as document root:\n\n\t$ docker run -p 80:80 -v $(pwd):/var/www/html webgriffe/php-apache-base\n\nCredits\n-------\n\n[Webgriffe®](http://www.webgriffe.com/)\n\n\n\n\n",
+  "dockerfile": "FROM php:5.6-apache\nMAINTAINER Webgriffe Srl <support@webgriffe.com>\n\n# Install GD\nRUN apt-get update \\\n    && apt-get install -y libfreetype6-dev libjpeg62-turbo-dev libpng12-dev \\\n    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \\\n    && docker-php-ext-install gd\n\n# Install MCrypt\nRUN apt-get update \\\n    && apt-get install -y libmcrypt-dev \\\n    && docker-php-ext-install mcrypt\n\n# Install Intl\nRUN apt-get update \\\n    && apt-get install -y libicu-dev \\\n    && docker-php-ext-install intl\n\n# Install XDebug\nENV XDEBUG_ENABLE 0\nRUN pecl install -o -f xdebug \\\n    && rm -rf /tmp/pear\nCOPY ./99-xdebug.ini.disabled /usr/local/etc/php/conf.d/\n\n# Install Mysql\nRUN docker-php-ext-install mysql mysqli pdo_mysql\n\n# Install Composer\nRUN curl -sS https://getcomposer.org/installer | php \\\n    && mv composer.phar /usr/local/bin/composer\n\n# Install mbstring\nRUN docker-php-ext-install mbstring\n\n# Install soap\nRUN apt-get update \\\n    && apt-get install -y libxml2-dev \\\n    && docker-php-ext-install soap\n\n# Install opcache\nRUN docker-php-ext-install opcache\n\n# Install PHP zip extension\nRUN docker-php-ext-install zip\n\n# Install Git\nRUN apt-get update \\\n    && apt-get install -y git\n\n# Install xsl\nRUN apt-get update \\\n    && apt-get install -y libxslt-dev \\\n    && docker-php-ext-install xsl\n\n# Define PHP_TIMEZONE env variable\nENV PHP_TIMEZONE Europe/Rome\n\n# Configure Apache Document Root\nENV APACHE_DOC_ROOT /var/www/html\n\n# Enable Apache mod_rewrite\nRUN a2enmod rewrite\n\n# Additional PHP ini configuration\nCOPY ./999-php.ini /usr/local/etc/php/conf.d/\n\n# Install Blackfire.io Probe\nRUN export VERSION=`php -r \"echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;\"` \\\n    && curl -A \"Docker\" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/${VERSION} \\\n    && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp \\\n    && mv /tmp/blackfire-*.so `php -r \"echo ini_get('extension_dir');\"`/blackfire.so \\\n    && echo \"extension=blackfire.so\\nblackfire.agent_socket=\\${BLACKFIRE_PORT}\" > $PHP_INI_DIR/conf.d/blackfire.ini\n\n# Sample index.php with phpinfo() and entrypoint\nCOPY ./index.php /var/www/html/index.php\n\n# Install ssmtp Mail Transfer Agent\nRUN apt-get update \\\n    && apt-get install -y ssmtp \\\n    && apt-get clean \\\n    && echo \"FromLineOverride=YES\" >> /etc/ssmtp/ssmtp.conf \\\n    && echo 'sendmail_path = \"/usr/sbin/ssmtp -t\"' > /usr/local/etc/php/conf.d/mail.ini\n\n# Install MySQL CLI Client\nRUN apt-get update \\\n    && apt-get install -y mysql-client\n\n########################################################################################################################\n\n# Start!\nCOPY ./start /usr/local/bin/\nCMD [\"start\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update     && apt-get install -y libfreetype6-dev libjpeg62-turbo-dev libpng12-dev     && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/     && docker-php-ext-install gd",
+      "apt-get update     && apt-get install -y libmcrypt-dev     && docker-php-ext-install mcrypt",
+      "apt-get update     && apt-get install -y libicu-dev     && docker-php-ext-install intl",
+      "pecl install -o -f xdebug     && rm -rf /tmp/pear",
+      "docker-php-ext-install mysql mysqli pdo_mysql",
+      "curl -sS https://getcomposer.org/installer | php     && mv composer.phar /usr/local/bin/composer",
+      "docker-php-ext-install mbstring",
+      "apt-get update     && apt-get install -y libxml2-dev     && docker-php-ext-install soap",
+      "docker-php-ext-install opcache",
+      "docker-php-ext-install zip",
+      "apt-get update     && apt-get install -y git",
+      "apt-get update     && apt-get install -y libxslt-dev     && docker-php-ext-install xsl",
+      "a2enmod rewrite",
+      "export VERSION=`php -r \"echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;\"`     && curl -A \"Docker\" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/${VERSION}     && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp     && mv /tmp/blackfire-*.so `php -r \"echo ini_get('extension_dir');\"`/blackfire.so     && echo \"extension=blackfire.so\\nblackfire.agent_socket=\\${BLACKFIRE_PORT}\" > $PHP_INI_DIR/conf.d/blackfire.ini",
+      "apt-get update     && apt-get install -y ssmtp     && apt-get clean     && echo \"FromLineOverride=YES\" >> /etc/ssmtp/ssmtp.conf     && echo 'sendmail_path = \"/usr/sbin/ssmtp -t\"' > /usr/local/etc/php/conf.d/mail.ini",
+      "apt-get update     && apt-get install -y mysql-client"
+    ],
+    "workdir": [],
+    "from": "php:5.6-apache",
+    "maintainer": "Webgriffe Srl <support@webgriffe.com>",
+    "env": {
+      "XDEBUG_ENABLE": "0",
+      "PHP_TIMEZONE": "Europe/Rome",
+      "APACHE_DOC_ROOT": "/var/www/html"
+    },
+    "copy": "./start /usr/local/bin/",
+    "cmd": "[\"start\"]"
+  },
+  "source_repository_url": "https://github.com/webgriffe/docker-php-apache-base.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/webgriffe/docker-php-apache-base",
+  "docker_repository": "webgriffe/php-apache-base",
+  "docker_image": "webgriffe/php-apache-base",
+  "parameters_schema": {
+    "XDEBUG_ENABLE": {
+      "default": "0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PHP_TIMEZONE": {
+      "default": "Europe/Rome",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APACHE_DOC_ROOT": {
+      "default": "/var/www/html",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "webgriffe/php-apache-base",
+  "revision": "5.6",
+  "uris": [
+    "https://hub.docker.com/r/webgriffe/php-apache-base",
+    "https://hub.docker.com/v2/repositories/webgriffe/php-apache-base",
+    "https://github.com/webgriffe/docker-php-apache-base.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/webgriffe/php-apache-base",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

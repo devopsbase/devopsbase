@@ -1,0 +1,94 @@
+{
+  "name": "encrypted_attributes Chef cookbook",
+  "chef_cookbook_name": "encrypted_attributes",
+  "revision": "0.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/encrypted_attributes",
+    "https://supermarket.chef.io/cookbooks/encrypted_attributes/download",
+    "https://supermarket.chef.io/cookbooks/encrypted_attributes/versions/0.1.0",
+    "https://supermarket.chef.io/cookbooks/encrypted_attributes/versions/0.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/encrypted_attributes/versions/0.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/encrypted_attributes",
+    "https://supermarket.chef.io/api/v1/cookbooks/encrypted_attributes/versions/0.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Mode/CLI",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/encrypted_attributes",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/encrypted_attributes/versions/0.1.0/download",
+  "deprecated": false,
+  "created": "2014-05-22T14:55:23.000Z",
+  "updated": "2015-08-17T19:52:38.760Z",
+  "description": "Installs and enables chef-encrypted-attributes gem: Chef plugin to add Node encrypted attributes support using client keys.",
+  "maintainer": {
+    "name": "zuazo",
+    "email": "team@onddo.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 2,
+  "downloads_count": 6624981,
+  "downloads_count_revision": 1207782,
+  "repository_url": "https://github.com/onddo/encrypted_attributes-cookbook",
+  "issues_url": "https://github.com/onddo/encrypted_attributes-cookbook/issues",
+  "chef_source_url": "https://github.com/onddo/encrypted_attributes-cookbook",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n[![Cookbook Version](https://img.shields.io/cookbook/v/encrypted_attributes.svg?style=flat)](https://community.opscode.com/cookbooks/encrypted_attributes)\n[![Build Status](http://img.shields.io/travis/onddo/encrypted_attributes-cookbook.svg?style=flat)](https://travis-ci.org/onddo/encrypted_attributes-cookbook)\n\nInstalls and enables [chef-encrypted-attributes](http://onddo.github.io/chef-encrypted-attributes/) gem: Chef plugin to add Node encrypted attributes support using client keys.\n\nRequirements\n============\n\nNo special requirements.\n\nAttributes\n==========\n\n<table>\n  <tr>\n    <th>Attribute</th>\n    <th>Description</th>\n    <th>Default</th>\n  </tr>\n  <tr>\n    <td><code>node[\"encrypted_attributes\"][\"version\"]</code></td>\n    <td>chef-encrypted-attributes gem version to install. The latest stable version is installed by default.</td>\n    <td><em>calculated</em></td>\n  </tr>\n  <tr>\n    <td><code>node[\"encrypted_attributes\"][\"mirror\"]</code></td>\n    <td>chef-encrypted-attributes mirror to download the gem from. For cases where you do not want to use rubygems.</td>\n    <td><code>nil</code></td>\n  </tr>\n  <tr>\n    <td><code>node[\"encrypted_attributes\"][\"data_bag\"][\"name\"]</code></td>\n    <td>chef-encrypted-attributes user keys data bag item name.</td>\n    <td><code>\"global\"</code></td>\n  </tr>\n  <tr>\n    <td><code>node[\"encrypted_attributes\"][\"data_bag\"][\"item\"]</code></td>\n    <td>chef-encrypted-attributes user keys data bag item name.</td>\n    <td><code>\"chef_users\"</code></td>\n  </tr>\n</table>\n\nRecipes\n=======\n\n### encrypted_attributes::default\n\nInstalls and loads the `chef-encrypted-attributes` gem.\n\n### encrypted_attributes::users_data_bag\n\nConfigures `chef-encrypted-attributes` Chef User keys reading them from a data bag. This is a workaround for the [Chef Users Limitation problem](http://onddo.github.io/chef-encrypted-attributes/#chef-users-limitation).\n\nUsage Examples\n==============\n\n## Including in a Cookbook Recipe\n\nYou can simply include it in a recipe:\n\n```ruby\ninclude_recipe \"encrypted_attributes\"\n```\n\nDon't forget to include the `encrypted_attributes` cookbook as a dependency in the metadata.\n\n```ruby\n# metadata.rb\n[...]\n\ndepends \"encrypted_attributes\"\n```\n\n## Including in the Run List\n\nAnother alternative is to include the default recipe in your Run List:\n\n```json\n{\n  \"name\": \"ftp.onddo.com\",\n  [...]\n  \"run_list\": [\n    [...]\n    \"recipe[encrypted_attributes]\"\n  ]\n}\n```\n\n## *encrypted_attributes::default* Recipe Usage Example\n\n```ruby\ninclude_recipe \"encrypted_attributes\"\n\nChef::Recipe.send(:include, Opscode::OpenSSL::Password) # include the #secure_password method\n\nif Chef::EncryptedAttribute.exists?(node[\"myapp\"][\"ftp_password\"])\n  # update with the new keys\n  Chef::EncryptedAttribute.update(node.set[\"myapp\"][\"ftp_password\"])\n\n  # read the password\n  ftp_pass = Chef::EncryptedAttribute.load(node[\"myapp\"][\"ftp_password\"])\nelse\n  # create the password and save it\n  ftp_pass = secure_password\n  node.set[\"myapp\"][\"ftp_password\"] = Chef::EncryptedAttribute.create(ftp_pass)\nend\n\n# use `ftp_pass` for something here ...\n```\n\n**Note:** This example requires the [openssl](http://community.opscode.com/cookbooks/openssl) cookbook.\n\nSee the [`chef-encrypted-attributes` gem Usage](http://onddo.github.io/chef-encrypted-attributes/#usage-in-recipes) section for more examples.\n\n## *encrypted_attributes::users_data_bag* Recipe Usage Example\n\nBefore using this recipe, you must create the required data bag:\n\n    $ knife data bag create global_data chef_users\n\nYou should create a data bag item with the following format:\n\n```json\n{\n  \"id\": \"chef_users\",\n  \"bob\": \"-----BEGIN PUBLIC KEY-----\\nMIIBIjANBgkqhkiG9w0BAQEFA...\",\n  \"alice\": \"-----BEGIN PUBLIC KEY-----\\nMIIBIjANBgkqhkiG9w0BAQEFA...\"\n}\n```\n\nThe keys can be set in *array of strings* format if you prefer:\n\n```json\n{\n  \"id\": \"chef_users\",\n  \"bob\": [\n    \"-----BEGIN PUBLIC KEY-----\",\n    \"MIIBIjANBgkqhkiG9w0BAQEFA...\",\n    ...\n  ],\n  \"alice\": [\n    \"-----BEGIN PUBLIC KEY-----\",\n    \"MIIBIjANBgkqhkiG9w0BAQEFA...\",\n    ...\n  ]\n}\n```\n\nYou can retrieve user public keys with `knife user show USER -a public_key -f json`.\n\nThen, you can use this data bag to configure the `Chef::Config[:encrypted_attributes][:keys]` chef-encrypted-attributes configuration only by calling the recipe:\n\n```ruby\nnode.default[\"encrypted_attributes\"][\"data_bag\"][\"name\"] = \"global_data\"\ninclude_recipe \"encrypted_attributes::users_data_bag\"\n\n# if Chef::EncryptedAttribute.exists_on_node?(...)\n#   Chef::EncryptedAttribute.update(...)\n# else\n#   node.set[...][...] = Chef::EncryptedAttribute.create(...)\n# ...\n```\n\n**Note:** This data bag does not need to be encrypted, because it only stores public keys.\n\nTesting\n=======\n\n## Requirements\n\n* `vagrant`\n* `foodcritic` ~> `3.0`\n* `berkshelf` >= `2.0`\n* `chefspec` ~> `3.2`\n* `test-kitchen` >= `1.2`\n* `kitchen-vagrant` >= `0.10`\n\n## Running the Syntax Style Tests\n\n    $ rake style\n\n## Running the Unit Tests\n\n    $ rake unit\n\nOr:\n\n    $ rspec\n\n## Running the Integration Tests\n\n    $ rake integration\n\nOr:\n\n    $ kitchen test\n    $ kitchen verify\n\n### Running Integration Tests in the Cloud\n\n#### Requirements\n\n* `kitchen-vagrant` >= `0.10`\n* `kitchen-digitalocean` >= `0.5`\n* `kitchen-ec2` >= `0.8`\n\nYou can run the tests in the cloud instead of using vagrant. First, you must set the following environment variables:\n\n* `AWS_ACCESS_KEY_ID`\n* `AWS_SECRET_ACCESS_KEY`\n* `AWS_KEYPAIR_NAME`: EC2 SSH public key name. This is the name used in Amazon EC2 Console's Key Pars section.\n* `EC2_SSH_KEY_PATH`: EC2 SSH private key local full path. Only when you are not using an SSH Agent.\n* `DIGITAL_OCEAN_CLIENT_ID`\n* `DIGITAL_OCEAN_API_KEY`\n* `DIGITAL_OCEAN_SSH_KEY_IDS`: DigitalOcean SSH numeric key IDs.\n* `DIGITAL_OCEAN_SSH_KEY_PATH`: DigitalOcean SSH private key local full path. Only when you are not using an SSH Agent.\n\nThen, you must configure test-kitchen to use `.kitchen.cloud.yml` configuration file:\n\n    $ export KITCHEN_LOCAL_YAML=\".kitchen.cloud.yml\"\n    $ kitchen list\n    [...]\n\nContributing\n============\n\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n\nLicense and Author\n=====================\n\n|                      |                                          |\n|:---------------------|:-----------------------------------------|\n| **Author:**          | [Xabier de Zuazo](https://github.com/zuazo) (<xabier@onddo.com>)\n| **Copyright:**       | Copyright (c) 2014, Onddo Labs, SL. (www.onddo.com)\n| **License:**         | Apache License, Version 2.0\n\n    Licensed under the Apache License, Version 2.0 (the \"License\");\n    you may not use this file except in compliance with the License.\n    You may obtain a copy of the License at\n    \n        http://www.apache.org/licenses/LICENSE-2.0\n    \n    Unless required by applicable law or agreed to in writing, software\n    distributed under the License is distributed on an \"AS IS\" BASIS,\n    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n    See the License for the specific language governing permissions and\n    limitations under the License.\n",
+  "chef_recipes": {
+    "encrypted_attributes::default": "Installs and loads the chef-encrypted-attributes gem.",
+    "encrypted_attributes::users_data_bag": "Configures chef-encrypted-attributes Chef User keys reading them from a data bag. This is a workaround for the Chef Users Limitation problem."
+  },
+  "parameters": {
+    "encrypted_attributes/version": {
+      "display_name": "chef-encrypted-attributes version",
+      "description": "chef-encrypted-attributes gem version to install. The latest stable version is installed by default.",
+      "type": "string",
+      "required": "optional",
+      "calculated": true,
+      "choice": [],
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "encrypted_attributes/mirror": {
+      "display_name": "chef-encrypted-attributes mirror",
+      "description": "chef-encrypted-attributes mirror to download the gem from. For cases where you do not want to use rubygems.",
+      "type": "string",
+      "required": "optional",
+      "default": "nil",
+      "choice": [],
+      "calculated": false,
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "encrypted_attributes/data_bag/name": {
+      "display_name": "chef-encrypted-attributes data bag name",
+      "description": "chef-encrypted-attributes user keys data bag name.",
+      "type": "string",
+      "required": "optional",
+      "default": "\"global\"",
+      "choice": [],
+      "calculated": false,
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    },
+    "encrypted_attributes/data_bag/item": {
+      "display_name": "chef-encrypted-attributes data bag item name",
+      "description": "chef-encrypted-attributes user keys data bag item name.",
+      "type": "string",
+      "required": "optional",
+      "default": "\"chef_users\"",
+      "choice": [],
+      "calculated": false,
+      "recipes": [],
+      "mapping": "cookbook_attribute"
+    }
+  }
+}

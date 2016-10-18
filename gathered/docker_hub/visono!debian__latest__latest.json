@@ -1,0 +1,131 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/visono/debian",
+    "repository_url": "https://hub.docker.com/v2/repositories/visono/debian",
+    "tags_url": "https://hub.docker.com/v2/repositories/visono/debian/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/visono/debian/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/visono/debian/autobuild",
+    "user": "visono",
+    "name": "debian",
+    "namespace": "visono",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1993,
+    "last_updated": "2016-09-23T20:48:08.933664Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 142554074,
+        "id": 461953,
+        "repository": 241420,
+        "creator": 54292,
+        "last_updater": 54383,
+        "last_updated": "2016-09-23T20:45:26.437655Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Visono/debian_base_image"
+  },
+  "name": "visono/debian Docker container",
+  "description": "Docker base image of debian 7 with tools installed.",
+  "readme": "# debian_base_image\n## Docker base image of debian 7 with tools installed.\n\nBase image: [debian][1]:wheezy-backports\n\n[![](https://badge.imagelayers.io/visono/debian:latest.svg)](https://imagelayers.io/?images=visono/debian:latest 'Get your own badge on imagelayers.io')\n\nAdditionally installed software:\n\n- curl\n- wget\n- unzip\n- htop\n- procps\n- vim\n- screen\n- supervisor\n- at\n- whois\n- less\n- python-pip\n- uuid-runtim\n- gawk\n- mediainfo\n- jq\n\n  [1]: https://registry.hub.docker.com/_/debian/\n",
+  "dockerfile": "# Lastest debian:wheezy-backports\nFROM debian:wheezy-backports\n\nMAINTAINER Patrik Hagedorn <p.hagedorn@visono.com>\n\nUSER root\n\n# Get noninteractive frontend for Debian to avoid some problems:\n#    debconf: unable to initialize frontend: Dialog\nENV DEBIAN_FRONTEND noninteractive\n\n# Set terminal to xterm\nENV TERM=\"xterm\"\n\n# Install and configure default locale\nRUN apt-get update \\\n    && apt-get install -y locales \\\n    && dpkg-reconfigure locales \\\n    && locale-gen C.UTF-8 \\\n    && /usr/sbin/update-locale LANG=C.UTF-8 \\\n    && echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen \\\n    && locale-gen\n\n# Set default locale for environment\nENV LC_ALL C.UTF-8\nENV LANG en_US.UTF-8\nENV LANGUAGE en_US.UTF-8\n\n# Install curl, wget, unzip, htop, procps, vim, screen, supervisor, at, whois, less, python-pip, uuid-runtime, gawk\nRUN apt-get install -y \\\n    curl \\\n    wget \\\n    unzip \\\n    htop \\\n    procps \\\n    vim \\\n    screen \\\n    supervisor \\\n    at \\\n    whois \\\n    less \\\n    python-pip \\\n    uuid-runtime \\\n    gawk \\\n    mediainfo \\\n    jq \\\n    && chmod 777 /var/run/screen \\\n    && mkdir -p /var/log/supervisor \\\n    && apt-get autoclean -y \\\n    && apt-get autoremove -y \\\n    && pip install supervisor --upgrade\n\n# Install security updates and patches\nRUN apt-get update -q \\\n    && apt-get upgrade -y \\\n    && apt-get dist-upgrade -y \\\n    && apt-get autoclean -y \\\n    && apt-get autoremove -y\n\n# Adding history search with page up and page down\nRUN sed -i'' 's|# \"\\\\e\\[5~\": history-search-backward|\"\\\\e\\[5~\": history-search-backward|' /etc/inputrc \\\n    && sed -i'' 's|# \"\\\\e\\[6~\": history-search-forward|\"\\\\e\\[6~\": history-search-forward|' /etc/inputrc\n\n# Adding limits module to pam config\nRUN echo \"session required pam_limits.so\" >> /etc/pam.d/common-session \\\n    && echo \"session required pam_limits.so\" >> /etc/pam.d/common-session-noninteractive\n\n# Adding limits.conf\nCOPY limits.conf /etc/security/limits.conf\n\n# Adding supervisord.conf\nCOPY supervisord.conf /etc/supervisor/supervisord.conf\nRUN ln -s /etc/supervisor/supervisord.conf /etc/supervisord.conf\n\n# Adding scripts\nCOPY run.sh /run.sh\nRUN chmod 755 /*.sh\n\nCMD [\"/bin/bash\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update     && apt-get install -y locales     && dpkg-reconfigure locales     && locale-gen C.UTF-8     && /usr/sbin/update-locale LANG=C.UTF-8     && echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen     && locale-gen",
+      "apt-get install -y     curl     wget     unzip     htop     procps     vim     screen     supervisor     at     whois     less     python-pip     uuid-runtime     gawk     mediainfo     jq     && chmod 777 /var/run/screen     && mkdir -p /var/log/supervisor     && apt-get autoclean -y     && apt-get autoremove -y     && pip install supervisor --upgrade",
+      "apt-get update -q     && apt-get upgrade -y     && apt-get dist-upgrade -y     && apt-get autoclean -y     && apt-get autoremove -y",
+      "sed -i'' 's|# \"\\\\e\\[5~\": history-search-backward|\"\\\\e\\[5~\": history-search-backward|' /etc/inputrc     && sed -i'' 's|# \"\\\\e\\[6~\": history-search-forward|\"\\\\e\\[6~\": history-search-forward|' /etc/inputrc",
+      "echo \"session required pam_limits.so\" >> /etc/pam.d/common-session     && echo \"session required pam_limits.so\" >> /etc/pam.d/common-session-noninteractive",
+      "ln -s /etc/supervisor/supervisord.conf /etc/supervisord.conf",
+      "chmod 755 /*.sh"
+    ],
+    "workdir": [],
+    "from": "debian:wheezy-backports",
+    "maintainer": "Patrik Hagedorn <p.hagedorn@visono.com>",
+    "user": "root",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "TERM": "\"xterm\"",
+      "LC_ALL": "C.UTF-8",
+      "LANG": "en_US.UTF-8",
+      "LANGUAGE": "en_US.UTF-8"
+    },
+    "copy": "run.sh /run.sh",
+    "cmd": "[\"/bin/bash\"]"
+  },
+  "source_repository_url": "https://github.com/Visono/debian_base_image.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Visono/debian_base_image",
+  "docker_repository": "visono/debian",
+  "docker_image": "visono/debian",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TERM": {
+      "default": "\"xterm\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LC_ALL": {
+      "default": "C.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "en_US.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANGUAGE": {
+      "default": "en_US.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "visono/debian",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/visono/debian",
+    "https://hub.docker.com/v2/repositories/visono/debian",
+    "https://github.com/Visono/debian_base_image.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://hub.docker.com/r/visono/debian",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

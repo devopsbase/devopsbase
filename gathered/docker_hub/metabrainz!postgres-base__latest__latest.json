@@ -1,0 +1,110 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/metabrainz/postgres-base",
+    "repository_url": "https://hub.docker.com/v2/repositories/metabrainz/postgres-base",
+    "tags_url": "https://hub.docker.com/v2/repositories/metabrainz/postgres-base/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/metabrainz/postgres-base/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/metabrainz/postgres-base/autobuild",
+    "user": "metabrainz",
+    "name": "postgres-base",
+    "namespace": "metabrainz",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 93,
+    "last_updated": "2016-10-15T01:32:43.961678Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 244742754,
+        "id": 4835033,
+        "repository": 915154,
+        "creator": 934688,
+        "last_updater": 934688,
+        "last_updated": "2016-10-15T01:32:43.573306Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "metabrainz/docker-postgres"
+  },
+  "name": "metabrainz/postgres-base Docker container",
+  "description": "Base image of postgres/pgbouncer without configuration",
+  "readme": "# docker-postgres\n\nMetaBrainz postgres + pgbouncer container.\n\nRunning `make` produces three images:\n * `metabrainz/haproxy-pgbouncer-readonly`\n * `metabrainz/postgres-master`\n * `metabrainz/postgres-slave`\n",
+  "dockerfile": "FROM metabrainz/consul-template-base\n\n# Pgbouncer and postgres are set up in the same container, because there is a\n# 1:1 relationship between them which can't easily scale with swarm otherwise.\n\nARG DEBIAN_FRONTEND=noninteractive\n\nARG RUN_DEPS=\" \\\n    ca-certificates \\\n    libc-ares2 \\\n    libev4 \\\n    libevent-2.0-5 \\\n    libicu55 \\\n    libssl1.0.0 \\\n    locales \\\n    rsync\"\n\nARG BUILD_DEPS=\" \\\n    autoconf \\\n    automake \\\n    build-essential \\\n    git \\\n    libssl-dev \\\n    libtool \\\n    pkg-config \\\n    postgresql-server-dev-9.5\"\n\nRUN apt-get update && \\\n    apt-get install --no-install-recommends -y $RUN_DEPS $BUILD_DEPS\n\n###############\n## pgbouncer ##\n###############\n\n# Within a docker container, DNS lookups are broken in the official packaged\n# versions of pgbouncer for trusty and jessie, plus the versions in the\n# official PG repo for both of those distros. Some scant details can be found\n# in this issue:\n# https://github.com/pgbouncer/pgbouncer/issues/122\n#\n# This section of the Dockerfile was based on the following comment from the\n# above issue:\n# https://github.com/pgbouncer/pgbouncer/issues/122#issuecomment-199182461\n#\n# Which in turn was based on:\n# https://hub.docker.com/r/mbentley/ubuntu-pgbouncer/~/dockerfile/\n# https://github.com/mbentley/dockerfiles/tree/master/ubuntu/pgbouncer\n\nARG PGBOUNCER_BUILD_DEPS=\" \\\n    libc-ares-dev \\\n    libev-dev \\\n    libevent-dev\"\n\nRUN apt-get update && \\\n    apt-get install --no-install-recommends -y $PGBOUNCER_BUILD_DEPS && \\\n    cd /tmp && \\\n    git clone https://github.com/pgbouncer/pgbouncer.git && \\\n    cd pgbouncer && \\\n    git checkout pgbouncer_1_7_2 && \\\n    git submodule init && \\\n    git submodule update && \\\n    ./autogen.sh && \\\n    ./configure --enable-evdns=no && \\\n    make && \\\n    make install && \\\n    apt-get purge -y $PGBOUNCER_BUILD_DEPS && \\\n    cd / && \\\n    rm -rf /tmp/pgbouncer /var/lib/apt/lists/*\n\n##############\n## postgres ##\n##############\n\n# https://github.com/docker-library/postgres/blob/04b1d36/9.5/Dockerfile#L37\nRUN sed -ri 's/#(create_main_cluster) .*$/\\1 = false/' /etc/postgresql-common/createcluster.conf && \\\n    apt-get update && \\\n    apt-get install --no-install-recommends -y \\\n        postgresql-9.5 \\\n        postgresql-contrib-9.5 && \\\n    rm -rf /var/lib/apt/lists/*\n\nENV PGDATA /var/lib/postgresql/data\n\nRUN mkdir -p $PGDATA && \\\n    chown -R postgres:postgres $PGDATA && \\\n    chpst -u postgres:postgres \\\n        /usr/lib/postgresql/9.5/bin/initdb \\\n            --encoding utf8 \\\n            --locale en_US.UTF8 \\\n            $PGDATA\n\n################\n## extensions ##\n################\n\nRUN cd /tmp && \\\n    git clone https://github.com/metabrainz/dbmirror.git && \\\n    cd dbmirror && \\\n    git reset --hard e0505788dde75b0ea0efe895c5c311b0f5aa757f && \\\n    make && \\\n    make install && \\\n    cd / && \\\n    rm -rf /tmp/dbmirror\n\nRUN apt-get update && \\\n    apt-get install --no-install-recommends -y libicu-dev && \\\n    cd /tmp && \\\n    git clone https://github.com/metabrainz/postgresql-musicbrainz-collate.git && \\\n    cd postgresql-musicbrainz-collate && \\\n    git reset --hard 958142e03c5d035bb215a4296fd09bcf388b833a && \\\n    make && \\\n    make install && \\\n    apt-get purge -y libicu-dev && \\\n    cd / && \\\n    rm -rf /tmp/postgresql-musicbrainz-collate /var/lib/apt/lists/*\n\nRUN cd /tmp && \\\n    git clone https://github.com/metabrainz/postgresql-musicbrainz-unaccent.git && \\\n    cd postgresql-musicbrainz-unaccent && \\\n    git reset --hard a32ca6a3e39c55b89dee85aabe770728dd896aef && \\\n    make && \\\n    make install && \\\n    cd / && \\\n    rm -rf /tmp/postgresql-musicbrainz-unaccent\n\nRUN cd /tmp && \\\n    git clone https://github.com/omniti-labs/pg_amqp.git && \\\n    cd pg_amqp && \\\n    git reset --hard 1290d7cfd4c7ba1e2d7a502708dcfeb53b308f3b && \\\n    make && \\\n    make install && \\\n    cd / && \\\n    rm -rf /tmp/pg_amqp\n\n#############\n## cleanup ##\n#############\n\nRUN apt-get purge -y $BUILD_DEPS && \\\n    apt-get autoremove -y\n\n###################\n## configuration ##\n###################\n\nCOPY pgbouncer.ini.ctmpl userlist.txt /etc/pgbouncer/\nCOPY pgbouncer.service /etc/service/pgbouncer/run\nCOPY postgres.service /etc/service/postgres/run\nRUN chmod 755 /etc/service/pgbouncer/run /etc/service/postgres/run\n\nVOLUME [\"/var/lib/postgresql/data\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "[\"/var/lib/postgresql/data\"]"
+    ],
+    "run": [
+      "apt-get update &&     apt-get install --no-install-recommends -y $RUN_DEPS $BUILD_DEPS",
+      "apt-get update &&     apt-get install --no-install-recommends -y $PGBOUNCER_BUILD_DEPS &&     cd /tmp &&     git clone https://github.com/pgbouncer/pgbouncer.git &&     cd pgbouncer &&     git checkout pgbouncer_1_7_2 &&     git submodule init &&     git submodule update &&     ./autogen.sh &&     ./configure --enable-evdns=no &&     make &&     make install &&     apt-get purge -y $PGBOUNCER_BUILD_DEPS &&     cd / &&     rm -rf /tmp/pgbouncer /var/lib/apt/lists/*",
+      "sed -ri 's/#(create_main_cluster) .*$/\\1 = false/' /etc/postgresql-common/createcluster.conf &&     apt-get update &&     apt-get install --no-install-recommends -y         postgresql-9.5         postgresql-contrib-9.5 &&     rm -rf /var/lib/apt/lists/*",
+      "mkdir -p $PGDATA &&     chown -R postgres:postgres $PGDATA &&     chpst -u postgres:postgres         /usr/lib/postgresql/9.5/bin/initdb             --encoding utf8             --locale en_US.UTF8             $PGDATA",
+      "cd /tmp &&     git clone https://github.com/metabrainz/dbmirror.git &&     cd dbmirror &&     git reset --hard e0505788dde75b0ea0efe895c5c311b0f5aa757f &&     make &&     make install &&     cd / &&     rm -rf /tmp/dbmirror",
+      "apt-get update &&     apt-get install --no-install-recommends -y libicu-dev &&     cd /tmp &&     git clone https://github.com/metabrainz/postgresql-musicbrainz-collate.git &&     cd postgresql-musicbrainz-collate &&     git reset --hard 958142e03c5d035bb215a4296fd09bcf388b833a &&     make &&     make install &&     apt-get purge -y libicu-dev &&     cd / &&     rm -rf /tmp/postgresql-musicbrainz-collate /var/lib/apt/lists/*",
+      "cd /tmp &&     git clone https://github.com/metabrainz/postgresql-musicbrainz-unaccent.git &&     cd postgresql-musicbrainz-unaccent &&     git reset --hard a32ca6a3e39c55b89dee85aabe770728dd896aef &&     make &&     make install &&     cd / &&     rm -rf /tmp/postgresql-musicbrainz-unaccent",
+      "cd /tmp &&     git clone https://github.com/omniti-labs/pg_amqp.git &&     cd pg_amqp &&     git reset --hard 1290d7cfd4c7ba1e2d7a502708dcfeb53b308f3b &&     make &&     make install &&     cd / &&     rm -rf /tmp/pg_amqp",
+      "apt-get purge -y $BUILD_DEPS &&     apt-get autoremove -y",
+      "chmod 755 /etc/service/pgbouncer/run /etc/service/postgres/run"
+    ],
+    "workdir": [],
+    "from": "metabrainz/consul-template-base",
+    "arg": "PGBOUNCER_BUILD_DEPS=\"     libc-ares-dev     libev-dev     libevent-dev\"",
+    "env": {
+      "PGDATA": "/var/lib/postgresql/data"
+    },
+    "copy": "postgres.service /etc/service/postgres/run"
+  },
+  "source_repository_url": "https://github.com/metabrainz/docker-postgres.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/metabrainz/docker-postgres",
+  "docker_repository": "metabrainz/postgres-base",
+  "docker_image": "metabrainz/postgres-base",
+  "parameters_schema": {
+    "PGDATA": {
+      "default": "/var/lib/postgresql/data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "metabrainz/postgres-base",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/metabrainz/postgres-base",
+    "https://hub.docker.com/v2/repositories/metabrainz/postgres-base",
+    "https://github.com/metabrainz/docker-postgres.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/metabrainz/postgres-base",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

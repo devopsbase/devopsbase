@@ -1,0 +1,46 @@
+{
+  "name": "materialize Chef cookbook",
+  "chef_cookbook_name": "materialize",
+  "revision": "1.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/materialize",
+    "https://supermarket.chef.io/cookbooks/materialize/download",
+    "https://supermarket.chef.io/cookbooks/materialize/versions/1.0.0",
+    "https://supermarket.chef.io/cookbooks/materialize/versions/1.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/materialize/versions/1.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/materialize",
+    "https://supermarket.chef.io/api/v1/cookbooks/materialize/versions/1.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Guide/Text/Pattern",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Search"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/materialize",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/materialize/versions/1.0.0/download",
+  "deprecated": false,
+  "created": "2016-09-16T16:59:00.504Z",
+  "updated": "2016-09-16T16:59:00.490Z",
+  "description": "Implements a materialized view pattern for searches",
+  "maintainer": {
+    "name": "tas50",
+    "email": "cookbooks@chef.io"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 19,
+  "downloads_count_revision": 19,
+  "repository_url": "https://github.com/chef-cookbooks/materialize",
+  "issues_url": "https://github.com/chef-cookbooks/materialize/issues",
+  "chef_source_url": "https://github.com/chef-cookbooks/materialize",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# materialize\n\n[![Build Status](https://travis-ci.org/chef-cookbooks/materialize.svg?branch=master)](http://travis-ci.org/chef-cookbooks/materialize)\n\nThis cookbook provides a way to materialize a data-structure into a Chef databag, and then easily retrieve it on another node. This can be useful if, for example, you want to amortize the cost of a large search one time, rather than repeat it on a thousand nodes.\n\n## Requirements\n\n### Platforms\n\n- Any platform supported by Chef\n\n### Chef\n\n- Chef 12.1+\n\n### Cookbooks\n\n- none\n\n## Usage\n\n1. Make this cookbook a dependency of the cookbook that will use either the read or write functions.\n2. Call the functions.\n3. There is no step three.\n\n## Write\n\nLets say you have a cookbook with a big search, to build something like ssh_known_hosts. In a typical Chef cookbook, you might write the following:\n\n```ruby\ndata = []\nsearch(:node, 'fqdn:* AND ipaddress:* AND keys_ssh_host_rsa_public:* AND host_dsa_public:*') do |n|\n  data << \"#{n['fqdn']},#{n['ipaddress']} #{n['keys']['ssh']['host_rsa_public']}\"\n  data << \"#{n['fqdn']},#{n['ipaddress']} #{n['keys']['ssh']['host_dsa_public']}\"\nend\ndata = data.sort\n```\n\nTo build up your data for the ssh_known_hosts file. This woudl result in a global search across every node in your infrastructure on every convergence, which, as you get larger, will be pretty brutal.\n\nWith this cookbook, you would do the following instead:\n\n```ruby\nmaterialize('ssh_known_hosts') do\n  data = []\n  search(:node, 'fqdn:* AND ipaddress:* AND keys_ssh_host_rsa_public:* AND host_dsa_public:*') do |n|\n    data << \"#{n['fqdn']},#{n['ipaddress']} #{n['keys']['ssh']['host_rsa_public']}\"\n    data << \"#{n['fqdn']},#{n['ipaddress']} #{n['keys']['ssh']['host_dsa_public']}\"\n  end\n  data.sort\nend\n```\n\nThis would take the output of your search query and store it in a data bag called 'materialize', with the key of 'ssh_known_hosts'. You want to make sure this happens _on one node only_, rather than on every node. (For example, move it to another recipe, or have a node attribute, or check on node name - whatever. Just don't run it every time.)\n\n## Read\n\nTo get your value back out, you would do something like this:\n\n```ruby\nbegin\n  ssh_known_hosts_content = retrieve('ssh_known_hosts').join(\"\\n\")\nrescue\n  # Protect against empty cache\n  ssh_known_hosts_content = IO.read('/etc/ssh/ssh_known_hosts')\nend\n\nfile \"/etc/ssh/ssh_known_hosts\" do\n  owner \"root\"\n  mode \"0644\"\n  content ssh_known_hosts_content\nend\n```\n\n## Development\n\nThis cookbook comes with unit tests!\n\n```bash\n$ bundle install\n$ bundle exec rspec\n```\n\nAnd with functional tests!\n\n```bash\n$ kitchen test default\n```\n\n## License & Authors\n\n**Author:** Cookbook Engineering Team ([cookbooks@chef.io](mailto:cookbooks@chef.io))\n\n**Copyright:** 2011-2016, Chef Software, Inc.\n\n```\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n"
+}

@@ -1,0 +1,137 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/grrrnl/garp3-httpd",
+    "repository_url": "https://hub.docker.com/v2/repositories/grrrnl/garp3-httpd",
+    "tags_url": "https://hub.docker.com/v2/repositories/grrrnl/garp3-httpd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/grrrnl/garp3-httpd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/grrrnl/garp3-httpd/autobuild",
+    "user": "grrrnl",
+    "name": "garp3-httpd",
+    "namespace": "grrrnl",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 103,
+    "last_updated": "2016-09-12T10:11:17.090923Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "3.9",
+        "full_size": 267742393,
+        "id": 4030452,
+        "repository": 811417,
+        "creator": 816205,
+        "last_updater": 816205,
+        "last_updated": "2016-09-12T10:11:15.891497Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.8",
+        "full_size": 254830415,
+        "id": 4017075,
+        "repository": 811417,
+        "creator": 816205,
+        "last_updater": 816205,
+        "last_updated": "2016-07-27T15:57:32.960726Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "grrr-amsterdam/garp3-httpd-docker"
+  },
+  "name": "grrrnl/garp3-httpd Docker container",
+  "description": "Web server for Garp 3 projects.",
+  "readme": "# Garp 3 webserver Docker setup\n[![](https://images.microbadger.com/badges/version/grrrnl/garp3-httpd.svg)](http://microbadger.com/images/grrrnl/garp3-httpd)\n[![](https://images.microbadger.com/badges/image/grrrnl/garp3-httpd.svg)](http://microbadger.com/images/grrrnl/garp3-httpd)\n\nThis is a webserver setup for Docker, to enable running a Garp 3 site out of the box.\nFor instance, on your local development machine.\n\nGarp 3 is a PHP based platform, originating from Grrr in Amsterdam.\n\nYou can use it with Docker Compose, or standalone.\nThe Docker Compose route is practical when also running a database setup.\n\nRepository name on Docker Hub: `grrrnl/garp3`\n\nExample of a `docker-compose.yml` file in your project:\n```\nversion: '2'\nservices:\n  web:\n    image: grrrnl/garp3-httpd\n    ports:\n      - \"80:80\"\n    depends_on:\n      - db\n    volumes:\n      - .:/var/www/html\n    privileged: true\n  db:\n    image: grrrnl/garp3-db\n    ports:\n      - \"3306:3306\"\n    restart: always\n    volumes_from:\n      - dbdata\n    environment:\n      MYSQL_ROOT_PASSWORD: secret\n      MYSQL_DATABASE: my_database\n      MYSQL_USER: my_db_user\n      MYSQL_PASSWORD: my_db_pass\n  dbdata:\n    image: grrrnl/garp3-data\n    volumes:\n      - ./application/data/docker:/var/lib/mysql\n```\n",
+  "dockerfile": "FROM php:5.6-apache\nMAINTAINER David Spreekmeester <david@grrr.nl>\n\nENV APPLICATION_ENV=development\n\n# Export $TERM explicitly to prevent some problems with Fish shell\nENV TERM linux\n# Add PHP Composer path to current path\nENV PATH $PATH:./vendor/bin\n\nADD docker/php.ini /usr/local/etc/php/\nADD docker/httpd.conf /etc/apache2/apache2.conf\n\nWORKDIR /var/www/html\n\nRUN \\\n    # Create document root directory.\n    mkdir -p /var/www/html/public && \\\n\n    # Update first\n    apt-get -y update && \\\n\n    # Install Fish shell for Debian 7.x\n    apt-key adv --keyserver keyserver.ubuntu.com --recv-key D880C8E4 && \\\n    echo 'deb http://download.opensuse.org/repositories/shells:/fish:/release:/2/Debian_7.0/ ./' \\\n        > /etc/apt/sources.list.d/fish-shell.list && \\\n    apt-get -y update && \\\n    apt-get -y install fish && \\\n\n    # Basics\n    apt-get -y install apt-utils wget && \\\n\n    # PHP GD library\n    apt-get -y install \\\n        libpng12-dev \\\n        libjpeg-dev \\\n        php5-gd && \\\n    docker-php-ext-configure gd --with-jpeg-dir=/usr/lib && \\\n    docker-php-ext-install gd && \\\n\n    # Enable Apache's mod_include for Server Side Includes\n    cp /etc/apache2/mods-available/include.load /etc/apache2/mods-enabled/ && \\\n\n    # Install MySql Improved\n    apt-get -y install php5-mysql && \\\n    docker-php-ext-install pdo_mysql && \\\n\n    # Install general MySQL client for easy access to db container\n    apt-get -y install mysql-client && \\\n\n    # Install Node 6.x & NPM\n    wget -qO- https://deb.nodesource.com/setup_6.x | bash - && \\\n    apt-get -y install nodejs && \\\n\n    # Install mod_rewrite on Apache\n    a2enmod rewrite && \\\n\n    # Install ruby gems\n    apt-get -y install ruby rubygems-integration && \\\n    gem install scss-lint && \\\n    gem install semver && \\\n\n    npm i -g gulp && \\\n    npm i -g bower && \\\n    npm i -g jshint && \\\n\n    # Deploy tools\n    gem install capistrano && \\\n\n    # Install python package manager\n    apt-get -y install python python-pip && \\\n\n    # Install aws cli tool\n    pip install awscli\nEXPOSE 80\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "docker/php.ini",
+        "dest": "/usr/local/etc/php/"
+      },
+      {
+        "source": "docker/httpd.conf",
+        "dest": "/etc/apache2/apache2.conf"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "    # Create document root directory."
+    ],
+    "workdir": [
+      "/var/www/html"
+    ],
+    "from": "php:5.6-apache",
+    "maintainer": "David Spreekmeester <david@grrr.nl>",
+    "env": {
+      "APPLICATION_ENV": "development",
+      "TERM": "linux",
+      "PATH": "$PATH:./vendor/bin"
+    }
+  },
+  "source_repository_url": "https://github.com/grrr-amsterdam/garp3-httpd-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/grrr-amsterdam/garp3-httpd-docker",
+  "docker_repository": "grrrnl/garp3-httpd",
+  "docker_image": "grrrnl/garp3-httpd",
+  "parameters_schema": {
+    "APPLICATION_ENV": {
+      "default": "development",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TERM": {
+      "default": "linux",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:./vendor/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "grrrnl/garp3-httpd",
+  "revision": "3.9",
+  "uris": [
+    "https://hub.docker.com/r/grrrnl/garp3-httpd",
+    "https://hub.docker.com/v2/repositories/grrrnl/garp3-httpd",
+    "https://github.com/grrr-amsterdam/garp3-httpd-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Web Server"
+  ],
+  "info_url": "https://hub.docker.com/r/grrrnl/garp3-httpd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,157 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/servivum/nginx",
+    "repository_url": "https://hub.docker.com/v2/repositories/servivum/nginx",
+    "tags_url": "https://hub.docker.com/v2/repositories/servivum/nginx/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/servivum/nginx/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/servivum/nginx/autobuild",
+    "user": "servivum",
+    "name": "nginx",
+    "namespace": "servivum",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 1484,
+    "last_updated": "2016-10-15T16:10:12.542521Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1",
+        "full_size": 139252584,
+        "id": 1629952,
+        "repository": 454358,
+        "creator": 468761,
+        "last_updater": 477131,
+        "last_updated": "2016-10-15T16:10:12.200027Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 139252649,
+        "id": 1601992,
+        "repository": 454358,
+        "creator": 468761,
+        "last_updater": 477131,
+        "last_updated": "2016-10-15T16:05:18.122385Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.11",
+        "full_size": 139252558,
+        "id": 3293267,
+        "repository": 454358,
+        "creator": 477131,
+        "last_updater": 477131,
+        "last_updated": "2016-10-15T16:00:23.681763Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Servivum/docker-nginx"
+  },
+  "name": "servivum/nginx Docker container",
+  "description": "Nginx Docker Image with Useful Tools",
+  "readme": "![nginx 1.11.5](https://img.shields.io/badge/nginx-1.11.5-brightgreen.svg?style=flat-square) ![PageSpeed Latest](https://img.shields.io/badge/PageSpeed-Latest-brightgreen.svg?style=flat-square) [![License MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT) [![Travis](https://img.shields.io/travis/servivum/docker-nginx.svg?style=flat-square)](https://travis-ci.org/servivum/docker-nginx)\n\n# Nginx Docker Image\n\nDockerfile for creating Nginx image with useful tools, e.g. Google Pagespeed module, Nginx config templates, etc. See \n[Docker Hub](https://hub.docker.com/r/servivum/nginx) for more details about the image.\n\n## What's inside?\n\n- Servivum Debian Base: [Read more](https://github.com/servivum/docker-debian)\n- nginx: Modern webserver and reverse proxy\n- Google Pagespeed Module: nginx module for speeding up your website by using handy filters.\n- H5BP Nginx Server Configs: Collection of nginx configuration snippets.\n- Let's Encrypt: Secure your project for free. \n- htpasswd: Create credential files for protected URLs.\n\n## Supported Tags\n\n- `1.11`, `1`, `latest` [(Dockerfile)](https://github.com/servivum/docker-nginx)\n\n## Usage\n\n### Basic\n\nStart the container with a port mapping like this to see the nginx welcome page:\n\n``bash\ndocker run -p 80:80 servivum/nginx\n``\n\n### Own nginx Configuration\n\nTo pass your own nginx configuration, place a file `/etc/nginx/nginx.conf` inside the container \nby volume or your own Dockerfile which extends the original one.\n\n``bash\ndocker run -p 80:80 -v /host-folder/nginx.conf:/etc/nginx/nginx.conf servivum/nginx\n``\n\n### Own Server Block/Virtual Host\n\nBy default the nginx.conf includes `/etc/nginx/conf.d/*.conf` files for configuring nginx server blocks.\nTo pass your own server block, place a file with `.conf` extension inside the container by volume or your own Dockerfile \nwhich extends the original one. \n\n``bash\ndocker run -p 80:80 -v /host-folder/:/etc/nginx/conf.d servivum/nginx\n``",
+  "dockerfile": "# Nginx Docker Image + Pagespeed + H5BP Configs + Let's Encrypt!\n\nFROM servivum/debian:jessie\nMAINTAINER Patrick Baber <patrick.baber@servivum.com>\n\n# Versions\n# URL: http://nginx.org/en/download.html\nENV NGINX_VERSION \"1.11.5\"\nENV NGINX_PGP_KEY_ID \"A1C052F8\"\n# URL: https://developers.google.com/speed/pagespeed/module/build_ngx_pagespeed_from_source\nENV NGINX_PAGESPEED_VERSION \"1.11.33.4\"\n# URL: https://github.com/certbot/certbot/releases\nENV LETS_ENCRYPT_VERSION \"0.8.1\"\n\n# Load build essentials\nRUN apt-get update && apt-get install -y --no-install-recommends \\\n    build-essential \\\n    libpcre3 \\\n    libpcre3-dev \\\n    libreadline6 \\\n    libssl-dev \\\n    zlib1g-dev \\\n    && \\\n    mkdir -p /usr/src/nginx && \\\n\n# Load Pagespeed module, PSOL and nginx\n    cd /usr/src/nginx && \\\n\twget https://github.com/pagespeed/ngx_pagespeed/archive/latest-stable.zip -O latest-stable.zip && \\\n\tunzip latest-stable.zip && \\\n\tcd ngx_pagespeed-latest-stable/ && \\\n\twget https://dl.google.com/dl/page-speed/psol/${NGINX_PAGESPEED_VERSION}.tar.gz && \\\n\ttar -xzvf ${NGINX_PAGESPEED_VERSION}.tar.gz && \\\n\n# Load and compile nginx with Pagespeed module\n    cd /usr/src/nginx && \\\n\twget http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz && \\\n\twget http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz.asc && \\\n\tgpg --keyserver x-hkp://pool.sks-keyservers.net --recv-keys ${NGINX_PGP_KEY_ID} && \\\n\tgpg --verify nginx-${NGINX_VERSION}.tar.gz.asc nginx-${NGINX_VERSION}.tar.gz && \\\n\ttar -xvzf nginx-${NGINX_VERSION}.tar.gz && \\\n\tcd nginx-${NGINX_VERSION}/ && \\\n\t./configure --add-module=/usr/src/nginx/ngx_pagespeed-latest-stable \\\n\t\t--sbin-path=/usr/sbin/nginx \\\n\t\t--conf-path=/etc/nginx/nginx.conf && \\\n\tmake && \\\n\tmake install && \\\n\tmkdir -p /var/log/nginx && \\\n\tmkdir -p /etc/nginx/conf.d && \\\n\n# Clean up\n\trm -rf /usr/src/nginx && \\\n    apt-get purge -y -f \\\n    build-essential \\\n    && \\\n    apt-get clean autoclean && \\\n    apt-get autoremove -y && \\\n    rm -rf /var/lib/apt/lists/*\n\n# Add nginx basic conf\nCOPY etc/nginx/nginx.conf /etc/nginx/nginx.conf\n\n# Add nginx to supervisor\nCOPY etc/supervisor/conf.d/nginx.conf /etc/supervisor/conf.d/nginx.conf\n\n# Copy h5bp nginx conf into nginx conf subfolder\nRUN mkdir -p /usr/src/nginx && \\\n    cd /usr/src/nginx && \\\n\twget https://github.com/h5bp/server-configs-nginx/archive/master.zip -O server-configs-nginx.zip && \\\n\tunzip server-configs-nginx.zip && \\\n\tcp -r server-configs-nginx-master/h5bp/ /etc/nginx/h5bp && \\\n\trm -rf /usr/src/nginx\n\n# Download Let's Encrypt!\nRUN mkdir -p /usr/src/nginx && \\\n    cd /usr/src/nginx && \\\n    wget https://github.com/certbot/certbot/archive/v${LETS_ENCRYPT_VERSION}.zip && \\\n    unzip v${LETS_ENCRYPT_VERSION}.zip && \\\n    cp -r certbot-${LETS_ENCRYPT_VERSION}/ /etc/letsencrypt/ && \\\n    ln -s /etc/letsencrypt/letsencrypt-auto /usr/local/bin/letsencrypt && \\\n    rm -rf /usr/src/nginx\n\n# Load apache2-utils because htpasswd is included.\n# @TODO: Is there a way to get only htpasswd without further apache stuff?\nRUN apt-get update && apt-get install -y  --no-install-recommends apache2-utils\n\nVOLUME [\"/var/cache/nginx\"]\nWORKDIR /var/www\nEXPOSE 80 443\nCMD [\"/usr/bin/supervisord\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/var/cache/nginx\"]"
+    ],
+    "run": [
+      "apt-get update && apt-get install -y --no-install-recommends     build-essential     libpcre3     libpcre3-dev     libreadline6     libssl-dev     zlib1g-dev     &&     mkdir -p /usr/src/nginx && ",
+      "mkdir -p /usr/src/nginx &&     cd /usr/src/nginx && \twget https://github.com/h5bp/server-configs-nginx/archive/master.zip -O server-configs-nginx.zip && \tunzip server-configs-nginx.zip && \tcp -r server-configs-nginx-master/h5bp/ /etc/nginx/h5bp && \trm -rf /usr/src/nginx",
+      "mkdir -p /usr/src/nginx &&     cd /usr/src/nginx &&     wget https://github.com/certbot/certbot/archive/v${LETS_ENCRYPT_VERSION}.zip &&     unzip v${LETS_ENCRYPT_VERSION}.zip &&     cp -r certbot-${LETS_ENCRYPT_VERSION}/ /etc/letsencrypt/ &&     ln -s /etc/letsencrypt/letsencrypt-auto /usr/local/bin/letsencrypt &&     rm -rf /usr/src/nginx",
+      "apt-get update && apt-get install -y  --no-install-recommends apache2-utils"
+    ],
+    "workdir": [
+      "/var/www"
+    ],
+    "from": "servivum/debian:jessie",
+    "maintainer": "Patrick Baber <patrick.baber@servivum.com>",
+    "env": {
+      "NGINX_VERSION": "\"1.11.5\"",
+      "NGINX_PGP_KEY_ID": "\"A1C052F8\"",
+      "NGINX_PAGESPEED_VERSION": "\"1.11.33.4\"",
+      "LETS_ENCRYPT_VERSION": "\"0.8.1\""
+    },
+    "copy": "etc/supervisor/conf.d/nginx.conf /etc/supervisor/conf.d/nginx.conf",
+    "cmd": "[\"/usr/bin/supervisord\"]"
+  },
+  "source_repository_url": "https://github.com/Servivum/docker-nginx.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Servivum/docker-nginx",
+  "docker_repository": "servivum/nginx",
+  "docker_image": "servivum/nginx",
+  "parameters_schema": {
+    "NGINX_VERSION": {
+      "default": "\"1.11.5\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NGINX_PGP_KEY_ID": {
+      "default": "\"A1C052F8\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NGINX_PAGESPEED_VERSION": {
+      "default": "\"1.11.33.4\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LETS_ENCRYPT_VERSION": {
+      "default": "\"0.8.1\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "servivum/nginx",
+  "revision": "1",
+  "uris": [
+    "https://hub.docker.com/r/servivum/nginx",
+    "https://hub.docker.com/v2/repositories/servivum/nginx",
+    "https://github.com/Servivum/docker-nginx.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/servivum/nginx",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

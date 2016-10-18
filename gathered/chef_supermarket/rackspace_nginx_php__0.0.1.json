@@ -1,0 +1,84 @@
+{
+  "name": "rackspace_nginx_php Chef cookbook",
+  "chef_cookbook_name": "rackspace_nginx_php",
+  "revision": "0.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/rackspace_nginx_php",
+    "https://supermarket.chef.io/cookbooks/rackspace_nginx_php/download",
+    "https://supermarket.chef.io/cookbooks/rackspace_nginx_php/versions/0.0.1",
+    "https://supermarket.chef.io/cookbooks/rackspace_nginx_php/versions/0.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/rackspace_nginx_php/versions/0.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/rackspace_nginx_php",
+    "https://supermarket.chef.io/api/v1/cookbooks/rackspace_nginx_php/versions/0.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Provider/HP",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/rackspace_nginx_php",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/rackspace_nginx_php/versions/0.0.1/download",
+  "deprecated": false,
+  "created": "2015-06-15T14:03:41.689Z",
+  "updated": "2015-11-02T14:00:39.070Z",
+  "description": "Installs/Configures rackspace_nginx_php",
+  "maintainer": {
+    "name": "rackops",
+    "email": "rackspace-cookbooks@rackspace.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 191059,
+  "downloads_count_revision": 96476,
+  "repository_url": "https://github.com/rackspace-cookbooks/rackspace_nginx_php",
+  "issues_url": "https://github.com/rackspace-cookbooks/rackspace_nginx_php/issues",
+  "chef_source_url": "https://github.com/rackspace-cookbooks/rackspace_nginx_php",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "[![Circle CI](https://circleci.com/gh/rackspace-cookbooks/rackspace_nginx_php.svg?style=svg)](https://circleci.com/gh/rackspace-cookbooks/rackspace_nginx_php)\n\n# rackspace_nginx_php-cookbook\n\nA cookbook to provide a web server able to serve php pages with Nginx and PHP fpm.\nIt relies on [nginx cookbook](https://github.com/miketheman/nginx) and [php-fpm](https://github.com/yevgenko/cookbook-php-fpm). Those cookbooks are pinned on well known working minor version to prevent breaking changes.\nIn addition (even if this is not a requirement), the cookbook will install php packages through [PHP cookbook](https://github.com/opscode-cookbooks/php). Indeed most of the time you will need `php::default` in your role which will conflict with the `php-fpm` package if they are different.\nYou can disable the installation of php packages with `node['rackspace_nginx_php']['php_packages_install']['enable']`.\n\n## Supported Platforms\n\n* Centos 6.5\n* Ubuntu 12.04\n* Ubuntu 14.04 [(only PHP 5.5 and 5.6)](https://github.com/oerdnj/deb.sury.org/issues/58#issuecomment-92246112)\n\n## Attributes\n\n* `node['rackspace_nginx_php']['php_version']` : Which PHP version to install, default to PHP 5.6\n* `node['rackspace_nginx_php']['php-fpm']['default_pool']['enable']` : Should it enable a default PHP-FPM pool which listens on a unix socket\n* `node['rackspace_nginx_php']['nginx']['default_site']['enable']` : Should it enable a default Nginx site which passes requests for php files to the default php-fpm pool\n* `node['rackspace_nginx_php']['nginx']['default_site']['cookbook']` : Where to find the template for the default Nginx site configuration , default to `rackspace_nginx_php cookbook`\n* `node['rackspace_nginx_php']['nginx']['default_site']['template']` : The name of the template for the default Nginx site configuration , default to `default.conf.erb`\n\n## Usage\n\nPlace a dependency on the rackspace_nginx_php cookbook in your cookbook's metadata.rb\n```\ndepends 'rackspace_nginx_php'\n```\nThen, add `rackspace_nginx_php::default` to your runlist\n\n```\n# myrecipe.rb\ninclude_recipe 'rackspace_nginx_php::default'\n```\n\nor\n\n```\n# roles/myrole.rb\nname \"myrole\"\ndescription \"nginx and php role\"\nrun_list(\n  \"rackspace_nginx_php::default\"\n)\n```\n\nYou can change any of the `nginx`,`php-fpm` and `php` cookbook attributes to tune rackspace_nginx_php configuration.\n** However you should not change ** `['php-fpm']['package_name']`,`['php-fpm']['service_name']` or `['php']['packages']` (as they are part of this cookbook logic) without checking it works.\n\n## In scope\n\nThe goal of this library is to do the basic configuration to serve PHP pages through Nginx. It will only configure `Nginx` and a default site and pool, users are free to use that or disable it and create their own Nginx sites and PHP-FPM pools.\n\nMore in details it : \n\n* Installs and configure Nginx web server\n* Installs and configure php-fpm\n* Installs and configure php\n* Configures Nginx to serve php pages through php-fpm\n* Gets the correct packages and change the configuration according to the php version \n\n## Out of scope\n\nVirtual Host are not managed by this cookbook, the configuration provided by this cookbook should not prevent users to extend php or php-fpm configuration. \nAs many features as possible should have a flag to enable/disable them, it will allow to enjoy some parts of the work done by this cookbook (get the correct packages by example) but still be able to configure your own php-fpm pools.\n\n\n### Examples\n#### Nginx and PHP 5.5\n\n```\nnode.default['rackspace_nginx_php']['php_version'] = '5.5'\ninclude_recipe 'rackspace_nginx_php::default'\n```\n\n#### Nginx and PHP 5.6\n\n```\ninclude_recipe 'rackspace_nginx_php::default'\n```\n\n#### Nginx and PHP 5.6 without the default Nginx site and PHP-FPM pool - Using attribute from upstream to define the pool\n\nYou will have to add your own Nginx site and PHP-FPM pool, here is an example using the upstream PHP-FPM attributes for the pool and a custom template for the Nginx site.\n \n```\nnode.default['rackspace_nginx_php']['nginx']['default_site']['enable'] = false\nnode.default['rackspace_nginx_php']['php-fpm']['default_pool']['enable'] = false\n\n# Create a php-fpm pool through the attribute exposed from upstream\nnode.default['php-fpm']['pools'] = {\n  override: {\n    enable: 'true',\n    process_manager: 'dynamic',\n    max_requests: 5000\n  }\n}\n\ninclude_recipe 'rackspace_nginx_php::default'\n\n# Create a nginx site to go with it (the template must be created by the user)\ntemplate \"#{node['nginx']['dir']}/sites-available/override.conf\" do\n  source 'override.conf.erb'\n  owner 'root'\n  group 'root'\n  mode '0644'\n  action :create\nend\n\nnginx_site 'override.conf' do\n  enable true\nend\n\n```\n\n#### Nginx and PHP 5.6 without the default Nginx site and PHP-FPM pool - Using the php_fpm_pool definition to add a pool\n\nYou will have to add your own Nginx site and PHP-FPM pool, here is an example using the upstream PHP-FPM definition for the pool and a custom template for the Nginx site.\n \n```\nnode.default['rackspace_nginx_php']['nginx']['default_site']['enable'] = false\nnode.default['rackspace_nginx_php']['php-fpm']['default_pool']['enable'] = false\n\n# Create a php-fpm pool with default settings using the php_fpm_pool definition\nphp_fpm_pool 'override'\n\ninclude_recipe 'rackspace_nginx_php::default'\n\n# Create a nginx site to go with it (the template must be created by the user)\ntemplate \"#{node['nginx']['dir']}/sites-available/override.conf\" do\n  source 'override.conf.erb'\n  owner 'root'\n  group 'root'\n  mode '0644'\n  action :create\nend\n\nnginx_site 'override.conf' do\n  enable true\nend\n\n```\n\n\n## References\n\n* [Nginx cookbook](https://github.com/miketheman/nginx)\n* [PHP-fpm cookbook](https://github.com/yevgenko/cookbook-php-fpm)\n* [PHP cookbook](https://github.com/opscode-cookbooks/php)\n\n\n## Contributing\n\n1. Fork the repository on Github\n2. Create a named feature branch (i.e. `add-new-recipe`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request\n\n## License and Authors\n\nAuthors:: Kostas Georgakopoulos (kostas.georgakopoulos@rackspace.co.uk), Julien Berard (julien.berard@rackspace.com)\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/nginx",
+      "revision": "~> 2.7",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef-sugar",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/php",
+      "revision": "~> 1.5",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/php-fpm",
+      "revision": "~> 0.7",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum-ius",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

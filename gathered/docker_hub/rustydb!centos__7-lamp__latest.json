@@ -1,0 +1,104 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/rustydb/centos",
+    "repository_url": "https://hub.docker.com/v2/repositories/rustydb/centos",
+    "tags_url": "https://hub.docker.com/v2/repositories/rustydb/centos/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/rustydb/centos/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/rustydb/centos/autobuild",
+    "user": "rustydb",
+    "name": "centos",
+    "namespace": "rustydb",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 16,
+    "last_updated": "2016-10-12T03:58:01.777615Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "7-lamp",
+        "full_size": 154726299,
+        "id": 5296509,
+        "repository": 963866,
+        "creator": 1154575,
+        "last_updater": 1154575,
+        "last_updated": "2016-10-12T03:58:00.640561Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "rustydb/stuffs"
+  },
+  "name": "rustydb/centos Docker container",
+  "description": "Modified Base CentOS 7 Image(s)",
+  "readme": "# Stuffs\n\nVarious things I've drafted up for other various things, peruse to your hearts content.\n\n## Things of Stuffs\n\n```javascript\nstuffs.forEach((stuff) => { console.log( stuff.whatIs() ) };\n```\n```\n├── docker_images\n│   └── centos:7-lamp   # A CentOS 7 LAMP Image\n├── html\n│   ├── 4lambda         # Website stuff\n├── linux\n│   ├── etc             # /etc files\n│   ├── rusty           # /rusty config files\n│   ├── usr             # /usr files\n│   └── var             # /var files\n├── school\n│   ├── 4061-repo       # Operating Systems\n│   ├── 4131-repo       # Web Applications\n│   ├── 4211-repo       # Networking\n│   └── 4707-repo       # Databases\n└── src\n    ├── c               # C\\C++ & OpenACC\n    ├── f90             # Fortran90\n    ├── perl            # Perl\n    ├── py              # Python\n    └── ruby            # Ruby\n```\n<p align=\"center\">\n    <img src=\"http://i.imgur.com/GvVk095.gif\" alt=\"banana dolphin\")\n</p>",
+  "dockerfile": "FROM centos:7\nMAINTAINER rusty <rusty@4lambda.io>\n\n# Epel.\nRUN yum -y install epel-release\n\n# Needed packages and yum maintenance.\nRUN yum -y install \\\n    httpd \\\n    mysql-devel \\\n    mysql-libs \\\n    mod_ssl \\\n    php \\\n    php-cli \\\n    php-ldap \\\n    php-mbstring \\\n    php-mcrypt \\\n    php-mysql \\\n    php-pear-MDB2-Driver-mysqli \\\n    php-pecl-memcached \\\n    php-xml \\\n    php-gd \\\n    && yum -y update bash \\\n    && rm -rf /var/cache/yum/* \\\n    && yum clean all\n\n# UTC Timezone & Networking.\nRUN ln -sf /usr/share/zoneinfo/UTC /etc/localtime \\\n    && echo \"NETWORKING=yes\" > /etc/sysconfig/network\n\n# Global Apache configuration changes.\nRUN sed -i \\\n    -e 's~^ServerSignature On$~ServerSignature Off~g' \\\n    -e 's~^ServerTokens OS$~ServerTokens Prod~g' \\\n    -e 's~^#ExtendedStatus On$~ExtendedStatus On~g' \\\n    -e 's~^DirectoryIndex \\(.*\\)$~DirectoryIndex \\1 index.php~g' \\\n    -e 's~^NameVirtualHost \\(.*\\)$~#NameVirtualHost \\1~g' \\\n    /etc/httpd/conf/httpd.conf\n\n# Disable Apache directory indexes.\nRUN sed -i \\\n    -e 's~^IndexOptions \\(.*\\)$~#IndexOptions \\1~g' \\\n    -e 's~^IndexIgnore \\(.*\\)$~#IndexIgnore \\1~g' \\\n    -e 's~^AddIconByEncoding \\(.*\\)$~#AddIconByEncoding \\1~g' \\\n    -e 's~^AddIconByType \\(.*\\)$~#AddIconByType \\1~g' \\\n    -e 's~^AddIcon \\(.*\\)$~#AddIcon \\1~g' \\\n    -e 's~^DefaultIcon \\(.*\\)$~#DefaultIcon \\1~g' \\\n    -e 's~^ReadmeName \\(.*\\)$~#ReadmeName \\1~g' \\\n    -e 's~^HeaderName \\(.*\\)$~#HeaderName \\1~g' \\\n    /etc/httpd/conf/httpd.conf\n\n# Disable Apache language based content negotiation.\nRUN sed -i \\\n    -e 's~^LanguagePriority \\(.*\\)$~#LanguagePriority \\1~g' \\\n    -e 's~^ForceLanguagePriority \\(.*\\)$~#ForceLanguagePriority \\1~g' \\\n    -e 's~^AddLanguage \\(.*\\)$~#AddLanguage \\1~g' \\\n    /etc/httpd/conf/httpd.conf\n\n# Disable all Apache modules and enable the minimum\nRUN sed -i \\\n    -e 's~^\\(LoadModule .*\\)$~#\\1~g' \\\n    -e 's~^#LoadModule mime_module ~LoadModule mime_module ~g' \\\n    -e 's~^#LoadModule log_config_module ~LoadModule log_config_module ~g' \\\n    -e 's~^#LoadModule setenvif_module ~LoadModule setenvif_module ~g' \\\n    -e 's~^#LoadModule status_module ~LoadModule status_module ~g' \\\n    -e 's~^#LoadModule authz_host_module ~LoadModule authz_host_module ~g' \\\n    -e 's~^#LoadModule dir_module ~LoadModule dir_module ~g' \\\n    -e 's~^#LoadModule alias_module ~LoadModule alias_module ~g' \\\n    -e 's~^#LoadModule expires_module ~LoadModule expires_module ~g' \\\n    -e 's~^#LoadModule deflate_module ~LoadModule deflate_module ~g' \\\n    -e 's~^#LoadModule headers_module ~LoadModule headers_module ~g' \\\n    -e 's~^#LoadModule alias_module ~LoadModule alias_module ~g' \\\n    /etc/httpd/conf/httpd.conf\n\n# Global PHP configuration changes\nRUN sed -i \\\n    -e 's~^;date.timezone =$~date.timezone = Europe/Rome~g' \\\n    -e 's~^;user_ini.filename =$~user_ini.filename =~g' \\\n    /etc/php.ini\nRUN echo '<?php phpinfo(); ?>' > /var/www/html/index.php\n\n# Purge\nRUN rm -rf /sbin/sln \\\n    ; rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,gnome/help,cracklib,il8n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \\\n    ; rm -rf /var/cache/{ldconfig,yum}/*\n\n# Expose and command!\nEXPOSE 80 443\nCMD /usr/sbin/httpd -c \"ErrorLog /dev/stdout\" -DFOREGROUND\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "yum -y install epel-release",
+      "yum -y install     httpd     mysql-devel     mysql-libs     mod_ssl     php     php-cli     php-ldap     php-mbstring     php-mcrypt     php-mysql     php-pear-MDB2-Driver-mysqli     php-pecl-memcached     php-xml     php-gd     && yum -y update bash     && rm -rf /var/cache/yum/*     && yum clean all",
+      "ln -sf /usr/share/zoneinfo/UTC /etc/localtime     && echo \"NETWORKING=yes\" > /etc/sysconfig/network",
+      "sed -i     -e 's~^ServerSignature On$~ServerSignature Off~g'     -e 's~^ServerTokens OS$~ServerTokens Prod~g'     -e 's~^#ExtendedStatus On$~ExtendedStatus On~g'     -e 's~^DirectoryIndex \\(.*\\)$~DirectoryIndex \\1 index.php~g'     -e 's~^NameVirtualHost \\(.*\\)$~#NameVirtualHost \\1~g'     /etc/httpd/conf/httpd.conf",
+      "sed -i     -e 's~^IndexOptions \\(.*\\)$~#IndexOptions \\1~g'     -e 's~^IndexIgnore \\(.*\\)$~#IndexIgnore \\1~g'     -e 's~^AddIconByEncoding \\(.*\\)$~#AddIconByEncoding \\1~g'     -e 's~^AddIconByType \\(.*\\)$~#AddIconByType \\1~g'     -e 's~^AddIcon \\(.*\\)$~#AddIcon \\1~g'     -e 's~^DefaultIcon \\(.*\\)$~#DefaultIcon \\1~g'     -e 's~^ReadmeName \\(.*\\)$~#ReadmeName \\1~g'     -e 's~^HeaderName \\(.*\\)$~#HeaderName \\1~g'     /etc/httpd/conf/httpd.conf",
+      "sed -i     -e 's~^LanguagePriority \\(.*\\)$~#LanguagePriority \\1~g'     -e 's~^ForceLanguagePriority \\(.*\\)$~#ForceLanguagePriority \\1~g'     -e 's~^AddLanguage \\(.*\\)$~#AddLanguage \\1~g'     /etc/httpd/conf/httpd.conf",
+      "sed -i     -e 's~^\\(LoadModule .*\\)$~#\\1~g'     -e 's~^#LoadModule mime_module ~LoadModule mime_module ~g'     -e 's~^#LoadModule log_config_module ~LoadModule log_config_module ~g'     -e 's~^#LoadModule setenvif_module ~LoadModule setenvif_module ~g'     -e 's~^#LoadModule status_module ~LoadModule status_module ~g'     -e 's~^#LoadModule authz_host_module ~LoadModule authz_host_module ~g'     -e 's~^#LoadModule dir_module ~LoadModule dir_module ~g'     -e 's~^#LoadModule alias_module ~LoadModule alias_module ~g'     -e 's~^#LoadModule expires_module ~LoadModule expires_module ~g'     -e 's~^#LoadModule deflate_module ~LoadModule deflate_module ~g'     -e 's~^#LoadModule headers_module ~LoadModule headers_module ~g'     -e 's~^#LoadModule alias_module ~LoadModule alias_module ~g'     /etc/httpd/conf/httpd.conf",
+      "sed -i     -e 's~^;date.timezone =$~date.timezone = Europe/Rome~g'     -e 's~^;user_ini.filename =$~user_ini.filename =~g'     /etc/php.ini",
+      "echo '<?php phpinfo(); ?>' > /var/www/html/index.php",
+      "rm -rf /sbin/sln     ; rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,gnome/help,cracklib,il8n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive}     ; rm -rf /var/cache/{ldconfig,yum}/*"
+    ],
+    "workdir": [],
+    "from": "centos:7",
+    "maintainer": "rusty <rusty@4lambda.io>",
+    "cmd": "/usr/sbin/httpd -c \"ErrorLog /dev/stdout\" -DFOREGROUND"
+  },
+  "source_repository_url": "https://github.com/rustydb/stuffs.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/rustydb/stuffs",
+  "docker_repository": "rustydb/centos",
+  "docker_image": "rustydb/centos",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "rustydb/centos",
+  "revision": "7-lamp",
+  "uris": [
+    "https://hub.docker.com/r/rustydb/centos",
+    "https://hub.docker.com/v2/repositories/rustydb/centos",
+    "https://github.com/rustydb/stuffs.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux/CentOS"
+  ],
+  "info_url": "https://hub.docker.com/r/rustydb/centos",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,113 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jcalazan/rabbitmq",
+    "repository_url": "https://hub.docker.com/v2/repositories/jcalazan/rabbitmq",
+    "tags_url": "https://hub.docker.com/v2/repositories/jcalazan/rabbitmq/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jcalazan/rabbitmq/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jcalazan/rabbitmq/autobuild",
+    "user": "jcalazan",
+    "name": "rabbitmq",
+    "namespace": "jcalazan",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 898,
+    "last_updated": "2016-03-16T10:11:31.750018Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 257864232,
+        "id": 67402,
+        "repository": 72309,
+        "creator": 87423,
+        "last_updater": 87423,
+        "last_updated": "2016-03-16T10:11:30.931062Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "ubuntu_14.04",
+        "full_size": 212984695,
+        "id": 1442161,
+        "repository": 72309,
+        "creator": 87423,
+        "last_updater": 87423,
+        "last_updated": "2015-11-29T13:19:48.560330Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "jcalazan/docker-django-local"
+  },
+  "name": "jcalazan/rabbitmq Docker container",
+  "description": "",
+  "readme": "docker-django-local\n===================\n\nDockerfiles to create images for use in local Django development environments.\n\nDesigned to be used with [Docker Compose](https://docs.docker.com/compose/), it will make things a lot easier.\n\nI took most of these Dockerfiles from existing projects and modified them to work for my setup.\n\nHere's a sample Django application that uses these Docker images: https://github.com/jcalazan/youtube-audio-dl\n\n## Images Info\n\n- **base** - Ubuntu 12.04 with commonly used packages for Django/Python development.\n- **postgresql** - PostgreSQL 9.1 database (default username/password is docker/docker).\n- **django** - Not much difference from the base image except port 80 is exposed and contains a few additional packages/libraries.\n- **rabbitmq** - RabbitMQ message broker usually used with Celery. \n\n## Docker Registry\n\nYou can pull these images directly from the Docker Registry: https://hub.docker.com/u/jcalazan/\n\nThis repo is configured for automated builds.\n\n## Sample ```docker-compose.yml``` Configuration\n\n```\npostgresql:\n  image: jcalazan/postgresql\n  environment:\n    - POSTGRESQL_DB=youtubeadl\n    - POSTGRESQL_USER=youtubeadl\n    - POSTGRESQL_PASSWORD=password\n  volumes:\n    - ~/dockerfiles/youtube-audio-dl/postgresql:/var/lib/postgresql\n  ports:\n    - \"5432:5432\"\n\nrabbitmq:\n  image: jcalazan/rabbitmq\n  ports:\n    - \"15672:15672\"\n\n# NOTES:\n#   - The C_FORCE_ROOT variable allows celery to run as the root user.\ncelery:\n  image: jcalazan/django\n  environment:\n    - C_FORCE_ROOT=true\n    - DATABASE_HOST=postgresql\n    - BROKER_URL=amqp://guest:guest@rabbitmq//\n  working_dir: /youtube-audio-dl\n  command: bash -c \"sleep 3 && celery -A youtubeadl worker -E -l info --concurrency=3\"\n  volumes:\n    - .:/youtube-audio-dl\n    - ~/dockerfiles/youtube-audio-dl/python:/usr/local/lib/python2.7\n    - ~/dockerfiles/youtube-audio-dl/bin:/usr/local/bin\n  links:\n    - postgresql\n    - rabbitmq\n\n# NOTES:\n#   - The C_FORCE_ROOT variable allows celery to run as the root user.\nflower:\n  image: jcalazan/django\n  environment:\n    - C_FORCE_ROOT=true\n    - DATABASE_HOST=postgresql\n    - BROKER_URL=amqp://guest:guest@rabbitmq//\n  working_dir: /youtube-audio-dl\n  command: bash -c \"sleep 3 && celery -A youtubeadl flower --port=5555\"\n  volumes:\n    - .:/youtube-audio-dl\n    - ~/dockerfiles/youtube-audio-dl/python:/usr/local/lib/python2.7\n    - ~/dockerfiles/youtube-audio-dl/bin:/usr/local/bin\n  ports:\n    - \"5555:5555\"\n  links:\n    - postgresql\n    - rabbitmq\n\ndjango:\n  image: jcalazan/django\n  environment:\n    - DATABASE_HOST=postgresql\n    - BROKER_URL=amqp://guest:guest@rabbitmq//\n  working_dir: /youtube-audio-dl\n  command: bash -c \"sleep 3 && python manage.py runserver_plus 0.0.0.0:80\" \n  volumes:\n    - .:/youtube-audio-dl\n    - ~/dockerfiles/youtube-audio-dl/python:/usr/local/lib/python2.7\n    - ~/dockerfiles/youtube-audio-dl/bin:/usr/local/bin\n  ports:\n    - \"80:80\"\n  links:\n    - postgresql\n    - rabbitmq\n```\n\n#### A few things to note about this sample configuration:\n\n- Under `volumes:`, local directories are mapped to the containers.  It expects `docker-compose.yml` to be in the root project directory.  Python packages are also mapped from the local directory to make the image more reusable (i.e. no need to rebuild the images every time you add a new package to your project).\n- For the `youtube-audio-dl` project, the `manage.py` file is in the project root, that's why I set that path as the `working_dir`.\n- You can run Django management commands inside the `django` container by prepending `fig run django` (e.g. `fig run django python manage.py migrate`).\n- By default, everything run as `root` in the Docker containers.\n- The `sleep` part in the command is to make sure the PostgreSQL service is ready to accept the connections before running a command that depends on it (see https://github.com/docker/compose/issues/374).",
+  "dockerfile": "FROM jcalazan/base\nMAINTAINER Jonathan Calazan \"jonathan@calazan.com\"\n\nADD rabbitmq-signing-key-public.asc /tmp/rabbitmq-signing-key-public.asc\nRUN apt-key add /tmp/rabbitmq-signing-key-public.asc\n\nRUN echo \"deb http://www.rabbitmq.com/debian/ testing main\" > /etc/apt/sources.list.d/rabbitmq.list\nRUN apt-get -qq update > /dev/null\nRUN apt-get -qq -y install rabbitmq-server > /dev/null\nRUN /usr/sbin/rabbitmq-plugins enable rabbitmq_management\nRUN echo \"[{rabbit, [{loopback_users, []}]}].\" > /etc/rabbitmq/rabbitmq.config\n\nEXPOSE 5672 15672 4369\n\nCMD /usr/sbin/rabbitmq-server",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "rabbitmq-signing-key-public.asc",
+        "dest": "/tmp/rabbitmq-signing-key-public.asc"
+      }
+    ],
+    "expose": [
+      5672
+    ],
+    "volume": [],
+    "run": [
+      "apt-key add /tmp/rabbitmq-signing-key-public.asc",
+      "echo \"deb http://www.rabbitmq.com/debian/ testing main\" > /etc/apt/sources.list.d/rabbitmq.list",
+      "apt-get -qq update > /dev/null",
+      "apt-get -qq -y install rabbitmq-server > /dev/null",
+      "/usr/sbin/rabbitmq-plugins enable rabbitmq_management",
+      "echo \"[{rabbit, [{loopback_users, []}]}].\" > /etc/rabbitmq/rabbitmq.config"
+    ],
+    "workdir": [],
+    "from": "jcalazan/base",
+    "maintainer": "Jonathan Calazan \"jonathan@calazan.com\"",
+    "cmd": "/usr/sbin/rabbitmq-server"
+  },
+  "source_repository_url": "https://github.com/jcalazan/docker-django-local.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/jcalazan/docker-django-local",
+  "docker_repository": "jcalazan/rabbitmq",
+  "docker_image": "jcalazan/rabbitmq",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5672
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jcalazan/rabbitmq",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jcalazan/rabbitmq",
+    "https://hub.docker.com/v2/repositories/jcalazan/rabbitmq",
+    "https://github.com/jcalazan/docker-django-local.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/jcalazan/rabbitmq",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,123 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/imanel/postgresql",
+    "repository_url": "https://hub.docker.com/v2/repositories/imanel/postgresql",
+    "tags_url": "https://hub.docker.com/v2/repositories/imanel/postgresql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/imanel/postgresql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/imanel/postgresql/autobuild",
+    "user": "imanel",
+    "name": "postgresql",
+    "namespace": "imanel",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1465,
+    "last_updated": "2016-10-13T21:39:09.501804Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "9.3",
+        "full_size": 130323290,
+        "id": 34342,
+        "repository": 14554,
+        "creator": 4599,
+        "last_updater": 4599,
+        "last_updated": "2016-10-13T21:39:08.221768Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 130323645,
+        "id": 34370,
+        "repository": 14554,
+        "creator": 4599,
+        "last_updater": 4599,
+        "last_updated": "2016-10-13T21:32:46.419242Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "imanel/docker-postgresql"
+  },
+  "name": "imanel/postgresql Docker container",
+  "description": "PostgreSQL Image for Docker",
+  "readme": "## PostgreSQL Dockerfile\n\nThis repository contains **Dockerfile** of [PostgreSQL](http://www.postgresql.org) for [Docker](https://www.docker.io/)'s [trusted build](https://index.docker.io/u/imanel/postgresql/) published to the public [Docker Registry](https://index.docker.io/).\n\n### Installation\n\n1. Install [Docker](https://www.docker.io/).\n\n2. Download [trusted build](https://index.docker.io/u/imanel/postgresql/) from public [Docker Registry](https://index.docker.io/): `docker pull imanel/postgresql`\n\n### Usage\n\n#### Create database\n\n    docker run -i -v $(pwd):/data/postgresql imanel/postgresql ./initdb -D /data/postgresql/$PG_VERSION/main -U superuser --pwfile=/data/postgresql/password.file\n\n#### Run PostgreSQL server\n\n    docker run -d -v $(pwd):/data/postgresql --name postgresql -p 5432:5432 imanel/postgresql\n",
+  "dockerfile": "FROM imanel/base\nMAINTAINER Bernard Potocki <bernard.potocki@imanel.org>\n\nENV PG_VERSION 9.3\n\n# Install PostgreSQL and PostGIS\nRUN apt-add-repository -y \"deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main\" && \\\n    wget --quiet -O - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | sudo apt-key add - && \\\n    apt-get update -qq && \\\n    DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql-$PG_VERSION postgresql-contrib-$PG_VERSION postgresql-$PG_VERSION-postgis-2.1 && \\\n    docker-cleanup\n\n# Configure PostgreSQL\nRUN sed -i \"s/^data_directory = .*/data_directory = '\\/data\\/postgresql\\/$PG_VERSION\\/main'/\" /etc/postgresql/$PG_VERSION/main/postgresql.conf && \\\n    sed -i \"s/^#listen_addresses = .*/listen_addresses = '*'/\" /etc/postgresql/$PG_VERSION/main/postgresql.conf && \\\n    echo \"host    all    all    0.0.0.0/0    md5\" >> /etc/postgresql/$PG_VERSION/main/pg_hba.conf\n\nUSER postgres\nWORKDIR /usr/lib/postgresql/9.3/bin\n\nEXPOSE 5432\nVOLUME [\"/data/postgresql\"]\n\n# Define an entry point\nCMD [\"./postgres\", \"--config-file=/etc/postgresql/9.3/main/postgresql.conf\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5432
+    ],
+    "volume": [
+      "[\"/data/postgresql\"]"
+    ],
+    "run": [
+      "apt-add-repository -y \"deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main\" &&     wget --quiet -O - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | sudo apt-key add - &&     apt-get update -qq &&     DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql-$PG_VERSION postgresql-contrib-$PG_VERSION postgresql-$PG_VERSION-postgis-2.1 &&     docker-cleanup",
+      "sed -i \"s/^data_directory = .*/data_directory = '\\/data\\/postgresql\\/$PG_VERSION\\/main'/\" /etc/postgresql/$PG_VERSION/main/postgresql.conf &&     sed -i \"s/^#listen_addresses = .*/listen_addresses = '*'/\" /etc/postgresql/$PG_VERSION/main/postgresql.conf &&     echo \"host    all    all    0.0.0.0/0    md5\" >> /etc/postgresql/$PG_VERSION/main/pg_hba.conf"
+    ],
+    "workdir": [
+      "/usr/lib/postgresql/9.3/bin"
+    ],
+    "from": "imanel/base",
+    "maintainer": "Bernard Potocki <bernard.potocki@imanel.org>",
+    "env": {
+      "PG_VERSION": "9.3"
+    },
+    "user": "postgres",
+    "cmd": "[\"./postgres\", \"--config-file=/etc/postgresql/9.3/main/postgresql.conf\"]"
+  },
+  "source_repository_url": "git://github.com/imanel/docker-postgresql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/imanel/docker-postgresql",
+  "docker_repository": "imanel/postgresql",
+  "docker_image": "imanel/postgresql",
+  "parameters_schema": {
+    "PG_VERSION": {
+      "default": "9.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5432
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "imanel/postgresql",
+  "revision": "9.3",
+  "uris": [
+    "https://hub.docker.com/r/imanel/postgresql",
+    "https://hub.docker.com/v2/repositories/imanel/postgresql",
+    "git://github.com/imanel/docker-postgresql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/imanel/postgresql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

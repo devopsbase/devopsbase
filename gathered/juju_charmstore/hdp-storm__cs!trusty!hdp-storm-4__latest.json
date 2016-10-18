@@ -1,0 +1,75 @@
+{
+  "name": "hdp-storm Juju charm",
+  "juju_charm_name": "hdp-storm",
+  "revision": "cs:trusty/hdp-storm-4",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/hdp-storm",
+    "https://jujucharms.com/hdp-storm/trusty",
+    "https://jujucharms.com/hdp-storm/trusty/4",
+    "https://api.jujucharms.com/v5/hdp-storm",
+    "https://api.jujucharms.com/v5/trusty/hdp-storm",
+    "https://api.jujucharms.com/v5/trusty/hdp-storm-4"
+  ],
+  "labels": [
+    "Juju charm",
+    "applications",
+    "Binding/Provider/HP",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Processing/Hadoop"
+  ],
+  "info_url": "https://jujucharms.com/hdp-storm",
+  "package_url": "https://api.jujucharms.com/v5/trusty/hdp-storm-4/archive",
+  "created": "2015-06-17T09:30:50.893Z",
+  "updated": "2015-06-17T09:30:50.893Z",
+  "description": "Apache Storm is a open source distributed realtime computation system.\n\nStorm makes it easy to reliably process unbounded streams of data, doing for realtime processing what Hadoop did for batch processing. Storm is simple, can be used with any programming language, and is a lot of fun to use!\n",
+  "maintainer": {
+    "name": "bigdata-charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "bigdata-charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/nimbus",
+      "self_resolve": true,
+      "juju_interface": "nimbus",
+      "juju_name": "slave",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/zookeeper",
+      "self_resolve": true,
+      "juju_interface": "zookeeper",
+      "juju_name": "zookeeper",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/nimbus",
+      "juju_interface": "nimbus",
+      "juju_name": "nimbus",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "# Hortonworks Storm Overview\n\nHortonworks (HDP 2.1.3) Apache Storm is a free and open source distributed \nreal-time computation system. Storm makes it easy to reliably process unbounded\nstreams of data, doing for real-time processing what Hadoop did for batch processing\nStorm has many use cases: real-time analytics, on-line machine learning, continuous\ncomputation, distributed RPC, ETL, and more. Storm is fast: a benchmark clocked \nit at over a million tuples processed per second per node. It is scalable, \nfault-tolerant, guarantees your data will be processed, and is easy to set up \nand operate.\nThis charm will build a storm cluster consistent of:\n 1. Nimbus master node with following daemons will configured and loaded  \n\n>  storm-drpc \n>  storm-logviewer\n>  storm-nimbus\n>  storm-ui\n\n 1. Storm worker node(s) with following daemons will configured and loaded:\n\n> storm-logviewer \t\n> storm-supervisor\n\n# Deployment \n\n**start a 3 node Hortonworks zookeeper quorum:**\t\n\n    juju deploy hdp-zookeeper hdp-zookeeper\n    juju add-unit -n 2 hdp-zookeeper    \n\n NOTE: Zookeeper must be loaded and active, to verify: \t \n\n     $echo ruok | nc {hdp-zookeeper/0 IP address} 2181\n\n imok   # I'm ok must be the reply \t\n\n    $ echo stat | nc {hdp-zookeeper/0 IP address} 2181\n\n   Node count: 4 # check for node count\n\n**start Apache Storm:**\n\n    juju deploy hdp-storm nimbus-server  \t\n    juju deploy hdp-storm storm-worker\n    juju add-relation nimbus-server:zookeeper hdp-zookeeper:zookeeper\n    juju add-relation storm-worker:zookeeper hdp-zookeeper:zookeeper\n    juju add-relation nimbus-server:nimbus storm-worker:slave\n \n**To verify a successful deployment:**\n\n    http://{nimbus-server ip address}:8080     \n\n# Real-time usage\n**Example - Deploying and Managing Apache Storm Topologies:**\nFollowing steps demonstrates how to deploy a Storm WordCount application .\nWordCount application has two parts- Spout randomly generates data\nstreams and Bolts processes generated stream.  \n\n     - $juju ssh nimbus-server/0\n     - $storm jar /usr/lib/storm/contrib/storm-starter/storm-starter-0.9.1.2.1.3.0-563-jar-with-dependencies.jar  storm.starter.WordCountTopology WordCount\n \n How to monitor deployment:\n \n\n     - go to http://{nimbus-server ip address}:8080   \n     - Under \"Topology  summary\", click on \"WordCount\"  \n     - Monitor Spouts & Bolts tasks\n\n\n# Scale out usage\n  Example, adding 5 more worker nodes\n\n     juju add-unit -n 5 storm-worker\n\n \n   To verify a successful scale:\n\n     - http://{nimbus-server ip address}:8080\n     - Under \"Topology summary\", click on \"WordCount\"\n     - Click on \"Spout\" link in \"Spouts (All time)\" section\n     - Note \"Host\" list under \"Executors (All time)\" section\n     - Go back to \"Topology summary\"\n     - Click on \"Rebalance\" in \"Topology actions\" section\n     - Click on \"Spout\" link in \"Spouts (All time)\" section\n     - Refresh, notice re-balancing of job as more storm-worker threads become available\n\n# Contact Information\nAmir Sanjar <amir.sanjar@canonical.com>\n\n## Apache & Hortonworks Storm \n\n- [Hortonworks website](http://hortonworks.com)\n- [Hortonworks Storm documentation](http://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.1.3/bk_installing_manually_book/content/ch_rpm_storm.html)\n- [Apache Storm upstream bug tracker](https://storm.incubator.apache.org)\n- [Apache Storm documentation](https://storm.incubator.apache.org/documentation/Home.html)\n\n",
+  "readme": "# Hortonworks Storm Overview\n\nHortonworks (HDP 2.1.3) Apache Storm is a free and open source distributed \nreal-time computation system. Storm makes it easy to reliably process unbounded\nstreams of data, doing for real-time processing what Hadoop did for batch processing\nStorm has many use cases: real-time analytics, on-line machine learning, continuous\ncomputation, distributed RPC, ETL, and more. Storm is fast: a benchmark clocked \nit at over a million tuples processed per second per node. It is scalable, \nfault-tolerant, guarantees your data will be processed, and is easy to set up \nand operate.\nThis charm will build a storm cluster consistent of:\n 1. Nimbus master node with following daemons will configured and loaded  \n\n>  storm-drpc \n>  storm-logviewer\n>  storm-nimbus\n>  storm-ui\n\n 1. Storm worker node(s) with following daemons will configured and loaded:\n\n> storm-logviewer \t\n> storm-supervisor\n\n# Deployment \n\n**start a 3 node Hortonworks zookeeper quorum:**\t\n\n    juju deploy hdp-zookeeper hdp-zookeeper\n    juju add-unit -n 2 hdp-zookeeper    \n\n NOTE: Zookeeper must be loaded and active, to verify: \t \n\n     $echo ruok | nc {hdp-zookeeper/0 IP address} 2181\n\n imok   # I'm ok must be the reply \t\n\n    $ echo stat | nc {hdp-zookeeper/0 IP address} 2181\n\n   Node count: 4 # check for node count\n\n**start Apache Storm:**\n\n    juju deploy hdp-storm nimbus-server  \t\n    juju deploy hdp-storm storm-worker\n    juju add-relation nimbus-server:zookeeper hdp-zookeeper:zookeeper\n    juju add-relation storm-worker:zookeeper hdp-zookeeper:zookeeper\n    juju add-relation nimbus-server:nimbus storm-worker:slave\n \n**To verify a successful deployment:**\n\n    http://{nimbus-server ip address}:8080     \n\n# Real-time usage\n**Example - Deploying and Managing Apache Storm Topologies:**\nFollowing steps demonstrates how to deploy a Storm WordCount application .\nWordCount application has two parts- Spout randomly generates data\nstreams and Bolts processes generated stream.  \n\n     - $juju ssh nimbus-server/0\n     - $storm jar /usr/lib/storm/contrib/storm-starter/storm-starter-0.9.1.2.1.3.0-563-jar-with-dependencies.jar  storm.starter.WordCountTopology WordCount\n \n How to monitor deployment:\n \n\n     - go to http://{nimbus-server ip address}:8080   \n     - Under \"Topology  summary\", click on \"WordCount\"  \n     - Monitor Spouts & Bolts tasks\n\n\n# Scale out usage\n  Example, adding 5 more worker nodes\n\n     juju add-unit -n 5 storm-worker\n\n \n   To verify a successful scale:\n\n     - http://{nimbus-server ip address}:8080\n     - Under \"Topology summary\", click on \"WordCount\"\n     - Click on \"Spout\" link in \"Spouts (All time)\" section\n     - Note \"Host\" list under \"Executors (All time)\" section\n     - Go back to \"Topology summary\"\n     - Click on \"Rebalance\" in \"Topology actions\" section\n     - Click on \"Spout\" link in \"Spouts (All time)\" section\n     - Refresh, notice re-balancing of job as more storm-worker threads become available\n\n# Contact Information\nAmir Sanjar <amir.sanjar@canonical.com>\n\n## Apache & Hortonworks Storm \n\n- [Hortonworks website](http://hortonworks.com)\n- [Hortonworks Storm documentation](http://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.1.3/bk_installing_manually_book/content/ch_rpm_storm.html)\n- [Apache Storm upstream bug tracker](https://storm.incubator.apache.org)\n- [Apache Storm documentation](https://storm.incubator.apache.org/documentation/Home.html)\n\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

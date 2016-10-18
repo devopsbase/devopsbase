@@ -1,0 +1,43 @@
+{
+  "name": "sshd Chef cookbook",
+  "chef_cookbook_name": "sshd",
+  "revision": "1.1.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/sshd",
+    "https://supermarket.chef.io/cookbooks/sshd/download",
+    "https://supermarket.chef.io/cookbooks/sshd/versions/1.1.2",
+    "https://supermarket.chef.io/cookbooks/sshd/versions/1.1.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/sshd/versions/1.1.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/sshd",
+    "https://supermarket.chef.io/api/v1/cookbooks/sshd/versions/1.1.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/sshd",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/sshd/versions/1.1.2/download",
+  "deprecated": false,
+  "created": "2013-11-14T16:12:04.000Z",
+  "updated": "2016-07-07T10:28:44.835Z",
+  "description": "Installs/Configures sshd",
+  "maintainer": {
+    "name": "chr4",
+    "email": "me@chr4.org"
+  },
+  "license": "GNU Public License 3.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 16,
+  "downloads_count": 3247411,
+  "downloads_count_revision": 240,
+  "repository_url": "https://github.com/chr4-cookbooks/sshd",
+  "issues_url": "https://github.com/chr4-cookbooks/sshd",
+  "chef_source_url": "https://github.com/chr4-cookbooks/sshd",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Description\n\nThis cookbook maintains the openssh server.\n\nUnlike other sshd cookbooks, this cookbook respects the default settings of the\ncurrent operating systems, unless these settings are explicitly overwritten.\n\nThis cookbook takes (or at least tries to) the default sshd configruation of the\ndistribution you are using as a default. Then you can overwrite specific\nsettings.\n\nSee below for the default settings.\n\n\n## Attributes\n\nYou can specify the package that installs sshd, using the following attribute.\nThere's  defaults for most linux distributions.\n\n```ruby\nnode['sshd']['package']      # package to install openssh-server\n```\n\nThe following settings will be filled in using the defaults of the distribution you're using, unless you overwrite it in your node configuration / definition\n\n```ruby\nnode['sshd']['config_file']  # path to sshd_config\nnode['sshd']['service_name'] # sshd service name\n```\n\nYou can specify every configuration option that openssh-server supports in the\n`sshd_config` attribute. The settings you specify will be merged with the\ndistributions default settings.\n\n```ruby\nnode['sshd']['sshd_config']['Port'] = 22\n```\n\nConditional blocks are defined using hashes\n\n```ruby\nnode['sshd']['sshd_config']['Match']['User fred']['X11Forwarding'] = 'no'\nnode['sshd']['sshd_config']['Match'] = {\n  'User john' => {\n    'ChrootDirectory' => '/srv',\n    'ForceCommand' => 'internal-sftp',\n    'AllowTcpForwarding' => 'no',\n    'X11Forwarding' => 'no'\n  }\n}\n```\n\nSome configuration options can be specified multiple times. You can reflect this\nusing an array\n\n```ruby\nnode['sshd']['sshd_config']['HostKey'] = %w{key1 key2}\n```\n\n\n## Recipes\n\n### default\n\nRuns the install recipe, then configures openssh-server according to the node attributes.\n\n### install\n\nJust installs openssh-server without configuring it, as well as enabling and starting the daemon.\n\n\n## Definitions\n\nYou can also maintain openssh-server using the definition. This is the\nrecommended way.\n\nTo use the definition, make sure your metadata.rb includes\n\n```ruby\ndepends 'sshd'\n```\n\n### openssh\\_server\n\nTo install and configure openssh-server from other recipes, use the following definition:\n\n```ruby\nopenssh_server node['sshd']['config_file']\n```\n\nor, if you need a configuration which differs from the default\n\n```ruby\nopenssh_server '/etc/sshd_config' do\n  Port 1234\n  X11Forward 'no'\nend\n```\n\nThe definition accepts all configuration options `sshd_config` supports.\n\n```ruby\nopenssh_server node['sshd']['config_file'] do\n  Port        1234\n  X11Forward  'yes'\n\n  # To specify an option multiple times, use an array\n  HostKey     %w{/etc/ssh/ssh_host_dsa_key /etc/ssh/ssh_host_rsa_key}\n\n  # For conditional blocks, use a hash\n  Match       'User fred' => { 'X11Forwarding' => 'no' },\n              'User john' => {\n                'ChrootDirectory' => '/srv',\n                'ForceCommand' => 'internal-sftp',\n                'AllowTcpForwarding' => 'no',\n                'X11Forwarding' => 'no'\n              }\nend\n```\n\nIn case you need it, you can also use a custom template to use for `sshd_config`\n\n```ruby\nopenssh_server node['sshd']['config_file'] do\n  cookbook 'mycookbook'\n  source   'mytemplate.erb'\nend\n```\n\n\n## Default sshd\\_config settings\n\nThe following options are set by default\n\n```\nPort 22\nProtocol 2\nAcceptEnv LANG LC_*\nHostKey /etc/ssh/ssh_host_ed25519_key\nHostKey /etc/ssh/ssh_host_rsa_key\nHostKey /etc/ssh/ssh_host_dsa_key\nHostKey /etc/ssh/ssh_host_ecdsa_key\nPasswordAuthentication yes\nChallengeResponseAuthentication no\nX11Forwarding yes\nUsePAM yes\n```\n\nPlus, on debian/ubuntu machines\n\n```\nSyslogFacility AUTH\nGSSAPIAuthentication no\nSubsystem sftp /usr/lib/openssh/sftp-server\n```\n\nAnd on centos/compatible machines\n\n```\nSyslogFacility AUTHPRIV\nGSSAPIAuthentication yes\nSubsystem sftp /usr/libexec/openssh/sftp-server\n```\n\n# Contributing\n\nYou fixed a bug, or added a new feature? Yippie!\n\n1. Fork the repository on Github\n2. Create a named feature branch (like `add\\_component\\_x`)\n3. Write you change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n\nContributions of any sort are very welcome!\n\n# License and Authors\n\nAuthors: Chris Aumann <me@chr4.org>\nContributors: Jeremy Olliver <jeremy.olliver@gmail.com>, Andy Thompson <\n"
+}

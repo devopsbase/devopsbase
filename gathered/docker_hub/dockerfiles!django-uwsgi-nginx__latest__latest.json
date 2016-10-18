@@ -1,0 +1,102 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dockerfiles/django-uwsgi-nginx",
+    "repository_url": "https://hub.docker.com/v2/repositories/dockerfiles/django-uwsgi-nginx",
+    "tags_url": "https://hub.docker.com/v2/repositories/dockerfiles/django-uwsgi-nginx/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dockerfiles/django-uwsgi-nginx/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dockerfiles/django-uwsgi-nginx/autobuild",
+    "user": "dockerfiles",
+    "name": "django-uwsgi-nginx",
+    "namespace": "dockerfiles",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 100,
+    "pull_count": 20599,
+    "last_updated": "2016-08-19T18:13:24.727396Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 165891809,
+        "id": 8638,
+        "repository": 5643,
+        "creator": 4612,
+        "last_updater": 4612,
+        "last_updated": "2016-08-19T18:13:24.301105Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "dockerfiles/django-uwsgi-nginx"
+  },
+  "name": "dockerfiles/django-uwsgi-nginx Docker container",
+  "description": "Dockerfile and configuration files to build a working Django container with uwsgi and nginx",
+  "readme": "# Django, uWSGI and Nginx in a container, using Supervisord\n\nThis Dockerfile shows you *how* to build a Docker container with a fairly standard\nand speedy setup for Django with uWSGI and Nginx.\n\nuWSGI from a number of benchmarks has shown to be the fastest server \nfor python applications and allows lots of flexibility. But note that we have\nnot done any form of optimalization on this package. Modify it to your needs.\n\nNginx has become the standard for serving up web applications and has the \nadditional benefit that it can talk to uWSGI using the uWSGI protocol, further\neliminating overhead. \n\nMost of this setup comes from the excellent tutorial on \nhttps://uwsgi.readthedocs.org/en/latest/tutorials/Django_and_nginx.html\n\nThe best way to use this repository is as an example. Clone the repository to \na location of your liking, and start adding your files / change the configuration \nas needed. Once you're really into making your project you'll notice you've \ntouched most files here.\n\n### Build and run\n* docker build -t webapp .\n* docker run -d webapp\n\n### How to insert your application\n\nIn /app currently a django project is created with startproject. You will\nprobably want to replace the content of /app with the root of your django\nproject. Then also remove the line of django-app startproject from the \nDockerfile\n\nuWSGI chdirs to /app so in uwsgi.ini you will need to make sure the python path\nto the wsgi.py file is relative to that.\n",
+  "dockerfile": "# Copyright 2013 Thatcher Peskens\n#\n# Licensed under the Apache License, Version 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy of the License at\n#\n#    http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions and\n# limitations under the License.\n\nFROM ubuntu:14.04\n\nMAINTAINER Dockerfiles\n\n# Install required packages and remove the apt packages cache when done.\n\nRUN apt-get update && apt-get install -y \\\n\tgit \\\n\tpython \\\n\tpython-dev \\\n\tpython-setuptools \\\n\tnginx \\\n\tsupervisor \\\n\tsqlite3 \\\n  && rm -rf /var/lib/apt/lists/*\n\nRUN easy_install pip\n\n# install uwsgi now because it takes a little while\nRUN pip install uwsgi\n\n# setup all the configfiles\nRUN echo \"daemon off;\" >> /etc/nginx/nginx.conf\nCOPY nginx-app.conf /etc/nginx/sites-available/default\nCOPY supervisor-app.conf /etc/supervisor/conf.d/\n\n# COPY requirements.txt and RUN pip install BEFORE adding the rest of your code, this will cause Docker's caching mechanism\n# to prevent re-installinig (all your) dependencies when you made a change a line or two in your app. \n\nCOPY app/requirements.txt /home/docker/code/app/\nRUN pip install -r /home/docker/code/app/requirements.txt\n\n# add (the rest of) our code\nCOPY . /home/docker/code/\n\n# install django, normally you would remove this step because your project would already\n# be installed in the code/app/ directory\nRUN django-admin.py startproject website /home/docker/code/app/ \n\n\nEXPOSE 80\nCMD [\"supervisord\", \"-n\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y \tgit \tpython \tpython-dev \tpython-setuptools \tnginx \tsupervisor \tsqlite3   && rm -rf /var/lib/apt/lists/*",
+      "easy_install pip",
+      "pip install uwsgi",
+      "echo \"daemon off;\" >> /etc/nginx/nginx.conf",
+      "pip install -r /home/docker/code/app/requirements.txt",
+      "django-admin.py startproject website /home/docker/code/app/ "
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "Dockerfiles",
+    "copy": ". /home/docker/code/",
+    "cmd": "[\"supervisord\", \"-n\"]"
+  },
+  "source_repository_url": "git://github.com/dockerfiles/django-uwsgi-nginx.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/dockerfiles/django-uwsgi-nginx",
+  "docker_repository": "dockerfiles/django-uwsgi-nginx",
+  "docker_image": "dockerfiles/django-uwsgi-nginx",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dockerfiles/django-uwsgi-nginx",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/dockerfiles/django-uwsgi-nginx",
+    "https://hub.docker.com/v2/repositories/dockerfiles/django-uwsgi-nginx",
+    "git://github.com/dockerfiles/django-uwsgi-nginx.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Mode/Executable/Script/Dockerfile",
+    "Type/Devopsware/Build",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/dockerfiles/django-uwsgi-nginx",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

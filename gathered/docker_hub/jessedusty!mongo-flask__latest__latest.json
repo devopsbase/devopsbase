@@ -1,0 +1,166 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jessedusty/mongo-flask",
+    "repository_url": "https://hub.docker.com/v2/repositories/jessedusty/mongo-flask",
+    "tags_url": "https://hub.docker.com/v2/repositories/jessedusty/mongo-flask/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jessedusty/mongo-flask/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jessedusty/mongo-flask/autobuild",
+    "user": "jessedusty",
+    "name": "mongo-flask",
+    "namespace": "jessedusty",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 116,
+    "last_updated": "2016-10-14T18:05:56.683530Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 254642634,
+        "id": 3393195,
+        "repository": 740319,
+        "creator": 405263,
+        "last_updater": 405263,
+        "last_updated": "2016-10-14T18:05:56.293760Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "dev-latest",
+        "full_size": 254604216,
+        "id": 4545426,
+        "repository": 740319,
+        "creator": 405263,
+        "last_updater": 405263,
+        "last_updated": "2016-08-28T06:14:35.765818Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "2-slim",
+        "full_size": 248990345,
+        "id": 4267615,
+        "repository": 740319,
+        "creator": 405263,
+        "last_updater": 405263,
+        "last_updated": "2016-08-11T01:35:31.732034Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.5.1-slim",
+        "full_size": 235613394,
+        "id": 3393265,
+        "repository": 740319,
+        "creator": 405263,
+        "last_updater": 405263,
+        "last_updated": "2016-06-12T22:41:26.024510Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.4",
+        "full_size": 234666654,
+        "id": 3393233,
+        "repository": 740319,
+        "creator": 405263,
+        "last_updater": 405263,
+        "last_updated": "2016-06-12T22:35:48.396572Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "jessedusty/mongo-flask"
+  },
+  "name": "jessedusty/mongo-flask Docker container",
+  "description": "Combination of superzazu/flask-python34 and the MongoDB python driver",
+  "readme": "# Flask Docker image\n\nFlask Docker image powered by Python (latest available from official python image), with nginx and gunicorn and the MongoDB driver. It is\naimed at a production use.\n\n# Project quickstart\n\n## Setup\n\n1. Create a Dockerfile in the root of your project, starting with : `FROM jessedusty/mongo-flask`\n2. Create a `requirements.txt` file containing your dependencies.\n\nNote: you must have a file called `app.py` at the root of your project\nwith an `app` variable containing the Flask object.\n\n## Running the project\n\n```\ndocker build -t myapp .\ndocker run -d -P myapp\n```\n\nWhen you want to run the project (or update it), you just have to re-do these\ntwo steps.\n\n# General notes\n\n- don't forget to check out the `sample-app` folder!\n- everything in the folder `static` is served by nginx.\n",
+  "dockerfile": "FROM python:slim\n\nRUN apt-get update\nRUN apt-get -y install nginx supervisor git\nRUN pip install --no-cache-dir gunicorn Flask\n\nRUN apt-get install -y python-pip\nRUN apt-get install -y mongodb-clients\nRUN pip install pymongo\nRUN apt-get install -y curl\nRUN mkdir -p /usr/src/app\nRUN mkdir -p /usr/src/app/static\nWORKDIR /usr/src/app\n\nONBUILD COPY requirements.txt /usr/src/app/\nONBUILD RUN pip install --no-cache-dir -r requirements.txt\n\nONBUILD COPY . /usr/src/app\n\n# nginx setup\nRUN rm /etc/nginx/sites-enabled/default\nCOPY flask.conf /etc/nginx/sites-available/\nRUN ln -s /etc/nginx/sites-available/flask.conf /etc/nginx/sites-enabled/flask.conf\nRUN echo \"daemon off;\" >> /etc/nginx/nginx.conf\n\n# supervisor setup\nRUN mkdir -p /var/log/supervisor\nCOPY supervisord.conf /etc/supervisor/conf.d/\nCOPY gunicorn.conf /etc/supervisor/conf.d/\n\nEXPOSE 80\nCMD [\"/usr/bin/supervisord\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update",
+      "apt-get -y install nginx supervisor git",
+      "pip install --no-cache-dir gunicorn Flask",
+      "apt-get install -y python-pip",
+      "apt-get install -y mongodb-clients",
+      "pip install pymongo",
+      "apt-get install -y curl",
+      "mkdir -p /usr/src/app",
+      "mkdir -p /usr/src/app/static",
+      "rm /etc/nginx/sites-enabled/default",
+      "ln -s /etc/nginx/sites-available/flask.conf /etc/nginx/sites-enabled/flask.conf",
+      "echo \"daemon off;\" >> /etc/nginx/nginx.conf",
+      "mkdir -p /var/log/supervisor"
+    ],
+    "workdir": [
+      "/usr/src/app"
+    ],
+    "from": "python:slim",
+    "onbuild": "COPY . /usr/src/app",
+    "copy": "gunicorn.conf /etc/supervisor/conf.d/",
+    "cmd": "[\"/usr/bin/supervisord\"]"
+  },
+  "source_repository_url": "https://github.com/jessedusty/mongo-flask.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/jessedusty/mongo-flask",
+  "docker_repository": "jessedusty/mongo-flask",
+  "docker_image": "jessedusty/mongo-flask",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jessedusty/mongo-flask",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jessedusty/mongo-flask",
+    "https://hub.docker.com/v2/repositories/jessedusty/mongo-flask",
+    "https://github.com/jessedusty/mongo-flask.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Binding/Region/North America/US",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB"
+  ],
+  "info_url": "https://hub.docker.com/r/jessedusty/mongo-flask",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

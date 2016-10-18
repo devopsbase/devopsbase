@@ -1,0 +1,117 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/otagoweb/centos",
+    "repository_url": "https://hub.docker.com/v2/repositories/otagoweb/centos",
+    "tags_url": "https://hub.docker.com/v2/repositories/otagoweb/centos/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/otagoweb/centos/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/otagoweb/centos/autobuild",
+    "user": "otagoweb",
+    "name": "centos",
+    "namespace": "otagoweb",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 47,
+    "last_updated": "2016-10-09T20:33:26.528590Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 183617272,
+        "id": 4611809,
+        "repository": 890163,
+        "creator": 996934,
+        "last_updater": 996934,
+        "last_updated": "2016-10-09T20:33:26.158883Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "7.0",
+        "full_size": 183616732,
+        "id": 4611683,
+        "repository": 890163,
+        "creator": 996934,
+        "last_updater": 996934,
+        "last_updated": "2016-10-09T20:29:17.893631Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "gdhnz/otagoweb-php"
+  },
+  "name": "otagoweb/centos Docker container",
+  "description": "Apache (with PHP7), built on CentOS 7",
+  "readme": "This is a CentOS 7 image that includes apache, php, composer, and the blackfire php probe. In order to use this image effectively, you'll need to mount:\n\n* /var/www/html/public for your site content (e.g. using \"-v /home/user/site:/var/www/html/public\")\n\n### Optional mounts\n* /etc/php.d for additional .ini files for php\n* /var/www/php is also available as a php includes directory\n\n## Example\n```bash\n$ docker run -p 8080:80 -v /home/user/mysite:/var/www/html/public -d otagoweb/centos\n```\n\n## Blackfire\nTo connect to the blackfire agent, you'll need to run the [blackfire/blackfire](https://hub.docker.com/r/blackfire/blackfire/) image. For more information, visit https://blackfire.io/docs/integrations/docker.\n\n## Installed php packages\n### PHP Modules\n* bcmath\n* blackfire\n* bz2\n* calendar\n* Core\n* ctype\n* curl\n* date\n* dom\n* exif\n* fileinfo\n* filter\n* ftp\n* gd\n* geoip\n* gettext\n* hash\n* iconv\n* igbinary\n* intl\n* json\n* ldap\n* libsodium\n* libxml\n* mbstring\n* mcrypt\n* mysqli\n* mysqlnd\n* openssl\n* pcntl\n* pcre\n* PDO\n* pdo_mysql\n* pdo_sqlite\n* Phar\n* posix\n* pspell\n* readline\n* recode\n* redis\n* Reflection\n* session\n* shmop\n* SimpleXML\n* snmp\n* soap\n* sockets\n* SPL\n* sqlite3\n* standard\n* sysvmsg\n* sysvsem\n* sysvshm\n* tidy\n* tokenizer\n* wddx\n* xdebug\n* xml\n* xmlreader\n* xmlrpc\n* xmlwriter\n* xsl\n* Zend OPcache\n* zip\n* zlib\n\n### Zend Modules\n* Xdebug\n* Zend OPcache\n* blackfire",
+  "dockerfile": "FROM centos:latest\n\n# Install REMI php yum repos\nRUN VERSION=`cat /etc/redhat-release | awk '{printf \"%d\", $4}'` \\\n    && yum -q -y install deltarpm wget pygpgme \\\n    && wget -q -P /tmp https://dl.fedoraproject.org/pub/epel/epel-release-latest-$VERSION.noarch.rpm \\\n    && wget -q -P /tmp http://rpms.remirepo.net/enterprise/remi-release-$VERSION.rpm \\\n    && rpm -U --quiet /tmp/epel-release-latest-$VERSION.noarch.rpm /tmp/remi-release-$VERSION.rpm \\\n    && rm -f /tmp/epel-release-latest-$VERSION.noarch.rpm /tmp/remi-release-$VERSION.rpm \\\n    && /usr/bin/yum-config-manager --enable remi-php70 \\\n    && yum -q -y install supervisor yum-cron \\\n    && yum clean all \\\n    && mkdir -p /var/log/supervisor \\\n    && mkdir -p /var/lock/subsys \\\n    && touch /var/lock/subsys/yum-cron \\\n    && sed -i \"s/apply_updates = no/apply_updates = yes/g\" /etc/yum/yum-cron.conf \\\n    && sed -i \"s/apply_updates = no/apply_updates = yes/g\" /etc/yum/yum-cron-hourly.conf \\\n    && sed -i \"s/download_updates = no/download_updates = yes/g\" /etc/yum/yum-cron-hourly.conf \\\n    && sed -i \"s/update_messages = no/update_messages = yes/g\" /etc/yum/yum-cron-hourly.conf\n\n# Update and install apache and php\nRUN yum -q -y update \\\n    && yum -q -y install httpd \\\n        php \\\n        php-bcmath \\\n        php-gd \\\n        php-intl \\\n        php-ldap \\\n        php-mbstring \\\n        php-mcrypt \\\n        php-mysqlnd \\\n        php-opcache \\\n        php-pdo \\\n        php-pecl-geoip \\\n        php-pecl-libsodium \\\n        php-pecl-redis \\\n        php-pecl-xdebug \\\n        php-pecl-zip \\\n        php-pspell \\\n        php-recode \\\n        php-snmp \\\n        php-soap \\\n        php-tidy \\\n        php-xml \\\n        php-xmlrpc \\\n        GeoIP-update \\\n        composer \\\n    && echo -e '\\n\\nfunction composer() { COMPOSER=\"/usr/bin/composer\" || { echo \"Could not find composer in path\" >&2 ; return 1 ; } && sed -i \"s/zend/;zend/g\" /etc/php.d/15-xdebug.ini ; $COMPOSER \"$@\" ; STATUS=$? ; sed -i \"s/;zend/zend/g\" /etc/php.d/15-xdebug.ini ; return $STATUS ; }' >> ~/.bashrc \\\n    && mkdir -p /var/www/php \\\n    && sed -i \"s/include-path/include-path\\ninclude_path = '.:\\/var\\/www\\/php:\\/usr\\/share\\/php'/g\" /etc/php.ini \\\n    && yum clean all\n\n# Install blackfire php probe\nRUN version=$(php -r \"echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;\") \\\n    && curl -A \"Docker\" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/$version \\\n    && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp \\\n    && mv /tmp/blackfire-*.so $(php -r \"echo ini_get('extension_dir');\")/blackfire.so \\\n    && printf \"extension=blackfire.so\\nblackfire.agent_socket=tcp://blackfire:8707\\n\" > /etc/php.d/blackfire.ini\n\n# Update Servername to localhost\nRUN sed -i \"s/#ServerName.*/ServerName localhost/g\" /etc/httpd/conf/httpd.conf \\\n    && sed -i \"s/DocumentRoot/#DocumentRoot/g\" /etc/httpd/conf/httpd.conf \\\n    && mkdir -p /var/www/html/public\n\n# Add GeoLite City database to image\nCOPY files/geolitecityupdate.sh /etc/cron.weekly/geolitecityupdate\nRUN chmod +x /etc/cron.weekly/geolitecityupdate \\\n    && /etc/cron.weekly/geolitecityupdate\n\n# Add apache config to image\nCOPY files/apache.conf /etc/httpd/conf.d/\n\n# Add supervisord config to image\nCOPY files/supervisord.ini /etc/supervisord.d/default.ini\nRUN chmod 600 /etc/supervisord.d/*.ini\n\nWORKDIR /var/www/html\nEXPOSE 80 443\nCMD [\"/bin/supervisord\", \"-c\", \"/etc/supervisord.conf\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "VERSION=`cat /etc/redhat-release | awk '{printf \"%d\", $4}'`     && yum -q -y install deltarpm wget pygpgme     && wget -q -P /tmp https://dl.fedoraproject.org/pub/epel/epel-release-latest-$VERSION.noarch.rpm     && wget -q -P /tmp http://rpms.remirepo.net/enterprise/remi-release-$VERSION.rpm     && rpm -U --quiet /tmp/epel-release-latest-$VERSION.noarch.rpm /tmp/remi-release-$VERSION.rpm     && rm -f /tmp/epel-release-latest-$VERSION.noarch.rpm /tmp/remi-release-$VERSION.rpm     && /usr/bin/yum-config-manager --enable remi-php70     && yum -q -y install supervisor yum-cron     && yum clean all     && mkdir -p /var/log/supervisor     && mkdir -p /var/lock/subsys     && touch /var/lock/subsys/yum-cron     && sed -i \"s/apply_updates = no/apply_updates = yes/g\" /etc/yum/yum-cron.conf     && sed -i \"s/apply_updates = no/apply_updates = yes/g\" /etc/yum/yum-cron-hourly.conf     && sed -i \"s/download_updates = no/download_updates = yes/g\" /etc/yum/yum-cron-hourly.conf     && sed -i \"s/update_messages = no/update_messages = yes/g\" /etc/yum/yum-cron-hourly.conf",
+      "yum -q -y update     && yum -q -y install httpd         php         php-bcmath         php-gd         php-intl         php-ldap         php-mbstring         php-mcrypt         php-mysqlnd         php-opcache         php-pdo         php-pecl-geoip         php-pecl-libsodium         php-pecl-redis         php-pecl-xdebug         php-pecl-zip         php-pspell         php-recode         php-snmp         php-soap         php-tidy         php-xml         php-xmlrpc         GeoIP-update         composer     && echo -e '\\n\\nfunction composer() { COMPOSER=\"/usr/bin/composer\" || { echo \"Could not find composer in path\" >&2 ; return 1 ; } && sed -i \"s/zend/;zend/g\" /etc/php.d/15-xdebug.ini ; $COMPOSER \"$@\" ; STATUS=$? ; sed -i \"s/;zend/zend/g\" /etc/php.d/15-xdebug.ini ; return $STATUS ; }' >> ~/.bashrc     && mkdir -p /var/www/php     && sed -i \"s/include-path/include-path\\ninclude_path = '.:\\/var\\/www\\/php:\\/usr\\/share\\/php'/g\" /etc/php.ini     && yum clean all",
+      "version=$(php -r \"echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;\")     && curl -A \"Docker\" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/$version     && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp     && mv /tmp/blackfire-*.so $(php -r \"echo ini_get('extension_dir');\")/blackfire.so     && printf \"extension=blackfire.so\\nblackfire.agent_socket=tcp://blackfire:8707\\n\" > /etc/php.d/blackfire.ini",
+      "sed -i \"s/#ServerName.*/ServerName localhost/g\" /etc/httpd/conf/httpd.conf     && sed -i \"s/DocumentRoot/#DocumentRoot/g\" /etc/httpd/conf/httpd.conf     && mkdir -p /var/www/html/public",
+      "chmod +x /etc/cron.weekly/geolitecityupdate     && /etc/cron.weekly/geolitecityupdate",
+      "chmod 600 /etc/supervisord.d/*.ini"
+    ],
+    "workdir": [
+      "/var/www/html"
+    ],
+    "from": "centos:latest",
+    "copy": "files/supervisord.ini /etc/supervisord.d/default.ini",
+    "cmd": "[\"/bin/supervisord\", \"-c\", \"/etc/supervisord.conf\"]"
+  },
+  "source_repository_url": "https://github.com/gdhnz/otagoweb-php.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/gdhnz/otagoweb-php",
+  "docker_repository": "otagoweb/centos",
+  "docker_image": "otagoweb/centos",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "otagoweb/centos",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/otagoweb/centos",
+    "https://hub.docker.com/v2/repositories/otagoweb/centos",
+    "https://github.com/gdhnz/otagoweb-php.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Infrastructure/Operating System/Linux/CentOS",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/otagoweb/centos",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

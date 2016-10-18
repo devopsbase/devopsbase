@@ -1,0 +1,335 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/unblibraries/fedora-solr-gsearch",
+    "repository_url": "https://hub.docker.com/v2/repositories/unblibraries/fedora-solr-gsearch",
+    "tags_url": "https://hub.docker.com/v2/repositories/unblibraries/fedora-solr-gsearch/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/unblibraries/fedora-solr-gsearch/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/unblibraries/fedora-solr-gsearch/autobuild",
+    "user": "unblibraries",
+    "name": "fedora-solr-gsearch",
+    "namespace": "unblibraries",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 320,
+    "last_updated": "2015-09-04T17:08:12.920364Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 1123947307,
+        "id": 793722,
+        "repository": 299531,
+        "creator": 324755,
+        "last_updater": 324755,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "3.8.x",
+        "full_size": 1123946980,
+        "id": 793702,
+        "repository": 299531,
+        "creator": 324755,
+        "last_updater": 324755,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "unb-libraries/docker-fedora-solr-gsearch"
+  },
+  "name": "unblibraries/fedora-solr-gsearch Docker container",
+  "description": "fedora-solr-gsearch",
+  "readme": "# Docker Fedora-Gsearch-Solr\nA simple, extensible Fedora/Gsearch/Tomcat container used by [unblibraries/docker-islandora-dev](https://github.com/unb-libraries/docker-islandora-dev) and designed for Islandora. Leverages the [phusion/baseimage](https://registry.hub.docker.com/u/phusion/baseimage/) my_init system. *This is not a production-ready image*.\n\n## License\n- Docker Fedora-Gsearch-Solr is licensed under the MIT License:\n  - [http://opensource.org/licenses/mit-license.html](http://opensource.org/licenses/mit-license.html)\n- Attribution is not required, but much appreciated:\n  - `Docker Fedora-Gsearch-Solr by UNB Libraries`\n  ",
+  "dockerfile": "FROM unblibraries/jdk:oracle8\nMAINTAINER Jacob Sanford <jsanford_at_unb.ca>\n\n## Environment Variables\n# Versions\nENV JAVA_MAJOR_VERSION=8\nENV FEDORA_VERSION=3.8.1\nENV FEDORA_AUTH_FILTER_VERSION=7.1.3\nENV FEDORA_AUTH_FILTER_FEDORA_VERSION=3.8.0\nENV GSEARCH_VERSION=2.8\nENV GSEARCH_DGI_EXTENSION_VERSION=0.1.1\nENV SOLR_VERSION=4.2.0\n\nENV FEDORA_MYSQL_USER fedora\nENV FEDORA_MYSQL_PASS fedora\nENV FEDORA_MYSQL_DB fedora3\nENV FEDORA_MYSQL_HOST 127.0.0.1\nENV FEDORA_MYSQL_PORT 3006\n\n# Paths\nENV TMP_WORKDIR=/tmp/islandora_install\nENV SOLR_DIR=/opt/solr\nENV FEDORA_HOME=/usr/local/fedora\nENV CATALINA_HOME=/usr/local/fedora/tomcat\nENV JAVA_HOME=/usr/lib/jvm/java-${JAVA_MAJOR_VERSION}-oracle\nENV JRE_HOME=/usr/lib/jvm/java-${JAVA_MAJOR_VERSION}-oracle/jre\nENV KAKADU_LIBRARY_PATH=/usr/local/djatoka/lib/Linux-x86-64\n\n# Download URIs\nENV FEDORA_COMMONS_DL_URI=http://downloads.sourceforge.net/project/fedora-commons/fedora/${FEDORA_VERSION}/fcrepo-installer-${FEDORA_VERSION}.jar\nENV FEDORA_DRUPAL_FILTER_DL_URI=https://github.com/Islandora/islandora_drupal_filter/releases/download/v${FEDORA_AUTH_FILTER_VERSION}/fcrepo-drupalauthfilter-${FEDORA_AUTH_FILTER_FEDORA_VERSION}.jar\nENV FEDORA_DRUPAL_FILTER_XML_DL_URI=https://raw.githubusercontent.com/Islandora/islandora_drupal_filter/master/filter-drupal.xml\nENV GSEARCH_DL_URI=http://downloads.sourceforge.net/project/fedora-commons/services/3.7/fedoragsearch-${GSEARCH_VERSION}.zip\nENV GSEARCH_DGI_EXT_DL_URI=https://github.com/discoverygarden/dgi_gsearch_extensions/releases/download/v${GSEARCH_DGI_EXTENSION_VERSION}/gsearch_extensions-${GSEARCH_DGI_EXTENSION_VERSION}-jar-with-dependencies.jar\nENV SOLR_DL_URI=http://archive.apache.org/dist/lucene/solr/${SOLR_VERSION}/solr-${SOLR_VERSION}.tgz\nENV SOLR_DGI_SCHEMA_DL_URI=https://raw.githubusercontent.com/discoverygarden/basic-solr-config/modular/conf/schema.xml\n\n# Other\nENV JAVA_OPTS=\"-Xms1024m -Xmx1024m -XX:MaxPermSize=128m -Djavax.net.ssl.trustStore=${FEDORA_HOME}/server/truststore -Djavax.net.ssl.trustStorePassword=tomcat\"\n\n## Build Image.\n# Install prerequisite packages.\nRUN apt-get update && \\\n  DEBIAN_FRONTEND=noninteractive apt-get install -y git ant unzip mysql-client\n\nRUN mkdir -p ${TMP_WORKDIR}\n\n# Install and configure Fedora.\nRUN wget --directory-prefix=${TMP_WORKDIR}/ ${FEDORA_COMMONS_DL_URI}\nADD conf/fedora-commons/install.properties ${TMP_WORKDIR}/install.properties\n\nRUN wget --directory-prefix=${TMP_WORKDIR}/ ${FEDORA_DRUPAL_FILTER_DL_URI}\nRUN wget --directory-prefix=${TMP_WORKDIR}/ ${FEDORA_DRUPAL_FILTER_XML_DL_URI}\nRUN git clone git://github.com/mjordan/drupal_filter_validator ${TMP_WORKDIR}/drupal_filter_validator\nRUN git clone git://github.com/Islandora/islandora-xacml-policies.git ${TMP_WORKDIR}/islandora-xacml-policies\n\n# Install and configure GSearch.\nRUN wget --directory-prefix=${TMP_WORKDIR}/ ${GSEARCH_DL_URI}\nRUN cd ${TMP_WORKDIR} && unzip fedoragsearch-${GSEARCH_VERSION}.zip\nRUN wget --directory-prefix=${TMP_WORKDIR}/ ${GSEARCH_DGI_EXT_DL_URI}\nRUN git clone git://github.com/discoverygarden/basic-solr-config.git ${TMP_WORKDIR}/basic-solr-config\nADD conf/gsearch/fgsconfig-basic.properties ${TMP_WORKDIR}/fgsconfig-basic.properties\n\n# Install and configure Solr.\nRUN wget --directory-prefix=${TMP_WORKDIR}/ ${SOLR_DL_URI}\nRUN cd ${TMP_WORKDIR}/ && tar xvzpf solr-${SOLR_VERSION}.tgz\nRUN mv ${TMP_WORKDIR}/solr-${SOLR_VERSION} /opt/\nRUN ln -s ${SOLR_DIR}-${SOLR_VERSION} ${SOLR_DIR}\nADD conf/solr/solr.xml ${TMP_WORKDIR}/solr.xml\nRUN sed -i -e \"s|SOLR_VERSION|$SOLR_VERSION|g\" ${TMP_WORKDIR}/solr.xml\n\nRUN wget --directory-prefix=${TMP_WORKDIR}/ ${SOLR_DGI_SCHEMA_DL_URI}\nRUN sed -i 's|<filter class=\"solr.EnglishPorterFilterFactory\" protected=\"protwords.txt\"/>|<filter class=\"solr.SnowballPorterFilterFactory\" language=\"English\" protected=\"protwords.txt\"/>|g' ${TMP_WORKDIR}/schema.xml\nRUN sed -i '290i   <field name=\"_version_\" type=\"long\" indexed=\"true\" stored=\"true\"/>' ${TMP_WORKDIR}/schema.xml\nRUN mv ${TMP_WORKDIR}/schema.xml ${SOLR_DIR}/example/solr/collection1/conf\n\nRUN sed -i 's|<openSearcher>false</openSearcher>|<openSearcher>true</openSearcher>|g' ${SOLR_DIR}/example/solr/collection1/conf/solrconfig.xml\nRUN sed -i 's|<queryResultWindowSize>20</queryResultWindowSize>|<queryResultWindowSize>50</queryResultWindowSize>|g' ${SOLR_DIR}/example/solr/collection1/conf/solrconfig.xml\nRUN sed -i 's|<requestDispatcher handleSelect=\"false\" >|<requestDispatcher handleSelect=\"true\" >|g' ${SOLR_DIR}/example/solr/collection1/conf/solrconfig.xml\nRUN sed -i '782i       <str name=\"fl\">*</str>' ${SOLR_DIR}/example/solr/collection1/conf/solrconfig.xml\nRUN sed -i '783i       <str name=\"q.alt\">*:*</str>' ${SOLR_DIR}/example/solr/collection1/conf/solrconfig.xml\nRUN sed -i '784i       <str name=\"qf\">dc.title^5 dc.subject^3 dc.description^3 dc.creator^3 dc.contributor^3 dc.type^1 dc.relation^1 dc.publisher^1 mods_identifier_local_ms^3 ds.WARC_FILTER^1 text_nodes_HOCR_hlt^1 mods_subject_hierarchicalGeographic_region_ms^3 mods_identifier_hdl_mt^3 dc.identifier^3 PID^0.5 catch_all_fields_mt^0.1</str>' ${SOLR_DIR}/example/solr/collection1/conf/solrconfig.xml\n\nCMD [\"/sbin/my_init\"]\n\n# Copy phusion/baseimage inits.\nADD init/ /etc/my_init.d/\nADD services/ /etc/service/\nRUN chmod -v +x /etc/service/*/run\nRUN chmod -v +x /etc/my_init.d/*.sh\n\n# Clean-up\nRUN apt-get clean && \\\n  rm -rf /var/lib/apt/lists/* /tmp/solr-* /var/tmp/*\n\nEXPOSE 8080\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "conf/fedora-commons/install.properties",
+        "dest": "${TMP_WORKDIR}/install.properties"
+      },
+      {
+        "source": "conf/gsearch/fgsconfig-basic.properties",
+        "dest": "${TMP_WORKDIR}/fgsconfig-basic.properties"
+      },
+      {
+        "source": "conf/solr/solr.xml",
+        "dest": "${TMP_WORKDIR}/solr.xml"
+      },
+      {
+        "source": "init/",
+        "dest": "/etc/my_init.d/"
+      },
+      {
+        "source": "services/",
+        "dest": "/etc/service/"
+      }
+    ],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update &&   DEBIAN_FRONTEND=noninteractive apt-get install -y git ant unzip mysql-client",
+      "mkdir -p ${TMP_WORKDIR}",
+      "wget --directory-prefix=${TMP_WORKDIR}/ ${FEDORA_COMMONS_DL_URI}",
+      "wget --directory-prefix=${TMP_WORKDIR}/ ${FEDORA_DRUPAL_FILTER_DL_URI}",
+      "wget --directory-prefix=${TMP_WORKDIR}/ ${FEDORA_DRUPAL_FILTER_XML_DL_URI}",
+      "git clone git://github.com/mjordan/drupal_filter_validator ${TMP_WORKDIR}/drupal_filter_validator",
+      "git clone git://github.com/Islandora/islandora-xacml-policies.git ${TMP_WORKDIR}/islandora-xacml-policies",
+      "wget --directory-prefix=${TMP_WORKDIR}/ ${GSEARCH_DL_URI}",
+      "cd ${TMP_WORKDIR} && unzip fedoragsearch-${GSEARCH_VERSION}.zip",
+      "wget --directory-prefix=${TMP_WORKDIR}/ ${GSEARCH_DGI_EXT_DL_URI}",
+      "git clone git://github.com/discoverygarden/basic-solr-config.git ${TMP_WORKDIR}/basic-solr-config",
+      "wget --directory-prefix=${TMP_WORKDIR}/ ${SOLR_DL_URI}",
+      "cd ${TMP_WORKDIR}/ && tar xvzpf solr-${SOLR_VERSION}.tgz",
+      "mv ${TMP_WORKDIR}/solr-${SOLR_VERSION} /opt/",
+      "ln -s ${SOLR_DIR}-${SOLR_VERSION} ${SOLR_DIR}",
+      "sed -i -e \"s|SOLR_VERSION|$SOLR_VERSION|g\" ${TMP_WORKDIR}/solr.xml",
+      "wget --directory-prefix=${TMP_WORKDIR}/ ${SOLR_DGI_SCHEMA_DL_URI}",
+      "sed -i 's|<filter class=\"solr.EnglishPorterFilterFactory\" protected=\"protwords.txt\"/>|<filter class=\"solr.SnowballPorterFilterFactory\" language=\"English\" protected=\"protwords.txt\"/>|g' ${TMP_WORKDIR}/schema.xml",
+      "sed -i '290i   <field name=\"_version_\" type=\"long\" indexed=\"true\" stored=\"true\"/>' ${TMP_WORKDIR}/schema.xml",
+      "mv ${TMP_WORKDIR}/schema.xml ${SOLR_DIR}/example/solr/collection1/conf",
+      "sed -i 's|<openSearcher>false</openSearcher>|<openSearcher>true</openSearcher>|g' ${SOLR_DIR}/example/solr/collection1/conf/solrconfig.xml",
+      "sed -i 's|<queryResultWindowSize>20</queryResultWindowSize>|<queryResultWindowSize>50</queryResultWindowSize>|g' ${SOLR_DIR}/example/solr/collection1/conf/solrconfig.xml",
+      "sed -i 's|<requestDispatcher handleSelect=\"false\" >|<requestDispatcher handleSelect=\"true\" >|g' ${SOLR_DIR}/example/solr/collection1/conf/solrconfig.xml",
+      "sed -i '782i       <str name=\"fl\">*</str>' ${SOLR_DIR}/example/solr/collection1/conf/solrconfig.xml",
+      "sed -i '783i       <str name=\"q.alt\">*:*</str>' ${SOLR_DIR}/example/solr/collection1/conf/solrconfig.xml",
+      "sed -i '784i       <str name=\"qf\">dc.title^5 dc.subject^3 dc.description^3 dc.creator^3 dc.contributor^3 dc.type^1 dc.relation^1 dc.publisher^1 mods_identifier_local_ms^3 ds.WARC_FILTER^1 text_nodes_HOCR_hlt^1 mods_subject_hierarchicalGeographic_region_ms^3 mods_identifier_hdl_mt^3 dc.identifier^3 PID^0.5 catch_all_fields_mt^0.1</str>' ${SOLR_DIR}/example/solr/collection1/conf/solrconfig.xml",
+      "chmod -v +x /etc/service/*/run",
+      "chmod -v +x /etc/my_init.d/*.sh",
+      "apt-get clean &&   rm -rf /var/lib/apt/lists/* /tmp/solr-* /var/tmp/*"
+    ],
+    "workdir": [],
+    "from": "unblibraries/jdk:oracle8",
+    "maintainer": "Jacob Sanford <jsanford_at_unb.ca>",
+    "env": {
+      "JAVA_MAJOR_VERSION": "8",
+      "FEDORA_VERSION": "3.8.1",
+      "FEDORA_AUTH_FILTER_VERSION": "7.1.3",
+      "FEDORA_AUTH_FILTER_FEDORA_VERSION": "3.8.0",
+      "GSEARCH_VERSION": "2.8",
+      "GSEARCH_DGI_EXTENSION_VERSION": "0.1.1",
+      "SOLR_VERSION": "4.2.0",
+      "FEDORA_MYSQL_USER": "fedora",
+      "FEDORA_MYSQL_PASS": "fedora",
+      "FEDORA_MYSQL_DB": "fedora3",
+      "FEDORA_MYSQL_HOST": "127.0.0.1",
+      "FEDORA_MYSQL_PORT": "3006",
+      "TMP_WORKDIR": "/tmp/islandora_install",
+      "SOLR_DIR": "/opt/solr",
+      "FEDORA_HOME": "/usr/local/fedora",
+      "CATALINA_HOME": "/usr/local/fedora/tomcat",
+      "JAVA_HOME": "/usr/lib/jvm/java-${JAVA_MAJOR_VERSION}-oracle",
+      "JRE_HOME": "/usr/lib/jvm/java-${JAVA_MAJOR_VERSION}-oracle/jre",
+      "KAKADU_LIBRARY_PATH": "/usr/local/djatoka/lib/Linux-x86-64",
+      "FEDORA_COMMONS_DL_URI": "http://downloads.sourceforge.net/project/fedora-commons/fedora/${FEDORA_VERSION}/fcrepo-installer-${FEDORA_VERSION}.jar",
+      "FEDORA_DRUPAL_FILTER_DL_URI": "https://github.com/Islandora/islandora_drupal_filter/releases/download/v${FEDORA_AUTH_FILTER_VERSION}/fcrepo-drupalauthfilter-${FEDORA_AUTH_FILTER_FEDORA_VERSION}.jar",
+      "FEDORA_DRUPAL_FILTER_XML_DL_URI": "https://raw.githubusercontent.com/Islandora/islandora_drupal_filter/master/filter-drupal.xml",
+      "GSEARCH_DL_URI": "http://downloads.sourceforge.net/project/fedora-commons/services/3.7/fedoragsearch-${GSEARCH_VERSION}.zip",
+      "GSEARCH_DGI_EXT_DL_URI": "https://github.com/discoverygarden/dgi_gsearch_extensions/releases/download/v${GSEARCH_DGI_EXTENSION_VERSION}/gsearch_extensions-${GSEARCH_DGI_EXTENSION_VERSION}-jar-with-dependencies.jar",
+      "SOLR_DL_URI": "http://archive.apache.org/dist/lucene/solr/${SOLR_VERSION}/solr-${SOLR_VERSION}.tgz",
+      "SOLR_DGI_SCHEMA_DL_URI": "https://raw.githubusercontent.com/discoverygarden/basic-solr-config/modular/conf/schema.xml",
+      "JAVA_OPTS": "\"-Xms1024m",
+      "-Xmx1024m": "-XX:MaxPermSize",
+      "128m": "-Djavax.net.ssl.trustStore",
+      "${FEDORA_HOME}/server/truststore": "-Djavax.net.ssl.trustStorePassword"
+    },
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/unb-libraries/docker-fedora-solr-gsearch.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/unb-libraries/docker-fedora-solr-gsearch",
+  "docker_repository": "unblibraries/fedora-solr-gsearch",
+  "docker_image": "unblibraries/fedora-solr-gsearch",
+  "parameters_schema": {
+    "JAVA_MAJOR_VERSION": {
+      "default": "8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FEDORA_VERSION": {
+      "default": "3.8.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FEDORA_AUTH_FILTER_VERSION": {
+      "default": "7.1.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FEDORA_AUTH_FILTER_FEDORA_VERSION": {
+      "default": "3.8.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GSEARCH_VERSION": {
+      "default": "2.8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GSEARCH_DGI_EXTENSION_VERSION": {
+      "default": "0.1.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SOLR_VERSION": {
+      "default": "4.2.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FEDORA_MYSQL_USER": {
+      "default": "fedora",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FEDORA_MYSQL_PASS": {
+      "default": "fedora",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FEDORA_MYSQL_DB": {
+      "default": "fedora3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FEDORA_MYSQL_HOST": {
+      "default": "127.0.0.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FEDORA_MYSQL_PORT": {
+      "default": "3006",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TMP_WORKDIR": {
+      "default": "/tmp/islandora_install",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SOLR_DIR": {
+      "default": "/opt/solr",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FEDORA_HOME": {
+      "default": "/usr/local/fedora",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CATALINA_HOME": {
+      "default": "/usr/local/fedora/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_HOME": {
+      "default": "/usr/lib/jvm/java-${JAVA_MAJOR_VERSION}-oracle",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JRE_HOME": {
+      "default": "/usr/lib/jvm/java-${JAVA_MAJOR_VERSION}-oracle/jre",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KAKADU_LIBRARY_PATH": {
+      "default": "/usr/local/djatoka/lib/Linux-x86-64",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FEDORA_COMMONS_DL_URI": {
+      "default": "http://downloads.sourceforge.net/project/fedora-commons/fedora/${FEDORA_VERSION}/fcrepo-installer-${FEDORA_VERSION}.jar",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FEDORA_DRUPAL_FILTER_DL_URI": {
+      "default": "https://github.com/Islandora/islandora_drupal_filter/releases/download/v${FEDORA_AUTH_FILTER_VERSION}/fcrepo-drupalauthfilter-${FEDORA_AUTH_FILTER_FEDORA_VERSION}.jar",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FEDORA_DRUPAL_FILTER_XML_DL_URI": {
+      "default": "https://raw.githubusercontent.com/Islandora/islandora_drupal_filter/master/filter-drupal.xml",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GSEARCH_DL_URI": {
+      "default": "http://downloads.sourceforge.net/project/fedora-commons/services/3.7/fedoragsearch-${GSEARCH_VERSION}.zip",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GSEARCH_DGI_EXT_DL_URI": {
+      "default": "https://github.com/discoverygarden/dgi_gsearch_extensions/releases/download/v${GSEARCH_DGI_EXTENSION_VERSION}/gsearch_extensions-${GSEARCH_DGI_EXTENSION_VERSION}-jar-with-dependencies.jar",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SOLR_DL_URI": {
+      "default": "http://archive.apache.org/dist/lucene/solr/${SOLR_VERSION}/solr-${SOLR_VERSION}.tgz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SOLR_DGI_SCHEMA_DL_URI": {
+      "default": "https://raw.githubusercontent.com/discoverygarden/basic-solr-config/modular/conf/schema.xml",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_OPTS": {
+      "default": "\"-Xms1024m",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "-Xmx1024m": {
+      "default": "-XX:MaxPermSize",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "128m": {
+      "default": "-Djavax.net.ssl.trustStore",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "${FEDORA_HOME}/server/truststore": {
+      "default": "-Djavax.net.ssl.trustStorePassword",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "unblibraries/fedora-solr-gsearch",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/unblibraries/fedora-solr-gsearch",
+    "https://hub.docker.com/v2/repositories/unblibraries/fedora-solr-gsearch",
+    "https://github.com/unb-libraries/docker-fedora-solr-gsearch.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Fedora",
+    "Type/Middleware/Search/Solr"
+  ],
+  "info_url": "https://hub.docker.com/r/unblibraries/fedora-solr-gsearch",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

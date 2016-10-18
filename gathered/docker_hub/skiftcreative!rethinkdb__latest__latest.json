@@ -1,0 +1,130 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/skiftcreative/rethinkdb",
+    "repository_url": "https://hub.docker.com/v2/repositories/skiftcreative/rethinkdb",
+    "tags_url": "https://hub.docker.com/v2/repositories/skiftcreative/rethinkdb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/skiftcreative/rethinkdb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/skiftcreative/rethinkdb/autobuild",
+    "user": "skiftcreative",
+    "name": "rethinkdb",
+    "namespace": "skiftcreative",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 97,
+    "last_updated": "2016-02-11T18:10:56.964765Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 77761864,
+        "id": 1978869,
+        "repository": 523449,
+        "creator": 168677,
+        "last_updater": 168677,
+        "last_updated": "2016-02-11T17:52:40.447452Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "2.2.3",
+        "full_size": 77762777,
+        "id": 1978792,
+        "repository": 523449,
+        "creator": 168677,
+        "last_updater": 168677,
+        "last_updated": "2016-02-11T17:51:18.359570Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "2.2.4",
+        "full_size": 77761803,
+        "id": 1979815,
+        "repository": 523449,
+        "creator": 168677,
+        "last_updater": 168677,
+        "last_updated": "2016-02-11T17:49:50.135539Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "SkiftCreative/rethinkdb"
+  },
+  "name": "skiftcreative/rethinkdb Docker container",
+  "description": "Fork of anaxpis/rethinkdb to support dockercloud",
+  "readme": "# rethinkdb-dockerfiles\n\nDockerfiles for past and present versions of RethinkDB.\n\n[![](https://badge.imagelayers.io/anapsix/rethinkdb:latest.svg)](https://imagelayers.io/?images=anapsix/rethinkdb:latest)\n\n## Usage\n\nYou may pass additional arguments to the container as you would to RethinkDB server binary.\n\n    docker run -it --rm anapsix/rethinkdb --help\n\nStarting 2 node cluster on 2 hosts\n\n    # on host host01.acmecorp.com\n    docker run -d --name rethinkdb \\\n      -p 28015:28015 -p 29015:29015 -p 8080 \\\n      anapsix/rethinkdb \\\n      --bind all \\\n      --join host01.acmecorp.com --join host02.acmecorp.com \\\n      --canonical-address $(curl -sS icanhazip.com)\n\n    # on host host02.acmecorp.com\n    docker run -d --name rethinkdb \\\n      -p 28015:28015 -p 29015:29015 -p 8080 \\\n      anapsix/rethinkdb \\\n      --bind all --join host01.acmecorp.com --join host02.acmecorp.com \\\n      --canonical-address $(curl -sS icanhazip.com)\n\n> It is save to pass it's own hostname to RethinkDB, since it ignores connections to self.\n> When starting a cluster, you should pass one (or multiple) `--canonical-address` directive(s) to\ncustomize which HOST/IP RethinkDB uses to advertise self to other hosts.\n> Otherwise, it won't start.\n\n## Tutum deployment\n\n[![Deploy to Tutum](https://s.tutum.co/deploy-to-tutum.svg)](https://dashboard.tutum.co/stack/deploy/)\n\nStart script is now [Tutum](http://tutum.co) compatible.\nAll is needed to start a 2+ node cluster is do a one-to-one port mapping \n(8080->8080, 28015->28015, 29015->29015) and that's it.\nAll instances will auto-discover each other and join the cluster.\nGo to service enpoint for port 8080 to access web UI.\n\n## Documentation\n\nhttps://github.com/docker-library/docs/blob/master/rethinkdb/README.md\n\n## Procedure for updating\n\n1. Realize RethinkDB has updated. *This part needs improving.*\n2. Add new version to `versions` array in `./generate_dockerfile.sh`\n3. Run `./generate_dockerfile.sh`\n4. Commit and push changes\n",
+  "dockerfile": "FROM debian:jessie\n\nMAINTAINER Anastas Dancha <anapsix@random.io>\n\nENV RETHINKDB_PACKAGE_VERSION 2.2.4\n\n# Add the RethinkDB repository and public key\n# \"RethinkDB Packaging <packaging@rethinkdb.com>\" http://download.rethinkdb.com/apt/pubkey.gpg\nRUN apt-key adv --keyserver pgp.mit.edu --recv-keys 1614552E5765227AEC39EFCFA7E00EF33A8F2399 && \\\n    echo \"deb http://download.rethinkdb.com/apt jessie main\" > /etc/apt/sources.list.d/rethinkdb.list && \\\n    apt-get update && \\\n\t  apt-get install -y rethinkdb=$RETHINKDB_PACKAGE_VERSION* && \\\n    apt-get install -y --no-install-recommends bind9-host && \\\n    rm -rf /var/lib/apt/lists/*\n\nCOPY docker-entrypoint.sh /entrypoint.sh\n\nVOLUME [\"/data\"]\nWORKDIR /data\n#   process cluster webui\nEXPOSE 28015 29015 8080\nENTRYPOINT [\"/entrypoint.sh\"]\nCMD [\"--bind\",\"all\"]\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      28015
+    ],
+    "volume": [
+      "[\"/data\"]"
+    ],
+    "run": [
+      "apt-key adv --keyserver pgp.mit.edu --recv-keys 1614552E5765227AEC39EFCFA7E00EF33A8F2399 &&     echo \"deb http://download.rethinkdb.com/apt jessie main\" > /etc/apt/sources.list.d/rethinkdb.list &&     apt-get update && \t  apt-get install -y rethinkdb=$RETHINKDB_PACKAGE_VERSION* &&     apt-get install -y --no-install-recommends bind9-host &&     rm -rf /var/lib/apt/lists/*"
+    ],
+    "workdir": [
+      "/data"
+    ],
+    "from": "debian:jessie",
+    "maintainer": "Anastas Dancha <anapsix@random.io>",
+    "env": {
+      "RETHINKDB_PACKAGE_VERSION": "2.2.4"
+    },
+    "copy": "docker-entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"--bind\",\"all\"]"
+  },
+  "source_repository_url": "https://github.com/SkiftCreative/rethinkdb.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/SkiftCreative/rethinkdb",
+  "docker_repository": "skiftcreative/rethinkdb",
+  "docker_image": "skiftcreative/rethinkdb",
+  "parameters_schema": {
+    "RETHINKDB_PACKAGE_VERSION": {
+      "default": "2.2.4",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        28015
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "skiftcreative/rethinkdb",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/skiftcreative/rethinkdb",
+    "https://hub.docker.com/v2/repositories/skiftcreative/rethinkdb",
+    "https://github.com/SkiftCreative/rethinkdb.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Document-oriented/RethinkDB"
+  ],
+  "info_url": "https://hub.docker.com/r/skiftcreative/rethinkdb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,113 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kakilangit/mariadb",
+    "repository_url": "https://hub.docker.com/v2/repositories/kakilangit/mariadb",
+    "tags_url": "https://hub.docker.com/v2/repositories/kakilangit/mariadb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kakilangit/mariadb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kakilangit/mariadb/autobuild",
+    "user": "kakilangit",
+    "name": "mariadb",
+    "namespace": "kakilangit",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 4,
+    "pull_count": 510,
+    "last_updated": "2016-09-10T14:24:32.448217Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 117103363,
+        "id": 168112,
+        "repository": 211324,
+        "creator": 104743,
+        "last_updater": 104743,
+        "last_updated": "2016-09-10T14:24:31.900549Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "kakilangit/docker"
+  },
+  "name": "kakilangit/mariadb Docker container",
+  "description": "Docker for MariaDB with OQGraph & TokuDB Engines",
+  "readme": "Docker for MariaDB 10.1.17 with OQGraph\n====================\n\n[![](https://images.microbadger.com/badges/image/kakilangit/mariadb.svg)](http://microbadger.com/images/kakilangit/mariadb \"Get your own image badge on microbadger.com\")\n\nDocker image to run a MariaDB database server with OQGraph.\n\nUsage\n-----\n\nTo create the image `kakilangit/mariadb`, execute the following command:\n\n        docker build -t kakilangit/mariadb .\n\nTo run the image and bind to port 3306:\n\n        docker run -d -p 3306:3306 kakilangit/mariadb\n\nThe first time that you run your container, a new user `admin` with all privileges\nwill be created in MariaDB with a random password. To get the password, check the logs\nof the container by running:\n\n        docker logs <CONTAINER_ID>\n\nYou will see an output like the following:\n\n        ========================================================================\n        You can now connect to this MariaDB Server using:\n\n            mysql -uadmin -pAnuAnuan -h<host> -P<port>\n\n        Please remember to change the above password as soon as possible!\n        MariaDB user 'root' has no password but only allows local connections\n        ========================================================================\n\n\nIn this case, `AnuAnuan` is the password assigned to the `admin` user.\n\nDone!\n\n\nSetting a specific password for the admin account\n-------------------------------------------------\n\nIf you want to use a preset password instead of a random generated one, you can\nset the environment variable `MARIADB_PASS` to your specific password when running the container:\n\n        docker run -d -p 3306:3306 -e MARIADB_PASS=\"mypass\" kakilangit/mariadb\n\n\nMounting the database file volume from other containers\n------------------------------------------------------\n\nOne way to persist the database data is to store database files in another container.\nTo do so, first create a container that holds database files:\n\n    docker run -d -v /var/lib/mysql --name dbvolume -p 22:22 debian\n\nThis will create a new ssh-enabled container and use its folder `/var/lib/mysql` to store MariaDB database files.\nYou can specify any name of the container by using `--name` option, which will be used in next step.\n\nAfter this you can start your MariaDB image using volumes in the container created above (put the name of container in `--volumes-from`)\n\n    docker run -d --volumes-from dbvolume -p 3306:3306 kakilangit/mariadb\n\nTokuDB\n------\n\nTokuDB is optional. Remove comment on my.cnf line 169 to enable TokuDB Engine.\nDisabling Transparent HugePage Support for TokuDB support on your Host.\n\n  https://mariadb.com/kb/en/mariadb/enabling-tokudb/#check-for-transparent-hugepage-support-on-linux\n",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER kakilangit <theguywhodrinkscoffeeandcodes@gmail.com>\n\n# https://downloads.mariadb.org/\nENV DEBIAN_FRONTEND noninteractive\nENV TERM dumb\n\nRUN groupadd -r mysql && useradd -r -g mysql mysql \\\n\t&& printf \"deb http://mariadb.biz.net.id/repo/10.1/ubuntu trusty main\" >> /etc/apt/sources.list \\\n\t&& apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db \\\n\t&& apt-get update && apt-get install -y \\\n\tmariadb-server \\\n\tmariadb-oqgraph-engine-10.1 \\\n\tpwgen \\\n\t&& apt-get autoremove -y \\\n  && apt-get autoclean \\\n  && apt-get clean \\\n\t&& rm -rf /var/lib/mysql/* /var/lib/apt/lists/*\n\nCOPY config/my.cnf /etc/mysql/my.cnf\nCOPY config/create_mariadb_admin_user.sh /create_mariadb_admin_user.sh\nCOPY config/run.sh /run.sh\nRUN chmod 775 /*.sh\n\nVOLUME  [\"/etc/mysql\", \"/var/lib/mysql\"]\n\nEXPOSE 3306\nCMD [\"/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      " [\"/etc/mysql\", \"/var/lib/mysql\"]"
+    ],
+    "run": [
+      "groupadd -r mysql && useradd -r -g mysql mysql \t&& printf \"deb http://mariadb.biz.net.id/repo/10.1/ubuntu trusty main\" >> /etc/apt/sources.list \t&& apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db \t&& apt-get update && apt-get install -y \tmariadb-server \tmariadb-oqgraph-engine-10.1 \tpwgen \t&& apt-get autoremove -y   && apt-get autoclean   && apt-get clean \t&& rm -rf /var/lib/mysql/* /var/lib/apt/lists/*",
+      "chmod 775 /*.sh"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "kakilangit <theguywhodrinkscoffeeandcodes@gmail.com>",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "TERM": "dumb"
+    },
+    "copy": "config/run.sh /run.sh",
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/kakilangit/docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/kakilangit/docker",
+  "docker_repository": "kakilangit/mariadb",
+  "docker_image": "kakilangit/mariadb",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TERM": {
+      "default": "dumb",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kakilangit/mariadb",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/kakilangit/mariadb",
+    "https://hub.docker.com/v2/repositories/kakilangit/mariadb",
+    "https://github.com/kakilangit/docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Version Control/Git",
+    "Type/Middleware/Data Store/Relational/MariaDB",
+    "Type/Middleware/Data Store/Graph"
+  ],
+  "info_url": "https://hub.docker.com/r/kakilangit/mariadb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

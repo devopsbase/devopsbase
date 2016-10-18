@@ -1,0 +1,109 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jynx2016/kibana",
+    "repository_url": "https://hub.docker.com/v2/repositories/jynx2016/kibana",
+    "tags_url": "https://hub.docker.com/v2/repositories/jynx2016/kibana/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jynx2016/kibana/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jynx2016/kibana/autobuild",
+    "user": "jynx2016",
+    "name": "kibana",
+    "namespace": "jynx2016",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 862,
+    "last_updated": "2016-02-22T08:37:55.929116Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 70303305,
+        "id": 2027667,
+        "repository": 532287,
+        "creator": 574765,
+        "last_updater": 574765,
+        "last_updated": "2016-02-22T08:37:55.349546Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "Jessicaynx/kibana"
+  },
+  "name": "jynx2016/kibana Docker container",
+  "description": "test",
+  "readme": "# Kibana\n\nPart of my [Elasticsearch ELK stack][]:\n\n* [Elasticsearch][]: [helder/elasticsearch][]\n* [Logstash][]: [helder/logstash][]\n* **[Kibana][]**: [helder/kibana][]\n\nSee more at [https://github.com/helderco/docker-elk]().\n\n\n## About this image\n\nI started off using the [pblittle/docker-logstash][] image which runs ELK through\nLogstash with embeded Elasticsearch and Kibana, but found performance issues in\nproduction so I decided to split into separate containers, while being as close to\nstandard or default installation as possible.\n\n\n### Security considerations\n\nKibana is pretty basic, running in browser, so I used nginx as the base image\nwith configs that add HTTP Basic Auth for Kibana as well as Elasticsearch.\n\n\n## Usage\n\nThis is meant to run with Elasticsearch (can be used with any elasticsearch container):\n\n    docker run -d --name elasticsearch helder/elasticsearch\n    docker run -d --link elasticsearch:elasticsearch -p 80:80 --name kibana helder/kibana\n\nOpen `http://<host>`. The default username and password is *kibana / docker*.\n\nNote: The link alias to elasticsearch is expected to be `elasticsearch`.\n\n\n## Configuration\n\nBy default, this Kibana tries to connect to Elasticsearch at the same address (protocol,\nhostname and port), which is probably what you want if you're using the included\nnginx configuration, but you can override this setting in order to specify another\nhost for Elasticsearch:\n\n    docker run -d ... \\\n        -e ELASTICSEARCH=\"http://<your-es-host>:<port>\" \\\n        -e DEFAULT_ROUTE=\"/dashboard/file/logstash.json\" \\\n        helder/kibana\n\nAs of now, the following environment variables are available:\n\n* [ELASTICSEARCH](http://www.elasticsearch.org/guide/en/kibana/current/_configuration.html#_elasticsearch):\n    *Address to Elasticsearch, as seen from your browser.*\n* [DEFAULT_ROUTE](http://www.elasticsearch.org/guide/en/kibana/current/_configuration.html#_default_route):\n    *The default landing page when you don’t specify a dashboard to load.*\n\nNote: Since the `ELASTICSEARCH` variable accepts js code (i.e. an object), in the\n      absence of a space it is assumed to be a string and thus single quotes will\n      be added.\n\n\n## Authentication\n\nThis image includes the `htpasswd` tool for setting credentials for HTTP Basic Auth.\nYou can use it to update the included `.htpasswd` file.\n\n    # Add new credentials\n    docker exec kibana htpasswd -b /etc/nginx/.htpasswd myuser mypass\n\n    # Delete default user\n    docker exec kibana htpasswd -D /etc/nginx/.htpasswd kibana\n\n    # Or update default user's password\n    docker exec kibana htpasswd -b /etc/nginx/.htpasswd kibana mypass\n\n\nNote: It may be a good idea do mount this file as a volume so you don't have to repeat\nthis when recreating the container.\n\n\n### More granular permissions\n\nI just protect the whole thing, but If you need more [granular permissions][]\nor something more custom on the nginx side, just create a new `Dockerfile`\nthat adds your own nginx config:\n\n    # Dockerfile\n    FROM helder/kibana\n    COPY kibana.conf /etc/nginx/conf.d/default.conf\n\n    # Or nginx.conf entirely\n    COPY nginx.conf /etc/nginx/nginx.conf\n\n\n## SSL\n\nIn production I don't publish this container to port 80. I have another nginx container\nrunning in port 80, being a reverse proxy with SSL termination to other containers. So\nI have something like this:\n\n    docker run -d --name elasticsearch helder/elasticsearch\n    docker run -d --link elasticsearch:es --name kibana helder/kibana\n    docker run -d --link kibana:kibana [--link ...] -p 80:80 -p 443:443 nginx\n\nWhere nginx is terminating SSL (with redirection from port 80), and in turn\nis reverse proxying to Kibana which is authenticating Kibana and Elasticsearch.\n\n\n[Elasticsearch ELK stack]: http://www.elasticsearch.org/overview/\n[Elasticsearch]: http://www.elasticsearch.org/overview/elasticsearch/\n[Logstash]: http://www.elasticsearch.org/overview/logstash/\n[Kibana]: http://www.elasticsearch.org/overview/kibana/\n[helder/elasticsearch]: https://registry.hub.docker.com/u/helder/elasticsearch/\n[helder/logstash]: https://registry.hub.docker.com/u/helder/logstash/\n[helder/kibana]: https://registry.hub.docker.com/u/helder/kibana/\n[pblittle/docker-logstash]: https://registry.hub.docker.com/u/pblittle/docker-logstash/\n[granular permissions]: http://www.elasticsearch.org/blog/playing-http-tricks-nginx/\n",
+  "dockerfile": "FROM nginx:1.7\nMAINTAINER Jessica Liu\n\n# Install htpasswd utility and curl\nRUN apt-get update \\\n    && apt-get install -y curl apache2-utils zip vim \\\n    && rm -rf /etc/nginx/conf.d/* \\\n    && apt-get clean \\\n    && rm -rf /var/lib/apt/lists/*\n\n# Install Kibana\nENV KIBANA_VERSION 4.0.3\nRUN mkdir -p /var/www \\\n && curl -s https://download.elasticsearch.org/kibana/kibana/kibana-$KIBANA_VERSION-linux-x64.tar.gz \\\n  | tar --transform \"s/^kibana-$KIBANA_VERSION/kibana/\" -xvz -C /var/www \\\n && mv /var/www/kibana-linux-x64 /var/www/kibana\n\n# Copy Nginx config\nCOPY config/nginx.conf /etc/nginx/nginx.conf\nCOPY config/kibana.conf /etc/nginx/conf.d/kibana.conf\n\n# Add default credentials\nRUN htpasswd -cb /etc/nginx/.htpasswd kibana \"docker\"\n\n\nENV PATH /var/www/kibana/bin:$PATH\nCOPY scripts/docker-entrypoint.sh /\nRUN chmod +x /docker-entrypoint.sh\n\n\nEXPOSE 5601\nENTRYPOINT [\"/docker-entrypoint.sh\"]\n\n\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5601
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update     && apt-get install -y curl apache2-utils zip vim     && rm -rf /etc/nginx/conf.d/*     && apt-get clean     && rm -rf /var/lib/apt/lists/*",
+      "mkdir -p /var/www  && curl -s https://download.elasticsearch.org/kibana/kibana/kibana-$KIBANA_VERSION-linux-x64.tar.gz   | tar --transform \"s/^kibana-$KIBANA_VERSION/kibana/\" -xvz -C /var/www  && mv /var/www/kibana-linux-x64 /var/www/kibana",
+      "htpasswd -cb /etc/nginx/.htpasswd kibana \"docker\"",
+      "chmod +x /docker-entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "nginx:1.7",
+    "maintainer": "Jessica Liu",
+    "env": {
+      "KIBANA_VERSION": "4.0.3",
+      "PATH": "/var/www/kibana/bin:$PATH"
+    },
+    "copy": "scripts/docker-entrypoint.sh /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/Jessicaynx/kibana.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Jessicaynx/kibana",
+  "docker_repository": "jynx2016/kibana",
+  "docker_image": "jynx2016/kibana",
+  "parameters_schema": {
+    "KIBANA_VERSION": {
+      "default": "4.0.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/var/www/kibana/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5601
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jynx2016/kibana",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jynx2016/kibana",
+    "https://hub.docker.com/v2/repositories/jynx2016/kibana",
+    "https://github.com/Jessicaynx/kibana.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Test"
+  ],
+  "info_url": "https://hub.docker.com/r/jynx2016/kibana",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

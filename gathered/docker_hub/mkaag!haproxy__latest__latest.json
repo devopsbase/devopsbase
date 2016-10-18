@@ -1,0 +1,167 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mkaag/haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/mkaag/haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/mkaag/haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mkaag/haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mkaag/haproxy/autobuild",
+    "user": "mkaag",
+    "name": "haproxy",
+    "namespace": "mkaag",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 172,
+    "last_updated": "2015-11-14T06:46:40.427133Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 118619410,
+        "id": 70249,
+        "repository": 102557,
+        "creator": 22221,
+        "last_updater": 22221,
+        "last_updated": "2015-11-14T06:46:45.981910Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "mkaag/docker-haproxy"
+  },
+  "name": "mkaag/haproxy Docker container",
+  "description": "haproxy Dockerfile w/ custom config and SSL",
+  "readme": "## haproxy Dockerfile\n\n[![Docker Hub](https://img.shields.io/badge/docker-mkaag%2Fhaproxy-008bb8.svg)](https://registry.hub.docker.com/u/mkaag/haproxy/)\n\nThis repository contains the **Dockerfile** and the configuration files of [Haproxy](http://haproxy.1wt.eu/) for [Docker](https://www.docker.com/).\n\n### Base Docker Image\n\n* [phusion/baseimage](https://github.com/phusion/baseimage-docker), the *minimal Ubuntu base image modified for Docker-friendliness*...\n* ...[including image's enhancement](https://github.com/racker/docker-ubuntu-with-updates) from [Paul Querna](https://journal.paul.querna.org/articles/2013/10/15/docker-ubuntu-on-rackspace/)\n\n### Installation\n\n```bash\ndocker build -t mkaag/haproxy github.com/mkaag/docker-haproxy\n```\n\n### Usage\n\n#### Basic usage\n\n```bash\ndocker run -d -p 443:443 -p 80:80 -p 1936:1936 mkaag/haproxy\n```\n\nThe TCP 1936 is used here for Haproxy stats only.\n\n#### Using SSL\n\nThe PEM file must contains the public, private keys as well as any intermediary certificate.\n\n```bash\ndocker run -d \\\n-v /opt/haproxy/ssl:/etc/ssl/private \\\n-e \"SSL_CERT=/etc/ssl/private/cert.pem\" \\\n-p 443:443 -p 80:80 -p 1936:1936 \\\nmkaag/haproxy\n```\n\n#### Using custom config file\n\n```bash\ndocker run -d \\\n-v /opt/haproxy/etc:/apps \\\n-e \"HAPROXY_CONFIG=/apps/haproxy.cfg\" \\\n-p 443:443 -p 80:80 -p 1936:1936 \\\nmkaag/haproxy\n```\n\n#### Custom config w/ SSL\n\n```bash\ndocker run -d \\\n-v /opt/haproxy/etc:/apps \\\n-v /opt/haproxy/ssl:/etc/ssl/private \\\n-e \"HAPROXY_CONFIG=/apps/haproxy.cfg\" \\\n-e \"SSL_CERT=/etc/ssl/private/cert.pem\" \\\n-p 443:443 -p 80:80 -p 1936:1936 \\\nmkaag/haproxy\n```\n\n",
+  "dockerfile": "FROM phusion/baseimage:latest\n\nMAINTAINER Maurice Kaag <mkaag@me.com>\n\nENV HOME /root\nENV DEBIAN_FRONTEND noninteractive\nENV DEBIAN_PRIORITY critical\nENV DEBCONF_NOWARNINGS yes\n# Workaround initramfs-tools running on kernel 'upgrade': <http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=594189>\nENV INITRD No\n\n# Workaround initscripts trying to mess with /dev/shm: <https://bugs.launchpad.net/launchpad/+bug/974584>\n# Used by our `src/ischroot` binary to behave in our custom way, to always say we are in a chroot.\nENV FAKE_CHROOT 1\nRUN mv /usr/bin/ischroot /usr/bin/ischroot.original\nADD build/ischroot /usr/bin/ischroot\n\n# Configure no init scripts to run on package updates.\nADD build/policy-rc.d /usr/sbin/policy-rc.d\n\n# Disable SSH\nRUN rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh\n\n# Haproxy Installation\nENV HAPROXY_CONFIG /etc/haproxy/haproxy.cfg\nENV SSL_CERT /etc/ssl/private/server.pem\n\nRUN \\\n    sed -i 's/^# \\(.*-backports\\s\\)/\\1/g' /etc/apt/sources.list && \\\n    echo 'deb http://ppa.launchpad.net/vbernat/haproxy-1.5/ubuntu trusty main' >> /etc/apt/sources.list; \\\n    echo 'deb-src http://ppa.launchpad.net/vbernat/haproxy-1.5/ubuntu trusty main' >> /etc/apt/sources.list; \\\n    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 505D97A41C61B9CD; \\\n    apt-get update -qqy\n\nRUN \\\n    apt-get install -qqy --no-install-recommends haproxy; \\\n    touch /var/log/haproxy.log; \\\n    chown haproxy: /var/log/haproxy.log\n\nADD build/syslog-ng.conf /etc/syslog-ng/conf.d/haproxy.conf\nADD build/haproxy.sh /etc/service/haproxy/run\nRUN chmod +x /etc/service/haproxy/run\n\nEXPOSE 80 443 1936\nVOLUME [\"/etc/ssl\"]\n\nCMD [\"/sbin/my_init\"]\n# End Haproxy\n\nRUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "build/ischroot",
+        "dest": "/usr/bin/ischroot"
+      },
+      {
+        "source": "build/policy-rc.d",
+        "dest": "/usr/sbin/policy-rc.d"
+      },
+      {
+        "source": "build/syslog-ng.conf",
+        "dest": "/etc/syslog-ng/conf.d/haproxy.conf"
+      },
+      {
+        "source": "build/haproxy.sh",
+        "dest": "/etc/service/haproxy/run"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/etc/ssl\"]"
+    ],
+    "run": [
+      "mv /usr/bin/ischroot /usr/bin/ischroot.original",
+      "rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh",
+      "    sed -i 's/^# \\(.*-backports\\s\\)/\\1/g' /etc/apt/sources.list &&     echo 'deb http://ppa.launchpad.net/vbernat/haproxy-1.5/ubuntu trusty main' >> /etc/apt/sources.list;     echo 'deb-src http://ppa.launchpad.net/vbernat/haproxy-1.5/ubuntu trusty main' >> /etc/apt/sources.list;     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 505D97A41C61B9CD;     apt-get update -qqy",
+      "    apt-get install -qqy --no-install-recommends haproxy;     touch /var/log/haproxy.log;     chown haproxy: /var/log/haproxy.log",
+      "chmod +x /etc/service/haproxy/run",
+      "apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+    ],
+    "workdir": [],
+    "from": "phusion/baseimage:latest",
+    "maintainer": "Maurice Kaag <mkaag@me.com>",
+    "env": {
+      "HOME": "/root",
+      "DEBIAN_FRONTEND": "noninteractive",
+      "DEBIAN_PRIORITY": "critical",
+      "DEBCONF_NOWARNINGS": "yes",
+      "INITRD": "No",
+      "FAKE_CHROOT": "1",
+      "HAPROXY_CONFIG": "/etc/haproxy/haproxy.cfg",
+      "SSL_CERT": "/etc/ssl/private/server.pem"
+    },
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/mkaag/docker-haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mkaag/docker-haproxy",
+  "docker_repository": "mkaag/haproxy",
+  "docker_image": "mkaag/haproxy",
+  "parameters_schema": {
+    "HOME": {
+      "default": "/root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_PRIORITY": {
+      "default": "critical",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBCONF_NOWARNINGS": {
+      "default": "yes",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "INITRD": {
+      "default": "No",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "FAKE_CHROOT": {
+      "default": "1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HAPROXY_CONFIG": {
+      "default": "/etc/haproxy/haproxy.cfg",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_CERT": {
+      "default": "/etc/ssl/private/server.pem",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mkaag/haproxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/mkaag/haproxy",
+    "https://hub.docker.com/v2/repositories/mkaag/haproxy",
+    "https://github.com/mkaag/docker-haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Dockerfile",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/mkaag/haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

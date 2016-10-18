@@ -1,0 +1,379 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/martingabelmann/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/martingabelmann/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/martingabelmann/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/martingabelmann/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/martingabelmann/owncloud/autobuild",
+    "user": "martingabelmann",
+    "name": "owncloud",
+    "namespace": "martingabelmann",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 802,
+    "last_updated": "2016-10-08T19:17:00.212744Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 70619388,
+        "id": 821441,
+        "repository": 306358,
+        "creator": 422708,
+        "last_updater": 422708,
+        "last_updated": "2016-10-08T19:16:59.522964Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "alpine",
+        "full_size": 70619811,
+        "id": 4492728,
+        "repository": 306358,
+        "creator": 422708,
+        "last_updater": 422708,
+        "last_updated": "2016-10-08T19:14:30.309868Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "archlinux",
+        "full_size": 337540669,
+        "id": 4525057,
+        "repository": 306358,
+        "creator": 422708,
+        "last_updater": 422708,
+        "last_updated": "2016-09-23T18:43:01.453902Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "martingabelmann/docker-owncloud"
+  },
+  "name": "martingabelmann/owncloud Docker container",
+  "description": "Dockerized OwnCloud based on alpine.",
+  "readme": "# OwnCloud with Docker\n_Based on Alpine_\n\n[![Run Status](https://api.shippable.com/projects/5787cdab3be4f4faa56ccc34/badge?branch=alpine)](https://app.shippable.com/projects/5787cdab3be4f4faa56ccc34)\n[![](https://images.microbadger.com/badges/image/martingabelmann/owncloud:alpine.svg)](http://microbadger.com/images/martingabelmann/owncloud:alpine \"Get your own image badge on microbadger.com\")\n[![](https://images.microbadger.com/badges/version/martingabelmann/owncloud:alpine.svg)](http://microbadger.com/images/martingabelmann/owncloud:alpine \"Get your own version badge on microbadger.com\")\n\n---\n\n * [Features](#features)\n * [Installation](#basics)\n * [Backups](#backups)\n * [Testing](#testing)\n * [OwnCloud cli](#owncloud-cli)\n\n#### Features\n - Full owncloud instance\n - OneClick/Run installation\n - Enforced ssl encryption \n - Backup cronjobs\n\n#### Installation\nGet the image:\n```\ndocker pull martingabelmann/owncloud\n```\n\nIt is highly recommended to use owncloud with ssl, so the apache-settings are forcing the browser to use ``https://``. There are certificates build in the image for testing but in production you`ll have to use your own:\n\nAssuming you owning (trusted) ssl-certificates at \n - ``/srv/docker/owncloud/ssl/server.key`` and \n - ``/srv/docker/owncloud/ssl/server.crt``,\n \nthat are beloging to the domain  ``example.org``,\n\nchoose a good database- and adminpassword, then type:\n  \n```\ndocker run --name=oc -d -p 443:443 -p 80:80 \\\n  -e DB_PASS=changemepls -e OC_ADMINPASS=changemepls \\\n  -e OC_DOMAIN=example.org -e OC_EMAIL=admin@example.org \\\n  -v /srv/docker/owncloud/:/owncloud/ martingabelmann/owncloud:alpine\n```\n\nThis will mount and use the certificates. Your {data,config,additional apps} are stored on your host at ``/srv/docker/owncloud/{data,config,apps}`` and the postgres database at ``/srv/docker/owncloud/sql``. \n\n\nCheck ``docker logs oc`` to verify that everything is done. Then point your browser to ``https://example.org/``. On the first vistit/install Owncloud will do some configurations and directly login into to the admin panel.\n\n##### Persistent configs\n**All** files locatet at ``/tpl`` are copied to the filesystems root ``/`` relative to ``/tpl/``. \nFor instance the preexisting file ``/tpl/etc/apache2/conf.d/httpd-vhosts.conf`` is copied to ``/etc/apache2/conf.d/httpd-vhosts.conf``.\nSimultaneously the installation uses the tool ``envsubst`` to replace all bash variables with variables passed with the ``-e`` option. \nFor php files this means, that you cannot simply write ``$phpvariable='\"$OC_DOMAIN\"';``, since the ``$phpvarvariable`` would be substituted too (with nothing if its not defined). \nThere is an exported variable ``${D}`` containing the dollar sign:  ``${D}phpvariable='\"$OC_DOMAIN\"';`` will lead to the desired result (e.g. ``$phpvariable='example.org';``).\n\nYou can mount your own config into ``/tpl`` and use your own environment variables with ``-e``.  \n  \n_Exception:_ the configs under ``/tpl/var/www/localhost/htdocs/config`` are only for new installs. For existing OwnCloud installations the files from ``/owncloud/config`` are used.\n\n#### Backups\nThe image provides a script called ``backup`` which is used to tar the data, config, apps and sql directories into OC_BACKUP_DIR and extract existing tarfiles from there into the corresponig destinations.\n\n##### Manual\n - You can either join the containers bash with a\n ```\n docker exec -ti oc bash\n ```\n and run the ``backup [options]``-command from there or run it directly from the host:\n ``` \n docker exec -ti oc backup [options]\n ```\n \n - To perform a new backup run ``backup -b``. The file is placed into ``/backups`` and called like ``owncloud_yearmonthday_time.tar.gz``. Depending on the variable ``OC_BACKUP_FILES``  (default=1), old backupfiles will be deleted.\n\n\n##### Automatic\nThe installscript is able to set a cronjob with that backup script. Because some people may have less storage it is disabled by default. To enable it just set the ``OC_BACKUP_CRON`` variable with the usual cron shurtcuts (see [here](http://fcron.free.fr/doc/en/fcrontab.5.html#AEN2144), e.g. to do a daily backup at midnight use \n``-e OC_BACKUP_CRON='@midnight'``).\n \n \n Full example to store the last 2 backups done at every midnight:\n\n```\ndocker run --name=oc -d -p 443:443 -p 80:80 \\\n  -e DB_PASS=changemepls -e OC_ADMINPASS=changemepls \\\n  -e OC_DOMAIN=example.org -e OC_EMAIL=admin@example.org \\\n  -e OC_BACKUP_FILES=2 \\\n  -e OC_BACKUP_CRON='@midnight' \\\n  -v /srv/backups/owncloud:/backups/ \\\n  -v /srv/docker/owncloud/:/owncloud martingabelmann/owncloud\n```\n \n##### Restore\n - Get a list of all available backups with ``backup -l``,\n - copy the filename of your choise (including extension),\n - restore with ``backup -r filename.tar.gz``\n\nHowever I can not give full warranty that restoring backups will work in every situation! It passed my daily usage but in some special configurations you may have to use a external backup service.\n\n#### Testing\nA minimal working owncloud instance can be run with\n\n```\ndocker run --name=octest -d -p 44300:443 -p 8000:80 martingabelmann/owncloud\n```\nThen point your browser to ``https://localhost:44300``. The container will use the build-in certificates, so be carefully, dont use this in public networks/production!\n\nDebuginformations can be viewed with\n```docker logs oc```\nor from inside the container (``docker exec -ti oc``) under ``/var/log/`` about apache, postgresql, cron and backups.\n\n\n#### Owncloud cli\n\nOwnCloud offers the possibility to do administrative tasks via the command line interface `occ`. Just try it\n```\ndocker exec oc occ help\n```\n\n\n#### Upgrades \nBecause the install script is downloading the newest stable version, updates can be easily done by removing the running container and starting a new one. Since the apps arent effected they will be upgraded by the webinterface on the next visit or via the command line. \n\nI recommend to upgrade via `occ`:\n```\ndocker exec oc occ upgrade\n```\n\nSometimes it happens that a upgrade fails and breaks your OwnCloud webinterface because a app isnt compatible (or so). Then you have to disable the app with \n```\ndocker exec oc occ app:disable APPNAME\n```\nyou may ask which apps are broken. Find out by observing `/var/www/localhost/htdocs/data/owncloud.log``. Check a specific app with\n\n```\ndocker exec oc app:check APPNAME\n``` \nfor compatiblity. If it fails, install the newest/compatible version by copying into `/var/www/localhost/htdocs/apps2/` (e.g. pulling from github). Afterwards try to enable it\n```\ndocker exec oc app:enable APPNAME\n```\nIf everything was successful you should be able to visit the webinterface again.\n",
+  "dockerfile": "FROM alpine\nMAINTAINER martin@gabelmann.biz\n\nENV DB_TYPE=pgsql \\\n    DB_HOST=localhost \\\n    DB_NAME=owncloud_db \\\n    DB_USER=owncloud \\\n    DB_PREFIX=\"\" \\\n    DB_PASS=changemepls \\\n    DB_EXTERNAL=false \\\n    SSL_CERTIFICATE_FILE=\"/owncloud/ssl/server.crt\" \\\n    SSL_CERTIFICATE_KEY_FILE=\"/owncloud/ssl/server.key\" \\\n    SSL_CERTIFICATE_CHAIN_FILE=\"/owncloud/ssl/server.crt\" \\\n    OC_ADMIN=admin \\\n    OC_EMAIL=\"admin@localhost\" \\\n    OC_ADMINPASS=changemepls \\\n    OC_WWW=/var/www/localhost/htdocs \\\n    OC_DATADIR=/var/www/localhost/htdocs/data \\\n    OC_DOMAIN=\"localhost\" \\\n    OC_BACKUP_CRON=no \\\n    OC_BACKUP_FILES=1 \\\n    OC_BACKUP_DIR=/backup \\\n    OC_TIME=\"Europe/Berlin\" \\\n    OC_LC=\"en_US.UTF-8\" \\\n    OC_TRUSTED_DOMAINS=\"'localhost','127.0.0.1',\" \\\n    OC_LANGUAGE=en \\\n    OC_DEFAULTAPP=files \\\n    OC_OVERWRITEHOST=\"\" \\\n    OC_LOGLEVEL=1 \\\n    OC_MAIL_FROM_ADDRESS=admin \\\n    OC_MAIL_SMTPMODE=smtp \\\n    OC_MAIL_DOMAIN=localhost \\\n    OC_MAIL_SMTPAUTHTYPE=LOGIN \\\n    OC_MAIL_SMTPAUTH=1 \\\n    OC_MAIL_SMTPHOST='smtp.localhost' \\\n    OC_MAIL_SMTPPORT=465 \\\n    OC_MAIL_SMTPNAME=admin@localhost \\\n    OC_MAIL_SMTPSECURE=ssl \\\n    OC_MAIL_SMTPPASSWORD=changemepls \n    \nRUN apk update && apk upgrade &&\\\n    apk add tzdata openssl ca-certificates apache2 apache2-ssl php5 php5-apache2 \\\n    php5-mcrypt php5-intl php5-gd php5-pgsql php5-pdo_pgsql php5-apcu php5-openssl \\\n    php5-curl php5-zip php5-json php5-dom php5-xmlreader php5-ctype php5-zlib \\\n    php5-iconv php5-xml php5-xmlrpc php5-posix php5-pcntl postgresql gettext\n\nVOLUME [\"/owncloud\", \"/backup\"]\n\nWORKDIR /var/www/localhost/htdocs\n\nRUN /usr/bin/install -g apache -m 775  -d /run/apache2 &&\\\n    /usr/bin/install -o postgres -d /var/log/postgresql &&\\\n    wget https://download.owncloud.com/download/community/setup-owncloud.php -O \"/var/www/localhost/htdocs/setup-owncloud.php\" &&\\\n    echo \"\"| php -R 'include(\"/var/www/localhost/htdocs//setup-owncloud.php\");' -B 'parse_str($argv[1], $_GET);' 'step=2&directory=.' &&\\\n    rm -f \"$OC_WWW\"/setup-owncloud.php &&\\\n    sed -i '/Listen 80/a Listen 443' /etc/apache2/httpd.conf &&\\\n    sed -i '/proxy_module/s/^#//g' /etc/apache2/httpd.conf &&\\\n    sed -i '/proxy_connect_module/s/^#//g' /etc/apache2/httpd.conf &&\\\n    sed -i '/proxy_ftp_module/s/^#//g' /etc/apache2/httpd.conf &&\\\n    sed -i '/proxy_http_module/s/^#//g' /etc/apache2/httpd.conf &&\\\n    sed -i '/proxy_wstunnel_module/s/^#//g' /etc/apache2/httpd.conf &&\\\n    sed -i '/proxy_ajp_module/s/^#//g' /etc/apache2/httpd.conf &&\\\n    sed -i '/proxy_balancer_module/s/^#//g' /etc/apache2/httpd.conf &&\\\n    sed -i '/ssl_module/s/^#//g' /etc/apache2/httpd.conf &&\\\n    sed -i '/cgi_module/s/^#//g' /etc/apache2/httpd.conf &&\\\n    sed -i '/mpm_prefork_module/s/^#//g' /etc/apache2/httpd.conf &&\\\n    sed -i '/mpm_event_module/s/^/#/g' /etc/apache2/httpd.conf &&\\\n    sed -i '/rewrite_module/s/^#//g' /etc/apache2/httpd.conf &&\\\n    sed -i 's/^;open_basedir.*$/open_basedir=\\/owncloud:\\/var\\/www\\/localhost\\/htdocs:\\/tmp\\/:\\/dev\\/urandom/' /etc/php5/php.ini &&\\\n    sed -i '/extension=bz2/s/^;//g' /etc/php5/php.ini &&\\\n    sed -i '/extension=bz2/a extension=apcu\\.so' /etc/php5/php.ini &&\\\n    sed -i '/extension=apcu/a extension=apc\\.so' /etc/php5/php.ini &&\\\n    sed -i '/extension=apc\\.so/a apc\\.enabled=1' /etc/php5/php.ini &&\\\n    sed -i '/apc\\.enabled=1/a apc\\.shm_size=64M' /etc/php5/php.ini &&\\\n    sed -i '/apc\\.shm_size=64M/a apc\\.ttl=7200' /etc/php5/php.ini &&\\\n    sed -i '/apc\\.ttl=7200/a apc\\.enable_cli=1' /etc/php5/php.ini &&\\\n    sed -i '/extension=gettext/s/^;//g' /etc/php5/php.ini &&\\\n    sed -i '/extension=iconv/s/^;//g' /etc/php5/php.ini &&\\\n    sed -i '/extension=xmlrpc/s/^;//g' /etc/php5/php.ini\n\nADD oc-install /usr/local/bin/oc-install\nADD oc-perms /usr/local/bin/oc-perms\nADD oc-backup /usr/local/bin/backup\nADD occ /usr/local/bin/occ\nADD tpl /tpl\nADD server.key /owncloud/ssl/server.key\nADD server.crt /owncloud/ssl/server.crt\n\nEXPOSE 80 443\n\nENTRYPOINT [\"oc-install\"]\nCMD [\"/usr/sbin/httpd\", \"-kstart\",  \"-DFOREGROUND\"] \n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "oc-install",
+        "dest": "/usr/local/bin/oc-install"
+      },
+      {
+        "source": "oc-perms",
+        "dest": "/usr/local/bin/oc-perms"
+      },
+      {
+        "source": "oc-backup",
+        "dest": "/usr/local/bin/backup"
+      },
+      {
+        "source": "occ",
+        "dest": "/usr/local/bin/occ"
+      },
+      {
+        "source": "tpl",
+        "dest": "/tpl"
+      },
+      {
+        "source": "server.key",
+        "dest": "/owncloud/ssl/server.key"
+      },
+      {
+        "source": "server.crt",
+        "dest": "/owncloud/ssl/server.crt"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/owncloud\", \"/backup\"]"
+    ],
+    "run": [
+      "apk update && apk upgrade &&    apk add tzdata openssl ca-certificates apache2 apache2-ssl php5 php5-apache2     php5-mcrypt php5-intl php5-gd php5-pgsql php5-pdo_pgsql php5-apcu php5-openssl     php5-curl php5-zip php5-json php5-dom php5-xmlreader php5-ctype php5-zlib     php5-iconv php5-xml php5-xmlrpc php5-posix php5-pcntl postgresql gettext",
+      "/usr/bin/install -g apache -m 775  -d /run/apache2 &&    /usr/bin/install -o postgres -d /var/log/postgresql &&    wget https://download.owncloud.com/download/community/setup-owncloud.php -O \"/var/www/localhost/htdocs/setup-owncloud.php\" &&    echo \"\"| php -R 'include(\"/var/www/localhost/htdocs//setup-owncloud.php\");' -B 'parse_str($argv[1], $_GET);' 'step=2&directory=.' &&    rm -f \"$OC_WWW\"/setup-owncloud.php &&    sed -i '/Listen 80/a Listen 443' /etc/apache2/httpd.conf &&    sed -i '/proxy_module/s/^#//g' /etc/apache2/httpd.conf &&    sed -i '/proxy_connect_module/s/^#//g' /etc/apache2/httpd.conf &&    sed -i '/proxy_ftp_module/s/^#//g' /etc/apache2/httpd.conf &&    sed -i '/proxy_http_module/s/^#//g' /etc/apache2/httpd.conf &&    sed -i '/proxy_wstunnel_module/s/^#//g' /etc/apache2/httpd.conf &&    sed -i '/proxy_ajp_module/s/^#//g' /etc/apache2/httpd.conf &&    sed -i '/proxy_balancer_module/s/^#//g' /etc/apache2/httpd.conf &&    sed -i '/ssl_module/s/^#//g' /etc/apache2/httpd.conf &&    sed -i '/cgi_module/s/^#//g' /etc/apache2/httpd.conf &&    sed -i '/mpm_prefork_module/s/^#//g' /etc/apache2/httpd.conf &&    sed -i '/mpm_event_module/s/^/#/g' /etc/apache2/httpd.conf &&    sed -i '/rewrite_module/s/^#//g' /etc/apache2/httpd.conf &&    sed -i 's/^;open_basedir.*$/open_basedir=\\/owncloud:\\/var\\/www\\/localhost\\/htdocs:\\/tmp\\/:\\/dev\\/urandom/' /etc/php5/php.ini &&    sed -i '/extension=bz2/s/^;//g' /etc/php5/php.ini &&    sed -i '/extension=bz2/a extension=apcu\\.so' /etc/php5/php.ini &&    sed -i '/extension=apcu/a extension=apc\\.so' /etc/php5/php.ini &&    sed -i '/extension=apc\\.so/a apc\\.enabled=1' /etc/php5/php.ini &&    sed -i '/apc\\.enabled=1/a apc\\.shm_size=64M' /etc/php5/php.ini &&    sed -i '/apc\\.shm_size=64M/a apc\\.ttl=7200' /etc/php5/php.ini &&    sed -i '/apc\\.ttl=7200/a apc\\.enable_cli=1' /etc/php5/php.ini &&    sed -i '/extension=gettext/s/^;//g' /etc/php5/php.ini &&    sed -i '/extension=iconv/s/^;//g' /etc/php5/php.ini &&    sed -i '/extension=xmlrpc/s/^;//g' /etc/php5/php.ini"
+    ],
+    "workdir": [
+      "/var/www/localhost/htdocs"
+    ],
+    "from": "alpine",
+    "maintainer": "martin@gabelmann.biz",
+    "env": {
+      "DB_TYPE": "pgsql",
+      "": "",
+      "DB_HOST": "localhost",
+      "DB_NAME": "owncloud_db",
+      "DB_USER": "owncloud",
+      "DB_PREFIX": "\"\"",
+      "DB_PASS": "changemepls",
+      "DB_EXTERNAL": "false",
+      "SSL_CERTIFICATE_FILE": "\"/owncloud/ssl/server.crt\"",
+      "SSL_CERTIFICATE_KEY_FILE": "\"/owncloud/ssl/server.key\"",
+      "SSL_CERTIFICATE_CHAIN_FILE": "\"/owncloud/ssl/server.crt\"",
+      "OC_ADMIN": "admin",
+      "OC_EMAIL": "\"admin@localhost\"",
+      "OC_ADMINPASS": "changemepls",
+      "OC_WWW": "/var/www/localhost/htdocs",
+      "OC_DATADIR": "/var/www/localhost/htdocs/data",
+      "OC_DOMAIN": "\"localhost\"",
+      "OC_BACKUP_CRON": "no",
+      "OC_BACKUP_FILES": "1",
+      "OC_BACKUP_DIR": "/backup",
+      "OC_TIME": "\"Europe/Berlin\"",
+      "OC_LC": "\"en_US.UTF-8\"",
+      "OC_TRUSTED_DOMAINS": "\"'localhost','127.0.0.1',\"",
+      "OC_LANGUAGE": "en",
+      "OC_DEFAULTAPP": "files",
+      "OC_OVERWRITEHOST": "\"\"",
+      "OC_LOGLEVEL": "1",
+      "OC_MAIL_FROM_ADDRESS": "admin",
+      "OC_MAIL_SMTPMODE": "smtp",
+      "OC_MAIL_DOMAIN": "localhost",
+      "OC_MAIL_SMTPAUTHTYPE": "LOGIN",
+      "OC_MAIL_SMTPAUTH": "1",
+      "OC_MAIL_SMTPHOST": "'smtp.localhost'",
+      "OC_MAIL_SMTPPORT": "465",
+      "OC_MAIL_SMTPNAME": "admin@localhost",
+      "OC_MAIL_SMTPSECURE": "ssl",
+      "OC_MAIL_SMTPPASSWORD": "changemepls"
+    },
+    "entrypoint": "[\"oc-install\"]",
+    "cmd": "[\"/usr/sbin/httpd\", \"-kstart\",  \"-DFOREGROUND\"] "
+  },
+  "source_repository_url": "https://github.com/martingabelmann/docker-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/martingabelmann/docker-owncloud",
+  "docker_repository": "martingabelmann/owncloud",
+  "docker_image": "martingabelmann/owncloud",
+  "parameters_schema": {
+    "DB_TYPE": {
+      "default": "pgsql",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DB_HOST": {
+      "default": "localhost",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DB_NAME": {
+      "default": "owncloud_db",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DB_USER": {
+      "default": "owncloud",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DB_PREFIX": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DB_PASS": {
+      "default": "changemepls",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DB_EXTERNAL": {
+      "default": "false",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_CERTIFICATE_FILE": {
+      "default": "\"/owncloud/ssl/server.crt\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_CERTIFICATE_KEY_FILE": {
+      "default": "\"/owncloud/ssl/server.key\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSL_CERTIFICATE_CHAIN_FILE": {
+      "default": "\"/owncloud/ssl/server.crt\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_ADMIN": {
+      "default": "admin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_EMAIL": {
+      "default": "\"admin@localhost\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_ADMINPASS": {
+      "default": "changemepls",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_WWW": {
+      "default": "/var/www/localhost/htdocs",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_DATADIR": {
+      "default": "/var/www/localhost/htdocs/data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_DOMAIN": {
+      "default": "\"localhost\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_BACKUP_CRON": {
+      "default": "no",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_BACKUP_FILES": {
+      "default": "1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_BACKUP_DIR": {
+      "default": "/backup",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_TIME": {
+      "default": "\"Europe/Berlin\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_LC": {
+      "default": "\"en_US.UTF-8\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_TRUSTED_DOMAINS": {
+      "default": "\"'localhost','127.0.0.1',\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_LANGUAGE": {
+      "default": "en",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_DEFAULTAPP": {
+      "default": "files",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_OVERWRITEHOST": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_LOGLEVEL": {
+      "default": "1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_MAIL_FROM_ADDRESS": {
+      "default": "admin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_MAIL_SMTPMODE": {
+      "default": "smtp",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_MAIL_DOMAIN": {
+      "default": "localhost",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_MAIL_SMTPAUTHTYPE": {
+      "default": "LOGIN",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_MAIL_SMTPAUTH": {
+      "default": "1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_MAIL_SMTPHOST": {
+      "default": "'smtp.localhost'",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_MAIL_SMTPPORT": {
+      "default": "465",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_MAIL_SMTPNAME": {
+      "default": "admin@localhost",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_MAIL_SMTPSECURE": {
+      "default": "ssl",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_MAIL_SMTPPASSWORD": {
+      "default": "changemepls",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "martingabelmann/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/martingabelmann/owncloud",
+    "https://hub.docker.com/v2/repositories/martingabelmann/owncloud",
+    "https://github.com/martingabelmann/docker-owncloud.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/martingabelmann/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

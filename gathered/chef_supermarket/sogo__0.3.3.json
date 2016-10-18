@@ -1,0 +1,78 @@
+{
+  "name": "sogo Chef cookbook",
+  "chef_cookbook_name": "sogo",
+  "revision": "0.3.3",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/sogo",
+    "https://supermarket.chef.io/cookbooks/sogo/download",
+    "https://supermarket.chef.io/cookbooks/sogo/versions/0.3.3",
+    "https://supermarket.chef.io/cookbooks/sogo/versions/0.3.3/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/sogo/versions/0.3.3",
+    "https://supermarket.chef.io/api/v1/cookbooks/sogo",
+    "https://supermarket.chef.io/api/v1/cookbooks/sogo/versions/0.3.3/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/sogo",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/sogo/versions/0.3.3/download",
+  "deprecated": false,
+  "created": "2014-07-19T19:18:32.647Z",
+  "updated": "2014-12-06T04:52:56.813Z",
+  "description": "Installs and configures SOGo groupware server solution",
+  "maintainer": {
+    "name": "rodolfojcj",
+    "email": "rodolfojcj@yahoo.com"
+  },
+  "license": "Apache v2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 9021902,
+  "downloads_count_revision": 1215996,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "sogo Cookbook\n=============\nThis cookbook installs and configures SOGo, an open source groupware server solution.\n\nRequirements\n------------\n\n#### Packages\n\n- `sogo` - main package of the solution.\n- `sope4.9-gdl1-postgresql` - postgresql connector for SOPE's fork of the GNUstep database libraries.\n\n#### Cookbooks\n\n- `apache2`\n- `apt`\n- `database`\n- `postgreql`\n\n#### Platforms\n\nFor now just Debian or Ubuntu. Other Linux based distributions where SOGo works could be supported with some adaptations\n\n#### Testing\n\nOnly manual testing has be done\n\nAttributes\n----------\n\n- `node['sogo']['db_host']` - server host for SOGo database\n- `node['sogo']['db_name']` - name of SOGo database\n- `node['sogo']['db_user']` - user to connect to SOGo database\n- `node['sogo']['db_password']` - password to connect to SOGo database\n- `node['sogo']['web_app_name']` - name to use when creating virtual host file for Apache\n- `node['sogo']['use_vhost']` - if true a new virtual host file will be created, if false a file within /etc/apache2/conf.d/ will be created and it's assumed that will work with the existing default virtual host of Apache\n- `node['sogo']['web_app_dns_name']` - DNS name to access to the SOGo installation, when using a virtual host\n- `node['sogo']['imap_server']` - address of IMAP server that SOGo will connect to\n- `node['sogo']['smtp_server']` - address of SMTP server that SOGo will connect to\n- `node['sogo']['specific_config_json']` - complementary configuration to get a working SOGo installation. It's specific for each deployment scenario and it's empty by default\n\nUsage\n-----\n#### sogo::default\n\nTo work with a PostgreSQL database for SOGo and the default recipe, some attributes must be set and then include the recipes. A simple example configuration authenticating via LDAP or via SQL will look like this:\n\n```\nnode.default['sogo']['specific_config_json'] = <<-EOH\n{\n  \"SOGoLanguage\": \"Spanish\",\n  \"SOGoTimeZone\": \"America/Caracas\",\n  \"SOGoPageTitle\": \"My SOGo\",\n  \"SOGoEnableDomainBasedUID\": true,\n  \"domains\": {\n    \"myLdap\": {\n      \"SOGoMailDomain\": \"yourdomainhere.com\",\n      \"SOGoUserSources\": [{\n        \"id\": \"myldapId\",\n        \"type\": \"ldap\",\n        \"CNFieldName\": \"cn\",\n        \"UIDFieldName\": \"uid\",\n        \"IDFieldName\": \"mail\",\n        \"bindFields\": [\"uid\", \"mail\"],\n        \"baseDN\": \"dc=yourdomainhere,dc=com\",\n        \"bindDN\": \"cn=some_read_only_connection_user,dc=yourdomainhere,dc=com\",\n        \"bindPassword\": \"a_very_hard_password_that_is_unguessable\",\n        \"canAuthenticate\": true,\n        \"IMAPLoginFieldName\": \"mail\",\n        \"displayName\": \"Shared AddressBook\",\n        \"hostname\": \"ldap://your_ldap_server_host_here:your_ldap_server_port_here\",\n        \"isAddressBook\": true\n      }]\n    },\n    \"sqlDomains\": {\n      \"SOGoUserSources\": [{\n        \"id\": \"sqlDomainsId\",\n        \"type\": \"sql\",\n        \"viewURL\": \"postgresql://other_connection_user:other_connection_password@other_database_server:5432/other_database_name/other_table_or_view\",\n        \"canAuthenticate\": true,\n        \"isAddressBook\": true,\n        \"displayName\": \"Another Shared AddressBook\",\n        \"userPasswordAlgorithm\": \"SHA\"\n      }]\n    }\n  }\n}\nEOH\n\nnode.default['sogo']['web_app_dns_name'] = 'your_real_sogo_domain_here.com'\nnode.default['sogo']['use_vhost'] = true\n\ninclude_recipe \"sogo::pgdb\"\ninclude_recipe \"sogo::default\"\n```\n\nNote that the value of `node.default['sogo']['specific_config_json']` will be merged with the hardcoded values of `templates/default/sogo_base_config.json.erb`. In that merging the specific values have higher precedence, so for example, to use another SMTP server just include this value to `node.default['sogo']['specific_config_json']`:\n\n```json\nnode.default['sogo']['specific_config_json'] = <<-EOH\n{\n  ...,\n  ...,\n  \"SOGoSMTPServer\": \"other_smtp.yourdomainhere.com\",\n  ...,\n  ...\n}\n```\n\nContributing\n------------\n\nUse it, fork it and every improvement, comment and correction will be welcomed.\n\nLicense and Authors\n-------------------\n\n* Author:: Rodolfo Castellanos: rodolfojcj at yahoo.com\n\n* Copyright:: 2014, OpenSinergia\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apache2",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/database",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/postgres",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

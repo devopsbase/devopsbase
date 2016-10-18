@@ -1,0 +1,108 @@
+{
+  "name": "ellk Chef cookbook",
+  "chef_cookbook_name": "ellk",
+  "revision": "0.3.5",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/ellk",
+    "https://supermarket.chef.io/cookbooks/ellk/download",
+    "https://supermarket.chef.io/cookbooks/ellk/versions/0.3.5",
+    "https://supermarket.chef.io/cookbooks/ellk/versions/0.3.5/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/ellk/versions/0.3.5",
+    "https://supermarket.chef.io/api/v1/cookbooks/ellk",
+    "https://supermarket.chef.io/api/v1/cookbooks/ellk/versions/0.3.5/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Mode/API/Toolkit",
+    "Type/Devopsware/Logging/Logstash",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/ellk",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/ellk/versions/0.3.5/download",
+  "deprecated": false,
+  "created": "2015-08-01T09:32:23.558Z",
+  "updated": "2015-12-10T01:46:18.684Z",
+  "description": "Library to handle Elasticsearch, Logstash, Logstash-Forwarder & Kibana",
+  "maintainer": {
+    "name": "racker_jacobd",
+    "email": "jacob.dearing@gmail.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 4,
+  "downloads_count": 66901,
+  "downloads_count_revision": 346,
+  "repository_url": "https://github.com/dearing/ellk",
+  "issues_url": "https://github.com/dearing/ellk/issues",
+  "chef_source_url": "https://github.com/dearing/ellk",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "ELLK Cookbook\n============\n\n[![forthebadge](http://forthebadge.com/images/badges/built-with-love.svg)](http://forthebadge.com)\n\n[![Cookbook Version](https://img.shields.io/cookbook/v/ELLk.svg)](https://supermarket.chef.io/cookbooks/ellk) [![Circle CI](https://circleci.com/gh/dearing/ellk/tree/master.svg?style=svg)](https://circleci.com/gh/dearing/ellk/tree/master)\n\nHack friendly, Chef library to manage Elasticsearch, Logstash, Logstash-forwarder and Kibana\n\n*note: expects consumer to install java, handle certs and manipulate firewalls*\n\nRequirements\n------------\n- [chef] 11+\n- works with anything [ark] and [runit] can handle\n- see [metadata] for complexity\n\nPublished\n---------\n- [changelog]\n- [releases]\n- [supermarket]\n\nA note on RUNIT\n---------------\nRunit has gone through some design changes and the releases between 1.5.18 and 1.7 would create inconsistent responses when polling the state of a service.  In order to prevent this from breaking integration tests and create false problems for consumers, I pinned this cookbook to v1.5.18. Since v0.3.5 I have released this pinning and advice the consumer to decide which version of runit they want to run.\n\nAbout\n------------\nThis cookbook provides a modern Chef approach to installing and configuring the four [elastic] products that make up an ELK stack with the company's binary artifacts.  Using [ark] to fetch those remote artifacts and [runit] to handle the service allows us to side step the nuanced vulgarity of competing package managers, driving down the complexity of this cookbook.  This means faster updates, less angles for bugs and a guard against feature creep.  So the flexibity is that this library won't be upset if you don't use the whole stack or any combination within.  Call what you need, configure how you like and get back to [#chefops], your way.\n\nThe opinion of this design is then that remote systems get a shipper in the form of [logstash-forwarder] that does nothing but harvest logs and forward them to logstash endpoints.  It is a Go static binary so there is no fuss for the host OS.  Simply unpack, configure and run.  The `logstash-forwarder` resource is designed to accept an array of hashes that is eventually converted to the json configuration for the program.  This allows you to simply call it in a scope of a node for its logs.\n\n```ruby\n## install LOGSTASH-FORWARDER and configure to watch various logs\nlogstash_forwarder 'default' do\n  crt_location '/tmp/logstash.crt'\n  logstash_servers ['localhost:5043']\n  files [{\n  'paths' => ['/var/log/messages', '/var/log/*log'],\n    'fields' => { \n      'type' => 'syslog', \n      'chef_node' => node.name, \n      'chef_env' => node.chef_environment \n    }\n  }]\nend\n```\nThe clever will note that this allows one to build up an array that finally can be passed as an attribute for [logstash-forwarder] to be configured by for harvesting.\n\n```ruby\nlogstash_forwarder 'default' do\n  crt_location '/tmp/logstash.crt'\n  logstash_servers ['localhost:5043']\n  files node['my_fancy_log_collection']\nend\n```\n\nShould you want them, standing up logstash and elasticsearch is just as easy with everything exposed to override defaults:\n\n```ruby\n## install ELASTICSEARCH and configure to use tmp for data storage\nelasticsearch 'default' do\n  datadir '/tmp/es_datadir'\nend\n```\n\n```ruby\n## install LOGSTASH and source my awesome_cookbook's templates instead\nlogstash 'default' do\n  crt_location '/tmp/logstash.crt'\n  key_location '/tmp/logstash.key'\n  source 'awesome_cookbook'\nend\n```\n\nThe logstash endpoint should then be configured with templates to react to shipped logs by the type:\n\n```\nfilter {\n if [type] == \"syslog-dev\" {\n    drop { }\n }\n if [type] == \"syslog-staging\" {\n    grok {\n      overwrite => \"message\"\n      match => [\n        \"message\",\n        \"%{SYSLOGTIMESTAMP:timestamp} %{IPORHOST:host} (?:%{PROG:program}(?:\\[%{POSINT:pid}\\])?: )?%{GREEDYDATA:message}\"\n      ]\n    }\n    syslog_pri { }\n  }\n}\n```\n\nWant to use a [service] (http://objectrocket.com/elasticsearch) for your endpoint?  Just tell it in your config, otherwise we'll go with our default localhost install.\n\n```\noutput {\n  elasticsearch { host => localhost}\n  stdout { codec => json }\n}\n```\nFinally, Kibana interfaces with elasticsearch to perform queries against it creating those gorgeous charts and graphs everyone swoons over.  The defaults roll out executing elasticsearch queries with localhost but everything is availiable to configure from provided attributes should you need them.\n\n```ruby\n## install KIBANA and configure for port 8080\n# !FIXME: Nginx with some auth_basic & expensive certificate from VeriSign\n# !TODO: restrict ips to office and my home networks...\nkibana 'default' do\n  port 8080\nend\n```\n\nDefault installed versions\n------------\n[elastic] product | version\n------------ | -------------\n[elasticsearch] | 1.7.0\n[logstash] | 1.5.3\n[logstash-forwarder] | 0.4.0\n[kibana] | 4.1.1\n\nYou can override any of these by passing the url for the zip/tar package, a checksum (sha256) and a version to tag it by. See the resource files in the libraries folder for the accepted attributes and [ellktest] for examples and flexibility..\n\nThor\n------------\n```\nCommands:\n  thor utils:create_bag      # create a Chef data bag of cert and key\n  thor utils:create_cert     # create a certificate with a key\n  thor utils:create_key      # create a RSA 2048 key\n  thor utils:help [COMMAND]  # Describe available commands or one specific command\n  thor utils:quick_bag       # executes create_cert, create_key & create_bag with defaults\n\nOptions:\n  [--fields=FIELDS]\n                     # Default: CN=localhost\n```\n\nTODO & Help Wanted\n------------\n - see [issues]\n\nContributing\n------------\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n\nLicense and Authors\n-------------------\nAuthor: Jacob Dearing // jacob.dearing@gmail.com\n\n```\nThe MIT License (MIT)\n\nCopyright (c) 2015 Jacob Dearing\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n```\n\n[#chefops]: https://twitter.com/hashtag/chefops\n[ark]: https://github.com/burtlo/ark\n[changelog]: https://github.com/dearing/ellk/blob/master/CHANGELOG.md\n[chef]: https://www.chef.io/\n[elastic]: https://www.elastic.co/\n[elasticsearch]: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html\n[ellktest]: https://github.com/dearing/ellk/blob/master/test/cookbooks/ellktest/recipes/default.rb\n[issues]: https://github.com/dearing/ellk/issues\n[kibana]: https://github.com/elastic/kibana\n[logstash-forwarder]: https://github.com/elastic/logstash-forwarder\n[logstash]: https://www.elastic.co/guide/en/logstash/current/index.html\n[metadata]: https://github.com/dearing/ellk/blob/master/metadata.rb\n[releases]: https://github.com/dearing/ellk/releases\n[runit]: https://github.com/hw-cookbooks/runit\n[supermarket]: https://supermarket.chef.io/cookbooks/ellk\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "oracle",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "enterpriseenterprise",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ark",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/runit",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

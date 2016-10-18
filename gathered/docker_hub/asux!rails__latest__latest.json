@@ -1,0 +1,145 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/asux/rails",
+    "repository_url": "https://hub.docker.com/v2/repositories/asux/rails",
+    "tags_url": "https://hub.docker.com/v2/repositories/asux/rails/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/asux/rails/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/asux/rails/autobuild",
+    "user": "asux",
+    "name": "rails",
+    "namespace": "asux",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 175442,
+    "last_updated": "2016-06-20T13:16:55.374319Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 356201815,
+        "id": 1167669,
+        "repository": 369239,
+        "creator": 269010,
+        "last_updater": 269010,
+        "last_updated": "2016-06-20T13:16:54.760186Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "asux/docker-images"
+  },
+  "name": "asux/rails Docker container",
+  "description": "Docker base image: Rails + Puma",
+  "readme": "Docker base image: Rails + Puma\n=======================================\n\nDocker base image for [Rails](http://rubyonrails.org) runned with [Puma](http://puma.io) prepared for deploy on [AWS Elasticbeanstalk](http://aws.amazon.com/ru/elasticbeanstalk/).\n\n[![](https://badge.imagelayers.io/asux/rails:latest.svg)](https://imagelayers.io/?images=asux/rails:latest 'Get your own badge on imagelayers.io')\n\n## Dockerfile\n\nDockerfile on [Github](https://github.com/asux/docker-images/blob/master/rails/Dockerfile).\n\n## Build\nCommmit changes and create new tag.\n\nTo build base image use:\n\n```shell\nmake build\n```\n\nTo tag latest image:\n\n```shell\nmake tag_latest\n```\n\nTo push to [Docker Hub repo](https://hub.docker.com/r/asux/rails/):\n\n```shell\nmake push\n```\n\nOr do this all:\n\n```shell\nmake\n```\n\n## Usage\n\nThis image made for AWS EB multicontainer environment and assumes:\n  * The [nginx](https://github.com/asux/docker-images/blob/master/nginx/) links this service as **web**.\n  * The code mounts to `/usr/src/app`.\n  * The startup script `bin/start.sh` prepares and runs web service or worker service if `WORKER=true`.\n\nExample files you can find in [examples](https://github.com/asux/docker-images/blob/master/rails/examples/) folder.\n",
+  "dockerfile": "FROM ruby:2\nMAINTAINER Alex Ulianytskyi <a.ulyanitsky@gmail.com>\n\n# Packages\nENV MAIN_PACKAGES git postgresql-client python python-pip\nENV BUILD_DEPENDENCIES python-dev libgmp3-dev\n# Gems to install\nENV DEFAULT_GEMS rails slack-notifier puma pg bcrypt\n\n# Install main packages\nRUN apt-get update\nRUN apt-get install -yq ${MAIN_PACKAGES} ${BUILD_DEPENDENCIES}\n\n# AWS CLI & EB CLi\nRUN pip install --upgrade awscli awsebcli colorama\n\n# Pre-install gems\nRUN gem install ${DEFAULT_GEMS}\n\n# Removing build dependencies, clean temporary files\nRUN apt-get purge -yq ${BUILD_DEPENDENCIES}\n\n# Make sure main packages installed\nRUN apt-get install -yq ${MAIN_PACKAGES}\n\nRUN apt-get autoremove -yq \\\n  && apt-get clean \\\n  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nRUN aws --version\nRUN eb --version\nRUN rails --version\nRUN puma --version\n\n# throw errors if Gemfile has been modified since Gemfile.lock\n# RUN bundle config --global frozen 1\n\nRUN mkdir -p /usr/src/app\n\nWORKDIR /usr/src/app\n\nEXPOSE 3000\nCMD bin/start.sh\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3000
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update",
+      "apt-get install -yq ${MAIN_PACKAGES} ${BUILD_DEPENDENCIES}",
+      "pip install --upgrade awscli awsebcli colorama",
+      "gem install ${DEFAULT_GEMS}",
+      "apt-get purge -yq ${BUILD_DEPENDENCIES}",
+      "apt-get install -yq ${MAIN_PACKAGES}",
+      "apt-get autoremove -yq   && apt-get clean   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "aws --version",
+      "eb --version",
+      "rails --version",
+      "puma --version",
+      "mkdir -p /usr/src/app"
+    ],
+    "workdir": [
+      "/usr/src/app"
+    ],
+    "from": "ruby:2",
+    "maintainer": "Alex Ulianytskyi <a.ulyanitsky@gmail.com>",
+    "env": {
+      "MAIN_PACKAGES": "git",
+      "postgresql-client": "python",
+      "BUILD_DEPENDENCIES": "python-dev",
+      "DEFAULT_GEMS": "rails",
+      "slack-notifier": "puma",
+      "pg": "bcrypt"
+    },
+    "cmd": "bin/start.sh"
+  },
+  "source_repository_url": "https://github.com/asux/docker-images.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/asux/docker-images",
+  "docker_repository": "asux/rails",
+  "docker_image": "asux/rails",
+  "parameters_schema": {
+    "MAIN_PACKAGES": {
+      "default": "git",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "postgresql-client": {
+      "default": "python",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUILD_DEPENDENCIES": {
+      "default": "python-dev",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEFAULT_GEMS": {
+      "default": "rails",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "slack-notifier": {
+      "default": "puma",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "pg": {
+      "default": "bcrypt",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "asux/rails",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/asux/rails",
+    "https://hub.docker.com/v2/repositories/asux/rails",
+    "https://github.com/asux/docker-images.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Mode/Executable/Image"
+  ],
+  "info_url": "https://hub.docker.com/r/asux/rails",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

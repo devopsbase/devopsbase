@@ -1,0 +1,43 @@
+{
+  "name": "resource_masher Chef cookbook",
+  "chef_cookbook_name": "resource_masher",
+  "revision": "0.9.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/resource_masher",
+    "https://supermarket.chef.io/cookbooks/resource_masher/download",
+    "https://supermarket.chef.io/cookbooks/resource_masher/versions/0.9.0",
+    "https://supermarket.chef.io/cookbooks/resource_masher/versions/0.9.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/resource_masher/versions/0.9.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/resource_masher",
+    "https://supermarket.chef.io/api/v1/cookbooks/resource_masher/versions/0.9.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/resource_masher",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/resource_masher/versions/0.9.0/download",
+  "deprecated": false,
+  "created": "2013-03-12T12:34:41.000Z",
+  "updated": "2013-08-06T08:18:23.000Z",
+  "description": "Extend Resources (and LWRPs) with greater ability to export their attributes, including validation, merged default values, and formatting.",
+  "maintainer": {
+    "name": "binarybabel",
+    "email": "projects@binarybabel.org"
+  },
+  "license": "Apache License, Version 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 2525170,
+  "downloads_count_revision": 1260787,
+  "repository_url": "https://github.com/org-binbab/cookbook-resource_masher",
+  "issues_url": "https://github.com/org-binbab/cookbook-resource_masher",
+  "chef_source_url": "https://github.com/org-binbab/cookbook-resource_masher",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Resource Masher - Chef Cookbook\n\nThis cookbook provides a library which extends Chef Resource objects with new abilities to export their attribute\nvalues, including default values, and with the added functionality of a Mash wrapper.\n\nThere are no sepcial requirements, it extends all resources generically.\n\n## Overview\n\n### Limitations of Chef default functionality\n\nBy default Chef provides a `.to_hash` method on Resources, which exports a Hash of its attributes; but\nits implimentation is counter-intuitive.\n\nIf an LWRP supplies default values, and they are not overwritten, those keys/values are not included in Chef's\n`.to_hash` export. By design the Hash behaves more like a serialization.\n\n## Usage\n\nThis cookbook adds the methods `.attribute_mash` and `.attribute_mash_formatted` to Chef resources.\n\nThe following example illustrates its usage in an LWRP provider. **Please note:**\n\n  * You do not need to be within a provider to invoke these functions.\n  * Only your cookbook needs to depend on the **resource_masher**, target resources require no modifications.\n\n### LWRP Example\n\nGiven the following sample LWRP resource describing a plugin:\n\n    actions :install, :remove\n    default_action :install\n\n    attribute :plugin_name, :name_attribute => true\n    attribute :vendor, :required => true\n    attribute :branch, :default => 'stable'\n    attribute :install_path, :default => '/opt/%{vendor}/%{plugin_name}'\n\n\nAnd the following invocation from a recipie:\n\n    my_plugin_lwrp \"sample_plugin\" do\n      action :install\n      vendor \"doe.corp\"\n    end\n\n\nLet's look at how the **resource_masher** helps in the provider:\n\n    action :install do\n\n       #\n       # Let's export the new_resource a few different ways.\n       # Perhaps for use with a Template's variables.\n       #\n\n       # Export to Hash using Chef's default method.\n       exp_chef     = new_resource.to_hash\n\n       # Export to Mash using 'attribute_mash'.\n       exp_mash     = new_resource.attribute_mash\n\n       # Export to Mash using 'attribute_mash_formatted'.\n       exp_mash_fmt = new_resource.attribute_mash_formatted\n\n       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n       # PROBLEM: Chef's Hash is incomplete.\n       #\n       # exp_chef is equal {\n       #   :plugin_name => \"sample_plugin\",\n       #   :vendor => \"doe.corp\"\n       # }\n       #\n       # !!! It's missing :branch and :install_path, which were defaults. !!!\n\n       # INCONVENIENCE: Chef's Hash is just a Hash\n       #\n       # You can only do this:\n       #   exp_chef[:plugin_name]\n       #\n       # Not:\n       #   exp_chef[\"plugin_name\"]\n       #   exp_chef.plugin_name\n\n       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n       # SOLUTION Part-1: Complete output (optionally formatted)\n       #\n       # exp_mash is equal {\n       #  :plugin_name => \"sample_plugin\",\n       #  :vendor => \"doe.corp\",\n       #  :branch => \"stable\",\n       #  :install_path => \"/opt/%{vendor}/%{plugin_name}\"\n       # }\n       #\n       # With the formatted version, the :install_path is different...\n       #   exp_mash_fmt[:install_path] is equal \"/opt/doe.corp/sample_plugin\"\n       #\n       # !!! The string formatters were automatically back-filled !!!\n\n       # SOLUTION Part-2: Our Mash, is a Mash, of course, of course\n       #\n       # You can do all of these now:\n       #   exp_mash[:plugin_name]\n       #   exp_mash[\"plugin_name\"]\n       #   exp_mash.plugin_name\n       #   exp_mash.symbolize_keys  # returns normal (complete) Hash\n\n    end\n\n### Formatting\n\nThe `.attribute_mash_formatted` method replaces any tokens in String values with matching values defined on the\nresource.\n\nFrom the above example:\n\n`:install_path => \"/opt/%{vendor}/%{plugin_name}\"` becomes `/opt/doe.corp/sample_plugin`\n\nWhen using the formatting feature, please note the following:\n\n  * The tokens use **percent signs**, not hash-marks.\n    This is standard Ruby syntax for such operations. [See here for more info](http://en.wikibooks.org/wiki/Ruby_Programming/Syntax/Literals#The_.25_Notation)\n  * If the replacement requires recursion, there is a depth limit of **three(3)** to safe-guard infinate loops.\n  * An undefined token will generate an exception, but you can supply extra data to avoid this.\n\nYou can supply additional data to inject with the formatting. This data acts as additional defaults,\nany matching attributes on the resource itself will override the provided data.\n\n    extra_data = { :alpha => 'AAA', :beta => 'BBB' }\n    export = new_resource.attribute_mash_formatted(extra_data)\n\n## Bugs / Docs / Updates\n\n### Please see: [code.binbab.org](http://code.binbab.org)\n\n\n## Versioning\n\nThe cookbook uses semantic versioning. Releases will be numbered in the following format:\n\n`<major>.<minor>.<patch>`\n\nAnd constructed with the following guidelines:\n\n* Breaking backward compatibility bumps the major (and resets the minor and patch)\n* New additions without breaking backward compatibility bumps the minor (and resets the patch)\n* Bug fixes and misc changes bumps the patch\n\nFor more information on SemVer, visit http://semver.org/.\n\n## Authors and License\n\n  * Author:: BinaryBabel OSS (<projects@binarybabel.org>)\n  * Copyright:: 2013 `sha1(OWNER) = df334a7237f10846a0ca302bd323e35ee1463931`\n  * License:: Apache License, Version 2.0\n\n----\n\n    Licensed under the Apache License, Version 2.0 (the \"License\");\n    you may not use this file except in compliance with the License.\n    You may obtain a copy of the License at\n\n        http://www.apache.org/licenses/LICENSE-2.0\n\n    Unless required by applicable law or agreed to in writing, software\n    distributed under the License is distributed on an \"AS IS\" BASIS,\n    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n    See the License for the specific language governing permissions and\n    limitations under the License."
+}

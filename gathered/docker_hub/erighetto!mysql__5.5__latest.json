@@ -1,0 +1,174 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/erighetto/mysql",
+    "repository_url": "https://hub.docker.com/v2/repositories/erighetto/mysql",
+    "tags_url": "https://hub.docker.com/v2/repositories/erighetto/mysql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/erighetto/mysql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/erighetto/mysql/autobuild",
+    "user": "erighetto",
+    "name": "mysql",
+    "namespace": "erighetto",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 25,
+    "last_updated": "2016-10-15T09:22:08.981532Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "5.5",
+        "full_size": 95022711,
+        "id": 5274043,
+        "repository": 961918,
+        "creator": 1088958,
+        "last_updater": 1088958,
+        "last_updated": "2016-10-15T09:22:08.616416Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5.6",
+        "full_size": 117579581,
+        "id": 5274017,
+        "repository": 961918,
+        "creator": 1088958,
+        "last_updater": 1088958,
+        "last_updated": "2016-10-15T09:20:21.806745Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 132636446,
+        "id": 5273942,
+        "repository": 961918,
+        "creator": 1088958,
+        "last_updater": 1088958,
+        "last_updated": "2016-10-13T22:07:27.758837Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "erighetto/mysql"
+  },
+  "name": "erighetto/mysql Docker container",
+  "description": "Spicy MySQL container",
+  "readme": "erighetto-docker-mysql\r\n==================\n\r\n\nBase docker image to run a MySQL database server\n\n\nMySQL version\n-------------\n\nDifferent versions are built from different folders.\r\n\n\nUsage\n-----\n\nTo create the image `erighetto/mysql`, execute the following command on the erighetto-mysql folder:\r\n\n        docker build -t erighetto/mysql 5.5/\r\n\nTo run the image and bind to port 3306:\n\n        docker run -d -p 3306:3306 erighetto/mysql\r\n\nThe first time that you run your container, a new user `admin` with all privileges\nwill be created in MySQL with a random password. To get the password, check the logs\nof the container by running:\n\n        docker logs <CONTAINER_ID>\n\nYou will see an output like the following:\n\n        ========================================================================\n        You can now connect to this MySQL Server using:\n\n            mysql -uadmin -p47nnf4FweaKu -h<host> -P<port>\n\n        Please remember to change the above password as soon as possible!\n        MySQL user 'root' has no password but only allows local connections.\n        ========================================================================\n\nIn this case, `47nnf4FweaKu` is the password allocated to the `admin` user.\n\nRemember that the `root` user has no password, but it's only accessible from within the container.\n\nYou can now test your deployment:\n\n        mysql -uadmin -p\n\nDone!\n\nPassing extra configuration to start mysql server\n------------------------------------------------\n\nTo pass additional settings to `mysqld`, you can use environment variable `EXTRA_OPTS`.\nFor example, to run mysql using lower case table name, you can do:\n\n    docker run -d -p 3306:3306 -e EXTRA_OPTS=\"--lower_case_table_names=1\" erighetto/mysql\r\n\nSetting a specific password for the admin account\n-------------------------------------------------\n\nIf you want to use a preset password instead of a random generated one, you can\nset the environment variable `MYSQL_PASS` to your specific password when running the container:\n\n        docker run -d -p 3306:3306 -e MYSQL_PASS=\"mypass\" erighetto/mysql\r\n\nYou can now test your deployment:\n\n        mysql -uadmin -p\"mypass\"\n\nThe admin username can also be set via the `MYSQL_USER` environment variable.\n\n\n\nCreating a database on container creation\n-------------------------------------------------\n\nIf you want a database to be created inside the container when you start it up\nfor the first time you can set the environment variable `ON_CREATE_DB` to a string\nthat names the database.\n\n        docker run -d -p 3306:3306 -e ON_CREATE_DB=\"newdatabase\" erighetto/mysql\r\n\nIf this is combined with importing SQL files, those files will be imported into the\ncreated database.\n\nMounting the database file volume\n---------------------------------\n\nIn order to persist the database data, you can mount a local folder from the host\non the container to store the database files. To do so:\n\n        docker run -d -v /path/in/host:/var/lib/mysql erighetto/mysql /bin/bash -c \"/usr/bin/mysql_install_db\"\r\n\nThis will mount the local folder `/path/in/host` inside the docker in `/var/lib/mysql` (where MySQL will store the database files by default). `mysql_install_db` creates the initial database structure.\n\nRemember that this will mean that your host must have `/path/in/host` available when you run your docker image!\n\nAfter this you can start your MySQL image, but this time using `/path/in/host` as the database folder:\n\n        docker run -d -p 3306:3306 -v /path/in/host:/var/lib/mysql erighetto/mysql\r\n\n\nMounting the database file volume from other containers\n------------------------------------------------------\n\nAnother way to persist the database data is to store database files in another container.\nTo do so, first create a container that holds database files:\n\n    docker run -d -v /var/lib/mysql --name db_vol -p 22:22 tutum/ubuntu-trusty\r\n\nThis will create a new ssh-enabled container and use its folder `/var/lib/mysql` to store MySQL database files.\nYou can specify any name of the container by using `--name` option, which will be used in next step.\n\nAfter this you can start your MySQL image using volumes in the container created above (put the name of container in `--volumes-from`)\n\n    docker run -d --volumes-from db_vol -p 3306:3306 erighetto/mysql\r\n\n\nMigrating an existing MySQL Server\n----------------------------------\n\nIn order to migrate your current MySQL server, perform the following commands from your current server:\n\nTo dump your databases structure:\n\n        mysqldump -u<user> -p --opt -d -B <database name(s)> > /tmp/dbserver_schema.sql\n\nTo dump your database data:\n\n        mysqldump -u<user> -p --quick --single-transaction -t -n -B <database name(s)> > /tmp/dbserver_data.sql\n\nTo import a SQL backup which is stored for example in the folder `/tmp` in the host, run the following:\n\n        sudo docker run -d -v /tmp:/tmp erighetto/mysql /bin/bash -c \"/import_sql.sh <user> <pass> /tmp/<dump.sql>\"\r\n\nAlso, you can start the new database initializing it with the SQL file:\n\n        sudo docker run -d -v /path/in/host:/var/lib/mysql -e STARTUP_SQL=\"/tmp/<dump.sql>\" erighetto/mysql\r\n\nWhere `<user>` and `<pass>` are the database username and password set earlier and `<dump.sql>` is the name of the SQL file to be imported.\n\n\nReplication - Master/Slave\n-------------------------\nTo use MySQL replication, please set environment variable `REPLICATION_MASTER`/`REPLICATION_SLAVE` to `true`. Also, on master side, you may want to specify `REPLICATION_USER` and `REPLICATION_PASS` for the account to perform replication, the default value is `replica:replica`\n\nExamples:\n- Master MySQL\n-\n        docker run -d -e REPLICATION_MASTER=true -e REPLICATION_PASS=mypass -p 3306:3306 --name mysql erighetto/mysql\r\n\n- Example on Slave MySQL:\n-\n        docker run -d -e REPLICATION_SLAVE=true -p 3307:3306 --link mysql:mysql erighetto/mysql\r\n\nNow you can access port `3306` and `3307` for the master/slave MySQL.\n\nEnvironment variables\n---------------------\n\n`MYSQL_USER`: Set a specific username for the admin account (default 'admin').\n\n`MYSQL_PASS`: Set a specific password for the admin account.\n\n`STARTUP_SQL`: Defines one or more SQL scripts separated by spaces to initialize the database. Note that the scripts must be inside the container, so you may need to mount them.\n\nCompatibility Issues\n--------------------\n\n- Volume created by MySQL 5.6 cannot be used in MySQL 5.5 Images.\n",
+  "dockerfile": "FROM ubuntu:trusty\nMAINTAINER Emanuel Righetto <posta@emanuelrighetto.it>\n\n# Add MySQL configuration\nCOPY my.cnf /etc/mysql/conf.d/my.cnf\nCOPY mysqld_charset.cnf /etc/mysql/conf.d/mysqld_charset.cnf\n\nRUN apt-get update && \\\n    apt-get -yq install mysql-server-5.5 pwgen && \\\n    rm -rf /var/lib/apt/lists/* && \\\n    rm /etc/mysql/conf.d/mysqld_safe_syslog.cnf && \\\n    if [ ! -f /usr/share/mysql/my-default.cnf ] ; then cp /etc/mysql/my.cnf /usr/share/mysql/my-default.cnf; fi && \\\n    mysql_install_db > /dev/null 2>&1 && \\\n    touch /var/lib/mysql/.EMPTY_DB\n\n# Add MySQL scripts\nCOPY import_sql.sh /import_sql.sh\nCOPY run.sh /run.sh\n\nENV MYSQL_USER=admin \\\n    MYSQL_PASS=**Random** \\\n    ON_CREATE_DB=**False** \\\n    REPLICATION_MASTER=**False** \\\n    REPLICATION_SLAVE=**False** \\\n    REPLICATION_USER=replica \\\n    REPLICATION_PASS=replica \\\n    ON_CREATE_DB=**False**\n\n# Add VOLUMEs to allow backup of config and databases\nVOLUME  [\"/etc/mysql\", \"/var/lib/mysql\"]\n\nEXPOSE 3306\nCMD [\"/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      " [\"/etc/mysql\", \"/var/lib/mysql\"]"
+    ],
+    "run": [
+      "apt-get update &&     apt-get -yq install mysql-server-5.5 pwgen &&     rm -rf /var/lib/apt/lists/* &&     rm /etc/mysql/conf.d/mysqld_safe_syslog.cnf &&     if [ ! -f /usr/share/mysql/my-default.cnf ] ; then cp /etc/mysql/my.cnf /usr/share/mysql/my-default.cnf; fi &&     mysql_install_db > /dev/null 2>&1 &&     touch /var/lib/mysql/.EMPTY_DB"
+    ],
+    "workdir": [],
+    "from": "ubuntu:trusty",
+    "maintainer": "Emanuel Righetto <posta@emanuelrighetto.it>",
+    "copy": "run.sh /run.sh",
+    "env": {
+      "MYSQL_USER": "admin",
+      "": "",
+      "MYSQL_PASS": "**Random**",
+      "ON_CREATE_DB": "**False**",
+      "REPLICATION_MASTER": "**False**",
+      "REPLICATION_SLAVE": "**False**",
+      "REPLICATION_USER": "replica",
+      "REPLICATION_PASS": "replica"
+    },
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/erighetto/mysql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/erighetto/mysql",
+  "docker_repository": "erighetto/mysql",
+  "docker_image": "erighetto/mysql",
+  "parameters_schema": {
+    "MYSQL_USER": {
+      "default": "admin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_PASS": {
+      "default": "**Random**",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ON_CREATE_DB": {
+      "default": "**False**",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REPLICATION_MASTER": {
+      "default": "**False**",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REPLICATION_SLAVE": {
+      "default": "**False**",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REPLICATION_USER": {
+      "default": "replica",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REPLICATION_PASS": {
+      "default": "replica",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "erighetto/mysql",
+  "revision": "5.5",
+  "uris": [
+    "https://hub.docker.com/r/erighetto/mysql",
+    "https://hub.docker.com/v2/repositories/erighetto/mysql",
+    "https://github.com/erighetto/mysql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/erighetto/mysql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,90 @@
+{
+  "name": "sanitize Chef cookbook",
+  "chef_cookbook_name": "sanitize",
+  "revision": "0.5.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/sanitize",
+    "https://supermarket.chef.io/cookbooks/sanitize/download",
+    "https://supermarket.chef.io/cookbooks/sanitize/versions/0.5.2",
+    "https://supermarket.chef.io/cookbooks/sanitize/versions/0.5.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/sanitize/versions/0.5.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/sanitize",
+    "https://supermarket.chef.io/api/v1/cookbooks/sanitize/versions/0.5.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/sanitize",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/sanitize/versions/0.5.2/download",
+  "deprecated": false,
+  "created": "2012-10-13T12:26:13.000Z",
+  "updated": "2014-02-17T13:48:47.000Z",
+  "description": "Sanitizes system by providing a sane default configuration",
+  "maintainer": {
+    "name": "mpasternacki",
+    "email": "maciej@pasternacki.net"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 3,
+  "downloads_count": 17645613,
+  "downloads_count_revision": 1260363,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nThis cookbook aims to normalize setup of a fresh server and set sane\ndefaults for global settings, and work with various initial\nenvironments (tested on EC2 images, Hetzner \"minimal\" installations,\nand debootstrap-created LXC images). At the moment it supports only\nUbuntu, Debian support is planned.\n\nIt calls recipes `chef-client::config` and `omnibus_updater`, and\nworks only with Omnibus Chef client package.\n\nThis cookbook is developed on GitHub at\nhttps://github.com/3ofcoins/chef-cookbook-sanitize\n\nRequirements\n============\n\n* apt\n* chef-client\n* iptables\n* omnibus_updater\n\nAttributes\n==========\n\n* `sanitize.iptables` -- if false, does not install and configure\n  iptables; defaults to true.\n\n* `sanitize.keep_access` -- if true, don't disable direct access users\n  (ubuntu user or root password); defaults to false.\n\n* `sanitize.ports` -- if `sanitize.iptables` is true, specifies TCP\n  ports to open. It is a dictionary, where keys are port numbers or\n  service names, and values can be:\n  \n  * `true` -- open port for any source address\n  * `false` -- close port\n  * a string -- will be used as `--src` argument to `iptables`\n  * an array of strings -- for many different `--src` entries\n  * **TODO:** It should be possible to specify a node search query\n\n  If the key is a list of ports (`port,port`) or a range\n  (`port1:port2`), then the `multiport` iptables module will be used.\n\n  Default:\n  \n```ruby\ndefault['sanitize']['ports']['ssh'] = true\n```\n\n* `sanitize.apt_repositories` -- dictionary of APT repositories to\n  add. Key is repository name, value is remaining attributes of the\n  `apt_repository` resource provided by the `apt` cookbook (see\n  http://community.opscode.com/cookbooks/apt). If you set\n  `distribution` to `\"lsb_codename\"`, `node['lsb']['codename']`\n  attribute will be used instead.:\n\n  Ubuntu's PPAs can be specified as a simple string, or as a `ppa`\n  key; the second form allows for customizing some of the attributes.\n\n  \n```ruby\n:sanitize => {\n  :apt_repositories => {\n    :percona => {\n      :uri => 'http://repo.percona.com/apt',\n      :distribution => 'lsb_codename',\n      :components => [ 'main' ],\n      :deb_src => true,\n      :keyserver => 'hkp://keys.gnupg.net',\n      :key => '1C4CBDCDCD2EFD2A'\n    },\n    :ruby_ng => 'ppa:brightbox/ruby-ng',\n    :nginx => {\n      :ppa => 'nginx/stable',\n      :distribution => 'precise' # force distribution regardless of lsb.codename\n    }\n    }}\n```\n\n* `sanitize.install_packages` -- a list of packages to install on all\n  machines; defaults to an empty list.\n\n* `sanitize.chef_gems` -- Chef gems to install. By default, installs\n  [chef-helpers](), [chef-sugar](), [chef-rewind](), and\n  [chef-vault](). Keys are gem names, values can be:\n  - `false` -- skip the package (use that to override defaults; you\n    can also set version to false)\n  - `true` -- install best version available, don't upgrade\n    (equivalent to just writing `chef_gem \"gem_name\"` in recipe\n    code)\n  - string with version requirement\n  - directory, where following keys are recognized:\n    - `version` - `false`, `true` (default), or version string\n    - `require` - `true` (default) means require gem after installing;\n      `false` means don't require anything; if a string is given,\n      it's name of library to require.\n\n  Example (which is also the default set of gems):\n\n```ruby\n:sanitize => {\n  :chef_gems => {\n    'chef-helpers' => '~> 0.1',\n    'chef-sugar' => {\n      :version => '~> 1.1',\n      :require => 'chef/sugar'\n    },\n    'chef-rewind' => {\n      :version => '~> 0.0.8',\n      :require => 'chef/rewind'\n    },\n    :chef-vault => '~> 2.1'\n  }\n}\n```\n\nUsage\n=====\n\nInclude `recipe[sanitize]` in your run list after your user accounts\nare created and sudo and ssh is configured, and otherwise as early as\npossible. In particular, if you use `omnibus_updater` cookbook, it\nshould be after `sanitize` in the run list.\n\nsanitize::default\n-----------------\n\nThis is the default \"base settings\" setup. It should be called\n**after** shell user accounts and sudo are configured, as it locks\ndefault login user and direct root access.\n\n1.  Deletes `ubuntu` system user\n2.  Locks system password for `root` user (assumes that only sudo is\n    used to elevate privileges)\n3.  Ensure all FHS-provided directories exist by creating some that\n    have been found missing on some of the installation (namely,\n    `/opt`)\n4.  Sets locale to `en_US.UTF-8`, generates this locale, sets time zone\n    to UTC\n5.  Changes mode of `/var/log/chef/client.log` to `0600` -- readable\n    only for root, as it may contain sensitive data\n6.  Deletes annoying `motd.d` files\n7.  Installs vim and sets it as a default system editor\n8.  Installs and configures iptables, opens SSH port (optional, but\n    enabled by default)\n9.  Installs `can-has` command as a symlink to `apt-get`\n10. Runs `chef-client::config` and `omnibus_updater` recipes\n\nRoadmap\n=======\n\nPlans for future, in no particular order:\n\n* Depend on and include `openssh-server`; configure SSH known hosts,\n  provide sane SSH server and client configuration defaults\n* Provide hooks (definitions / LWRP / library) for other cookbooks for\n  commonly used facilities, such as opening up common ports, \"backend\"\n  http service, SSL keys management, maybe some other \"library\"\n  functions like helpers for encrypted data bags\n* Test with test-kitchen\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 10.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "mac_os_x",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef-client",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/dmg",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/homebrew",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/iptables",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/omnibus_updater",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

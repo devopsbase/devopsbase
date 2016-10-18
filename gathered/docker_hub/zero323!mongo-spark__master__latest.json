@@ -1,0 +1,218 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/zero323/mongo-spark",
+    "repository_url": "https://hub.docker.com/v2/repositories/zero323/mongo-spark",
+    "tags_url": "https://hub.docker.com/v2/repositories/zero323/mongo-spark/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/zero323/mongo-spark/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/zero323/mongo-spark/autobuild",
+    "user": "zero323",
+    "name": "mongo-spark",
+    "namespace": "zero323",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 198,
+    "last_updated": "2016-03-22T22:09:03.456026Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "master",
+        "full_size": 1027773386,
+        "id": 2394532,
+        "repository": 410631,
+        "creator": 2932,
+        "last_updater": 2932,
+        "last_updated": "2016-03-22T22:09:02.249430Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "zero323/docker-mongo-spark"
+  },
+  "name": "zero323/mongo-spark Docker container",
+  "description": "Apache Spark + Mongo-Hadoop",
+  "readme": "[![DOI](https://zenodo.org/badge/19086/zero323/docker-mongo-spark.svg)](https://zenodo.org/badge/latestdoi/19086/zero323/docker-mongo-spark)\n\nPySpark + [Mongo Hadoop](https://github.com/mongodb/mongo-hadoop):\n\n- Ubuntu 16.04\n- Apache Spark 1.6.1\n- Mongo Hadoop 1.5.1\n\nFor details see: [Getting Spark, Python, and MongoDB to work together](http://stackoverflow.com/q/33391840/1560062)\n\n\n\nNote: This repository is kept alive mostly for a reference.\n",
+  "dockerfile": "FROM ubuntu:16.04\n\n# See https://github.com/phusion/baseimage-docker/issues/58\nRUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections\n\nRUN apt-get update \\\n    && apt-get install -y wget ipython python-setuptools build-essential python-dev python-pip openjdk-7-jdk \\\n    && apt-get clean \\\n    && rm -rf /var/lib/apt/lists/* \n\nRUN pip install pymongo\n\nENV SPARK_VERSION 1.6.1\nENV HADOOP_VERSION 2.6\nENV MONGO_HADOOP_VERSION 1.5.1\nENV MONGO_HADOOP_COMMIT r1.5.1\n\nENV JAVA_HOME /usr/lib/jvm/java-7-openjdk-amd64\nENV SPARK_HOME /usr/local/spark\n\nENV APACHE_MIRROR http://ftp.ps.pl/pub/apache\nENV SPARK_URL ${APACHE_MIRROR}/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz\nENV SPARK_DIR spark-${SPARK_VERSION}-bin-hadoop2.6\n\nENV MONGO_HADOOP_URL https://github.com/mongodb/mongo-hadoop/archive/${MONGO_HADOOP_COMMIT}.tar.gz\n\nENV MONGO_HADOOP_LIB_PATH /usr/local/mongo-hadoop/build/libs\nENV MONGO_HADOOP_JAR  ${MONGO_HADOOP_LIB_PATH}/mongo-hadoop-${MONGO_HADOOP_VERSION}-SNAPSHOT.jar\n\nENV MONGO_HADOOP_SPARK_PATH /usr/local/mongo-hadoop/spark\nENV MONGO_HADOOP_SPARK_JAR ${MONGO_HADOOP_SPARK_PATH}/build/libs/mongo-hadoop-spark-${MONGO_HADOOP_VERSION}-SNAPSHOT.jar\nENV PYTHONPATH  ${MONGO_HADOOP_SPARK_PATH}/src/main/python\n\nENV SPARK_DRIVER_EXTRA_CLASSPATH ${MONGO_HADOOP_JAR}:${MONGO_HADOOP_SPARK_JAR}\nENV CLASSPATH ${SPARK_DRIVER_EXTRA_CLASSPATH}\nENV JARS ${MONGO_HADOOP_JAR},${MONGO_HADOOP_SPARK_JAR}\n\nENV PYSPARK_DRIVER_PYTHON /usr/bin/ipython\nENV PATH $PATH:$SPARK_HOME/bin\n\n# Download  Spark\nRUN wget -qO - ${SPARK_URL} | tar -xz -C /usr/local/ \\\n    && cd /usr/local && ln -s ${SPARK_DIR} spark\n\nRUN wget -qO - ${MONGO_HADOOP_URL} | tar -xz -C /usr/local/ \\\n    && mv /usr/local/mongo-hadoop-${MONGO_HADOOP_COMMIT} /usr/local/mongo-hadoop \\\n    && cd /usr/local/mongo-hadoop \\\n    && ./gradlew jar\n\nRUN echo \"spark.driver.extraClassPath   ${CLASSPATH}\" > $SPARK_HOME/conf/spark-defaults.conf\n\nRUN groupadd -r spark && useradd -r -g spark spark\n\nUSER spark\n\nCMD [\"/bin/bash\"]\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections",
+      "apt-get update     && apt-get install -y wget ipython python-setuptools build-essential python-dev python-pip openjdk-7-jdk     && apt-get clean     && rm -rf /var/lib/apt/lists/* ",
+      "pip install pymongo",
+      "wget -qO - ${SPARK_URL} | tar -xz -C /usr/local/     && cd /usr/local && ln -s ${SPARK_DIR} spark",
+      "wget -qO - ${MONGO_HADOOP_URL} | tar -xz -C /usr/local/     && mv /usr/local/mongo-hadoop-${MONGO_HADOOP_COMMIT} /usr/local/mongo-hadoop     && cd /usr/local/mongo-hadoop     && ./gradlew jar",
+      "echo \"spark.driver.extraClassPath   ${CLASSPATH}\" > $SPARK_HOME/conf/spark-defaults.conf",
+      "groupadd -r spark && useradd -r -g spark spark"
+    ],
+    "workdir": [],
+    "from": "ubuntu:16.04",
+    "env": {
+      "SPARK_VERSION": "1.6.1",
+      "HADOOP_VERSION": "2.6",
+      "MONGO_HADOOP_VERSION": "1.5.1",
+      "MONGO_HADOOP_COMMIT": "r1.5.1",
+      "JAVA_HOME": "/usr/lib/jvm/java-7-openjdk-amd64",
+      "SPARK_HOME": "/usr/local/spark",
+      "APACHE_MIRROR": "http://ftp.ps.pl/pub/apache",
+      "SPARK_URL": "${APACHE_MIRROR}/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz",
+      "SPARK_DIR": "spark-${SPARK_VERSION}-bin-hadoop2.6",
+      "MONGO_HADOOP_URL": "https://github.com/mongodb/mongo-hadoop/archive/${MONGO_HADOOP_COMMIT}.tar.gz",
+      "MONGO_HADOOP_LIB_PATH": "/usr/local/mongo-hadoop/build/libs",
+      "MONGO_HADOOP_JAR": "",
+      "MONGO_HADOOP_SPARK_PATH": "/usr/local/mongo-hadoop/spark",
+      "MONGO_HADOOP_SPARK_JAR": "${MONGO_HADOOP_SPARK_PATH}/build/libs/mongo-hadoop-spark-${MONGO_HADOOP_VERSION}-SNAPSHOT.jar",
+      "PYTHONPATH": "",
+      "SPARK_DRIVER_EXTRA_CLASSPATH": "${MONGO_HADOOP_JAR}:${MONGO_HADOOP_SPARK_JAR}",
+      "CLASSPATH": "${SPARK_DRIVER_EXTRA_CLASSPATH}",
+      "JARS": "${MONGO_HADOOP_JAR},${MONGO_HADOOP_SPARK_JAR}",
+      "PYSPARK_DRIVER_PYTHON": "/usr/bin/ipython",
+      "PATH": "$PATH:$SPARK_HOME/bin"
+    },
+    "user": "spark",
+    "cmd": "[\"/bin/bash\"]"
+  },
+  "source_repository_url": "https://github.com/zero323/docker-mongo-spark.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/zero323/docker-mongo-spark",
+  "docker_repository": "zero323/mongo-spark",
+  "docker_image": "zero323/mongo-spark",
+  "parameters_schema": {
+    "SPARK_VERSION": {
+      "default": "1.6.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HADOOP_VERSION": {
+      "default": "2.6",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGO_HADOOP_VERSION": {
+      "default": "1.5.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGO_HADOOP_COMMIT": {
+      "default": "r1.5.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_HOME": {
+      "default": "/usr/lib/jvm/java-7-openjdk-amd64",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SPARK_HOME": {
+      "default": "/usr/local/spark",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APACHE_MIRROR": {
+      "default": "http://ftp.ps.pl/pub/apache",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SPARK_URL": {
+      "default": "${APACHE_MIRROR}/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SPARK_DIR": {
+      "default": "spark-${SPARK_VERSION}-bin-hadoop2.6",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGO_HADOOP_URL": {
+      "default": "https://github.com/mongodb/mongo-hadoop/archive/${MONGO_HADOOP_COMMIT}.tar.gz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGO_HADOOP_LIB_PATH": {
+      "default": "/usr/local/mongo-hadoop/build/libs",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGO_HADOOP_JAR": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGO_HADOOP_SPARK_PATH": {
+      "default": "/usr/local/mongo-hadoop/spark",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGO_HADOOP_SPARK_JAR": {
+      "default": "${MONGO_HADOOP_SPARK_PATH}/build/libs/mongo-hadoop-spark-${MONGO_HADOOP_VERSION}-SNAPSHOT.jar",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PYTHONPATH": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SPARK_DRIVER_EXTRA_CLASSPATH": {
+      "default": "${MONGO_HADOOP_JAR}:${MONGO_HADOOP_SPARK_JAR}",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CLASSPATH": {
+      "default": "${SPARK_DRIVER_EXTRA_CLASSPATH}",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JARS": {
+      "default": "${MONGO_HADOOP_JAR},${MONGO_HADOOP_SPARK_JAR}",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PYSPARK_DRIVER_PYTHON": {
+      "default": "/usr/bin/ipython",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:$SPARK_HOME/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "zero323/mongo-spark",
+  "revision": "master",
+  "uris": [
+    "https://hub.docker.com/r/zero323/mongo-spark",
+    "https://hub.docker.com/v2/repositories/zero323/mongo-spark",
+    "https://github.com/zero323/docker-mongo-spark.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB",
+    "Type/Middleware/Data Processing/Hadoop"
+  ],
+  "info_url": "https://hub.docker.com/r/zero323/mongo-spark",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,98 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/istresearch/jenkins",
+    "repository_url": "https://hub.docker.com/v2/repositories/istresearch/jenkins",
+    "tags_url": "https://hub.docker.com/v2/repositories/istresearch/jenkins/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/istresearch/jenkins/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/istresearch/jenkins/autobuild",
+    "user": "istresearch",
+    "name": "jenkins",
+    "namespace": "istresearch",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 95,
+    "last_updated": "2016-08-29T17:45:37.616652Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 585902334,
+        "id": 1104517,
+        "repository": 357698,
+        "creator": 130037,
+        "last_updater": 130050,
+        "last_updated": "2016-08-29T17:45:37.254891Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "istresearch/jenkins"
+  },
+  "name": "istresearch/jenkins Docker container",
+  "description": "Automated builds of a custom version of Jenkins for IST Research.",
+  "readme": "# jenkins-ist\nGithub repo for automated builds of a custom version of Jenkins on docker hub.\n\n## Installation\n\nEnsure /data/jenkins/ directory is created and has the correct permissions.\n- If you are using vagrant, the directory should be owned by vagrant.\n  If you are logged in to an Ubuntu EC2 instance, then the ubuntu user should own the directory.\n- If it needs to be created:\n  1. Run *sudo mkdir /data*\n  2. Run *sudo mkdir /data/jenkins*\n  3. Run *sudo chown 1000 /data/jenkins*\n\n## Building\n\nTo build the Jenkins docker image that you want to run in a container. Ensure\nyou are in the `/jenkins` directory with the *Dockerfile* and run\n\n```Bash\ndocker build -t ist/jenkins:[Version]\n```\n\nAlternatively you can do.\n```Bash\ndocker-compose build\n```\n\n> The first approach allows you to specify the tags that you want to use for the\ndocker image. Meanwhile, with the second approach,  you are forced to use\nwhatever is defined in the `docker-compose.yml` file\n\n## Running\n\nTo run the container, type the following\n\n```Bash\n# Run without mounting the docker socket\ndocker run \\\n  -d \\\n  --name jenkins \\\n  --net=host \\\n  -p 8080:8080 \\\n  -p 5000:5000 \\\n  -v /data/jenkins:/var/jenkins_home \\\n  -u 1000 \\\n  istresearch/jenkins:latest\n\n# Run with the docker socket mounted\ndocker run \\\n  -d \\\n  --name jenkins \\\n  --net=host \\\n  -p 8080:8080 \\\n  -p 5000:5000 \\\n  -v /data/jenkins:/var/jenkins_home \\\n  -v /var/run/docker.sock:/var/run/docker.sock \\\n  -u 1000 \\\n  istresearch/jenkins:latest\n```\n- *-d* to run in the background\n- *--net=host* so the container shares the host network stack and has access to the /etc/hosts for network communication\n- *-p 8080:8080* so the 8080 port in the container receives all requests to port 8080 on the host. Jenkins runs on Tomcat, which uses port 8080 as the default\n- *-p 5000:5000* required to attach slave servers; port 50000 is used to communicate between master and slaves\n- *-v /data/jenkins:/var/jenkins_home* to bind host directory /data/jenkins to the container directory /var/jennkins_home\n- *-v /var/run/docker.sock:/var/run/docker.sock* Mounts the docker socket into the container \n- *-u 1000* jenkins user uid is 1000, same as ubuntu and vagrant uid's are 1000\n\nAlternatively, you can run one of the following\n\n```Bash\n# Uses the istresearch/jenkins:latest image\ndocker-compose up -d\n\n# Runs a local dev version, which allows you to modify the Dockerfile for local experimentation.\ndocker-compose -f docker-compose.yml -f docker-compose-dev.yml up -d\n```\n",
+  "dockerfile": "FROM jenkins\nUSER root\n\n\nRUN apt-get update && \\\napt-get install -qy \\\n  build-essential \\\n  python-dev \\\n  libxml2-dev \\\n  libxslt-dev \\\n  libffi-dev \\\n  libssl-dev \\\n  libmysqlclient-dev \\\n  python-mysqldb \\\n  python-pip \\\n  libjpeg-dev \\\n  zlib1g-dev \\\n  libblas-dev\\\n  liblapack-dev \\\n  libatlas-base-dev \\\n  apt-transport-https \\\n  ca-certificates \\\n  gfortran && \\\nrm -rf /var/lib/apt/lists/*\n\n# Install docker\nRUN apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys \\\n      58118E89F3A912897C070ADBF76221572C52609D && \\\n    echo deb https://apt.dockerproject.org/repo debian-jessie main >> \\\n      /etc/apt/sources.list.d/docker.list && \\\n    apt-get update && \\\n    apt-get install -qy docker-engine=1.12.0-0~jessie\n\n# Install compose\nRUN curl -L https://github.com/docker/compose/releases/download/1.8.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose && \\\n    chmod +x /usr/local/bin/docker-compose\n\nRUN pip install cffi --upgrade\nRUN pip install pip2pi ansible==2.0\n\nCOPY executors.groovy /usr/share/jenkins/ref/init.groovy.d/executors.groovy\nCOPY plugins.txt /usr/share/jenkins/ref/plugins.txt\nRUN /usr/local/bin/plugins.sh /usr/share/jenkins/ref/plugins.txt\n\n# add the jenkins user to the docker group so that sudo is not required to run docker commands\nRUN groupmod -g 1034 docker && gpasswd -a jenkins docker\nUSER jenkins\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -qy   build-essential   python-dev   libxml2-dev   libxslt-dev   libffi-dev   libssl-dev   libmysqlclient-dev   python-mysqldb   python-pip   libjpeg-dev   zlib1g-dev   libblas-dev  liblapack-dev   libatlas-base-dev   apt-transport-https   ca-certificates   gfortran && rm -rf /var/lib/apt/lists/*",
+      "apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys       58118E89F3A912897C070ADBF76221572C52609D &&     echo deb https://apt.dockerproject.org/repo debian-jessie main >>       /etc/apt/sources.list.d/docker.list &&     apt-get update &&     apt-get install -qy docker-engine=1.12.0-0~jessie",
+      "curl -L https://github.com/docker/compose/releases/download/1.8.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose &&     chmod +x /usr/local/bin/docker-compose",
+      "pip install cffi --upgrade",
+      "pip install pip2pi ansible==2.0",
+      "/usr/local/bin/plugins.sh /usr/share/jenkins/ref/plugins.txt",
+      "groupmod -g 1034 docker && gpasswd -a jenkins docker"
+    ],
+    "workdir": [],
+    "from": "jenkins",
+    "user": "jenkins",
+    "copy": "plugins.txt /usr/share/jenkins/ref/plugins.txt"
+  },
+  "source_repository_url": "https://github.com/istresearch/jenkins.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/istresearch/jenkins",
+  "docker_repository": "istresearch/jenkins",
+  "docker_image": "istresearch/jenkins",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "istresearch/jenkins",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/istresearch/jenkins",
+    "https://hub.docker.com/v2/repositories/istresearch/jenkins",
+    "https://github.com/istresearch/jenkins.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Build",
+    "Type/Devopsware/Integration/Jenkins",
+    "Type/Middleware/Search"
+  ],
+  "info_url": "https://hub.docker.com/r/istresearch/jenkins",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,129 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/klaemo/couchdb-ssl",
+    "repository_url": "https://hub.docker.com/v2/repositories/klaemo/couchdb-ssl",
+    "tags_url": "https://hub.docker.com/v2/repositories/klaemo/couchdb-ssl/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/klaemo/couchdb-ssl/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/klaemo/couchdb-ssl/autobuild",
+    "user": "klaemo",
+    "name": "couchdb-ssl",
+    "namespace": "klaemo",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 19,
+    "pull_count": 4762,
+    "last_updated": "2016-10-08T15:55:41.661721Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1.6",
+        "full_size": 172805261,
+        "id": 1878662,
+        "repository": 10474,
+        "creator": 8812,
+        "last_updater": 8812,
+        "last_updated": "2016-10-08T15:55:40.104718Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.6.1",
+        "full_size": 172805252,
+        "id": 1878683,
+        "repository": 10474,
+        "creator": 8812,
+        "last_updater": 8812,
+        "last_updated": "2016-10-08T15:53:56.731710Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 172805266,
+        "id": 13744,
+        "repository": 10474,
+        "creator": 8812,
+        "last_updater": 8812,
+        "last_updated": "2016-10-08T15:52:24.713386Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "klaemo/docker-couchdb-ssl"
+  },
+  "name": "klaemo/couchdb-ssl Docker container",
+  "description": "couchdb w\\ nginx ssl terminator",
+  "readme": "# Dockerized CouchDB with nginx SSL terminator\n\nMake your CouchDB a straight A SSL student!\n\n**NOTE**: This image uses [nginx](http://nginx.org/) to provide the SSL/TLS endpoint.  CouchDB's SSL features are unused.\n\nVersion: `CouchDB 1.6.1` and `nginx 1.9.9`.\n\n## Run\n\nAvailable in the docker index as [klaemo/couchdb-ssl](https://index.docker.io/u/klaemo/couchdb-ssl/)\nbased on [klaemo/couchdb](https://index.docker.io/u/klaemo/couchdb/)\n\n__Note:__ Out of the box bogus self-signed certificates are being used.\nYou should replace them with your real files (see below).\n\n```bash\n$ [sudo] docker pull klaemo/couchdb-ssl:latest\n\n# expose it to the world on port 6984\n$ [sudo] docker run -d -p 6984:6984 --name couchdb klaemo/couchdb-ssl\n\n$ curl -k https://localhost:6984\n```\n\n## Features\n\n* exposes couchdb on port `6984` (https) of the container\n* runs everything as non-root user (security ftw!)\n* nginx is configured with a list of preferable cipher suites (more security win!!11)\n\nYour CouchDB will get a __straight A__ on the [SSL Labs Server Test](https://www.ssllabs.com/ssltest/)!\n\n## Build your own\n\nYou can use `klaemo/couchdb-ssl` as the base image for your own couchdb instance.\nYou might want to provide your own version of the following files:\n\n* `local.ini` for CouchDB.\n* `nginx.conf` for nginx configuration.\n* `server.crt` for nginx configuration (certificate).\n* `server.key` for nginx configuration (private key).\n* `dhparams.pem` for nginx configuration (diffie-helman parameters).\n* `chain.pem` for nginx configuration (all three above combined).\n\nExample Dockerfile:\n\n```bash\nFROM klaemo/couchdb-ssl\n\nCOPY local.ini /usr/local/etc/couchdb/\nCOPY nginx.conf /etc/nginx/\nCOPY server.crt /etc/nginx/certs/\nCOPY server.key /etc/nginx/certs/\nCOPY dhparams.pem /etc/nginx/certs/\nCOPY chain.pem /etc/nginx/certs/\n```\n\nand then build and run it\n\n```bash\n$ [sudo] docker build -t you/awesome-couchdb .\n$ [sudo] docker run -d -p 5984:5984 -p 6984:6984 you/awesome-couchdb\n```\n\net voilá you have your own CouchDB instance with SSL support on port 6984.\n\n### Generate self-signed certificate\n\n[Heroku - Creating a Self-Signed SSL Certificate](https://devcenter.heroku.com/articles/ssl-certificate-self)\n\n```bash\n$ openssl genrsa -des3 -passout pass:x -out server.pass.key 2048\n$ openssl rsa -passin pass:x -in server.pass.key -out server.key\nwriting RSA key\n$ rm server.pass.key\n$ openssl req -new -key server.key -out server.csr\n...\nCountry Name (2 letter code) [AU]:\nState or Province Name (full name) [Some-State]:\n...\nA challenge password []:\n...\n$ openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt\nSignature ok\nsubject=/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=localhost\nGetting Private key\n```\n\n### Generate strong Diffie-Helman parameters\n\n```bash\n$ openssl dhparam -out dhparams.pem 2048\n```\n\n**NOTE**: For higher key size negotiation, you may wish to create a 4096 bit dhparams file.  Just change the number above.\n\n### Concatenate to chain.pem\n\nThe `chain.pem` file contains your SSL key, certificates and DH parameters.\n\nSpecifically, the following information:\n* The server's private key\n* The server's certificate (signing its private key)\n* (Optionally) Intermediate certificates\n* (Optionally, recommended) DH parameters\n\nTo create the PEM file, use something similar to the following:\n\n```sh\n$ cat server.key server.crt [intermediate_cert1.pem ...] dhparams.pem > chain.pem\n```\n\n## Credits\n\n* thanks @dscape for [this article](https://medium.com/code-adventures/35c45ce2a814)\n* [hynek.me](https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/)\n* [mozilla](https://wiki.mozilla.org/Security/Server_Side_TLS) for the resources on SSL/TLS configuration\n\n## Contributors\n\n* [Mirco Zeiss](https://github.com/zemirco)\n\n## License\n\nApache License 2.0\n",
+  "dockerfile": "FROM klaemo/couchdb:latest\n\nMAINTAINER Clemens Stolle klaemo@fastmail.fm\n\n# use nginx install installation from official dockerfile\n# https://github.com/nginxinc/docker-nginx/blob/master/Dockerfile\nENV NGINX_VERSION 1.9.9-1~jessie\n\nRUN apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62 \\\n && echo \"deb http://nginx.org/packages/mainline/debian/ jessie nginx\" >> /etc/apt/sources.list \\\n && apt-get update \\\n && apt-get install -y ca-certificates nginx=${NGINX_VERSION} gettext-base \\\n && rm -rf /var/lib/apt/lists/*\n\n# forward request and error logs to docker log collector\nRUN ln -sf /dev/stdout /var/log/nginx/access.log \\\n && ln -sf /dev/stderr /var/log/nginx/error.log\n\n# add config and dummy certificates for localhost\nCOPY nginx.conf /etc/nginx/\nCOPY server.crt /etc/nginx/certs/server.crt\nCOPY server.key /etc/nginx/certs/server.key\nCOPY dhparams.pem /etc/nginx/certs/dhparams.pem\n\n# create cert chain for OCSP\nRUN cd /etc/nginx/certs && cat server.key server.crt dhparams.pem > chain.pem\n\nCOPY entrypoint-nginx.sh /\n\nENTRYPOINT [\"/entrypoint-nginx.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62  && echo \"deb http://nginx.org/packages/mainline/debian/ jessie nginx\" >> /etc/apt/sources.list  && apt-get update  && apt-get install -y ca-certificates nginx=${NGINX_VERSION} gettext-base  && rm -rf /var/lib/apt/lists/*",
+      "ln -sf /dev/stdout /var/log/nginx/access.log  && ln -sf /dev/stderr /var/log/nginx/error.log",
+      "cd /etc/nginx/certs && cat server.key server.crt dhparams.pem > chain.pem"
+    ],
+    "workdir": [],
+    "from": "klaemo/couchdb:latest",
+    "maintainer": "Clemens Stolle klaemo@fastmail.fm",
+    "env": {
+      "NGINX_VERSION": "1.9.9-1~jessie"
+    },
+    "copy": "entrypoint-nginx.sh /",
+    "entrypoint": "[\"/entrypoint-nginx.sh\"]"
+  },
+  "source_repository_url": "git://github.com/klaemo/docker-couchdb-ssl.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/klaemo/docker-couchdb-ssl",
+  "docker_repository": "klaemo/couchdb-ssl",
+  "docker_image": "klaemo/couchdb-ssl",
+  "parameters_schema": {
+    "NGINX_VERSION": {
+      "default": "1.9.9-1~jessie",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "klaemo/couchdb-ssl",
+  "revision": "1.6",
+  "uris": [
+    "https://hub.docker.com/r/klaemo/couchdb-ssl",
+    "https://hub.docker.com/v2/repositories/klaemo/couchdb-ssl",
+    "git://github.com/klaemo/docker-couchdb-ssl.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Web Server/Nginx",
+    "Type/Middleware/Data Store/Document-oriented/CouchDB"
+  ],
+  "info_url": "https://hub.docker.com/r/klaemo/couchdb-ssl",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

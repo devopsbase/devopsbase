@@ -1,0 +1,100 @@
+{
+  "name": "postfix Juju charm",
+  "juju_charm_name": "postfix",
+  "revision": "cs:precise/postfix-2",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/postfix",
+    "https://jujucharms.com/postfix/precise",
+    "https://jujucharms.com/postfix/precise/2",
+    "https://api.jujucharms.com/v5/postfix",
+    "https://api.jujucharms.com/v5/precise/postfix",
+    "https://api.jujucharms.com/v5/precise/postfix-2"
+  ],
+  "labels": [
+    "Juju charm",
+    "applications",
+    "Binding/Provider/HP",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Email/Postfix"
+  ],
+  "info_url": "https://jujucharms.com/postfix",
+  "package_url": "https://api.jujucharms.com/v5/precise/postfix-2/archive",
+  "created": "2015-06-17T09:34:25.289Z",
+  "updated": "2015-06-17T09:34:25.289Z",
+  "description": "High-performance mail transport agent\n\nPostfix is Wietse Venema's mail transport agent that started life as an\nalternative to the widely-used Sendmail program.  Postfix attempts to\nbe fast, easy to administer, and secure, while at the same time being\nsendmail compatible enough to not upset existing users. Thus, the\noutside has a sendmail-ish flavor, but the inside is completely\ndifferent.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "precise",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= precise"
+    }
+  ],
+  "parameters": {
+    "cacert": {
+      "type": "string",
+      "description": "This is the cacert.pem file you generated. Should go as `cat ~/cacert.pem`",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "cakey": {
+      "type": "string",
+      "description": "This is the cakey.pem file you generated. Should go as `cat ~/cakey.pem`",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Your domain (what goes after the @)",
+      "default": "example.com",
+      "mapping": "charm_option"
+    },
+    "hostname": {
+      "type": "string",
+      "description": "The hostname you assigned for the server",
+      "default": "server1.example.com",
+      "mapping": "charm_option"
+    },
+    "rootuser": {
+      "type": "string",
+      "description": "The root username",
+      "default": "root",
+      "mapping": "charm_option"
+    },
+    "ssl-cert": {
+      "type": "string",
+      "description": "This is the SSL Certificate address on your system. Should go as `cat ~/smtpd.crt`",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "ssl-key": {
+      "type": "string",
+      "description": "This is the SSL Key address on your system. Should go as `cat ~/smtpd.key`",
+      "default": "",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/postfix",
+      "juju_interface": "postfix",
+      "juju_name": "mta",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "# Overview\n\nPostfix is Wietse Venema's mail transport agent that started life as an\nalternative to the widely-used Sendmail program. Postfix attempts to be fast,\neasy to administer, and secure, while at the same time being sendmail\ncompatible enough to not upset existing users. Thus, the outside has a\nsendmail-ish flavor, but the inside is completely different.\n\nThis charm will install the necessary packages, create the required\ncertificates, and fully deploy Postfix as a POP3 and SMTP server, so it is\nready to use.\n\nREMINDER: This charm does not include a configuration for a web interface.\n\n\n# Usage\n\nTo deploy Postfix, you first need to edit the config.yaml with your own\nconfiguration options. This is because some certificates will be created once\nto deploy the system, and they need to have your own values. Once you have done\nthat, you can run:\n\n    juju deploy --config config.yaml postfix\n\nonce the environment is bootstrapped, and the configuration file edited. To\nexpose the service, and open all the necessary ports for mail transport, do:\n\n    juju expose postfix\n\nonce the service has finished deploying.\n\n# Configuration\n\nTo configure the charm, you need to edit the config.yaml file that comes here,\nsetting the values to your current values. More information on the add-ssl and\noptions can be found on the config.yaml file itself.\n\n`hostname`: This is the hostname you assigned for the server, not the rDNS\n\n`domain`: This is the domain you will be using for the server (what, in the email address, goes after the @)\n\n`rootuser`: The root username (it is usually root or ubuntu)\n\n`ssl-key`: The SSL key on your system, which should be stated as `cat\n~/smtpd.key`\n\n`ssl-cert`: The SSL certificate on your system, which should be stated as `cat\n~/smtpd.crt`\n\n`cacert`: The cacert.pem file you generated on your system, which should be\nstated as `cat ~/cacert.pem`\n\n`cakey`: The cakey.pem file you generated on your system, which should be\nstated as `cat ~/cakey.pem`\n\n## Adding TLS/SSL support\n\nThis charm has Transport Socket Layer (TLS) and Secure Socket Layer (SSL)\nsupport. Even though this option is not necessary, it is highly recommended. To\nadd TLS/SSL support, just trigger the add-ssl hook. For this script to work you\nwill have to follow the instructions below for generating keys/certificates (in\ncase you do not have them yet) and placing them in the correct directories.\n\n## Generating the keys and certificates\n\nIn case you want to add TLS/SSL to this charm you will need to use keys and SSL\ncertificates. If you already have those done, please skip to the bottom of this\nstep, otherwise please follow this instructions.\n\nTo generate self-signed certificates, you need to issue the following commands\non a Terminal:\n\n    touch smtpd.key\n    chmod 600 smtpd.key\n    openssl genrsa 1024 > smtpd.key openssl req -new -key smtpd.key -x509 -days\n  3650 -out smtpd.crt\n    openssl req -new -x509 -extensions v3_ca -keyout cakey.pem -out cacert.pem\n  -days 3650\n\nPlease, note that the third and fourth commands have prompts you have to fill\nin with the correct information.\n\nOnce you have generated the certificates, you can go ahead and execute the\nfollowing command:\n\n    juju set postfix ssl-key=\"`cat ~/smtpd.key`\" ssl-cert=\"`cat ~/smtpd.crt`\"\n  cacert=\"`cat ~/cacert.pem`\" cakey=\"`~/cakey.pem`\"\n\n## Renewing the keys and certificates\n\nThe renewal of keys and SSL certificates can be done in the same way that you\nadded SSL support. Just re-run the following command, specifying the new\ncertificates and keys locations instead of the old ones:\n\n    juju set postfix ssl-key=\"`cat ~/smtpd.key`\" ssl-cert=\"`cat ~/smtpd.crt`\"\n  cacert=\"`cat ~/cacert.pem`\" cakey=\"`~/cakey.pem`\"\n\nOnce you do that, your keys and SSL certificates should be updated.\n\n# Contact Information\n\nAuthor: José Antonio Rey <jose@ubuntu.com>\nReport bugs at: http://bugs.launchpad.net/charms\nLocation: http://jujucharms.com\n",
+  "readme": "# Overview\n\nPostfix is Wietse Venema's mail transport agent that started life as an\nalternative to the widely-used Sendmail program. Postfix attempts to be fast,\neasy to administer, and secure, while at the same time being sendmail\ncompatible enough to not upset existing users. Thus, the outside has a\nsendmail-ish flavor, but the inside is completely different.\n\nThis charm will install the necessary packages, create the required\ncertificates, and fully deploy Postfix as a POP3 and SMTP server, so it is\nready to use.\n\nREMINDER: This charm does not include a configuration for a web interface.\n\n\n# Usage\n\nTo deploy Postfix, you first need to edit the config.yaml with your own\nconfiguration options. This is because some certificates will be created once\nto deploy the system, and they need to have your own values. Once you have done\nthat, you can run:\n\n    juju deploy --config config.yaml postfix\n\nonce the environment is bootstrapped, and the configuration file edited. To\nexpose the service, and open all the necessary ports for mail transport, do:\n\n    juju expose postfix\n\nonce the service has finished deploying.\n\n# Configuration\n\nTo configure the charm, you need to edit the config.yaml file that comes here,\nsetting the values to your current values. More information on the add-ssl and\noptions can be found on the config.yaml file itself.\n\n`hostname`: This is the hostname you assigned for the server, not the rDNS\n\n`domain`: This is the domain you will be using for the server (what, in the email address, goes after the @)\n\n`rootuser`: The root username (it is usually root or ubuntu)\n\n`ssl-key`: The SSL key on your system, which should be stated as `cat\n~/smtpd.key`\n\n`ssl-cert`: The SSL certificate on your system, which should be stated as `cat\n~/smtpd.crt`\n\n`cacert`: The cacert.pem file you generated on your system, which should be\nstated as `cat ~/cacert.pem`\n\n`cakey`: The cakey.pem file you generated on your system, which should be\nstated as `cat ~/cakey.pem`\n\n## Adding TLS/SSL support\n\nThis charm has Transport Socket Layer (TLS) and Secure Socket Layer (SSL)\nsupport. Even though this option is not necessary, it is highly recommended. To\nadd TLS/SSL support, just trigger the add-ssl hook. For this script to work you\nwill have to follow the instructions below for generating keys/certificates (in\ncase you do not have them yet) and placing them in the correct directories.\n\n## Generating the keys and certificates\n\nIn case you want to add TLS/SSL to this charm you will need to use keys and SSL\ncertificates. If you already have those done, please skip to the bottom of this\nstep, otherwise please follow this instructions.\n\nTo generate self-signed certificates, you need to issue the following commands\non a Terminal:\n\n    touch smtpd.key\n    chmod 600 smtpd.key\n    openssl genrsa 1024 > smtpd.key openssl req -new -key smtpd.key -x509 -days\n  3650 -out smtpd.crt\n    openssl req -new -x509 -extensions v3_ca -keyout cakey.pem -out cacert.pem\n  -days 3650\n\nPlease, note that the third and fourth commands have prompts you have to fill\nin with the correct information.\n\nOnce you have generated the certificates, you can go ahead and execute the\nfollowing command:\n\n    juju set postfix ssl-key=\"`cat ~/smtpd.key`\" ssl-cert=\"`cat ~/smtpd.crt`\"\n  cacert=\"`cat ~/cacert.pem`\" cakey=\"`~/cakey.pem`\"\n\n## Renewing the keys and certificates\n\nThe renewal of keys and SSL certificates can be done in the same way that you\nadded SSL support. Just re-run the following command, specifying the new\ncertificates and keys locations instead of the old ones:\n\n    juju set postfix ssl-key=\"`cat ~/smtpd.key`\" ssl-cert=\"`cat ~/smtpd.crt`\"\n  cacert=\"`cat ~/cacert.pem`\" cakey=\"`~/cakey.pem`\"\n\nOnce you do that, your keys and SSL certificates should be updated.\n\n# Contact Information\n\nAuthor: José Antonio Rey <jose@ubuntu.com>\nReport bugs at: http://bugs.launchpad.net/charms\nLocation: http://jujucharms.com\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

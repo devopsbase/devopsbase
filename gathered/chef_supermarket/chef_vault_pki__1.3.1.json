@@ -1,0 +1,59 @@
+{
+  "name": "chef_vault_pki Chef cookbook",
+  "chef_cookbook_name": "chef_vault_pki",
+  "revision": "1.3.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/chef_vault_pki",
+    "https://supermarket.chef.io/cookbooks/chef_vault_pki/download",
+    "https://supermarket.chef.io/cookbooks/chef_vault_pki/versions/1.3.1",
+    "https://supermarket.chef.io/cookbooks/chef_vault_pki/versions/1.3.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/chef_vault_pki/versions/1.3.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/chef_vault_pki",
+    "https://supermarket.chef.io/api/v1/cookbooks/chef_vault_pki/versions/1.3.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/chef_vault_pki",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/chef_vault_pki/versions/1.3.1/download",
+  "deprecated": false,
+  "created": "2014-04-16T13:12:47.000Z",
+  "updated": "2014-09-09T15:11:07.732Z",
+  "description": "Uses chef-vault to provide an easy-to-manage Public Key Infrastructure (PKI) for servers managed by Chef.",
+  "maintainer": {
+    "name": "zeroxten",
+    "email": "fraser.scott@gmail.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 14849940,
+  "downloads_count_revision": 1211789,
+  "repository_url": "https://github.com/zeroXten/chef_vault_pki",
+  "issues_url": "https://github.com/zeroXten/chef_vault_pki",
+  "chef_source_url": "https://github.com/zeroXten/chef_vault_pki",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# chef\\_vault\\_pki cookbook\n\nUses chef-vault to provide an easy-to-manage Public Key Infrastructure (PKI) for servers managed by Chef.\n\nInstead of having to manage and secure a CA, chef\\_vault\\_pki lets you generate a CA cert and key which is then stored and secured using chef-vault. Authorised clients can then obtain the CA cert and key, and automatically generate and sign their certificates.\n\n# Requirements\n\nDepends on [chef-vault](http://community.opscode.com/cookbooks/chef-vault) and [sensu\\_spec](http://community.opscode.com/cookbooks/sensu_spec) cookbooks.\n\n# Usage\n\n## Creating a CA\n\nInstall the [chef-vault-pki](https://github.com/zeroXten/chef-vault-pki) command on your workstation.\n\nInstall the gem:\n\n    $ gem install chef-vault-pki\n\nRunning chef-vault-pki will generate a CA certificate and key, and will output the PEMs as JSON by default. We pass this directly to chef-vault to create an encrypted data bag.\n\n    $ chef-vault-pki | knife vault create chef_vault_pki chef_vault_pki_ca -J /dev/stdin --search 'role:base' --admins admin-user\n\nWe can see chef-vault created the data bag as required.\n\n    $ ls data_bags/chef_vault_pki/\n    chef_vault_pki_ca.json    chef_vault_pki_ca_keys.json\n\nSee the chef-vault documentation for more information on managing data bags encrypted with chef-vault.\n\n## Using chef\\_vault\\_pki in a recipe\n\nchef\\_vault\\_pki provides an LWRP that can be used in your cookbooks. To use it, add this to your cookbook's metadata.rb\n\n    depends 'chef_vault_pki'\n\nThen install with `berks install`.\n\nBasic usage will use the defaults set in attributes (see below):\n\n    chef_vault_pki node.name\n\nNote that the name has spaces automatically converted to underscores (\\_).\n\nMaybe you need make things a little more specifc:\n\n    chef_vault_pki \"sensu_#{node.name}\"\n\nOr even override the default attributes:\n\n    chef_vault_pki \"sensu_#{node.name}\" do\n      ca 'sensu_ca'\n      path '/opt/chef_vault_pki'\n      owner 'sensu'\n      group 'sensu'\n      public_mode 0644\n      private_mode 0600\n      bundle_ca true\n    end\n\nThis final example will create three files in `/opt/chef_vault_pki`:\n\n* `sensu_NODENAME.crt` (uses public\\_mode)\n* `sensu_NODENAME.key` (uses private\\_mode)\n* `sensu_ca.crt` (uses public\\_mode)\n\nThese files can then be used by applications requiring a TLS PKI.\n\nYou can get the certificates of other nodes using a search. E.g. for the above sensu\\_ca client we might have:\n\n    certs = search(:node, \"name:*\").first['chef_vault_pki']['certs']['sensu_ca']\n\n# Security\n\nThis approach to managing a PKI isn't suitable for many situations. The generated CA private key is basically treated as a shared key or password between all authorised (through chef-vault) clients.\n\nIt is assumes you that trust all clients and the workstation that created the CA. It also assumes you trust chef-vault.\n\nBecause it treats the CA key as a shared key, you cannot revoke a certificate in the traditonal sense. In the same way that a shared password compromise requires the password to be changed everywhere, so it is with chef\\_vault\\_pki. However, updating the CA key is as simple as re-creating the data bag using the `chef-vault-pki` and `chef-vault` commands as above. All nodes will automatically detect the CA has changed and will generate new certificates during their next run.\n\nIf you want to regenerate a certificate for a client, just delete the CA certificate file on the file system. This will make the client think the CA has changed and so will regenerate all the files.\n\n# Attributes\n\nAttributes are used to set the defaults for the chef\\_vault\\_pki resource. This allows you to override values per resource, or for the node.\n\nSee `attributes/default.rb` for defaults.\n\n* `node['chef_vault_pki']['data_bag']` - name of the chef\\_vault data bag\n* `node['chef_vault_pki']['ca']` - name of the CA\n* `node['chef_vault_pki']['expires']` - certificate expiry period (in days by default)\n* `node['chef_vault_pki']['expires_factor']` - used to calculate the period (a day by default)\n* `node['chef_vault_pki']['key_size']` - key size to use\n* `node['chef_vault_pki']['path']` - where generated certs etc go (managed by Chef)\n* `node['chef_vault_pki']['path_mode']` - permissions of the path\n* `node['chef_vault_pki']['path_recursive']` - recursively create the path\n* `node['chef_vault_pki']['owner']` - file and path owner\n* `node['chef_vault_pki']['group']` - file and path group\n* `node['chef_vault_pki']['public_mode']` - permissions of public files (e.g. certs)\n* `node['chef_vault_pki']['private_mode']` - permissions of private files (e.g. keys)\n* `node['chef_vault_pki']['bundle_ca']` - this bundles the ca cert with the client cert\n* `node['chef_vault_pki']['standalone']` - doesn't attempt to read the ca from chef-vault, but generates on instead (e.g. for testing)\n\nGenerated client certs are added to the node attributes:\n\n* `node['chef_vault_pki']['certs'][CA_NAME][CERT_NAME] = CERT`\n\n# Recipes\n\n* `chef_vault_pki::test` - used by test-kitchen\n\n# Contributing\n\n1. Fork it\n2. Create your feature branch (`git checkout -b my-new-feature`)\n3. Commit your changes (`git commit -am 'Add some feature'`)\n4. Push to the branch (`git push origin my-new-feature`)\n5. Create new Pull Request\n\n# Author\n\nzeroXten - fraser.scott@gmail.com\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/sensu_spec",
+      "revision": "~> 0.4",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": "~> 2.3",
+      "self_resolve": true
+    }
+  ]
+}

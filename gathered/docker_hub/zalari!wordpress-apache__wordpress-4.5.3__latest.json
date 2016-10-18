@@ -1,0 +1,259 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/zalari/wordpress-apache",
+    "repository_url": "https://hub.docker.com/v2/repositories/zalari/wordpress-apache",
+    "tags_url": "https://hub.docker.com/v2/repositories/zalari/wordpress-apache/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/zalari/wordpress-apache/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/zalari/wordpress-apache/autobuild",
+    "user": "zalari",
+    "name": "wordpress-apache",
+    "namespace": "zalari",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 120,
+    "last_updated": "2016-06-29T11:53:19.004657Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "wordpress-4.5.3",
+        "full_size": 185102906,
+        "id": 3632671,
+        "repository": 387059,
+        "creator": 418725,
+        "last_updater": 418725,
+        "last_updated": "2016-06-29T11:53:18.671421Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 185102914,
+        "id": 1265570,
+        "repository": 387059,
+        "creator": 459295,
+        "last_updater": 418725,
+        "last_updated": "2016-06-29T11:47:53.403479Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "wordpress-4.5.2",
+        "full_size": 185013375,
+        "id": 3065986,
+        "repository": 387059,
+        "creator": 418725,
+        "last_updater": 418725,
+        "last_updated": "2016-05-18T12:24:15.414815Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "wordpress-4.5",
+        "full_size": 185004139,
+        "id": 2694712,
+        "repository": 387059,
+        "creator": 418725,
+        "last_updater": 418725,
+        "last_updated": "2016-05-18T12:17:50.487252Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "wordpress-4.4.2",
+        "full_size": 184357438,
+        "id": 2005195,
+        "repository": 387059,
+        "creator": 418725,
+        "last_updater": 418725,
+        "last_updated": "2016-02-15T14:08:19.109113Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "zalari/docker-wordpress-apache"
+  },
+  "name": "zalari/wordpress-apache Docker container",
+  "description": "Yet another wordpress docker container, with ssmtp pre-installed.",
+  "readme": "# docker-wordpress-apache\nApachePHP-based docker container for running Wordpress with ssmtp enabled...\n",
+  "dockerfile": "# from https://wordpress.org/about/requirements/\nFROM php:5.6-apache\n\nMAINTAINER  David Enke <david.enke@zalari.de>\nENV REFRESHED_AT 2016-06-29\nENV CONTAINER_VERSION 0.1.4\n\nRUN a2enmod rewrite\n\n#no frontend, otherwise ssmtp install fails...\nENV DEBIAN_FRONTEND noninteractive\n\n# install the PHP extensions we need + SSMTP\nRUN apt-get update && apt-get install -y libpng12-dev libjpeg-dev libpq-dev ssmtp \\\n\t&& rm -rf /var/lib/apt/lists/* \\\n\t&& docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \\\n\t&& docker-php-ext-install gd mbstring pdo pdo_mysql pdo_pgsql mysqli\n\n#execute apache2-foreground as the PHP image does\n#(we only needed to install the MySQL extension after all)\nCMD [\"apache2-foreground\"]\n\n#setup php.ini to allow for sending via ssmtp\nRUN echo \"[mail function]\" >> /usr/local/etc/php/php.ini && \\\n\techo \"sendmail_path = /usr/sbin/ssmtp -t\" >> /usr/local/etc/php/php.ini && \\\n\tapache2ctl restart\n\nWORKDIR /var/www/html\n\n# https://de.wordpress.org/releases/\nENV WP_VERSION 4.5.3\nENV WP_LOCALE de_DE\nENV WP_MD5 81a23442557a53366b8926b64f206d63\n\nRUN curl -fSL \"https://de.wordpress.org/wordpress-${WP_VERSION}-${WP_LOCALE}.tar.gz\" -o wp.tar.gz \\\n\t&& echo \"${WP_MD5} *wp.tar.gz\" | md5sum -c - \\\n\t&& tar -xz --strip-components=1 -f wp.tar.gz \\\n\t&& rm wp.tar.gz \\\n\t&& chown -R www-data:www-data .\n\n#setup ssmtp ENVs defaults\nENV SMTP_MAILHOST localhost\nENV SMTP_PORT 25\nENV SMTP_USER user\nENV SMTP_PASS pass\nENV SMTP_USE_TLS No\nENV SMTP_USE_TLS_CERTS No\nENV SMTP_FROM_OVERRIDE Yes\nENV SMTP_USE_STARTTLS No\nENV SMTP_ROOT root@localhost\nENV SMTP_HOSTNAME wordpress.zz\n\n#allow running apache as root, to circumvent docker-host-sharing-file-ownership-madness\nENV CHANGE_USER_ID No\nENV WWW_DATA_USER_ID 1000\n\n#configure ssmtp by creating a new conf on run, generated from ENVs\nCOPY setup_ssmtp_run_apache.sh /usr/local/bin/\nCMD [\"setup_ssmtp_run_apache.sh\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "a2enmod rewrite",
+      "apt-get update && apt-get install -y libpng12-dev libjpeg-dev libpq-dev ssmtp \t&& rm -rf /var/lib/apt/lists/* \t&& docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \t&& docker-php-ext-install gd mbstring pdo pdo_mysql pdo_pgsql mysqli",
+      "echo \"[mail function]\" >> /usr/local/etc/php/php.ini && \techo \"sendmail_path = /usr/sbin/ssmtp -t\" >> /usr/local/etc/php/php.ini && \tapache2ctl restart",
+      "curl -fSL \"https://de.wordpress.org/wordpress-${WP_VERSION}-${WP_LOCALE}.tar.gz\" -o wp.tar.gz \t&& echo \"${WP_MD5} *wp.tar.gz\" | md5sum -c - \t&& tar -xz --strip-components=1 -f wp.tar.gz \t&& rm wp.tar.gz \t&& chown -R www-data:www-data ."
+    ],
+    "workdir": [
+      "/var/www/html"
+    ],
+    "from": "php:5.6-apache",
+    "maintainer": " David Enke <david.enke@zalari.de>",
+    "env": {
+      "REFRESHED_AT": "2016-06-29",
+      "CONTAINER_VERSION": "0.1.4",
+      "DEBIAN_FRONTEND": "noninteractive",
+      "WP_VERSION": "4.5.3",
+      "WP_LOCALE": "de_DE",
+      "WP_MD5": "81a23442557a53366b8926b64f206d63",
+      "SMTP_MAILHOST": "localhost",
+      "SMTP_PORT": "25",
+      "SMTP_USER": "user",
+      "SMTP_PASS": "pass",
+      "SMTP_USE_TLS": "No",
+      "SMTP_USE_TLS_CERTS": "No",
+      "SMTP_FROM_OVERRIDE": "Yes",
+      "SMTP_USE_STARTTLS": "No",
+      "SMTP_ROOT": "root@localhost",
+      "SMTP_HOSTNAME": "wordpress.zz",
+      "CHANGE_USER_ID": "No",
+      "WWW_DATA_USER_ID": "1000"
+    },
+    "cmd": "[\"setup_ssmtp_run_apache.sh\"]",
+    "copy": "setup_ssmtp_run_apache.sh /usr/local/bin/"
+  },
+  "source_repository_url": "https://github.com/zalari/docker-wordpress-apache.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/zalari/docker-wordpress-apache",
+  "docker_repository": "zalari/wordpress-apache",
+  "docker_image": "zalari/wordpress-apache",
+  "parameters_schema": {
+    "REFRESHED_AT": {
+      "default": "2016-06-29",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CONTAINER_VERSION": {
+      "default": "0.1.4",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WP_VERSION": {
+      "default": "4.5.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WP_LOCALE": {
+      "default": "de_DE",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WP_MD5": {
+      "default": "81a23442557a53366b8926b64f206d63",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SMTP_MAILHOST": {
+      "default": "localhost",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SMTP_PORT": {
+      "default": "25",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SMTP_USER": {
+      "default": "user",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SMTP_PASS": {
+      "default": "pass",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SMTP_USE_TLS": {
+      "default": "No",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SMTP_USE_TLS_CERTS": {
+      "default": "No",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SMTP_FROM_OVERRIDE": {
+      "default": "Yes",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SMTP_USE_STARTTLS": {
+      "default": "No",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SMTP_ROOT": {
+      "default": "root@localhost",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SMTP_HOSTNAME": {
+      "default": "wordpress.zz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CHANGE_USER_ID": {
+      "default": "No",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "WWW_DATA_USER_ID": {
+      "default": "1000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "zalari/wordpress-apache",
+  "revision": "wordpress-4.5.3",
+  "uris": [
+    "https://hub.docker.com/r/zalari/wordpress-apache",
+    "https://hub.docker.com/v2/repositories/zalari/wordpress-apache",
+    "https://github.com/zalari/docker-wordpress-apache.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/zalari/wordpress-apache",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

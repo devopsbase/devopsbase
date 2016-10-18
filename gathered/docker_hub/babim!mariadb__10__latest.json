@@ -1,0 +1,176 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/babim/mariadb",
+    "repository_url": "https://hub.docker.com/v2/repositories/babim/mariadb",
+    "tags_url": "https://hub.docker.com/v2/repositories/babim/mariadb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/babim/mariadb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/babim/mariadb/autobuild",
+    "user": "babim",
+    "name": "mariadb",
+    "namespace": "babim",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 506,
+    "last_updated": "2016-05-07T08:58:24.089055Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "10",
+        "full_size": 139226984,
+        "id": 1567338,
+        "repository": 445268,
+        "creator": 141627,
+        "last_updater": 141627,
+        "last_updated": "2016-05-07T08:58:22.706522Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "10.1",
+        "full_size": 152831411,
+        "id": 1551595,
+        "repository": 445268,
+        "creator": 141627,
+        "last_updater": 141627,
+        "last_updated": "2016-05-07T08:47:31.463443Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "5.5",
+        "full_size": 141338600,
+        "id": 1566929,
+        "repository": 445268,
+        "creator": 141627,
+        "last_updater": 141627,
+        "last_updated": "2016-04-22T06:13:46.075543Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "10.ssh",
+        "full_size": 143837344,
+        "id": 1567349,
+        "repository": 445268,
+        "creator": 141627,
+        "last_updater": 141627,
+        "last_updated": "2016-04-22T06:11:39.364013Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "5.5.ssh",
+        "full_size": 138605694,
+        "id": 1575745,
+        "repository": 445268,
+        "creator": 141627,
+        "last_updater": 141627,
+        "last_updated": "2016-04-22T06:10:08.652389Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "10.1.ssh",
+        "full_size": 155809230,
+        "id": 1568894,
+        "repository": 445268,
+        "creator": 141627,
+        "last_updater": 141627,
+        "last_updated": "2016-01-31T16:18:50.557466Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "babim/docker-ubuntu-mariadb"
+  },
+  "name": "babim/mariadb Docker container",
+  "description": "docker-ubuntu-mariadb",
+  "readme": "# Setting a specific password for the admin account\nThe first time that you run your container, a new user admin with all privileges will be created in MariaDB with a random password. To get the password, check the logs of the container by running:\n\n    docker logs <CONTAINER_ID>\n\nYou will see an output like the following:\n\n    ========================================================================\n    You can now connect to this MariaDB Server using:\n\n        mysql -uadmin -pxVN33tWOhM3u -h<host> -P<port>\n\n    Please remember to change the above password as soon as possible!\n    MariaDB user 'root' has no password but only allows local connections\n    ========================================================================\n\nIn this case, xVN33tWOhM3u is the password assigned to the admin user.\n\nIf you want to use a preset password instead of a random generated one, you can set the environment variable MARIADB_PASS to your specific password when running the container:\n\n    docker run -d -p 3306:3306 -e MARIADB_PASS=\"mypass\" babim/mariadb\n",
+  "dockerfile": "FROM babim/ubuntubase\n\nENV DEBIAN_FRONTEND noninteractive\n\nRUN apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8 && \\\n    echo 'deb http://mariadb.biz.net.id/repo/10.0/ubuntu xenial main' >> /etc/apt/sources.list && \\\n    echo 'deb-src http://mariadb.biz.net.id/repo/10.0/ubuntu xenial main' >> /etc/apt/sources.list && \\\n    apt-get update && \\\n    apt-get install -y mariadb-server pwgen && \\\n    rm -rf /var/lib/mysql/* && \\\n    apt-get clean && \\\n    rm -rf /var/lib/apt/lists/*\n\n#change bind address to 0.0.0.0\nRUN sed -i -r 's/bind-address.*$/bind-address = 0.0.0.0/' /etc/mysql/my.cnf\n#change to disable bind-address\n#RUN sed -i 's/^\\(bind-address\\s.*\\)/# \\1/' /etc/mysql/my.cnf\n\nADD create_mariadb_admin_user.sh /create_mariadb_admin_user.sh\nADD run.sh /run.sh\nRUN chmod 775 /*.sh\n\n# Add VOLUMEs to allow backup of config and databases\nVOLUME  [\"/etc/mysql\", \"/var/lib/mysql\"]\n\nEXPOSE 3306\nCMD [\"/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "create_mariadb_admin_user.sh",
+        "dest": "/create_mariadb_admin_user.sh"
+      },
+      {
+        "source": "run.sh",
+        "dest": "/run.sh"
+      }
+    ],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      " [\"/etc/mysql\", \"/var/lib/mysql\"]"
+    ],
+    "run": [
+      "apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8 &&     echo 'deb http://mariadb.biz.net.id/repo/10.0/ubuntu xenial main' >> /etc/apt/sources.list &&     echo 'deb-src http://mariadb.biz.net.id/repo/10.0/ubuntu xenial main' >> /etc/apt/sources.list &&     apt-get update &&     apt-get install -y mariadb-server pwgen &&     rm -rf /var/lib/mysql/* &&     apt-get clean &&     rm -rf /var/lib/apt/lists/*",
+      "sed -i -r 's/bind-address.*$/bind-address = 0.0.0.0/' /etc/mysql/my.cnf",
+      "chmod 775 /*.sh"
+    ],
+    "workdir": [],
+    "from": "babim/ubuntubase",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/babim/docker-ubuntu-mariadb.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/babim/docker-ubuntu-mariadb",
+  "docker_repository": "babim/mariadb",
+  "docker_image": "babim/mariadb",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "babim/mariadb",
+  "revision": "10",
+  "uris": [
+    "https://hub.docker.com/r/babim/mariadb",
+    "https://hub.docker.com/v2/repositories/babim/mariadb",
+    "https://github.com/babim/docker-ubuntu-mariadb.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/babim/mariadb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

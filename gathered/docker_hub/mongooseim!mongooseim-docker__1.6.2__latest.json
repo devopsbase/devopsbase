@@ -1,0 +1,200 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mongooseim/mongooseim-docker",
+    "repository_url": "https://hub.docker.com/v2/repositories/mongooseim/mongooseim-docker",
+    "tags_url": "https://hub.docker.com/v2/repositories/mongooseim/mongooseim-docker/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mongooseim/mongooseim-docker/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mongooseim/mongooseim-docker/autobuild",
+    "user": "mongooseim",
+    "name": "mongooseim-docker",
+    "namespace": "mongooseim",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 9,
+    "pull_count": 21289,
+    "last_updated": "2016-02-26T09:44:50.940965Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1.6.2",
+        "full_size": 330601487,
+        "id": 2126624,
+        "repository": 97717,
+        "creator": 168367,
+        "last_updater": 168367,
+        "last_updated": "2016-02-26T09:44:50.456699Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 330601599,
+        "id": 106670,
+        "repository": 97717,
+        "creator": 168367,
+        "last_updater": 168367,
+        "last_updated": "2016-02-26T09:14:05.809534Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest_stable",
+        "full_size": 292161261,
+        "id": 1808963,
+        "repository": 97717,
+        "creator": 168367,
+        "last_updater": 168367,
+        "last_updated": "2016-01-24T16:39:54.582589Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.6.1",
+        "full_size": 307341138,
+        "id": 1505362,
+        "repository": 97717,
+        "creator": 168367,
+        "last_updater": 168367,
+        "last_updated": "2015-12-08T10:46:38.512724Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "master_branch",
+        "full_size": 307340822,
+        "id": 106694,
+        "repository": 97717,
+        "creator": 168367,
+        "last_updater": 168367,
+        "last_updated": "2015-12-08T10:46:32.130221Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.6.0",
+        "full_size": 305424758,
+        "id": 1140102,
+        "repository": 97717,
+        "creator": 168367,
+        "last_updater": 168367,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "1.5.1",
+        "full_size": 291789602,
+        "id": 106634,
+        "repository": 97717,
+        "creator": 168367,
+        "last_updater": 168367,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "ppikula/mongooseim-docker"
+  },
+  "name": "mongooseim/mongooseim-docker Docker container",
+  "description": "MongooseIM server the latest stable version ",
+  "readme": "# mongooseim-docker\n\nMongooseIM server stable version ([other versions](#other-versions))\n\nMongooseIM is Erlang Solutions' robust and efficient XMPP server aimed at large installations. Specifically designed for enterprise purposes, it is fault-tolerant, can utilize resources of multiple clustered machines and easily scale in need of more capacity (by just adding a box/VM). It provides support for WebSockets and reimplemented BOSH.\n\nIts home at GitHub is http://github.com/esl/MongooseIM.\n\n## Exposed ports\n\n* 4369 - epmd - erlang port mapper daemon\n* 5222 - xmpp port\n* 5280 - rest endpoint\n* 5269 - port for the s2s communication\n* 9100 - port for distributed erlang\n\n## Volumes\n\n* `/data/log` - mongooseim logs directory (logs are also available via `docker logs CONTAINER_NAME`\n* `/data/mnesia` - mnesia directory. It contains Mnesia.mongoose@hostname directory\n\n## Usage\n\n### Start single node\n\nTo start an interactive session and map the XMPP port to the host:\n\n`$ docker run -i -t -p 5222:5222  mongooseim/mongooseim-docker live`\n\nTo start MongooseIM in the background (logs are available via `docker logs CONTAINER_NAME`).\n\n`$ docker run -d -t  -p 5222:5222 mongooseim/mongooseim-docker`\n\nNote the -t option also for the background case, without it\nthe `mongooseim debug` shell won't be able to attach to running MongooseIM.\n\nTo attach the menstioned debug shell to already running node use:\n\n`$ docker exec -it CONTAINER_NAME mongooseimctl debug`\n\nwhere CONTAINER_NAME can be obtained via `docker ps` or by explicitly specifing\nit using the `--name` option during `docker run`.\n\nActually with the `docker exec` command you can do any mongoosectl command for example\nwe can  register a new user:\n\n`$ docker exec -it CONTAINER_NAME mongooseimctl mongooseimctl register pawel localhost test`\n\n### Create cluster of the MongooseIM nodes using docker links\n\nTo be able to create a MongooseIM cluster you need to set the hostname for\nthe containers. Based on the hostname the `start.sh` script will start a node with\nthe following sname `mongooseim@HOSTNAME`.\n\nThen, to create a cluster, you first need to start an initial node:\n\n`$ docker run -d -t -h mim1 --name mim1 mongooseim/mongooseim-docker `\n\nsname of initial node will be `mongooseim@mim1`. To start the next node and make\nit part of the existing cluster you need to add the `--link` option and set the\n`CLUSTER_WITH` env variable:\n\n`$ docker run -d -t -h mim2 --name mim2 --link mim1:mim1 -e CLUSTER_WITH=mim1 mongooseim/mongooseim-docker `\n\nIn this example we started a new node with sname: `mognooseim@mim2`\nwhich will join the cluster to which mim1 belongs.  Note that link name\nand CLUSTER_WITH *must* match the hostname of initial node.\nIt wouldn't work if set in the following way:\n\n`--link mim1:my_initial_node` and `-e CLUSTER_WITH=my_initial_node_name`.\n\nIn this case the IP address will be resolved correctly but it won't match\nsname of the CLUSTER_WITH host - as a result nodes won't be able to cluster.\n\n### Create cluster of the MongooseIM nodes - multihost setup\n\nClustering setup presented in the previous section only makes sense if all containers are on the same on the same \nnode. Otherwise, we won't be able to use links mechanism without extra work(ambassador pattern etc.). The situation is not as bad as it seems to be, the only thing we need to change is switch from `--link` to proper `--add-host` options which adds required entries to the `/etc/hosts` file,  Additionally we need to make sure, that we have exposed and forwarded all required ports, which are:\n* 4369 - for erlang port mapper daemon\n* 9100 - for actual cluster connections\n\nIt was not an issue in the previous case, because by default all ports in the \"docker network\" are open, so containers are able to talk to each other using them. \nBelow is a sample Vagrant file, which shows how to do that with 2 hosts. See the Mongoose documentation for more details about clustering: http://mongooseim.readthedocs.org/en/latest/operation-and-maintenance/Cluster-configuration-and-node-management/.\n\nThe Vagrant file has been taken from the issue [#3](https://github.com/ppikula/mongooseim-docker/issues/3) Thanks [oli-g](https://github.com/oli-g)!\n\n```ruby\n# -*- mode: ruby -*-\n# vi: set ft=ruby :\n\nHOSTS = [\n  { name: \"mongooseim-1\", ip: \"192.168.200.2\", master: true },\n  { name: \"mongooseim-2\", ip: \"192.168.200.3\" }\n]\n\nVagrant.configure(2) do |config|\n  config.vm.box = \"ubuntu/trusty64\"\n\n  HOSTS.each do |host|\n    config.vm.define host[:name] do |node|\n      node.vm.hostname = \"#{host[:name]}-host\"\n      node.vm.network \"private_network\", ip: host[:ip]\n\n      node.vm.provider \"virtualbox\" do |v|\n        v.name = \"#{host[:name]}-vm\"\n        v.cpus = 1\n        v.memory = 512\n      end\n\n      if host[:master]\n        node.vm.provision \"docker\", version: \"1.7.1\" do |d|\n          d.run \"mongooseim/mongooseim-docker\",\n            daemonize: true,\n            auto_assign_name: false,\n            args: \"-t -p 5222:5222 -p 5280:5280 -p 5269:5269 -p 4369:4369 -p 9100:9100 -h #{host[:name]} --name #{host[:name]}\"\n        end\n      end\n\n      if !host[:master]\n        master = HOSTS.find { |h| h[:master] }\n        node.vm.provision \"docker\", version: \"1.7.1\" do |d|\n          d.run \"mongooseim/mongooseim-docker\",\n            daemonize: true,\n            auto_assign_name: false,\n            args: \"-t -p 5222:5222 -p 5280:5280 -p 5269:5269 -p 4369:4369 -p 9100:9100 -h #{host[:name]} --name #{host[:name]} --add-host #{master[:name]}:#{master[:ip]} -e CLUSTER_WITH=#{master[:name]}\"\n        end\n      end\n\n      node.vm.provision \"shell\", inline: %q{usermod -a -G docker vagrant}\n      node.vm.provision \"shell\", inline: %q{ps aux | grep 'sshd:' | awk '{print $2}' | xargs kill}\n    end\n  end\nend\n```\n\n## Change configuration\n\nThe best way to replace the default config file is to create a new image that uses\n`mongooseim/mongooseim-docker` as a base image and just replace the config file\nwith the ADD command. Moreover this approach allows you to update any MongooseIM file.\n\nFor example new Dockerfile might look like this (assuming that ejabberd.cfg is present in the\ncurrent directory:\n\n```\nFROM mongooseim/mongooseim-docker\n\nADD ./ejabberd.cfg  /opt/mongooseim/rel/mongooseim/etc/ejabberd.cfg\n```\n\nThere is also a way that doesn't require creating, so  we should be\nable to mount the given file with `-v option`:\n\n```\ndocker run -v `pwd`/ejabberd.cfg:/opt/mongooseim/rel/mongooseim/etc/ejabberd.cfg mongooseim/mongooseim-docker`\n```\n\nTo get the default config you need to run a container and then use the `docker cp`\ncommand to copy it from container or just take it from https://github.com/esl/MongooseIM/blob/master/rel/files/ejabberd.cfg (remember to select correct branch!)\n\n## Persistent data\n\nThere are two volumes that one might want to persist or share between image upgrades:\n\n* `/data/log`\n* `/data/mnesia`\n\nTo bind a volume you can use -v option:\n\n```\ndocker run -td -h mim1 -v `pwd`/mnesia:/data/mnesia -v `pwd`/log:/data/log --name mim1 mongooseim/mongooseim-docker\n```\n\nIt will start a MongooseIM instance and it will bind the mnesia dir and log directory\nto the `mnesia` and `log` dir in the current working dir.\n\nThe mnesia directory will look like this:\n\n```\nls -l mnesia\ndrwxr-xr-x  16 pawel.pikula  staff  544 May 25 16:05 Mnesia.mongooseim@mim1\ndrwxr-xr-x  16 pawel.pikula  staff  544 May 25 16:05 Mnesia.mongooseim@mim2\n```\n\nAs a result it is possible to use one volume for all instances, but in case of\nthe log directory the log files are saved directly in that directory:\n\n```\nls -la log\n-rw-r--r--   1 pawel.pikula  staff    0 May 25 16:02 crash.log\n-rw-r--r--   1 pawel.pikula  staff  472 May 25 16:02 ejabberd.log\n```\n\nOf course we can use data containers instead of our local filesystem. Look at\nhttps://docs.docker.com/userguide/dockervolumes/ for more details.\n\n## Other versions\n\nFor the different versions of MongooseIM check the tags tab:\nhttps://registry.hub.docker.com/u/mongooseim/mongooseim-docker/tags/manage/\n\nIn case you need a different version you have to fork and edit Dockerfile and change `MONGOOSEIM_VERSION` to desired branch/tag and then build a new image.\n\n",
+  "dockerfile": "FROM ubuntu:14.04\nMAINTAINER Pawel Pikula <pawel.pikula@erlang-solutions.com>\n\nENV HOME /opt/mongooseim\nENV MONGOOSEIM_VERSION 1.6.2\nENV MONGOOSEIM_REL_DIR /opt/mongooseim/rel/mongooseim\nENV PATH /opt/mongooseim/rel/mongooseim/bin/:$PATH\n\n# install required packages\nRUN apt-get update && apt-get install -y   wget \\\n                                           git \\\n                                           make \\\n                                           gcc \\\n                                           libc6-dev \\\n                                           libncurses5-dev \\\n                                           libssl-dev \\\n                                           libexpat1-dev \\\n                                           libpam0g-dev\n\n# add esl packages\nRUN wget https://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb \\\n    && dpkg -i erlang-solutions_1.0_all.deb \\\n    && wget http://packages.erlang-solutions.com/debian/erlang_solutions.asc\\\n    && apt-key add erlang_solutions.asc \\\n    && apt-get update \\\n    && apt-get install -y esl-erlang=1:17.5\n\n# install mim from source\nRUN git clone https://github.com/esl/MongooseIM.git -b $MONGOOSEIM_VERSION /opt/mongooseim \\\n    && cd /opt/mongooseim \\\n    && make configure with-mysql with-pgsql with-riak with-redis with-cassandra \\\n    && make rel \\\n    && rm -rf /opt/mongooseim/rel/mongooseim/log \\\n    && ln -s /data/log /opt/mongooseim/rel/mongooseim/log\n\nADD ./start.sh start.sh\n\n# expose xmpp, rest, s2s, epmd, distributed erlang\nEXPOSE 5222 5280 5269 4369 9100\n\n# Define mount points.\nVOLUME [\"/data/mnesia\", \"/data/log\"]\n\nENTRYPOINT [\"./start.sh\"]\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./start.sh",
+        "dest": "start.sh"
+      }
+    ],
+    "expose": [
+      5222
+    ],
+    "volume": [
+      "[\"/data/mnesia\", \"/data/log\"]"
+    ],
+    "run": [
+      "apt-get update && apt-get install -y   wget                                            git                                            make                                            gcc                                            libc6-dev                                            libncurses5-dev                                            libssl-dev                                            libexpat1-dev                                            libpam0g-dev",
+      "wget https://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb     && dpkg -i erlang-solutions_1.0_all.deb     && wget http://packages.erlang-solutions.com/debian/erlang_solutions.asc    && apt-key add erlang_solutions.asc     && apt-get update     && apt-get install -y esl-erlang=1:17.5",
+      "git clone https://github.com/esl/MongooseIM.git -b $MONGOOSEIM_VERSION /opt/mongooseim     && cd /opt/mongooseim     && make configure with-mysql with-pgsql with-riak with-redis with-cassandra     && make rel     && rm -rf /opt/mongooseim/rel/mongooseim/log     && ln -s /data/log /opt/mongooseim/rel/mongooseim/log"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "Pawel Pikula <pawel.pikula@erlang-solutions.com>",
+    "env": {
+      "HOME": "/opt/mongooseim",
+      "MONGOOSEIM_VERSION": "1.6.2",
+      "MONGOOSEIM_REL_DIR": "/opt/mongooseim/rel/mongooseim",
+      "PATH": "/opt/mongooseim/rel/mongooseim/bin/:$PATH"
+    },
+    "entrypoint": "[\"./start.sh\"]"
+  },
+  "source_repository_url": "https://github.com/ppikula/mongooseim-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/ppikula/mongooseim-docker",
+  "docker_repository": "mongooseim/mongooseim-docker",
+  "docker_image": "mongooseim/mongooseim-docker",
+  "parameters_schema": {
+    "HOME": {
+      "default": "/opt/mongooseim",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGOOSEIM_VERSION": {
+      "default": "1.6.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGOOSEIM_REL_DIR": {
+      "default": "/opt/mongooseim/rel/mongooseim",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/opt/mongooseim/rel/mongooseim/bin/:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5222
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mongooseim/mongooseim-docker",
+  "revision": "1.6.2",
+  "uris": [
+    "https://hub.docker.com/r/mongooseim/mongooseim-docker",
+    "https://hub.docker.com/v2/repositories/mongooseim/mongooseim-docker",
+    "https://github.com/ppikula/mongooseim-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Test",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB"
+  ],
+  "info_url": "https://hub.docker.com/r/mongooseim/mongooseim-docker",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,102 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/chriswayg/apache-php",
+    "repository_url": "https://hub.docker.com/v2/repositories/chriswayg/apache-php",
+    "tags_url": "https://hub.docker.com/v2/repositories/chriswayg/apache-php/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/chriswayg/apache-php/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/chriswayg/apache-php/autobuild",
+    "user": "chriswayg",
+    "name": "apache-php",
+    "namespace": "chriswayg",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 10,
+    "pull_count": 162915,
+    "last_updated": "2016-09-23T19:57:18.373607Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 81311770,
+        "id": 781525,
+        "repository": 296239,
+        "creator": 367576,
+        "last_updater": 367576,
+        "last_updated": "2016-09-23T19:53:54.928622Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "chriswayg/apache-php"
+  },
+  "name": "chriswayg/apache-php Docker container",
+  "description": "Apache 2.4 web server with PHP 5.6 based on official Debian Jessie",
+  "readme": "# apache-php for Docker\n\nDocker image with Apache2 web server and PHP based on the official Debian Jessie image\n\n[![](https://badge.imagelayers.io/chriswayg/apache-php:latest.svg)](https://imagelayers.io/?images=chriswayg/apache-php:latest)\n\n- Apache 2.4 web server \n- HTTPS/SSL enabled\n- PHP 5.6\n- logging enabled\n- all original Debian Packages (not compiled from source)\n- this image automatically updates on Docker Hub, each time the Debian image is updated\n\n## Apache\n\nThe Apache HTTP Server, colloquially called Apache, is a Web server application notable for playing a key role in the initial growth of the World Wide Web. Originally based on the NCSA HTTPd server, development of Apache began in early 1995 after work on the NCSA code stalled. Apache quickly overtook NCSA HTTPd as the dominant HTTP server, and has remained the most popular HTTP server in use since April 1996.\n\n> [wikipedia.org/wiki/Apache_HTTP_Server](http://en.wikipedia.org/wiki/Apache_HTTP_Server)\n\n![logo](https://raw.githubusercontent.com/docker-library/docs/master/httpd/logo.png)\n\n## PHP \n\nPHP is a server-side scripting language designed for web development, but which can also be used as a general-purpose programming language. PHP can be added to straight HTML or it can be used with a variety of templating engines and web frameworks. PHP code is usually processed by an interpreter, which is here implemented as a native module. Apache and PHP requires preforking Apache for best results.\n\n> [wikipedia.org/wiki/PHP](http://en.wikipedia.org/wiki/PHP)\n\n![logo](https://raw.githubusercontent.com/docker-library/docs/master/php/logo.png)\n\n## Quickstart:\n\n### Example with host mount:\n\n```\nmkdir -p html && echo \"<?php phpinfo(); ?>\" > html/index.php\n\ndocker run -d --name=apache-php \\\n--restart=always \\\n-p 80:80 -p 443:443 \\\n-v \"$PWD/html\":/var/www/html \\\nchriswayg/apache-php\n```\n\n### Alternatively create a `Dockerfile` for your project\n\nThe `./html/` directory contains all your php files and the `./config/` directory contains your `php.ini` file. It is recommended to add a custom `php.ini` configuration. `COPY` it into `/etc/php5/apache2/`.\n\n`Dockerfile`\n```\nFROM chriswayg/apache-php\nCOPY ./html/ /var/www/html/\nCOPY ./config/php.ini /etc/php5/apache2/\n```\n\nThen, run the commands to build and run the Docker image:\n\n```\ndocker build -t my-php-site .\ndocker run -d --name=my-php-site_1 -p 80:80 -p 443:443 my-php-site\ndocker logs my-php-site_1\n```\n\n### SSL Certificate & Key\n\nBy default, Apache will use the Debian generated \"snakeoil\" key when serving SSL. Obviously this isn't sufficient or advisable for production, so you'll want to mount or copy a real certificate into `/etc/ssl/certs/` and the coreesponding key into `/etc/ssl/private/`. Edit `default-ssl.conf` to include the paths to your new cert and key and mount or copy it into `/etc/apache2/sites-available/` If you don't want to use SSL, you don't need to forward port 443 when running the container.\n\n### Directories with important data:\n\nCopy or mount needed data for these directories as described above or use [Data Volume Containers](https://docs.docker.com/userguide/dockervolumes/) to store the data.\n\n* Webroot: `/var/www/html/`\n* Apache2 config: `/etc/apache2/`\n* SSL: `/etc/ssl/`\n* PHP: `/etc/php5/apache2/php.ini`\n\n### Used by Concrete5.7 CMS Docker Image\n\nSee how this image is used as the base of my [Concrete5.7 CMS Docker Image](https://hub.docker.com/r/chriswayg/concrete5.7/) and the corresponding Github repository here: https://github.com/chriswayg/concrete5.7\n\n---\n###### License:\nThis program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.\n",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER Christian Wagner chriswayg@gmail.com\n\n# Usage:\n# docker run -d --name=apache-php -p 8080:80 -p 8443:443 chriswayg/apache-php\n# webroot: /var/www/html/\n# Apache2 config: /etc/apache2/\n\nRUN apt-get update && \\\n      DEBIAN_FRONTEND=noninteractive apt-get -y install \\\n      apache2 \\\n      libapache2-mod-php5 \\\n      php5 && \\\n    apt-get clean && rm -r /var/lib/apt/lists/*\n\n# Apache + PHP requires preforking Apache for best results & enable Apache SSL\n# forward request and error logs to docker log collector\nRUN a2dismod mpm_event && \\\n    a2enmod mpm_prefork \\\n            ssl \\\n            rewrite && \\\n    a2ensite default-ssl && \\\n    ln -sf /dev/stdout /var/log/apache2/access.log && \\\n    ln -sf /dev/stderr /var/log/apache2/error.log\n\nWORKDIR /var/www/html\n\nCOPY apache2-foreground /usr/local/bin/\n\nEXPOSE 80\nEXPOSE 443\n\nCMD [\"apache2-foreground\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80,
+      443
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update &&       DEBIAN_FRONTEND=noninteractive apt-get -y install       apache2       libapache2-mod-php5       php5 &&     apt-get clean && rm -r /var/lib/apt/lists/*",
+      "a2dismod mpm_event &&     a2enmod mpm_prefork             ssl             rewrite &&     a2ensite default-ssl &&     ln -sf /dev/stdout /var/log/apache2/access.log &&     ln -sf /dev/stderr /var/log/apache2/error.log"
+    ],
+    "workdir": [
+      "/var/www/html"
+    ],
+    "from": "debian:jessie",
+    "maintainer": "Christian Wagner chriswayg@gmail.com",
+    "copy": "apache2-foreground /usr/local/bin/",
+    "cmd": "[\"apache2-foreground\"]"
+  },
+  "source_repository_url": "https://github.com/chriswayg/apache-php.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/chriswayg/apache-php",
+  "docker_repository": "chriswayg/apache-php",
+  "docker_image": "chriswayg/apache-php",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80,
+        443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "chriswayg/apache-php",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/chriswayg/apache-php",
+    "https://hub.docker.com/v2/repositories/chriswayg/apache-php",
+    "https://github.com/chriswayg/apache-php.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/chriswayg/apache-php",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

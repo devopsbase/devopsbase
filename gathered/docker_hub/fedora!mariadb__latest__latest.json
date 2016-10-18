@@ -1,0 +1,138 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/fedora/mariadb",
+    "repository_url": "https://hub.docker.com/v2/repositories/fedora/mariadb",
+    "tags_url": "https://hub.docker.com/v2/repositories/fedora/mariadb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/fedora/mariadb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/fedora/mariadb/autobuild",
+    "user": "fedora",
+    "name": "mariadb",
+    "namespace": "fedora",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 23,
+    "pull_count": 4689,
+    "last_updated": "2016-06-17T13:02:51.948166Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 137972881,
+        "id": 24952,
+        "repository": 18509,
+        "creator": 17785,
+        "last_updater": 17785,
+        "last_updated": "2016-06-17T13:02:51.593514Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "fedora-cloud/Fedora-Dockerfiles"
+  },
+  "name": "fedora/mariadb Docker container",
+  "description": "",
+  "readme": "MariaDB Docker image\n====================\n\nThis container image includes MariaDB server 10.0 for OpenShift and general usage.\n\nEnvironment variables and volumes\n----------------------------------\n\nThe image recognizes the following environment variables that you can set during\ninitialization by passing `-e VAR=VALUE` to the Docker run command.\n\n|    Variable name       |    Description                            |\n| :--------------------- | ----------------------------------------- |\n|  `MYSQL_USER`          | User name for MySQL account to be created |\n|  `MYSQL_PASSWORD`      | Password for the user account             |\n|  `MYSQL_DATABASE`      | Database name                             |\n|  `MYSQL_ROOT_PASSWORD` | Password for the root user (optional)     |\n\nThe following environment variables influence the MySQL configuration file. They are all optional.\n\n|    Variable name                |    Description                                                    |    Default\n| :------------------------------ | ----------------------------------------------------------------- | -------------------------------\n|  `MYSQL_LOWER_CASE_TABLE_NAMES` | Sets how the table names are stored and compared                  |  0\n|  `MYSQL_MAX_CONNECTIONS`        | The maximum permitted number of simultaneous client connections   |  151\n|  `MYSQL_MAX_ALLOWED_PACKET`     | The maximum size of one packet or any generated/intermediate string | 200M\n|  `MYSQL_FT_MIN_WORD_LEN`        | The minimum length of the word to be included in a FULLTEXT index |  4\n|  `MYSQL_FT_MAX_WORD_LEN`        | The maximum length of the word to be included in a FULLTEXT index |  20\n|  `MYSQL_AIO`                    | Controls the `innodb_use_native_aio` setting value in case the native AIO is broken. See http://help.directadmin.com/item.php?id=529 |  1\n|  `MYSQL_TABLE_OPEN_CACHE`       | The number of open tables for all threads                         |  400\n|  `MYSQL_KEY_BUFFER_SIZE`        | The size of the buffer used for index blocks                      |  32M (or 10% of available memory)\n|  `MYSQL_SORT_BUFFER_SIZE`       | The size of the buffer used for sorting                           |  256K\n|  `MYSQL_READ_BUFFER_SIZE`       | The size of the buffer used for a sequential scan                 |  8M (or 5% of available memory)\n|  `MYSQL_INNODB_BUFFER_POOL_SIZE`| The size of the buffer pool where InnoDB caches table and index data |  32M (or 50% of available memory)\n|  `MYSQL_INNODB_LOG_FILE_SIZE`   | The size of each log file in a log group                          |  8M (or 15% of available available)\n|  `MYSQL_INNODB_LOG_BUFFER_SIZE` | The size of the buffer that InnoDB uses to write to the log files on disk | 8M (or 15% of available memory)\n|  `MYSQL_DEFAULTS_FILE`          | Point to an alternative configuration file                        |  /etc/my.cnf\n|  `MYSQL_BINLOG_FORMAT`          | Set sets the binlog format, supported values are `row` and `statement` | statement\n\nYou can also set the following mount points by passing the `-v /host:/container` flag to Docker.\n\n|  Volume mount point      | Description          |\n| :----------------------- | -------------------- |\n|  `/var/lib/mysql/data`   | MySQL data directory |\n\n**Notice: When mouting a directory from the host into the container, ensure that the mounted\ndirectory has the appropriate permissions and that the owner and group of the directory\nmatches the user UID which is running inside the container.**\n\nUsage\n---------------------------------\n\nFor this, we will assume that you are using the `fedora/mariadb` image.\nIf you want to set only the mandatory environment variables and not store\nthe database in a host directory, execute the following command:\n\n```\n$ docker run -d --name mariadb_database -e MYSQL_USER=user -e MYSQL_PASSWORD=pass -e MYSQL_DATABASE=db -p 3306:3306 fedora/mariadb\n```\n\nThis will create a container named `mariadb_database` running MySQL with database\n`db` and user with credentials `user:pass`. Port 3306 will be exposed and mapped\nto the host. If you want your database to be persistent across container executions,\nalso add a `-v /host/db/path:/var/lib/mysql/data` argument. This will be the MySQL\ndata directory.\n\nIf the database directory is not initialized, the entrypoint script will first\nrun [`mysql_install_db`](https://dev.mysql.com/doc/refman/5.6/en/mysql-install-db.html)\nand setup necessary database users and passwords. After the database is initialized,\nor if it was already present, `mysqld` is executed and will run as PID 1. You can\n stop the detached container by running `docker stop mariadb_database`.\n\n\nMariaDB auto-tuning\n-------------------\n\nWhen the MySQL image is run with the `--memory` parameter set and you didn't\nspecify value for some parameters, their values will be automatically\ncalculated based on the available memory.\n\n| Variable name                   | Configuration parameter   | Relative value\n| :-------------------------------| ------------------------- | --------------\n| `MYSQL_KEY_BUFFER_SIZE`         | `key_buffer_size`         | 10%\n| `MYSQL_READ_BUFFER_SIZE`        | `read_buffer_size`        | 5%\n| `MYSQL_INNODB_BUFFER_POOL_SIZE` | `innodb_buffer_pool_size` | 50%\n| `MYSQL_INNODB_LOG_FILE_SIZE`    | `innodb_log_file_size`    | 15%\n| `MYSQL_INNODB_LOG_BUFFER_SIZE`  | `innodb_log_buffer_size`  | 15%\n\n\nMySQL root user\n---------------------------------\nThe root user has no password set by default, only allowing local connections.\nYou can set it by setting the `MYSQL_ROOT_PASSWORD` environment variable. This\nwill allow you to login to the root account remotely. Local connections will\nstill not require a password.\n\nTo disable remote root access, simply unset `MYSQL_ROOT_PASSWORD` and restart\nthe container.\n\n\nChanging passwords\n------------------\n\nSince passwords are part of the image configuration, the only supported method\nto change passwords for the database user (`MYSQL_USER`) and root user is by\nchanging the environment variables `MYSQL_PASSWORD` and `MYSQL_ROOT_PASSWORD`,\nrespectively.\n\nChanging database passwords through SQL statements or any way other than through\nthe environment variables aforementioned will cause a mismatch between the\nvalues stored in the variables and the actual passwords. Whenever a database\ncontainer starts it will reset the passwords to the values stored in the\nenvironment variables.\n\nDefault my.cnf file\n-------------------\nWith environment variables we are able to customize a lot of different parameters\nor configurations for the mysql bootstrap configurations. If you'd prefer to use\nyour own configuration file, you can override the `MYSQL_DEFAULTS_FILE` env\nvariable with the full path of the file you wish to use. For example, the default\nlocation is `/etc/my.cnf` but you can change it to `/etc/mysql/my.cnf` by setting\n `MYSQL_DEFAULTS_FILE=/etc/mysql/my.cnf`\n\nChanging the replication binlog_format\n--------------------------------------\nSome applications may wish to use `row` binlog_formats (for example, those built\n  with change-data-capture in mind). The default replication/binlog format is\n  `statement` but to change it you can set the `MYSQL_BINLOG_FORMAT` environment\n  variable. For example `MYSQL_BINLOG_FORMAT=row`. Now when you run the database\n  with `master` replication turned on (ie, set the Docker/container `cmd` to be\n`run-mysqld-master`) the binlog will emit the actual data for the rows that change\nas opposed to the statements (ie, DML like insert...) that caused the change.\n",
+  "dockerfile": "FROM fedora\nMAINTAINER http://fedoraproject.org/wiki/Cloud\n\n# MariaDB image for OpenShift.\n#\n# Volumes:\n#  * /var/lib/mysql/data - Datastore for MariaDB\n# Environment:\n#  * $MYSQL_USER - Database user name\n#  * $MYSQL_PASSWORD - User's password\n#  * $MYSQL_DATABASE - Name of the database to create\n#  * $MYSQL_ROOT_PASSWORD (Optional) - Password for the 'root' MySQL account\n\nENV MYSQL_VERSION=10.0 \\\n    HOME=/var/lib/mysql\n\nLABEL summary=\"MariaDB is a multi-user, multi-threaded SQL database server\" \\\n      io.k8s.description=\"MariaDB is a multi-user, multi-threaded SQL database server\" \\\n      io.k8s.display-name=\"MariaDB 10.0\" \\\n      io.openshift.expose-services=\"3306:mysql\" \\\n      io.openshift.tags=\"database,mysql,mariadb,mariadb100\"\n\nEXPOSE 3306\n\n# This image must forever use UID 27 for mysql user so our volumes are\n# safe in the future. This should *never* change, the last test is there\n# to make sure of that.\n# https://git.fedorahosted.org/cgit/setup.git/tree/uidgid\n# policycoreutils installed for restorecon called in container-setup script\nRUN INSTALL_PKGS=\"rsync tar gettext hostname bind-utils policycoreutils mariadb-server\" && \\\n    dnf install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \\\n    rpm -V $INSTALL_PKGS && \\\n    dnf clean all && \\\n    mkdir -p /var/lib/mysql/data && chown -R mysql.0 /var/lib/mysql && \\\n    rpm -q --qf '%{version}' mariadb-server | grep -e '10\\.0\\.' && \\\n    test \"$(id mysql)\" = \"uid=27(mysql) gid=27(mysql) groups=27(mysql)\"\n\n# Get prefix path and path to scripts rather than hard-code them in scripts\nENV CONTAINER_SCRIPTS_PATH=/usr/share/container-scripts/mysql \\\n    MYSQL_PREFIX=/usr\n\nADD root /\n\n# this is needed due to issues with squash\n# when this directory gets rm'd by the container-setup\n# script.\nRUN rm -rf /etc/my.cnf.d/*\nRUN /usr/libexec/container-setup\n\nVOLUME [\"/var/lib/mysql/data\"]\n\nUSER 27\n\nENTRYPOINT [\"container-entrypoint\"]\nCMD [\"run-mysqld\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "root",
+        "dest": "/"
+      }
+    ],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      "[\"/var/lib/mysql/data\"]"
+    ],
+    "run": [
+      "INSTALL_PKGS=\"rsync tar gettext hostname bind-utils policycoreutils mariadb-server\" &&     dnf install -y --setopt=tsflags=nodocs $INSTALL_PKGS &&     rpm -V $INSTALL_PKGS &&     dnf clean all &&     mkdir -p /var/lib/mysql/data && chown -R mysql.0 /var/lib/mysql &&     rpm -q --qf '%{version}' mariadb-server | grep -e '10\\.0\\.' &&     test \"$(id mysql)\" = \"uid=27(mysql) gid=27(mysql) groups=27(mysql)\"",
+      "rm -rf /etc/my.cnf.d/*",
+      "/usr/libexec/container-setup"
+    ],
+    "workdir": [],
+    "from": "fedora",
+    "maintainer": "http://fedoraproject.org/wiki/Cloud",
+    "env": {
+      "MYSQL_VERSION": "10.0",
+      "": "",
+      "HOME": "/var/lib/mysql",
+      "CONTAINER_SCRIPTS_PATH": "/usr/share/container-scripts/mysql",
+      "MYSQL_PREFIX": "/usr"
+    },
+    "label": "summary=\"MariaDB is a multi-user, multi-threaded SQL database server\"       io.k8s.description=\"MariaDB is a multi-user, multi-threaded SQL database server\"       io.k8s.display-name=\"MariaDB 10.0\"       io.openshift.expose-services=\"3306:mysql\"       io.openshift.tags=\"database,mysql,mariadb,mariadb100\"",
+    "user": "27",
+    "entrypoint": "[\"container-entrypoint\"]",
+    "cmd": "[\"run-mysqld\"]"
+  },
+  "source_repository_url": "git://github.com/fedora-cloud/Fedora-Dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/fedora-cloud/Fedora-Dockerfiles",
+  "docker_repository": "fedora/mariadb",
+  "docker_image": "fedora/mariadb",
+  "parameters_schema": {
+    "MYSQL_VERSION": {
+      "default": "10.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/var/lib/mysql",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CONTAINER_SCRIPTS_PATH": {
+      "default": "/usr/share/container-scripts/mysql",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_PREFIX": {
+      "default": "/usr",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "fedora/mariadb",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/fedora/mariadb",
+    "https://hub.docker.com/v2/repositories/fedora/mariadb",
+    "git://github.com/fedora-cloud/Fedora-Dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Fedora",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/fedora/mariadb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,104 @@
+{
+  "name": "apache-flume-kafka Juju charm",
+  "juju_charm_name": "apache-flume-kafka",
+  "revision": "cs:trusty/apache-flume-kafka-0",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/apache-flume-kafka",
+    "https://jujucharms.com/apache-flume-kafka/trusty",
+    "https://jujucharms.com/apache-flume-kafka/trusty/0",
+    "https://api.jujucharms.com/v5/apache-flume-kafka",
+    "https://api.jujucharms.com/v5/trusty/apache-flume-kafka",
+    "https://api.jujucharms.com/v5/trusty/apache-flume-kafka-0"
+  ],
+  "labels": [
+    "Juju charm",
+    "applications",
+    "bigdata",
+    "apache",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://jujucharms.com/apache-flume-kafka",
+  "package_url": "https://api.jujucharms.com/v5/trusty/apache-flume-kafka-0/archive",
+  "created": "2016-04-05T23:29:37.332Z",
+  "updated": "2016-04-05T23:29:37.332Z",
+  "description": "Ingest Kafka messages with Apache Flume\n\nUses a Kafka source, memory channel, and Avro sink in Apache Flume\nto ingest messages published to a Kafka topic.\n",
+  "maintainer": {
+    "name": "bigdata-charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "bigdata-charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/flume-agent",
+      "self_resolve": true,
+      "juju_interface": "flume-agent",
+      "juju_name": "flume-sink",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/kafka",
+      "self_resolve": true,
+      "juju_interface": "kafka",
+      "juju_name": "kafka",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "channel_capacity": {
+      "type": "string",
+      "description": "The maximum number of events stored in the channel.\n",
+      "default": "1000",
+      "mapping": "charm_option"
+    },
+    "channel_transaction_capacity": {
+      "type": "string",
+      "description": "The maximum number of events the channel will take from a source or\ngive to a sink per transaction.\n",
+      "default": "100",
+      "mapping": "charm_option"
+    },
+    "event_dir": {
+      "type": "string",
+      "description": "The HDFS subdirectory under /user/flume where events will be stored.\n",
+      "default": "flume-kafka",
+      "mapping": "charm_option"
+    },
+    "kafka_max_batch_size": {
+      "type": "string",
+      "description": "Maximum number of messages written to channel in a single batch\n",
+      "default": "1000",
+      "mapping": "charm_option"
+    },
+    "kafka_topic": {
+      "type": "string",
+      "description": "The Kafka topic to watch for messages\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "resources_mirror": {
+      "type": "string",
+      "description": "URL from which to fetch resources (e.g., Flume binaries) instead of S3\n",
+      "default": "",
+      "mapping": "charm_option"
+    }
+  },
+  "license": "## Overview\n\nFlume is a distributed, reliable, and available service for efficiently\ncollecting, aggregating, and moving large amounts of log data. It has a simple\nand flexible architecture based on streaming data flows. It is robust and fault\ntolerant with tunable reliability mechanisms and many fail over and recovery\nmechanisms. It uses a simple extensible data model that allows for online\nanalytic application. Learn more at [flume.apache.org](http://flume.apache.org).\n\nThis charm provides a Flume agent designed to ingest messages published to\na Kafka topic and send them to the `apache-flume-hdfs` agent for storage in\nthe shared filesystem (HDFS) of a connected Hadoop cluster. This leverages the\nKafkaSource jar packaged with Flume. Learn more about the\n[Flume Kafka Source](https://flume.apache.org/FlumeUserGuide.html#kafka-source).\n\n\n## Usage\n\nThis charm is intended to be deployed via the\n[apache-ingestion-kafka](https://jujucharms.com/apache-ingestion-kafka) bundle:\n\n    juju quickstart apache-ingestion-kafka\n\nThis will deploy the Apache Hadoop platform with Apache Flume and Apache Kafka\ncommunicating with the cluster via the `apache-hadoop-plugin` charm.\n\n\n## Configuration\n\nThe default Kafka topic where messages are published is unset. Set this to\nan existing Kafka topic as follows:\n\n    juju set flume-kafka kafka_topic='<topic_name>'\n\nIf you don't have a Kafka topic, you may create one (and verify successful\ncreation) with:\n\n    juju action do kafka/0 create-topic topic=<topic_name> \\\n     partitions=1 replication=1\n    juju action fetch <id>  # <-- id from above command\n\nOnce the Flume agents start, messages will start flowing into\nHDFS in year-month-day directories here: `/user/flume/flume-kafka/%y-%m-%d`.\n\n\n## Testing\n\nA Kafka topic is required for this test. Topic creation is covered in the\n**Configuration** section above. Generate Kafka messages with the `write-topic`\naction:\n\n    juju action do kafka/0 write-topic topic=<topic_name> data=\"This is a test\"\n\nTo verify these messages are being stored into HDFS, SSH to the `flume-hdfs`\nunit, locate an event, and cat it:\n\n    juju ssh flume-hdfs/0\n    hdfs dfs -ls /user/flume/flume-kafka  # <-- find a date\n    hdfs dfs -ls /user/flume/flume-kafka/yyyy-mm-dd  # <-- find an event\n    hdfs dfs -cat /user/flume/flume-kafka/yyyy-mm-dd/FlumeData.[id]\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Help\n\n- [Apache Flume home page](http://flume.apache.org/)\n- [Apache Flume bug tracker](https://issues.apache.org/jira/browse/flume)\n- [Apache Flume mailing lists](https://flume.apache.org/mailinglists.html)\n- `#juju` on `irc.freenode.net`\n",
+  "readme": "## Overview\n\nFlume is a distributed, reliable, and available service for efficiently\ncollecting, aggregating, and moving large amounts of log data. It has a simple\nand flexible architecture based on streaming data flows. It is robust and fault\ntolerant with tunable reliability mechanisms and many fail over and recovery\nmechanisms. It uses a simple extensible data model that allows for online\nanalytic application. Learn more at [flume.apache.org](http://flume.apache.org).\n\nThis charm provides a Flume agent designed to ingest messages published to\na Kafka topic and send them to the `apache-flume-hdfs` agent for storage in\nthe shared filesystem (HDFS) of a connected Hadoop cluster. This leverages the\nKafkaSource jar packaged with Flume. Learn more about the\n[Flume Kafka Source](https://flume.apache.org/FlumeUserGuide.html#kafka-source).\n\n\n## Usage\n\nThis charm is intended to be deployed via the\n[apache-ingestion-kafka](https://jujucharms.com/apache-ingestion-kafka) bundle:\n\n    juju quickstart apache-ingestion-kafka\n\nThis will deploy the Apache Hadoop platform with Apache Flume and Apache Kafka\ncommunicating with the cluster via the `apache-hadoop-plugin` charm.\n\n\n## Configuration\n\nThe default Kafka topic where messages are published is unset. Set this to\nan existing Kafka topic as follows:\n\n    juju set flume-kafka kafka_topic='<topic_name>'\n\nIf you don't have a Kafka topic, you may create one (and verify successful\ncreation) with:\n\n    juju action do kafka/0 create-topic topic=<topic_name> \\\n     partitions=1 replication=1\n    juju action fetch <id>  # <-- id from above command\n\nOnce the Flume agents start, messages will start flowing into\nHDFS in year-month-day directories here: `/user/flume/flume-kafka/%y-%m-%d`.\n\n\n## Testing\n\nA Kafka topic is required for this test. Topic creation is covered in the\n**Configuration** section above. Generate Kafka messages with the `write-topic`\naction:\n\n    juju action do kafka/0 write-topic topic=<topic_name> data=\"This is a test\"\n\nTo verify these messages are being stored into HDFS, SSH to the `flume-hdfs`\nunit, locate an event, and cat it:\n\n    juju ssh flume-hdfs/0\n    hdfs dfs -ls /user/flume/flume-kafka  # <-- find a date\n    hdfs dfs -ls /user/flume/flume-kafka/yyyy-mm-dd  # <-- find an event\n    hdfs dfs -cat /user/flume/flume-kafka/yyyy-mm-dd/FlumeData.[id]\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Help\n\n- [Apache Flume home page](http://flume.apache.org/)\n- [Apache Flume bug tracker](https://issues.apache.org/jira/browse/flume)\n- [Apache Flume mailing lists](https://flume.apache.org/mailinglists.html)\n- `#juju` on `irc.freenode.net`\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

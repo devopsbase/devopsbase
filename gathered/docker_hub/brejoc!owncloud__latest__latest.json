@@ -1,0 +1,138 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/brejoc/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/brejoc/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/brejoc/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/brejoc/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/brejoc/owncloud/autobuild",
+    "user": "brejoc",
+    "name": "owncloud",
+    "namespace": "brejoc",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 92,
+    "last_updated": "2016-10-13T18:50:14.029419Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 233287399,
+        "id": 131294,
+        "repository": 147240,
+        "creator": 124704,
+        "last_updater": 124704,
+        "last_updated": "2016-10-13T18:50:08.037012Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "performance",
+        "full_size": 277654946,
+        "id": 2141672,
+        "repository": 147240,
+        "creator": 124704,
+        "last_updater": 124704,
+        "last_updated": "2016-02-28T19:01:10.361809Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "CVE-2015-7547",
+        "full_size": 260304617,
+        "id": 2140774,
+        "repository": 147240,
+        "creator": 124704,
+        "last_updater": 124704,
+        "last_updated": "2016-02-28T13:00:23.869148Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "brejoc/docker-owncloud"
+  },
+  "name": "brejoc/owncloud Docker container",
+  "description": "",
+  "readme": "[![](https://images.microbadger.com/badges/image/brejoc/owncloud.svg)](https://microbadger.com/images/brejoc/owncloud \"Get your own image badge on microbadger.com\")\n\nThis builds a docker container with owncloud running in it. It uses a docker volume in order to allow you to persist the data and config between different containers. It is setup for usage with MySQL and Sqlite but, it does not have a linked MySQL container. Pull-Requests are welcome!\n\n# Usage #\n\n## Building the image ##\n\nrun `docker build -t 'brejoc/owncloud' .`\n\n## Running ##\n\n1. You can either build this image locally or just fetch it from the docker hub: `brejoc/owncloud`.\n2. Run it `docker run -d -m 1g -p 127.0.0.1:9000:80 --name=\"my_docker_owncloud\" -v /var/owncloud/data:/var/www/owncloud/data -v /var/owncloud/config:/var/www/owncloud/config brejoc/owncloud`\n3. Setup a reverse proxy to server it from port 80:\n\n```\nserver {\n\t     listen 80;\n\t     server_name owncloud.example.com;\n\t     return 301 https://$host$request_uri;\n}\n\nserver {\n\tlisten 443;\n\tserver_name owncloud.example.com;\n\tssl on;\n\tssl_certificate /etc/ssl/private/example_com.cert;\n\tssl_certificate_key /etc/ssl/private/example_com.key;\n\tlocation / {\n\t\tproxy_pass\t\t\thttp://127.0.0.1:9000;\n\t\tproxy_redirect\t\toff;\n\t\tproxy_buffering\t\toff;\n\t\tproxy_set_header\tHost\t$host;\n\t\tproxy_set_header\tX-Real-IP\t$remote_addr;\n\t\tproxy_set_header\tX-Forwarded-For\t$proxy_add_x_forwarded_for;\n\t}\n}\n```\n",
+  "dockerfile": "FROM phusion/baseimage:0.9.15\nMAINTAINER Jochen Breuer \"brejoc@gmail.com\"\nRUN apt-get -y update\nRUN apt-get install -y apache2 php5 php5-gd php-xml-parser php5-intl php5-mysqlnd php5-json php5-mcrypt php5-sqlite smbclient curl libcurl3 php5-curl bzip2 wget\nRUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nRUN rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh\n\nRUN curl -k https://download.owncloud.org/community/owncloud-9.0.4.tar.bz2 | tar jx -C /var/www/\nRUN mkdir /var/www/owncloud/data\nRUN chown -R www-data:www-data /var/www/owncloud\nRUN chmod 770 -R /var/www/owncloud/data\n\nADD ./001-owncloud.conf /etc/apache2/sites-available/\nRUN rm -f /etc/apache2/sites-enabled/000*\nRUN ln -s /etc/apache2/sites-available/001-owncloud.conf /etc/apache2/sites-enabled/\nRUN a2enmod rewrite\n\nADD rc.local /etc/rc.local\nRUN chown root:root /etc/rc.local\n\nVOLUME [\"/var/www/owncloud/data\", \"/var/www/owncloud/config\"]\nEXPOSE 80\nCMD [\"/sbin/my_init\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./001-owncloud.conf",
+        "dest": "/etc/apache2/sites-available/"
+      },
+      {
+        "source": "rc.local",
+        "dest": "/etc/rc.local"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[\"/var/www/owncloud/data\", \"/var/www/owncloud/config\"]"
+    ],
+    "run": [
+      "apt-get -y update",
+      "apt-get install -y apache2 php5 php5-gd php-xml-parser php5-intl php5-mysqlnd php5-json php5-mcrypt php5-sqlite smbclient curl libcurl3 php5-curl bzip2 wget",
+      "apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh",
+      "curl -k https://download.owncloud.org/community/owncloud-9.0.4.tar.bz2 | tar jx -C /var/www/",
+      "mkdir /var/www/owncloud/data",
+      "chown -R www-data:www-data /var/www/owncloud",
+      "chmod 770 -R /var/www/owncloud/data",
+      "rm -f /etc/apache2/sites-enabled/000*",
+      "ln -s /etc/apache2/sites-available/001-owncloud.conf /etc/apache2/sites-enabled/",
+      "a2enmod rewrite",
+      "chown root:root /etc/rc.local"
+    ],
+    "workdir": [],
+    "from": "phusion/baseimage:0.9.15",
+    "maintainer": "Jochen Breuer \"brejoc@gmail.com\"",
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/brejoc/docker-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/brejoc/docker-owncloud",
+  "docker_repository": "brejoc/owncloud",
+  "docker_image": "brejoc/owncloud",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "brejoc/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/brejoc/owncloud",
+    "https://hub.docker.com/v2/repositories/brejoc/owncloud",
+    "https://github.com/brejoc/docker-owncloud.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/brejoc/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

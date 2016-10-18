@@ -1,0 +1,57 @@
+{
+  "name": "application_nginx Chef cookbook",
+  "chef_cookbook_name": "application_nginx",
+  "revision": "2.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/application_nginx",
+    "https://supermarket.chef.io/cookbooks/application_nginx/download",
+    "https://supermarket.chef.io/cookbooks/application_nginx/versions/2.0.0",
+    "https://supermarket.chef.io/cookbooks/application_nginx/versions/2.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/application_nginx/versions/2.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/application_nginx",
+    "https://supermarket.chef.io/api/v1/cookbooks/application_nginx/versions/2.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Style/Virtualization Level/Application",
+    "Type/Middleware/Web Server/Nginx",
+    "Type/Middleware/Application Server"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/application_nginx",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/application_nginx/versions/2.0.0/download",
+  "deprecated": false,
+  "created": "2012-05-24T22:04:10.000Z",
+  "updated": "2013-10-25T23:17:49.000Z",
+  "description": "Deploys and configures Nginx as an application server",
+  "maintainer": {
+    "name": "coderanger",
+    "email": "cookbooks@opscode.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 31,
+  "downloads_count": 7343544,
+  "downloads_count_revision": 1227156,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nThis cookbook is designed to be able to deploy and configure an nginx reverse proxy in front of one or more application servers, which are also managed with the `application` cookbook.\n\nNote that this cookbook provides the nginx-specific bindings for the `application` cookbook; you will find general documentation in that cookbook.\n\nRequirements\n============\n\nChef 0.10.0 or higher required (for Chef environment use).\n\nThe following Opscode cookbooks are dependencies:\n\n* application\n* nginx\n\nResources/Providers\n==========\n\nThe LWRP provided by this cookbook is not meant to be used by itself; make sure you are familiar with the `application` cookbook before proceeding.\n\nnginx\\_load\\_balancer\n---------------------\n\nThe `nginx_load_balancer` sub-resource LWRP installs and configures nginx with an upstream for the given application; the upstream will point to all the nodes returned by a search for a specific role.\n\nNote that the application repository will still be checked out even if this is the only sub-resource applied to a node. This is useful for instance to serve static files directly from the load balancer.\n\n# Attribute Parameters\n\n- application\\_server\\_role: the role to search for when looking for application servers. Defaults to \"#{application name}\\_application\\_server\"\n- template: the name of template that will be rendered to create the context file; if specified it will be looked up in the application cookbook. Defaults to \"load_balancer.conf.erb\" from this cookbook\n- server\\_name: the virtual host name(s). Defaults to the node FQDN\n- port: the port nginx will bind. Defaults to 80\n- application_port: the port the application server runs on. Defaults to 8000\n- static_files: a Hash mapping URLs to files. Defaults to an empty Hash\n- ssl: true/false that we should use SSL\n- ssl_certificate: The SSL public certificate full path file name, defaults to #{node.fqdn}.cert if ssl true, append any chained CA certificates to the end of this file.\n- ssl_certificate_key: The SSL private certificate full path file name, defaults to #{node.fqdn}.key if ssl true\n\nUsage\n=====\n\nA sample application that needs a database connection:\n\n    application \"my-app\" do\n      path \"/usr/local/my-app\"\n      repository \"...\"\n      revision \"...\"\n\n      rails do\n      end\n\n      nginx_load_balancer do\n        only_if { node['roles'].include?('my-app_load_balancer') }\n      end\n    end\n\nAssuming you have a `my-app_application_server` role applied to nodes backend-0..backend-3, and a `my-app_load_balancer` role assigned to frontend-0..frontend-1, then nginx will be installed on the frontends, and configured like this:\n\n    upstream my-app {\n      server <IP of backend-0>:8000;\n      server <IP of backend-1>:8000;\n      server <IP of backend-2>:8000;\n      server <IP of backend-3>:8000;\n    }\n\n    server {\n      listen 80;\n      server_name frontend-0;\n      location / {\n        proxy_pass http://my-app;\n      }\n    }\n\nYou can configure nginx to serve static files by settings the `static_files` attribute:\n\n    application \"my-app\" do\n      path \"/usr/local/my-app\"\n      repository \"...\"\n      revision \"...\"\n\n      nginx_load_balancer do\n        only_if { node['roles'].include?('my-app_load_balancer') }\n        static_files \"/img\" => \"images\"\n      end\n    end\n\nwhich will be expanded to:\n\n    server {\n      listen 80;\n      server_name frontend-0;\n\n      location /img {\n        alias /usr/local/my-app/current/images;\n      }\n\n      location / {\n        proxy_pass http://my-app;\n      }\n    }\n\nLicense and Author\n==================\n\nAuthor:: Adam Jacob (<adam@opscode.com>)\nAuthor:: Andrea Campi (<andrea.campi@zephirworks.com.com>)\nAuthor:: Joshua Timberman (<joshua@opscode.com>)\nAuthor:: Seth Chisamore (<schisamo@opscode.com>)\n\nCopyright 2009-2012, Opscode, Inc.\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/application",
+      "revision": "~> 3.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/nginx",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

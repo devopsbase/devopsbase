@@ -1,0 +1,99 @@
+{
+  "name": "graylog2 Chef cookbook",
+  "chef_cookbook_name": "graylog2",
+  "revision": "2.0.4",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/graylog2",
+    "https://supermarket.chef.io/cookbooks/graylog2/download",
+    "https://supermarket.chef.io/cookbooks/graylog2/versions/2.0.4",
+    "https://supermarket.chef.io/cookbooks/graylog2/versions/2.0.4/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/graylog2/versions/2.0.4",
+    "https://supermarket.chef.io/api/v1/cookbooks/graylog2",
+    "https://supermarket.chef.io/api/v1/cookbooks/graylog2/versions/2.0.4/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Monitoring & Trending",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Logging"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/graylog2",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/graylog2/versions/2.0.4/download",
+  "deprecated": false,
+  "created": "2011-02-03T22:08:21.000Z",
+  "updated": "2016-09-19T15:22:52.651Z",
+  "description": "Installs and configures Graylog - maintained by Graylog, Inc.",
+  "maintainer": {
+    "name": "graylog2",
+    "email": "marius@graylog.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 76,
+  "downloads_count": 17046097,
+  "downloads_count_revision": 82,
+  "repository_url": "https://github.com/Graylog2/graylog2-cookbook",
+  "issues_url": "https://github.com/Graylog2/graylog2-cookbook/issues",
+  "chef_source_url": "https://github.com/Graylog2/graylog2-cookbook",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n-----------\n[![Build Status](https://travis-ci.org/Graylog2/graylog2-cookbook.svg)](https://travis-ci.org/Graylog2/graylog2-cookbook)\n\nThis _Chef_ cookbook installs and configures the [Graylog](http://www.graylog.org) log management system.\n\nIt is using the official installation packages provided by [_Graylog, Inc._](http://www.graylog.com). It needs as requirement an installation of Java, [Elasticsearch](http://www.elasticsearch.org) and [MongoDB](https://www.mongodb.org).\n\nUsage\n-----\n\n### Quickstart\nTo give this cookbook a try simply use the Kitchen test suite.\n\n```\nkitchen setup oracle-ubuntu-1404\nopen http://localhost:9000\nLogin with admin/admin\n```\n\n### Recipes\nThe cookbook contains several recipes for different installation setups. Pick only the recipes\nyou need for your environment.\n\n|Recipe     | Description |\n|:----------|:------------|\n|default    |Setup the Graylog package repository|\n|server     |Install Graylog server|\n|authbind   |Give the Graylog user access to privileged ports like 514 (only on Ubuntu/Debian)|\n|collector  |Install Graylog's collector (deprecated)|\n\nIn a minimal setup you need at least the _default_ and _server_ recipes. Combined with\nMongoDB and Elasticsearch, a run list might look like this:\n\n```\nrun_list \"recipe[java]\",\n         \"recipe[elasticsearch]\",\n         \"recipe[mongodb]\",\n         \"recipe[graylog2]\",\n         \"recipe[graylog2::server]\"\n```\n\n### Attributes\nGraylog runs currently with Java 8. To install the correct version set this attribute:\n\n#### Oracle\n\n```json\n  \"java\": {\n    \"jdk_version\": \"8\",\n    \"install_flavor\": \"oracle\",\n    \"oracle\": {\n      \"accept_oracle_download_terms\": true\n    }\n  }\n```\n\n#### OpenJDK\n\n```json\n  \"java\": {\n    \"jdk_version\": \"8\",\n    \"install_flavor\": \"openjdk\"\n  }\n```\n\nOpenJDK and Oracle JDK are both fine for Graylog. Note that you must accept\nOracle's download terms if you select the oracle install flavor.\n\nOn some platforms you need to accept terms to install OpenJDK too. See the [java\ncookbook's README](https://supermarket.chef.io/cookbooks/java) for more\ninformation.\n\nYou _have_ to use a  certain version of Elasticsearch for every Graylog Version, currently\nthis is 2.2.0. The cluster name should be 'graylog':\n\n```json\n  \"elasticsearch\": {\n    \"version\": \"2.2.0\",\n    \"cluster\": {\n      \"name\": \"graylog\"\n    }\n  }\n```\n\nGraylog itself needs a secret for encryption and a hashed password for the root user. By default this user is called _admin_.\n\nYou can create the secret with this shell command `pwgen -s 96 1`.\n\nThe password can be generated with `echo -n yourpassword | shasum -a 256 | awk '{print $1}'`\n\n```json\n  \"graylog2\": {\n    \"password_secret\": \"ZxUahiN48EFVJgzRTzGO2olFRmjmsvzybSf4YwBvn5x1asLUBPe8GHbOQTZ0jzuAB7dzrNPk3wCEH57PCZm23MHAET0G653G\",\n    \"root_password_sha2\": \"e3c652f0ba0b4801205814f8b6bc49672c4c74e25b497770bb89b22cdeb4e951\",\n    \"server\": {\n      \"java_opts\": \"-Djava.net.preferIPv4Stack=true\"\n    }\n  }\n```\n\nAlternatively you can create an encrypted data bag and store the secrets there. The data should be called\n'secrets' with an item 'graylog'.\n\n```shell\nknife data bag create --secret-file ~/.chef/encrypted_data_bag_secret secrets graylog\n\n{\n  \"id\": \"graylog\",\n  \"server\": {\n    \"root_password_sha2\": \"<root password as sha256>\",\n    \"password_secret\": \"<random string as encryption salt>\"\n  }\n}\n```\n\nYou can take a look into the attributes file under `attributes/default.rb` to get an idea\nwhat can be configured for Graylog.\n\n### Remote Elasticsearch hosts\nIn order to connect Graylog to a remote Elasticsearch node you have to make it listen on the public network interface:\n```ruby\n'graylog2'=> {\n  'elasticsearch' => {\n\t\t'network_host'=> '0.0.0.0'\n\t}\n}\n```\n\n### Node discovery\nThe cookbook is able to use Chef's search to find Elasticsearch and other Graylog nodes. To configure\na dynamic cluster set the following attributes:\n\n#### Elasticsearch discovery\n```ruby\n'graylog2'=> {\n  'elasticsearch' => {\n    'unicast_search_query' => 'role:elasticsearch',\n    'search_node_attribute' => 'ipaddress'\n  }\n}\n```\n\nIf you have multiple server one need to be set as a master, use this attribute to do so\n\n```\ndefault.graylog2[:ip_of_master] = node.ipaddress\n```\n\n### Authbind\n\nUbuntu/Debian systems allow a user to bind a proccess to a certain privileged port below 1024.\nThis is called authbind and is supported by this cookbook. So it is possible to let Graylog listen on port 514 and act like a normal syslog server.\nTo enable this feature include the [authbind](https://supermarket.chef.io/cookbooks/authbind) cookbook to your run list and also the recipe\n`recipe[graylog2::authbind]` from this cookbook.\nBy default the recipe will give the Graylog user permission to bind to port 514 if you need more than that you can\nset the attribute `default.graylog2[:authorized_ports]` to an array of allowed ports.\n\n### Development and testing\n\nThe cookbook comes with unit and integration tests for Ubuntu/Debian/CentOS. You can run them by using Rake and Test Kitchen.\n\nUnit tests:\n\n```\n  $ bundle exec rake spec\n```\n\nIntegration tests:\n\n```\n  $ kitchen list\n  $ kitchen converge oracle-ubuntu-1404\n  $ kitchen verify oracle-ubuntu-1404\n```\n\nAdditionally you can verify the coding style by running RoboCop and Foodcritic.\n\nVerify Ruby syntax with RuboCop:\n\n```\n  $ bundle exec rake style:ruby\n```\n\nVerify Chef syntax with Foodcritic:\n\n```\n  $ bundle exec rake style:chef\n```\n\nLicense\n-------\n\nAuthor: Marius Sturm (<marius@graylog.com>) and [contributors](http://github.com/graylog2/graylog2-cookbook/graphs/contributors)\n\nLicense: Apache 2.0\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/authbind",
+      "revision": ">= 0.1.8",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/java",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ark",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "recommends": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/mongodb",
+      "revision": ">= 0.0.0"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/elasticsearch",
+      "revision": ">= 0.0.0"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/authbind",
+      "revision": ">= 0.0.0"
+    }
+  ]
+}

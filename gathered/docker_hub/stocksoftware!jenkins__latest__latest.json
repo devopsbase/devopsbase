@@ -1,0 +1,102 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/stocksoftware/jenkins",
+    "repository_url": "https://hub.docker.com/v2/repositories/stocksoftware/jenkins",
+    "tags_url": "https://hub.docker.com/v2/repositories/stocksoftware/jenkins/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/stocksoftware/jenkins/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/stocksoftware/jenkins/autobuild",
+    "user": "stocksoftware",
+    "name": "jenkins",
+    "namespace": "stocksoftware",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 130,
+    "last_updated": "2016-10-11T20:01:43.253367Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 225142017,
+        "id": 3954672,
+        "repository": 812843,
+        "creator": 861779,
+        "last_updater": 861779,
+        "last_updated": "2016-10-11T20:01:42.816984Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "stocksoftware/docker-jenkins"
+  },
+  "name": "stocksoftware/jenkins Docker container",
+  "description": "A Jenkins image customized for our build automation",
+  "readme": "# docker-jenkins\n\n[![](http://dockeri.co/image/stocksoftware/jenkins)](https://hub.docker.com/r/stocksoftware/jenkins)\n[![Build Status](https://secure.travis-ci.org/stocksoftware/docker-java.png?branch=master)](http://travis-ci.org/stocksoftware/docker-jenkins)\n\nA customized jenkins container based on the official jenkins images with tools added as required.\n\n## Usage\n\nThis image is designed to be extended add configured for a particular customer. Ideally a number of\ngroovy scripts will be created and added to the image to configure the build as required. An example\n``Dockerfile`` for such an image is.\n\n```\nFROM stocksoftware/jenkins\n\nCOPY custom.groovy /usr/share/jenkins/ref/init.groovy.d/custom.groovy\n```\n\nThe custom image should then be run using a command such as the following. Note: the `jenkins_data`\nvolume should have already been setup and it contains all the persistent data, and port `50000` is\nonly needed if jnlp build agents will connect back to the main jenkins server.\n\n```\ndocker run -v /var/run/docker.sock:/var/run/docker.sock -v jenkins_data:/var/jenkins_home -p 8080:8080 -p 50000:50000 mys_custom_jenkins\n```\n\n## How-to generate plugin list\n\nThe plugin list is periodically regenerated as new plugins are upgraded. The easiest way to do this\nis to manually install the plugins, trial the functionality and when satisfied they meet the quality\ncriteria to upgrade the base image then copy the json from plugins web interface at\n`/pluginManager/api/json?pretty=true&tree=plugins[shortName,version]` and then using ruby transform the\njson  to the plugin list. Typically you open up `irb` and type the following:\n\n```ruby\nh = # paste content here\n\nputs h[:plugins].collect {|v| \"#{v[:shortName]}:#{v[:version]}\"}.sort.join(\"\\n\")\n```\n\nThen replace the content in `plugins.txt` with the new list.\n",
+  "dockerfile": "#\n# Licensed under the Apache License, Version 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions and\n# limitations under the License.\n#\nFROM jenkins:2.7.1-alpine\n\nMAINTAINER Stock Software\n\nENV JAVA_OPTS=-Djava.awt.headless=true\n\nUSER root\n\nRUN apk upgrade --update && \\\n    apk add --update docker tzdata && \\\n    cp /usr/share/zoneinfo/Australia/Melbourne /etc/localtime && \\\n    echo \"Australia/Melbourne\" > /etc/timezone && \\\n    apk del tzdata && \\\n    rm -rf  /tmp/* /var/cache/apk/*  && \\\n    addgroup jenkins users\n\nUSER jenkins:jenkins\n\nCOPY plugins.txt /usr/share/jenkins/ref/\nCOPY plugins.txt /usr/share/jenkins/\nRUN /usr/local/bin/plugins.sh /usr/share/jenkins/plugins.txt\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apk upgrade --update &&     apk add --update docker tzdata &&     cp /usr/share/zoneinfo/Australia/Melbourne /etc/localtime &&     echo \"Australia/Melbourne\" > /etc/timezone &&     apk del tzdata &&     rm -rf  /tmp/* /var/cache/apk/*  &&     addgroup jenkins users",
+      "/usr/local/bin/plugins.sh /usr/share/jenkins/plugins.txt"
+    ],
+    "workdir": [],
+    "from": "jenkins:2.7.1-alpine",
+    "maintainer": "Stock Software",
+    "env": {
+      "JAVA_OPTS": "-Djava.awt.headless"
+    },
+    "user": "jenkins:jenkins",
+    "copy": "plugins.txt /usr/share/jenkins/"
+  },
+  "source_repository_url": "https://github.com/stocksoftware/docker-jenkins.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/stocksoftware/docker-jenkins",
+  "docker_repository": "stocksoftware/jenkins",
+  "docker_image": "stocksoftware/jenkins",
+  "parameters_schema": {
+    "JAVA_OPTS": {
+      "default": "-Djava.awt.headless",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "stocksoftware/jenkins",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/stocksoftware/jenkins",
+    "https://hub.docker.com/v2/repositories/stocksoftware/jenkins",
+    "https://github.com/stocksoftware/docker-jenkins.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Build",
+    "Type/Devopsware/Integration/Jenkins"
+  ],
+  "info_url": "https://hub.docker.com/r/stocksoftware/jenkins",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

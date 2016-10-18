@@ -1,0 +1,107 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/bringnow/nginx-letsencrypt",
+    "repository_url": "https://hub.docker.com/v2/repositories/bringnow/nginx-letsencrypt",
+    "tags_url": "https://hub.docker.com/v2/repositories/bringnow/nginx-letsencrypt/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/bringnow/nginx-letsencrypt/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/bringnow/nginx-letsencrypt/autobuild",
+    "user": "bringnow",
+    "name": "nginx-letsencrypt",
+    "namespace": "bringnow",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 479,
+    "last_updated": "2016-10-12T17:08:23.975611Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 80904788,
+        "id": 1937248,
+        "repository": 516587,
+        "creator": 213020,
+        "last_updater": 213020,
+        "last_updated": "2016-10-12T17:08:23.684601Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "alpine",
+        "full_size": 20076431,
+        "id": 2893066,
+        "repository": 516587,
+        "creator": 213020,
+        "last_updater": 213020,
+        "last_updated": "2016-10-12T17:07:11.286371Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "bringnow/docker-nginx-letsencrypt"
+  },
+  "name": "bringnow/nginx-letsencrypt Docker container",
+  "description": "nginx docker image with some TLS preconfiguration intended for use with letsencrypt.",
+  "readme": "# docker-nginx-letsencrypt\nnginx docker image based on the [official nginx image](https://hub.docker.com/_/nginx/) with built-in config snippets for [ACME webroot authentication](https://en.wikipedia.org/wiki/Automated_Certificate_Management_Environment) support (for [Let’s Encrypt)](https://letsencrypt.org/) and zero-downtime auto-reload on configuration or certificate changes. Furthermore it comes with a config snippet for SSL/TLS which achieves an A+ rating at [Qualys SSL Server Test](https://www.ssllabs.com/ssltest/).  This image was created for use with [letsencrypt-manager](https://github.com/bringnow/docker-letsencrypt-manager).\n\n![SSL Server Test Rating](./sslservertest.png?raw=true \"Qualys SSL Server Test Rating\")\n\n## Usage\n\nThere are currently two snippets available:\n\n* [`snippets/letsencryptauth.conf`](letsencryptauth.conf): Provide the ACME webroot via HTTP (port 80). Redirect all other traffic to HTTPS pendant.\n* [`snippets/sslconfig.conf`](sslconfig.conf): SSL config directives for enabling an A+ rating on Qualys SSL Server Test.\n\nThe recommended use of this image is via [docker-compose](https://docs.docker.com/compose/). An example docker-compose.yml looks like that:\n\n```\nnginx:\n  image: bringnow/nginx-letsencrypt\n  volumes:\n    - ./nginx.conf:/etc/nginx/nginx.conf\n    - /etc/letsencrypt:/etc/letsencrypt\n    - /var/acme-webroot:/var/acme-webroot\n    - /srv/docker/nginx/dhparam:/etc/nginx/dhparam\n  ports:\n    - \"80:80\"\n    - \"443:443\"\n  net: \"host\"\n  dns_search:\n    - \"example.com\"\n```\n\nFor using the configuration snippets, you can just include them in your `nginx.conf`. A complete example config looks like that:\n\n```\nevents {\n  worker_connections 1024;\n}\n\nhttp {\n\n  include snippets/letsencryptauth.conf;\n  include snippets/sslconfig.conf;\n\n  server {\n    listen 443 ssl default_server;\n    server_name example.com www.example.com\n\n    ssl_certificate /etc/letsencrypt/live/www.example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/www.example.com/privkey.pem;\n\n    add_header Strict-Transport-Security \"max-age=31536000; includeSubdomains\" always;\n\n    location / {\n      # Just return a blank response\n      return 200;\n    }\n  }\n}\n```\n\n### HTTP Strict Transport Security\n\n**Note**: To achieve an A+ rating (not \"only\" A), you need to explicetely set the `Strict-Transport-Security` header in each `server` block (see example above). This will enable [HTTP Strict Transport Security](https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security).\n\n### Volumes\n\n#### letsencrypt authentication\n\nFor *letsencrypt* (e.g. via [letsencrypt-manager](https://github.com/bringnow/docker-letsencrypt-manager)) to work, you should mount the following directories to the appropriate place of your host:\n\n* `/etc/letsencrypt`: The configuration directory of the letsencrypt client.\n* `/var/acme-webroot`: This is the directory where letsencrypt puts data for [ACME webroot validation](http://letsencrypt.readthedocs.org/en/latest/using.html#webroot).\n\n#### DH parameters\n\nIn order to achieve an A+ rating one must also use 4096 bit [DH parameters](https://en.wikipedia.org/wiki/Denavit%E2%80%93Hartenberg_parameters). This image helps you by creating these parameters on startup (if not already present). This takes a whole bunch of time! So if this container is running but nginx not responding, check the log if it is still generating those parameters.\n\nBecause this process is so time-consuming, you can ensure to preserve the generated parameters file by mounting the `/etc/nginx/dhparam` volume to some persistent directory on your host.\n",
+  "dockerfile": "FROM nginx:stable\n\nRUN runtimeDeps='inotify-tools' \\\n\t&& apt-get update && apt-get install -y $runtimeDeps --no-install-recommends\n\nCOPY letsencryptauth.conf /etc/nginx/snippets/letsencryptauth.conf\nCOPY sslconfig.conf /etc/nginx/snippets/sslconfig.conf\n\nVOLUME /etc/nginx/dhparam\n\nCOPY entrypoint.sh /\n\nENTRYPOINT [\"/entrypoint.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "/etc/nginx/dhparam"
+    ],
+    "run": [
+      "runtimeDeps='inotify-tools' \t&& apt-get update && apt-get install -y $runtimeDeps --no-install-recommends"
+    ],
+    "workdir": [],
+    "from": "nginx:stable",
+    "copy": "entrypoint.sh /",
+    "entrypoint": "[\"/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/bringnow/docker-nginx-letsencrypt.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/bringnow/docker-nginx-letsencrypt",
+  "docker_repository": "bringnow/nginx-letsencrypt",
+  "docker_image": "bringnow/nginx-letsencrypt",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "bringnow/nginx-letsencrypt",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/bringnow/nginx-letsencrypt",
+    "https://hub.docker.com/v2/repositories/bringnow/nginx-letsencrypt",
+    "https://github.com/bringnow/docker-nginx-letsencrypt.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/bringnow/nginx-letsencrypt",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

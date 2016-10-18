@@ -1,0 +1,220 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/divio/django-cms-preview",
+    "repository_url": "https://hub.docker.com/v2/repositories/divio/django-cms-preview",
+    "tags_url": "https://hub.docker.com/v2/repositories/divio/django-cms-preview/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/divio/django-cms-preview/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/divio/django-cms-preview/autobuild",
+    "user": "divio",
+    "name": "django-cms-preview",
+    "namespace": "divio",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 1044,
+    "last_updated": "2016-07-07T20:00:31.380575Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "3.3.x",
+        "full_size": 356082604,
+        "id": 3260016,
+        "repository": 310025,
+        "creator": 80919,
+        "last_updater": 80919,
+        "last_updated": "2016-07-07T20:00:25.599166Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.1.x",
+        "full_size": 366197794,
+        "id": 2774437,
+        "repository": 310025,
+        "creator": 80919,
+        "last_updater": 80919,
+        "last_updated": "2016-07-04T07:42:51.032497Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.2.x",
+        "full_size": 356691779,
+        "id": 2974817,
+        "repository": 310025,
+        "creator": 80919,
+        "last_updater": 80919,
+        "last_updated": "2016-07-04T07:42:22.701756Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 370611065,
+        "id": 839035,
+        "repository": 310025,
+        "creator": 4045,
+        "last_updater": 80919,
+        "last_updated": "2016-06-13T07:43:39.287876Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.0.x",
+        "full_size": 369797435,
+        "id": 2776314,
+        "repository": 310025,
+        "creator": 80919,
+        "last_updater": 80919,
+        "last_updated": "2016-06-13T07:34:57.586015Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "divio/django-cms-preview"
+  },
+  "name": "divio/django-cms-preview Docker container",
+  "description": "django CMS Preview",
+  "readme": "##################\ndjango CMS Preview\n##################\n\n\nDockerfile for a `django CMS <github.com/divio/django-cms>`_ preview (develop).\n\n\nGet Started\n===========\n\nBuild locally:\n\n* ``docker build --no-cache -t django-cms-preview .``\n* ``docker run -p 8000:80 -t django-cms-preview``\n\nBuild from docker hub:\n\n* ``docker pull divio/django-cms-preview`` (to pull)\n* ``docker run -d --name=\"djangocms-preview\" -p 80:80 divio/django-cms-preview`` (to run)\n\n\nCredentials\n===========\n\n* Login: **user**\n* Password: **password**\n\n\nOther\n=====\n\n* Create fixtures: ``python manage.py dumpdata > initial_data.json``\n",
+  "dockerfile": "FROM python:2.7\n\nENV PIP_REQUIRE_VIRTUALENV false\n\nRUN pip install --no-deps argparse djangocms-installer six dj-database-url pytz tzlocal\n\nRUN apt-get -y update && apt-get -y install git unzip\nADD requirements.txt /requirements.txt\nRUN djangocms -m -r /requirements.txt -q -p /cms preview\n\nRUN pip install --upgrade https://github.com/divio/djangocms-admin-style/archive/master.zip\n\nADD create-users /cms/create-users\nRUN chmod +x /cms/create-users\n\nWORKDIR /cms\nADD settings.py /cms/preview/settings.py\nADD template.html /cms/preview/templates/aldryn_faq/plugins/category_list.html\nADD template.html /cms/preview/templates/aldryn_faq/plugins/latest_questions.html\nADD template.html /cms/preview/templates/aldryn_faq/plugins/question_list.html\nADD template.html /cms/preview/templates/aldryn_faq/plugins/top_questions.html\nADD template.html /cms/preview/templates/aldryn_faq/plugins/most_read_questions.html\nADD template.html /cms/preview/templates/aldryn_jobs/plugins/categories_list.html\nADD template.html /cms/preview/templates/aldryn_jobs/plugins/latest_entries.html\nADD template.html /cms/preview/templates/aldryn_people/plugins/standard/people_list.html\nADD base.html /cms/preview/templates/base.html\nRUN wget https://github.com/twbs/bootstrap/releases/download/v3.3.5/bootstrap-3.3.5-dist.zip -O /tmp/bootstrap.zip\nRUN unzip /tmp/bootstrap.zip -d /cms/preview/static\nRUN rm /tmp/bootstrap.zip\nRUN mv /cms/preview/static/bootstrap-3.3.5-dist/* /cms/preview/static/\nRUN rm -rf /cms/preview/static/bootstrap-3.3.5-dist\n\nRUN python manage.py migrate cms 0013\nRUN python manage.py migrate\n\n# XXX intellectronica 2015-11-26 This initial data was prepared with\n# Django 1.7 and no longer works. Needs to be updated.\n# ADD initial_data.json /cms/initial_data.json\n# RUN python manage.py loaddata /cms/initial_data.json\nRUN /cms/create-users\nEXPOSE 80\n\nCMD python manage.py runserver 0.0.0.0:80\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "requirements.txt",
+        "dest": "/requirements.txt"
+      },
+      {
+        "source": "create-users",
+        "dest": "/cms/create-users"
+      },
+      {
+        "source": "settings.py",
+        "dest": "/cms/preview/settings.py"
+      },
+      {
+        "source": "template.html",
+        "dest": "/cms/preview/templates/aldryn_faq/plugins/category_list.html"
+      },
+      {
+        "source": "template.html",
+        "dest": "/cms/preview/templates/aldryn_faq/plugins/latest_questions.html"
+      },
+      {
+        "source": "template.html",
+        "dest": "/cms/preview/templates/aldryn_faq/plugins/question_list.html"
+      },
+      {
+        "source": "template.html",
+        "dest": "/cms/preview/templates/aldryn_faq/plugins/top_questions.html"
+      },
+      {
+        "source": "template.html",
+        "dest": "/cms/preview/templates/aldryn_faq/plugins/most_read_questions.html"
+      },
+      {
+        "source": "template.html",
+        "dest": "/cms/preview/templates/aldryn_jobs/plugins/categories_list.html"
+      },
+      {
+        "source": "template.html",
+        "dest": "/cms/preview/templates/aldryn_jobs/plugins/latest_entries.html"
+      },
+      {
+        "source": "template.html",
+        "dest": "/cms/preview/templates/aldryn_people/plugins/standard/people_list.html"
+      },
+      {
+        "source": "base.html",
+        "dest": "/cms/preview/templates/base.html"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "pip install --no-deps argparse djangocms-installer six dj-database-url pytz tzlocal",
+      "apt-get -y update && apt-get -y install git unzip",
+      "djangocms -m -r /requirements.txt -q -p /cms preview",
+      "pip install --upgrade https://github.com/divio/djangocms-admin-style/archive/master.zip",
+      "chmod +x /cms/create-users",
+      "wget https://github.com/twbs/bootstrap/releases/download/v3.3.5/bootstrap-3.3.5-dist.zip -O /tmp/bootstrap.zip",
+      "unzip /tmp/bootstrap.zip -d /cms/preview/static",
+      "rm /tmp/bootstrap.zip",
+      "mv /cms/preview/static/bootstrap-3.3.5-dist/* /cms/preview/static/",
+      "rm -rf /cms/preview/static/bootstrap-3.3.5-dist",
+      "python manage.py migrate cms 0013",
+      "python manage.py migrate",
+      "/cms/create-users"
+    ],
+    "workdir": [
+      "/cms"
+    ],
+    "from": "python:2.7",
+    "env": {
+      "PIP_REQUIRE_VIRTUALENV": "false"
+    },
+    "cmd": "python manage.py runserver 0.0.0.0:80"
+  },
+  "source_repository_url": "https://github.com/divio/django-cms-preview.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/divio/django-cms-preview",
+  "docker_repository": "divio/django-cms-preview",
+  "docker_image": "divio/django-cms-preview",
+  "parameters_schema": {
+    "PIP_REQUIRE_VIRTUALENV": {
+      "default": "false",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "divio/django-cms-preview",
+  "revision": "3.3.x",
+  "uris": [
+    "https://hub.docker.com/r/divio/django-cms-preview",
+    "https://hub.docker.com/v2/repositories/divio/django-cms-preview",
+    "https://github.com/divio/django-cms-preview.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Type/Middleware/Content Management"
+  ],
+  "info_url": "https://hub.docker.com/r/divio/django-cms-preview",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

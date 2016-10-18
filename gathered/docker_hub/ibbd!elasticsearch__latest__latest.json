@@ -1,0 +1,133 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/ibbd/elasticsearch",
+    "repository_url": "https://hub.docker.com/v2/repositories/ibbd/elasticsearch",
+    "tags_url": "https://hub.docker.com/v2/repositories/ibbd/elasticsearch/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/ibbd/elasticsearch/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/ibbd/elasticsearch/autobuild",
+    "user": "ibbd",
+    "name": "elasticsearch",
+    "namespace": "ibbd",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 137,
+    "last_updated": "2016-08-25T05:35:14.269056Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 269663104,
+        "id": 2569524,
+        "repository": 623076,
+        "creator": 419585,
+        "last_updater": 419585,
+        "last_updated": "2016-08-25T05:35:13.903117Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "shield",
+        "full_size": 270581206,
+        "id": 4022319,
+        "repository": 623076,
+        "creator": 419585,
+        "last_updater": 419585,
+        "last_updated": "2016-07-27T09:57:38.781276Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "IBBD/dockerfile-elk"
+  },
+  "name": "ibbd/elasticsearch Docker container",
+  "description": "Elasticsearch with IK ",
+  "readme": "# ibbd/elasticsearch\n\n## 计划安装插件\n\n- 安全插件\n- [x] IK中文分词: https://github.com/medcl/elasticsearch-analysis-ik\n- MongoDB数据导入插件: https://github.com/richardwilly98/elasticsearch-river-mongodb/ （支持的es版本有点低）\n- CSV数据导入插件: https://github.com/xxBedy/elasticsearch-river-csv （版本支持低）\n- Hadoop插件：https://github.com/elasticsearch/elasticsearch-hadoop\n- 关系型数据库同步插件：https://github.com/jprante/elasticsearch-river-jdbc\n\n关于安全插件的分析：http://drops.wooyun.org/tips/8129\n\n## IK配置\n\n- ik_max_word 会将文本做最细粒度的拆分，比如会将“中华人民共和国国歌”拆分为“中华人民共和国,中华人民,中华,华人,人民共和国,人民,人,民,共和国,共和,和,国国,国歌”，会穷尽各种可能的组合；\n- ik_smart 会做最粗粒度的拆分，比如会将“中华人民共和国国歌”拆分为“中华人民共和国,国歌”。\n- stop words\n- 量词表：quantifier.dic\n\n[stop words](https://github.com/blueshen/ik-analyzer/blob/master/src/main/resources/stopword.dic)\n\n",
+  "dockerfile": "#\n# ElasticSearch Dockerfile with IK plugin for chinese\n#\n# https://github.com/ibbd/dockerfile-elk/elasticsearch\n#\n#\n\n# Pull base image.\nFROM elasticsearch:2.3\n\nMAINTAINER Alex Cai \"cyy0523xc@gmail.com\"\n\n# 安装插件\n# ElasticSearch IK for chinese\n# 注意检查版本：https://github.com/medcl/elasticsearch-analysis-ik\nENV ELASTICSEARCH_IK_MAJOR 1.9.5\nADD https://github.com/medcl/elasticsearch-analysis-ik/archive/v$ELASTICSEARCH_IK_MAJOR.tar.gz /tmp/elasticsearch-analysis-ik.tar.gz\nRUN apt-get update && \\\n    apt-get install -y --no-install-recommends --force-yes maven openjdk-8-jdk && \\\n    rm -rf /var/lib/apt/lists/* && \\\n    tar -xvf /tmp/elasticsearch-analysis-ik.tar.gz -C /tmp && \\\n    cd /tmp/elasticsearch-analysis-ik-$ELASTICSEARCH_IK_MAJOR && \\\n    mvn package && \\\n    unzip target/releases/elasticsearch-analysis-ik-$ELASTICSEARCH_IK_MAJOR.zip -d /usr/share/elasticsearch/plugins/ik && \\\n    cd / && \\\n    rm -rf /tmp/elasticsearch-analysis-ik*\n# 安装  elasticsearch-head 插件\nRUN  plugin install mobz/elasticsearch-head\n\n# 安装  elasticsearch-kopf 插件\nRUN  plugin install lmenezes/elasticsearch-kopf\n# 解决时区问题\nENV TZ \"Asia/Shanghai\"\n\n# 终端设置\nENV TERM xterm\n\n\nEXPOSE 9200\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "https://github.com/medcl/elasticsearch-analysis-ik/archive/v$ELASTICSEARCH_IK_MAJOR.tar.gz",
+        "dest": "/tmp/elasticsearch-analysis-ik.tar.gz"
+      }
+    ],
+    "expose": [
+      9200
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update &&     apt-get install -y --no-install-recommends --force-yes maven openjdk-8-jdk &&     rm -rf /var/lib/apt/lists/* &&     tar -xvf /tmp/elasticsearch-analysis-ik.tar.gz -C /tmp &&     cd /tmp/elasticsearch-analysis-ik-$ELASTICSEARCH_IK_MAJOR &&     mvn package &&     unzip target/releases/elasticsearch-analysis-ik-$ELASTICSEARCH_IK_MAJOR.zip -d /usr/share/elasticsearch/plugins/ik &&     cd / &&     rm -rf /tmp/elasticsearch-analysis-ik*",
+      " plugin install mobz/elasticsearch-head",
+      " plugin install lmenezes/elasticsearch-kopf"
+    ],
+    "workdir": [],
+    "from": "elasticsearch:2.3",
+    "maintainer": "Alex Cai \"cyy0523xc@gmail.com\"",
+    "env": {
+      "ELASTICSEARCH_IK_MAJOR": "1.9.5",
+      "TZ": "\"Asia/Shanghai\"",
+      "TERM": "xterm"
+    }
+  },
+  "source_repository_url": "https://github.com/IBBD/dockerfile-elk.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/IBBD/dockerfile-elk",
+  "docker_repository": "ibbd/elasticsearch",
+  "docker_image": "ibbd/elasticsearch",
+  "parameters_schema": {
+    "ELASTICSEARCH_IK_MAJOR": {
+      "default": "1.9.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TZ": {
+      "default": "\"Asia/Shanghai\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TERM": {
+      "default": "xterm",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        9200
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "ibbd/elasticsearch",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/ibbd/elasticsearch",
+    "https://hub.docker.com/v2/repositories/ibbd/elasticsearch",
+    "https://github.com/IBBD/dockerfile-elk.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/ibbd/elasticsearch",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

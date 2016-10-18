@@ -1,0 +1,182 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/devgeniem/wordpress-server",
+    "repository_url": "https://hub.docker.com/v2/repositories/devgeniem/wordpress-server",
+    "tags_url": "https://hub.docker.com/v2/repositories/devgeniem/wordpress-server/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/devgeniem/wordpress-server/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/devgeniem/wordpress-server/autobuild",
+    "user": "devgeniem",
+    "name": "wordpress-server",
+    "namespace": "devgeniem",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1115,
+    "last_updated": "2016-10-17T14:07:40.788513Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 57384725,
+        "id": 3359763,
+        "repository": 734849,
+        "creator": 664607,
+        "last_updater": 664607,
+        "last_updated": "2016-10-17T14:07:40.423250Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "php7.0",
+        "full_size": 57384625,
+        "id": 3411363,
+        "repository": 734849,
+        "creator": 664607,
+        "last_updater": 664607,
+        "last_updated": "2016-10-17T14:05:55.694842Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "php5.6",
+        "full_size": 41489074,
+        "id": 3411353,
+        "repository": 734849,
+        "creator": 664607,
+        "last_updater": 664607,
+        "last_updated": "2016-09-30T06:04:41.716827Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "devgeniem/docker-wordpress"
+  },
+  "name": "devgeniem/wordpress-server Docker container",
+  "description": "Minimal wordpress server with nginx and php7 included.",
+  "readme": "# Lightweight PHP-FPM & Nginx Docker Image for WordPress\n[![devgeniem/alpine-wordpress docker image](http://dockeri.co/image/devgeniem/wordpress-server)](https://registry.hub.docker.com/u/devgeniem/wordpress-server/)\n\n[![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)\n\nThis is maintained repository. We use this project in production and recommend this for your projects too. This container doesn't have mysql or email, you need to provide them from elsewhere. This can be other container or your host machine.\n\nI tried to include all build, test and project tools in [docker-alpine-wordpress](https://github.com/devgeniem/docker-alpine-wordpress) image. I think that more modular design is better for docker and security as well.\n\nThis project tries to be as minimal as possible and doesn't include anything that we don't absolutely need in the runtime.\n\n## Aren't you only supposed to run one process per container?\nWe think that docker container should be small set of processes which provide one service rather than one clumsy process. This container uses [s6-overlay](https://github.com/just-containers/s6-overlay) in order to run php-fpm and nginx together.\n\n## Container layout\nMount your wordpress project into:\n```\n/var/www/project\n```\n\nYour project should define web root in:\n```\n/var/www/project/web\n```\nThis is the place where nginx will serve requests. This is compatible with [bedrock layout](https://github.com/roots/bedrock).\n\n### Override project path\nYou can use `OVERRIDE_PROJECT_ROOT` variable to change project path with symlink.\n\nFor example in `Drone CI` all mounts are done into `/drone/src` folder and we use `OVERRIDE_PROJECT_ROOT=/drone/src/project` in our testing.\n\nContainer creates a symlink from /var/www/project into `$OVERRIDE_PROJECT_ROOT` which allows us to use custom path.\n\n## User permissions\nYou can use `WP_GID` and `WP_UID` env to change web user and group.\n\nIf these are not set container will look for owner:group from files mounted in `/var/www/project/web/`.\n\nIf these files are owned by root user or root group the container will automatically use 100:101 as permissions instead. This is so that we won't never run nginx and php-fpm as root.\n\n## Nginx includes\nYou can have custom nginx includes in your project mount `/var/www/project/nginx`.\n\n**Include into http {} block:**\n`/var/www/project/nginx/http/*.conf`\n\n**Include into server {} block:**\n`/var/www/project/nginx/server/*.conf`\n\nSee more in our [wp-project template](https://github.com/devgeniem/wp-project).\n\n## Cron jobs\nYou can place cron file in `/var/www/project/tasks.cron`. This is symlinked to crond and run as user `wordpress`.\n\nFor example:\n```\n# do daily/weekly/monthly maintenance\n*       *       *       *       *       echo \"test log from: $(whoami)...\" >> /tmp/test.log\n```\n\n## Environment Variables\n\n### Timezone\nThis sets timezone for the environment and php. See candidates here: http://php.net/manual/en/timezones.php\n```\nTZ     # Default: 'Europe/Helsinki'\n```\n\n### Development/Production\n\n```\nWP_ENV # Default: '' Options: development,testing,production,pretty-much-anything-you-want\n```\n\n### Database variables (mysql/mariadb)\n\n```\nDB_NAME     # Default: ''\nDB_PASSWORD # Default: ''\nDB_USER     # Default: ''\nDB_HOST     # Default: ''\nDB_PORT     # Default: ''\n```\n\nRemember to set `DB_NAME`, `DB_PASSWORD` and `DB_USER` and use these variables in your wp-config.php. These are automatically added as envs in php context.\n\n### Email variables\n\n```\nSMTP_HOST\n```\n\nThis variable changes the host where container tries to send mail from. By default this is docker host `172.17.0.1`.\n\n```\nSMTP_PORT\n```\n\nThis variable changes the port where container tries to connect in order to send mail. By default this is `25`.\n\n```\nSMTP_TLS\n```\n\nIf this is provided use username in authenticating to mail server. Default: null\n```\nSMTP_USER\n```\n\nIf this is provided use password in authenticating to mail server. Default: null\n```\nSMTP_PASSWORD\n```\n\nIf this is `on` mail will use username/password authentication in connections to smtp server.\nThis will automatically activate if you use `SMTP_USER` and `SMTP_PASSWORD`. Default: `off`\n```\nSMTP_AUTH\n```\n\nSee more about these variables in [msmtp docs](http://msmtp.sourceforge.net/doc/msmtp.html#Authentication).\n\n### PHP and Nginx Variables\nYou can change following env to change php configs:\n\n```\n# Variables and default values\nPHP_MEMORY_LIMIT=128M\nNGINX_MAX_BODY_SIZE=64M\nNGINX_FASTCGI_TIMEOUT=30\n```\n\n## What's inside container:\n### For running WordPress\n- php7\n- php-fpm7\n- nginx\n- wp-cli\n\n### For sending emails with smtp server\n- msmtp\n",
+  "dockerfile": "# Dependency for php7: libwebp library doesn't work correctly with alpine:v3.3 so we are using alpine:edge\nFROM alpine:edge\nMAINTAINER Onni Hakala - Geniem Oy. <onni.hakala@geniem.com>\n\n# Install dependencies and small amount of devtools\nRUN apk add --update curl bash git openssh-client nano nginx ca-certificates \\\n    # Libs for php\n    libssh2 libpng freetype libjpeg-turbo libgcc libxml2 libstdc++ icu-libs libltdl libmcrypt \\\n    # WP-CLI will try to use interactive mode and causes few errors in output\n    # when ncurses is not installed\n    ncurses \\\n    # For mails\n    msmtp \\\n    # For mysql import/export\n    mysql-client \\\n    # Install gettext\n    gettext \\\n    # Set timezone according your location\n    tzdata && \\\n    # Upgrade musl\n    apk add -u musl && \\\n\n    ##\n    # Install php7\n    # - These repositories are in 'testing' repositories but it's much more stable/easier than compiling our own php.\n    ##\n    apk add --update-cache --repository http://dl-4.alpinelinux.org/alpine/edge/testing/ \\\n    php7-pdo_mysql php7-mysqli php7-mysqlnd php7-mcrypt \\\n    php7 php7-session php7-fpm php7-json php7-zlib php7-xml php7-pdo \\\n    php7-gd php7-curl php7-opcache php7-ctype php7-mbstring php7-soap \\\n    php7-intl php7-bcmath php7-dom php7-xmlreader php7-openssl php7-phar php7-redis php7-mongodb  && \\\n\n    # Small fixes to php & nginx\n    ln -s /etc/php7 /etc/php && \\\n    ln -s /usr/bin/php7 /usr/bin/php && \\\n    ln -s /usr/sbin/php-fpm7 /usr/bin/php-fpm && \\\n    ln -s /usr/lib/php7 /usr/lib/php && \\\n    rm -rf /var/log/php7 && \\\n    mkdir -p /var/log/php/ && \\\n\n    # No need for the default configs\n    rm -f /etc/php/php-fpm.d/www.conf && \\\n\n    # Remove nginx user because we will create a user with correct permissions dynamically\n    deluser nginx && \\\n    mkdir -p /var/log/nginx && \\\n    mkdir -p /tmp/nginx/body && \\\n\n    # Remove default crontab\n    rm /var/spool/cron/crontabs/root && \\\n\n    ##\n    # Add S6-overlay to use S6 process manager\n    # source: https://github.com/just-containers/s6-overlay/#the-docker-way\n    ##\n    curl -L https://github.com/just-containers/s6-overlay/releases/download/v1.17.2.0/s6-overlay-amd64.tar.gz \\\n    | tar -xvzC /  && \\\n\n    ##\n    # Install wp-cli\n    # source: http://wp-cli.org/\n    ##\n    curl -L https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar -o /usr/local/bin/wp-cli && \\\n    chmod +rx /usr/local/bin/wp-cli && \\\n    # wp-cli uses less internally to output it's help pages\n    apk add less && \\\n\n    ##\n    # Install cronlock for running cron correctly with mulitple container setups\n    # https://github.com/kvz/cronlock\n    ##\n    curl -L https://raw.githubusercontent.com/kvz/cronlock/master/cronlock -o /usr/local/bin/cronlock && \\\n    chmod +rx /usr/local/bin/cronlock && \\\n\n    ##\n    # Install Composer\n    ##\n    curl -L -sS https://getcomposer.org/installer | \\\n    php -- --install-dir=/usr/local/bin --filename=composer && \\\n    chmod +rx /usr/local/bin/composer && \\\n    # composer parallel install plugin\n    composer global require hirak/prestissimo && \\\n\n    # Remove cache and tmp files\n    rm -rf /var/cache/apk/* && \\\n    rm -rf /tmp/*\n\n##\n# Add Project files like nginx and php-fpm processes and configs\n# Also custom scripts and bashrc\n##\nCOPY rootfs/ /\n\n# Update path with composer files + wpcs\nENV TERM=\"xterm\" \\\n    DB_HOST=\"\" \\\n    DB_NAME=\"\" \\\n    DB_USER=\"\"\\\n    DB_PASSWORD=\"\"\\\n    # Set defaults which can be overriden\n    DB_PORT=\"3306\" \\\n    # Use default web port in nginx but allow it to be overridden\n    # This also works correctly with flynn:\n    # https://github.com/flynn/flynn/issues/3213#issuecomment-237307457\n    PORT=\"80\" \\\n    # Set defaults for redis\n    WP_REDIS_PORT=\"6379\" \\\n    WP_REDIS_DATABASE=\"0\" \\\n    WP_REDIS_SCHEME=\"tcp\" \\\n    WP_REDIS_CLIENT=\"pecl\" \\\n    # Cronlock is used to stop simultaneous cronjobs in clusterised environments\n    CRONLOCK_HOST=\"\" \\\n    # This is for your project root\n    PROJECT_ROOT=\"/var/www/project\" \\\n    # This is used by nginx and php-fpm\n    WEB_ROOT=\"/var/www/project/web\" \\\n    # Nginx include files\n    NGINX_INCLUDE_DIR=\"/var/www/project/nginx\" \\\n    # Allow bigger file uploads\n    NGINX_MAX_BODY_SIZE=\"64M\" \\\n    # Have sane fastcgi timeout by default\n    NGINX_FASTCGI_TIMEOUT=\"30\" \\\n\n    # Default php memory limit\n    PHP_MEMORY_LIMIT=\"128M\" \\\n\n    # This is used automatically by wp-cli\n    WP_CORE=\"/var/www/project/web/wp\" \\\n    # Use host machine as default SMTP_HOST\n    SMTP_HOST=\"172.17.0.1\" \\\n    # This folder is used to mount files into host machine\n    # You should use this path for your uploads since everything else should be ephemeral\n    UPLOADS_ROOT=\"/var/www/uploads\"\\\n    # This can be overidden by you, it's just default for us\n    TZ=\"Europe/Helsinki\"\n\n# Set default path to project folder for easier running commands in project\nWORKDIR ${PROJECT_ROOT}\n\nEXPOSE ${PORT}\n\nENTRYPOINT [\"/init\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      "${PORT}"
+    ],
+    "volume": [],
+    "run": [
+      "apk add --update curl bash git openssh-client nano nginx ca-certificates     # Libs for php"
+    ],
+    "workdir": [
+      "${PROJECT_ROOT}"
+    ],
+    "from": "alpine:edge",
+    "maintainer": "Onni Hakala - Geniem Oy. <onni.hakala@geniem.com>",
+    "copy": "rootfs/ /",
+    "env": {
+      "TERM": "\"xterm\"",
+      "": "",
+      "DB_HOST": "\"\"",
+      "DB_NAME": "\"\"",
+      "DB_USER": "\"\"",
+      "\"\"": "",
+      "#": "Set",
+      "defaults": "which",
+      "can": "be"
+    },
+    "entrypoint": "[\"/init\"]"
+  },
+  "source_repository_url": "https://github.com/devgeniem/docker-wordpress.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/devgeniem/docker-wordpress",
+  "docker_repository": "devgeniem/wordpress-server",
+  "docker_image": "devgeniem/wordpress-server",
+  "parameters_schema": {
+    "TERM": {
+      "default": "\"xterm\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DB_HOST": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DB_NAME": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DB_USER": {
+      "default": "\"\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "\"\"": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "#": {
+      "default": "Set",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "defaults": {
+      "default": "which",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "can": {
+      "default": "be",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        "${PORT}"
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "devgeniem/wordpress-server",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/devgeniem/wordpress-server",
+    "https://hub.docker.com/v2/repositories/devgeniem/wordpress-server",
+    "https://github.com/devgeniem/docker-wordpress.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/devgeniem/wordpress-server",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

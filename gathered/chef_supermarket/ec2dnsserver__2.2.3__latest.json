@@ -1,0 +1,66 @@
+{
+  "name": "ec2dnsserver Chef cookbook",
+  "chef_cookbook_name": "ec2dnsserver",
+  "revision": "2.2.3",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/ec2dnsserver",
+    "https://supermarket.chef.io/cookbooks/ec2dnsserver/download",
+    "https://supermarket.chef.io/cookbooks/ec2dnsserver/versions/2.2.3",
+    "https://supermarket.chef.io/cookbooks/ec2dnsserver/versions/2.2.3/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/ec2dnsserver/versions/2.2.3",
+    "https://supermarket.chef.io/api/v1/cookbooks/ec2dnsserver",
+    "https://supermarket.chef.io/api/v1/cookbooks/ec2dnsserver/versions/2.2.3/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Provider/Amazon/EC2",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Network/DNS"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/ec2dnsserver",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/ec2dnsserver/versions/2.2.3/download",
+  "deprecated": false,
+  "created": "2016-03-22T15:35:18.353Z",
+  "updated": "2016-03-28T13:35:55.757Z",
+  "description": "Installs/Configures ec2dnsserver",
+  "maintainer": {
+    "name": "evertrue",
+    "email": "devops@evertrue.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 639,
+  "downloads_count_revision": 223,
+  "repository_url": "https://github.com/evertrue/ec2dnsserver-cookbook/",
+  "issues_url": "https://github.com/evertrue/ec2dnsserver-cookbook/issues",
+  "chef_source_url": "https://github.com/evertrue/ec2dnsserver-cookbook/",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# ec2dnsserver cookbook\n\nUses the AWS API to build bind zone files to reference all of the nodes in your cluster using their tagged names and internal IPs.\n\n# Requirements\n\n* Fog gem (to call the EC2 API and get node tags)\n* IPAddress gem (for some IP address parsing)\n* Rsyslog (if you want to use syslog logging)\n\n# Necessary changes to the chef-client\n\nThis cookbook sets the `node['chef_client']['interval']` and `node['chef_client']['splay']` attributes which are read by the chef-client cookbook to make chef-client run more rapidly.  If you are not using the chef-client cookbook, you may want to find some other way to adjust the chef run interval so that your DNS stay reasonably up to date.\n\n# Known Issues\n\n* Currently only supports IPv4\n* Currently only supports RSyslog\n* Possibly more complicated to use than it really should be\n\n## Required Permissions\n\nCreate an IAM user with the following permissions:\n\n    {\n      \"Version\": \"2014-03-12\",\n      \"Statement\": [\n        {\n          \"Action\": [\n            \"ec2:DescribeInstances\",\n            \"ec2:DescribeNetworkInterface*\",\n            \"ec2:DescribeVpcs\"\n          ],\n          \"Resource\": [\n            \"*\"\n          ],\n          \"Effect\": \"Allow\"\n        }\n      ]\n    }\n\n# Usage\n\nThere are essentially two supported ways to use the ec2dnsserver cookbook.  One\nis to include the recipe via `include_recipe` and the other is via the\nec2dnsserver_zone resource, like so:\n\n## ec2dnsserver_zone Resource\n\n    execute 'reload_zones' do\n      command 'rndc reload'\n      action :nothing\n    end\n\n    ec2dnsserver_zone \"priv.yourdomain.local\" do\n      vpcs %w(vpc-1a2b3c4d)\n      stub false\n      ptr false\n      suffix \"priv.yourdomain.local\"\n      static_records(\n        'hostname' => {\n          'cookbook' => 'some_cookbook'\n        }\n      )\n      avoid_subnets %w(subnet-1a2b3c4d)\n      contact_email 'hostmaster@yourcompany.com'\n      path '/etc/bind/db.priv.yourdomain.local'\n      notifies :run, 'execute[reload_zones]'\n    end\n\n### Properties explained\n\n* **apex (name attribute)** - The zone apex.\n* **vpcs** - This is the list of VPCs from which to include zone data (default: [])\n* **avoid_subnets** - IPs for network adapters in these subnets will not be used to generate the zone\n* **path** - The location of the zone file (default: `#{node['ec2dnsserver']['zones_dir']}/db.#{apex}`)\n* **stub** - Set to `true` if this is to be a \"stub\" zone.  A stub zone is a zone with only one A record at the zone apex.  It is useful for overriding FQDNs in zones for which your DNS server is not authoritative.\n* **suffix** - Name to append to any tagged names found in your EC2 cluster.  E.g. In PTR zones, records will be constructed as \"4.3.2.1.in-addr.arpa IN PTR ec2servername.suffix\".  Defaults to the zone apex if not specified.\n* **ptr** - True if this is a PTR (reverse lookup) zone (default: false)\n* **static_records** - A hash describing extra records to be appended to the zone (See `static_records` section)\n* **ns_zone** - The parent zone of the name server (NS) record for this zone.  (default: value of **suffix**)\n\n#### Properties pertaining specifically to the SOA record (See: http://www.zytrax.com/books/dns/ch8/soa.html).  *All times are in seconds.*\n\n* **source_host** - The host used for the SOA record name server field (default: node.name)\n* **default_ttl** - The default time-to-live (i.e. cache timeout) for the zone in seconds (default: 300)\n* **contact_email** - The hostmaster's email address (REQUIRED)\n* **refresh_time** - Timeout before the slave will try to refresh the zone from the master (default: 3600)\n* **retry_time** - Time between retries if the slave fails to contact the master when *refresh* (above) has expired (default: 600)\n* **expire_time** - Indicates when the zone data is no longer considered authoritative (default: 86400)\n* **nxdomain_ttl** - How long a bad lookup (e.g. one that finds nothing) is cached (default: 300)\n\n## static_records\n\nThis section describes the format of the hash used to define static records.  Basically they look like this:\n\n### To define the base of a \"stub\" (aka. override) zone\n    {\n      \"value\": \"1.1.1.1\",\n      \"type\": \"A\"\n    }\n\n### To use a cookbook or a role to create a dynamic mapping\n    {\n      \"hostname\": {\n        \"cookbook\": \"cookbook_name\"\n      }\n    }\n\n### Or a role\n    {\n      \"hostname\": {\n        \"role\": \"role_name\"\n      }\n    }\n\n## zones\n\nThis section describes the format of the *keyed hash* used to define zones (by way of the `node['ec2dnsserver']['zones']` attribute).  The format looks like the following...\n\n### Simplest possible primary zone config:\n    {\n      \"priv.yourdomain.local\": {}\n    }\n\n### Simplest possible PTR config:\n    {\n      \"10.in-addr.arpa\": {\n        \"ptr_zone\": true,\n        \"suffix\": \"priv.yourdomain.local\"\n      }\n    }\n\n### For a standard, primary zone with some *static records* that uses VPCs:\n    {\n      \"priv.yourdomain.local\": {\n        \"ptr_zone\": false,\n        \"primary\": true,\n        \"static_records\": {\n          \"stage-storm\": {\n            \"cookbook\": \"et_ops_haproxy\"\n          }\n        },\n        \"vpcs\": [\n          \"vpc-1a2b3c4d\"\n        ]\n      }\n    }\n\n### For a PTR zone:\n    {\n      \"10.in-addr.arpa\": {\n        \"ptr_zone\": true,\n        \"suffix\": \"priv.yourdomain.local\",\n        \"primary\": false,\n        \"vpcs\": [\n          \"vpc-1a2b3c4d\"\n        ]\n      }\n    }\n\n### For a stub zone that uses a cookbook search to build its apex record:\n    {\n      \"test-cookbook-host.anotherdomain.com\": {\n        \"stub\": true,\n        \"suffix\": \"priv.yourdomain.local\",\n        \"primary\": false,\n        \"static_records\": {\n          \"cookbook\": \"et_ops_haproxy\"\n        }\n      }\n    }\n\n### For a stub zone that uses a statically defined IP address for its apex record:\n    {\n      \"test-value-host.anotherdomain.com\": {\n        \"stub\": true,\n        \"suffix\": \"priv.yourdomain.local\",\n        \"primary\": false,\n        \"static_records\": {\n          \"value\": \"1.1.1.1\",\n          \"type\": \"A\"\n        }\n      }\n    }\n\n# Attributes\n\n*All attributes fall under the **['ec2dnsserver']** hash key.*\n\n* **['user']** - User that bind will run under.  (default: bind)\n* **['group']** - Grou that bind will run under.  (default: bind)\n* **['aws_api_user']** - User that ec2dnsserver will use to interact with the EC2 API (in fact this is currently only used as the key to lookup the real keys in the API keys data bag).  (default: Ec2DnsServer)\n* **['config_dir']** - The bind config path (default: /etc/bind)\n* **['cache_dir']** - The bind cache directory (default: /var/cache/bind)\n* **['zones_dir']** - Where the zone files live (default: value of **['config_dir']**)\n* **['contact_email']** - The hostmaster's email address (default: nil)\n* **['dnssec_validation']** - Sets the flag by the same name in bind conf (See: [DNS BIND9 Security Statements](http://www.zytrax.com/books/dns/ch7/security.html)) (default: no)\n* **['avoid_subnets']** - IPs for network adapters in these subnets will not be used to generate the zone.  (default: [])\n* **['recursion_clients']** - Array of CIDR-formatted network addresses that will be allowed to do recursive queries against the nameserver.  (attribute default is [] but template automatically includes localhost, 10/8, and localnets)\n* **['zones']** - Use this to pass a list of zones to the cookbook instead of using the resource.  See **zones** section.\n\n## Logging Attributes\n* **['log']['log_queries']** - Enable logging of every single query (warning: disk space monster).  (default: false)\n* **['log']['facility']** - Which syslog facility to use.  (default: daemon)\n* **['log']['versions']** - How many old log files to keep.  (default: 5)\n* **['log']['size']** - Max log file size.  (default: 25M)\n* **['log']['logger']** - Which log config recipe to use.  (default and currently the only one supported: rsyslog)\n* **['log']['severity']** - Which severity to attach to syslog messages.  (default: dynamic)\n* **['log']['file']** - File to send logs to when not using syslog.  (default: /var/log/named/named.log)\n\n# Recipes\n\nThe only one you care about is `default`.  `rsyslog` (and any future sys logger dependencies) are brought in as dependencies automatically.\n\n# Author\n\nAuthor:: EverTrue, Inc. (<devops@evertrue.com>)\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 14.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/et_fog",
+      "revision": "~> 1.0",
+      "self_resolve": true
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/microwebapps/haproxy-frontend",
+    "repository_url": "https://hub.docker.com/v2/repositories/microwebapps/haproxy-frontend",
+    "tags_url": "https://hub.docker.com/v2/repositories/microwebapps/haproxy-frontend/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/microwebapps/haproxy-frontend/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/microwebapps/haproxy-frontend/autobuild",
+    "user": "microwebapps",
+    "name": "haproxy-frontend",
+    "namespace": "microwebapps",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 124,
+    "last_updated": "2015-10-27T15:17:41.044983Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 59202457,
+        "id": 218506,
+        "repository": 229418,
+        "creator": 338695,
+        "last_updater": 253146,
+        "last_updated": "2015-10-27T15:34:26.673146Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "micro-webapps/micro-webapps"
+  },
+  "name": "microwebapps/haproxy-frontend Docker container",
+  "description": "HAProxy frontend allowing simple deployment and configuration of web applications.",
+  "readme": "## What is micro-webapps?\nThe goal of the micro-webapps project is to allow simple deployment of web applications in the cloud (multi container) environment. Admin is able to choose the frontend which will serve the web applications and then install the web applications as separate containers. For each web application, he is able to configure the URI on which the web application will be served.\n\nIt is therefore possible to setup webserver with, for example, following structure:\n\n- `http://domain.tld/` running static content.\n- `http://domain.tld/blog` running wordpress in separate container.\n- `http://bugs.domain.tld` running Bugzilla in separate container.\n- `http://another-domain.tld` running completely different domain.\n\nIt also allows more advanced features like load-balancing. For more information, check the [micro-webapps home page](https://github.com/micro-webapps/micro-webapps).\n\n## What is haproxy-frontend?\nThis Docker image contains HAProxy running as frontend for other web applications in the cloud. It is intended to be used with Kubernetes or Openshift. It fetches the list of deployed micro-webapps from the Kubernetes or Openshift API server and sets up the reverse proxy for the web applications.\n\n## How to use haproxy-frontend?\n\nYou should consider using [Atomic App](https://github.com/projectatomic/atomicapp) to deploy haproxy-frontend using the microwebapps/haproxy-frontend-atomicapp Docker image, but it is also possible to just use this this Docker image without Atomic App to deploy the haproxy-frontend.\n\n\n### 1. Create the haproxy-frontend Kubernetes/Openshift service\n\nDownload the [haproxy-frontend-service.json](https://raw.githubusercontent.com/micro-webapps/micro-webapps/master/nulecules/mwa-haproxy-frontend/artifacts/kubernetes/mwa-haproxy-frontend-service.json) and replace the `$publicip` variable with the public IP address you want to use for the haproxy-frontend.\n\nThen you can deploy the Kubernetes/Openshift service as usual using `kubectl` or `osc`.\n\n### 2. Create the haproxy-frontend Kubernetes/Openshift pod\n\nDownload the [haproxy-frontend-pod.yaml](https://raw.githubusercontent.com/micro-webapps/micro-webapps/master/nulecules/mwa-haproxy-frontend/artifacts/kubernetes/mwa-haproxy-frontend-pod.yaml) and replace the `$kubernetes_client_certificate`, `$kubernetes_client_key` and `$kubernetes_namespace` variables with the proper values.\n\nFor Kubernetes, you can replace `$kubernetes_client_certificate` and `$kubernetes_client_key` with an empty string, because Kubernetes provides authorization token in the container automatically. Use `default` string as a default `$kubernetes_namespace`.\n\nThen you can deploy the Kubernetes/Openshift pod as usual using `kubectl` or `osc`.\n\n### 3. Test that the haproxy-frontend is running.\n\nYou should now be able to use curl or wget to check that haproxy-frontend is responding on the $publicip or on the IP address showed in `kubectl get service` or `osc get service` output.\n\n## Deploying micro-webapps web application\n\nWhen haproxy-frontend is running, you can start deploying micro-webapps web applications. Check the [micro-webapps](https://hub.docker.com/u/microwebapps/dashboard/) Docker registry for list of supported web applications.",
+  "dockerfile": "# This program is free software: you can redistribute it and/or modify\n# it under the terms of the GNU General Public License as published by\n# the Free Software Foundation, either version 3 of the License, or\n# (at your option) any later version.\n# \n# This program is distributed in the hope that it will be useful,\n# but WITHOUT ANY WARRANTY; without even the implied warranty of\n# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n# GNU General Public License for more details.\n# \n# You should have received a copy of the GNU General Public License\n# along with this program.  If not, see <http://www.gnu.org/licenses/>.\n#\n# Author: Jan Kaluza <jkaluza at redhat dot com>\n\nFROM haproxy:1.5\n\nCOPY *.sh /\nRUN chmod +x /*.sh\n\nRUN mkdir -p /haproxy-cfg-tmp\nCOPY haproxy-cfg /haproxy-cfg-tmp\nRUN mv /haproxy-cfg-tmp/haproxy-cfg /\nRUN rm -rf /haproxy-cfg-tmp\nRUN chmod +x /haproxy-cfg\n\nRUN mkdir -p /kubernetes-confd-tmp\nCOPY kubernetes-confd /kubernetes-confd-tmp\nRUN mv /kubernetes-confd-tmp/kubernetes-confd /\nRUN rm -rf /kubernetes-confd-tmp\nRUN chmod +x /kubernetes-confd\n\nRUN touch /usr/local/etc/haproxy/haproxy.cfg\n\nRUN apt-get update && apt-get install -y python psmisc\n\nExpose 80\nExpose 443\n\nCMD [\"/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80,
+      443
+    ],
+    "volume": [],
+    "run": [
+      "chmod +x /*.sh",
+      "mkdir -p /haproxy-cfg-tmp",
+      "mv /haproxy-cfg-tmp/haproxy-cfg /",
+      "rm -rf /haproxy-cfg-tmp",
+      "chmod +x /haproxy-cfg",
+      "mkdir -p /kubernetes-confd-tmp",
+      "mv /kubernetes-confd-tmp/kubernetes-confd /",
+      "rm -rf /kubernetes-confd-tmp",
+      "chmod +x /kubernetes-confd",
+      "touch /usr/local/etc/haproxy/haproxy.cfg",
+      "apt-get update && apt-get install -y python psmisc"
+    ],
+    "workdir": [],
+    "from": "haproxy:1.5",
+    "copy": "kubernetes-confd /kubernetes-confd-tmp",
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/micro-webapps/micro-webapps.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/micro-webapps/micro-webapps",
+  "docker_repository": "microwebapps/haproxy-frontend",
+  "docker_image": "microwebapps/haproxy-frontend",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80,
+        443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "microwebapps/haproxy-frontend",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/microwebapps/haproxy-frontend",
+    "https://hub.docker.com/v2/repositories/microwebapps/haproxy-frontend",
+    "https://github.com/micro-webapps/micro-webapps.git"
+  ],
+  "labels": [
+    "Docker",
+    "Style/Virtualization Level/Application",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/microwebapps/haproxy-frontend",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

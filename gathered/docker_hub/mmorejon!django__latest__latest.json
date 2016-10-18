@@ -1,0 +1,105 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/mmorejon/django",
+    "repository_url": "https://hub.docker.com/v2/repositories/mmorejon/django",
+    "tags_url": "https://hub.docker.com/v2/repositories/mmorejon/django/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/mmorejon/django/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/mmorejon/django/autobuild",
+    "user": "mmorejon",
+    "name": "django",
+    "namespace": "mmorejon",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 36,
+    "last_updated": "2016-09-21T19:32:49.465845Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 304125475,
+        "id": 2150752,
+        "repository": 553487,
+        "creator": 152927,
+        "last_updater": 152927,
+        "last_updated": "2016-09-21T19:32:48.832840Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "mmorejon/docker-django"
+  },
+  "name": "mmorejon/django Docker container",
+  "description": "Django project structure for development and production environments.",
+  "readme": "Django - Docker\n====================\n\nPasos para iniciar un proyecto con Django utilizando Docker dentro del flujo de trabajo. Se utiliza `projectname` para hacer referencia al nombre del projecto.\n\n### Pre requisito\n\n* Tener instalado **Docker**. Si está utilizando Mac OS X instale **Docker Toolbox**.\n\n## Paso Uno - Establecer Estructura.\n\n**_Descargar estructura del proyecto_**\n\nSe descarga el proyecto que contiene la estructura general.\n```\ngit clone https://github.com/mmorejon/docker-django.git projectname\n```\n\n**_Eliminar carpeta de Git_**\n\nLa carpeta `.git` se elimina para crear un nuevo repositorio.\n\n```\ncd projectname\nrm -rf .git/\n```\n\n**_Crear nuevo repositorio dentro del proyecto_**\n\nSe inicia el control de versiones dentro de la carpeta del proyecto para registrar los cambios.\n\n```\ngit init\n```\n\n## Paso Dos - Crear Imagen de Docker\n\n**_Crear Imagen en Docker_**\n\nSe crea la imagen de Docker para el projecto. La imagen va a contener la instalación de los requerimientos establecidos en el fichero `requirements.txt`.\n\nEl fichero `requirements.txt` contiene los requisitos básicos para el inicio y despliegue de una aplicación con Django, si necesita adicionarle nuevos elementos este es un buen momento.\n\n```\ndocker build -t projectname:1.0 .\n```\n\nSiempre que modifique los elementos dentro del fichero `requirements.txt` tiene que repetir este paso.\n\n\n**_Configurar Docker Compose_**\n\nEn el fichero `docker-compose.yml` se modifica el nombre de la imagen que será utilizada. El nombre de la imagen se ha establecido en el paso anterior. La zona que se modifica dentro del fichero es la siguiente:\n```\nimage: projectname:1.0\n```\n\n## Paso Tres - Crear Proyecto Django\n\n**_Crear Proyecto_**\nSe crea el proyecto utilizando los mismos comandos descritos por el sitio Django.\n```\ndocker-compose run web django-admin startproject projectname .\n```\n\n**_Probar el sistema_**\nPara probar si el sistema está funcionando correctamente se ejectua el siguiente comando. En el navegador se puede revisar la aplicación en la siguiente dirección `http://<ip-máquina:8000>`. El puerto de salida puede ser configurado en el fichero `docker-compose.yml`.\n```\ndocker-compose up\n```\n\n**_Para el sistema_**\nSe detiene el sistema de ser necesario para continuar con las configuraciones.\n```\nCtrl-C\n```\n\n## Paso Cuatro - Crear Aplicación\n\nPara crear una aplicación dentro del proyecto Django se utiliza el siguiente comando:\n```\ndocker-compose run web python manage.py startapp app\n```\n\n## Paso Cinco - Crear Usuario\n\nLos usuarios se crean utilizando el mismo comando descrito en la documentación de Django.\n```\ndocker-compose run web python manage.py createsuperuser\n```\n\n## Paso Seis - Entorno de Producción\n\nPara utilizar la aplicación en el entorno de producción se debe configurar los siguientes ficheros:\n\nAdicionar al final del fichero `projectname/settings.py` la siguiente línea:\n\n```\nSTATIC_ROOT = './static/'\n```\n\nAdicionar la línea `command: ./run-production.sh` al fichero `docker-compose.yml` quedando de la siguiente forma:\n\n```\nweb:\n  image: projectname:1.0\n  command: ./run-production.sh\n  volumes:\n    - .:/code\n  ports:\n    - \"8000:80\"\n```\n\nPara finalizar debe modificar el nombre del proyecto `projectname` en el fichero `conf/app.ini`.\n\n### Enlaces relacionados con el tema\n\n* <a target=\"_blank\" href=\"https://docs.docker.com/compose/django/\">Docker Compose con proyectos Django</a>\n* <a target=\"_blank\" href=\"https://docs.djangoproject.com/es/1.9/intro/tutorial01/\">Primeros pasos en projectos con Django</a>\n",
+  "dockerfile": "#\n#  Dockerfile para proyectos Django\n#\n\n# Base image.\nFROM python:2.7\n\n# Create code folder.\nRUN mkdir /code\n\n# Set working dir.\nWORKDIR /code\n\n# Add python requirements file.\nADD requirements.txt /code/\n\n# Install required programs.\nRUN pip install -r requirements.txt\nRUN apt-get update\nRUN apt-get install -y \\\n    gettext \\\n    nginx \\\n    vim\n\nRUN echo \"daemon off;\" >> /etc/nginx/nginx.conf\nRUN rm /etc/nginx/sites-enabled/default\nRUN ln -s /code/conf/nginx-app.conf /etc/nginx/sites-enabled/\n\n# Add source code.\nADD . /code/\n\n# Run script file.\nCMD ./run.sh",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "requirements.txt",
+        "dest": "/code/"
+      },
+      {
+        "source": ".",
+        "dest": "/code/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "mkdir /code",
+      "pip install -r requirements.txt",
+      "apt-get update",
+      "apt-get install -y     gettext     nginx     vim",
+      "echo \"daemon off;\" >> /etc/nginx/nginx.conf",
+      "rm /etc/nginx/sites-enabled/default",
+      "ln -s /code/conf/nginx-app.conf /etc/nginx/sites-enabled/"
+    ],
+    "workdir": [
+      "/code"
+    ],
+    "from": "python:2.7",
+    "cmd": "./run.sh"
+  },
+  "source_repository_url": "https://github.com/mmorejon/docker-django.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mmorejon/docker-django",
+  "docker_repository": "mmorejon/django",
+  "docker_image": "mmorejon/django",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "mmorejon/django",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/mmorejon/django",
+    "https://hub.docker.com/v2/repositories/mmorejon/django",
+    "https://github.com/mmorejon/docker-django.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python"
+  ],
+  "info_url": "https://hub.docker.com/r/mmorejon/django",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

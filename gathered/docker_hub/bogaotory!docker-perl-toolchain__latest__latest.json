@@ -1,0 +1,95 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/bogaotory/docker-perl-toolchain",
+    "repository_url": "https://hub.docker.com/v2/repositories/bogaotory/docker-perl-toolchain",
+    "tags_url": "https://hub.docker.com/v2/repositories/bogaotory/docker-perl-toolchain/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/bogaotory/docker-perl-toolchain/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/bogaotory/docker-perl-toolchain/autobuild",
+    "user": "bogaotory",
+    "name": "docker-perl-toolchain",
+    "namespace": "bogaotory",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 45,
+    "last_updated": "2015-12-11T14:43:20.642281Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 227115765,
+        "id": 1517873,
+        "repository": 438451,
+        "creator": 495719,
+        "last_updater": 495719,
+        "last_updated": "2015-12-11T14:43:18.995805Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "bogaotory/docker-perl-toolchain"
+  },
+  "name": "bogaotory/docker-perl-toolchain Docker container",
+  "description": "Image which contains the Perl toolchain (plenv + cpanm + carton)",
+  "readme": "### docker-perl-toolchain\nBuild a docker image which includes the *plenv + cpanm + carton* Perl toolchain.\n - [plenv](https://github.com/tokuhirom/plenv) - Perl installation manager\n - [cpanm](https://github.com/miyagawa/cpanminus) - CPAN installer\n - [carton](https://metacpan.org/pod/Carton) - Module dependency manager (like Bundler in Ruby)\n\nOn Github: [https://github.com/bogaotory/docker-perl-toolchain](https://github.com/bogaotory/docker-perl-toolchain)\n\n\n### Build the image yourself\nChoose your Perl version by changing `PLENV_VERSION` in `Dockerfile` or overwrite `PLENV_VERSION` with the `-e` option\n```\ncd docker-perl-toolchain\ndocker build -t [repositoryname] .\n```\n\n\n### Docker image (Automated Build)\nThe docker image itself is available on Docker Hub:\n[docker-perl-toolchain image](https://hub.docker.com/r/bogaotory/docker-perl-toolchain/).\n\n\n### Example Usage\nSuppose you wish to run a script (`corecheck.pl`) which prints the CPU information of the host. Then you would have these three files:\n\n1. `cpanfile`:\n ```\n requires \"Sys::Info\", \"0.78\";\n ```\n\n2. `corecheck.pl`:\n ```perl\n use Sys::Info;\n use Sys::Info::Constants qw( :device_cpu );\n my $info = Sys::Info->new;\n my $cpu  = $info->device( CPU => %options );\n \n printf \"CPU: %s\\n\", scalar($cpu->identify)  || 'N/A';\n printf \"CPU speed is %s MHz\\n\", $cpu->speed || 'N/A';\n printf \"There are %d CPUs\\n\"  , $cpu->count || 1;\n printf \"CPU load: %s\\n\"       , $cpu->load  || 0;\n ```\n\n3. `Dockerfile`:\n ```\n FROM bogaotory/perl-toolchain\n \n ADD cpanfile /build/cpanfile\n ADD corecheck.pl /build/corecheck.pl\n \n WORKDIR build\n \n RUN . /etc/profile \\\n  && carton install # This happens in the WORKDIR, modules are installed in /build/local directory\n \n ENTRYPOINT . /etc/profile \\\n  && carton exec perl corecheck.pl\n ```\n\n\n### References\nHere is a list of articles/posts/repos I read in order to make this Dockerfile:\n - [Dockerising a Perl application](https://robn.io/docker-perl/)\n - [Modern Perl toolchain for Git managed web apps](http://kappataumu.com/articles/modern-perl-toolchain-for-web-apps.html)\n - [https://github.com/miyagawa/docker-plenv-vanilla](https://github.com/miyagawa/docker-plenv-vanilla)\n - [https://github.com/moltar/docker.plenv](https://github.com/moltar/docker.plenv)\n - [Understanding a little more about /etc/profile and /etc/bashrc](http://bencane.com/2013/09/16/understanding-a-little-more-about-etcprofile-and-etcbashrc/)\n - [Best practices for writing Dockerfiles](https://docs.docker.com/engine/articles/dockerfile_best-practices/)\n - [Which cpan installer is the right one? (CPAN.pm/CPANPLUS/cpanminus)](http://stackoverflow.com/questions/5861292/which-cpan-installer-is-the-right-one-cpan-pm-cpanplus-cpanminus)\n - [Number of CPU/Cores in Perl](http://stackoverflow.com/questions/18360374/number-of-cpu-cores-in-perl)",
+  "dockerfile": "FROM ubuntu:14.04.3\nMAINTAINER Bo Gao (bogao@dcs.warwick.ac.uk)\nLABEL Description=\"Image which includes the Perl toolchain (plenv+cpanm+carton)\"\n\nENV PLENV_VERSION\t5.18.2\n\nENV PLENV_ROOT\t\t/root/.plenv\n#ENV PATH\t\t\t$PLENV_ROOT/bin:$PLENV_ROOT/shims:$PATH\n\nRUN apt-get update && apt-get install -y \\\n\tbuild-essential \\\n\tcurl\t\t\t\\\n\tgit \t\t\t\\\n && apt-get clean\n\n# A. Install the Perl toolchain: plenv -> cpanminus -> carton\n\n# A1. Install plenv\nRUN git clone git://github.com/tokuhirom/plenv.git $PLENV_ROOT \\\n && git clone git://github.com/tokuhirom/Perl-Build.git $PLENV_ROOT/plugins/perl-build/\n\n#ADD ./plenv.sh /etc/profile.d/plenv.sh\n#RUN . /etc/profile\n\nRUN echo 'export PLENV_VERSION='$PLENV_VERSION\t>> /etc/profile.d/plenv.sh \\\n && echo 'export PLENV_ROOT=\"'$PLENV_ROOT'\"' \t>> /etc/profile.d/plenv.sh \\\n && echo 'export PATH=\"$PLENV_ROOT/bin:$PATH\"' \t>> /etc/profile.d/plenv.sh \\\n && echo 'eval \"$(plenv init -)\"' \t\t\t\t>> /etc/profile.d/plenv.sh \\\n && . /etc/profile \t\t\t\t\t\\\n && plenv install $PLENV_VERSION \t\\\n && plenv rehash \t\t\t\t\t\\\n && plenv global $PLENV_VERSION\n\nRUN cachebuster=b953b35\n\n# A2. Install cpanminus\nRUN . /etc/profile \\\n && plenv install-cpanm\n\n# A3. Install Carton\nRUN . /etc/profile \\\n && cpanm Carton\n\nCMD bash -l",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y \tbuild-essential \tcurl\t\t\t\tgit \t\t\t && apt-get clean",
+      "git clone git://github.com/tokuhirom/plenv.git $PLENV_ROOT  && git clone git://github.com/tokuhirom/Perl-Build.git $PLENV_ROOT/plugins/perl-build/",
+      "echo 'export PLENV_VERSION='$PLENV_VERSION\t>> /etc/profile.d/plenv.sh  && echo 'export PLENV_ROOT=\"'$PLENV_ROOT'\"' \t>> /etc/profile.d/plenv.sh  && echo 'export PATH=\"$PLENV_ROOT/bin:$PATH\"' \t>> /etc/profile.d/plenv.sh  && echo 'eval \"$(plenv init -)\"' \t\t\t\t>> /etc/profile.d/plenv.sh  && . /etc/profile \t\t\t\t\t && plenv install $PLENV_VERSION \t && plenv rehash \t\t\t\t\t && plenv global $PLENV_VERSION",
+      "cachebuster=b953b35",
+      ". /etc/profile  && plenv install-cpanm",
+      ". /etc/profile  && cpanm Carton"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04.3",
+    "maintainer": "Bo Gao (bogao@dcs.warwick.ac.uk)",
+    "label": "Description=\"Image which includes the Perl toolchain (plenv+cpanm+carton)\"",
+    "env": {},
+    "cmd": "bash -l"
+  },
+  "source_repository_url": "https://github.com/bogaotory/docker-perl-toolchain.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/bogaotory/docker-perl-toolchain",
+  "docker_repository": "bogaotory/docker-perl-toolchain",
+  "docker_image": "bogaotory/docker-perl-toolchain",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "bogaotory/docker-perl-toolchain",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/bogaotory/docker-perl-toolchain",
+    "https://hub.docker.com/v2/repositories/bogaotory/docker-perl-toolchain",
+    "https://github.com/bogaotory/docker-perl-toolchain.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image",
+    "Type/Middleware/Runtime/Perl"
+  ],
+  "info_url": "https://hub.docker.com/r/bogaotory/docker-perl-toolchain",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

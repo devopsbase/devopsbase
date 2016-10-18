@@ -1,0 +1,44 @@
+{
+  "name": "generic-users Chef cookbook",
+  "chef_cookbook_name": "generic-users",
+  "revision": "0.1.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/generic-users",
+    "https://supermarket.chef.io/cookbooks/generic-users/download",
+    "https://supermarket.chef.io/cookbooks/generic-users/versions/0.1.2",
+    "https://supermarket.chef.io/cookbooks/generic-users/versions/0.1.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/generic-users/versions/0.1.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/generic-users",
+    "https://supermarket.chef.io/api/v1/cookbooks/generic-users/versions/0.1.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/generic-users",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/generic-users/versions/0.1.2/download",
+  "deprecated": true,
+  "created": "2011-09-23T20:49:11.000Z",
+  "updated": "2014-10-16T17:48:19.072Z",
+  "description": "Sets up user accounts",
+  "maintainer": {
+    "name": "mpasternacki",
+    "email": "maciej@pasternacki.net"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 15,
+  "downloads_count": 12066347,
+  "downloads_count_revision": 1206624,
+  "chef_replacement": {
+    "url": "https://supermarket.chef.io/api/v1/cookbooks/users"
+  },
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nThis cookbook manages user accounts, attributes, and permissions in a\ngeneric, data-driven way. It is a drop-in replacement for Opscode's or\n37signals' `users` cookbook, but it is more flexible.\n\nThis cookbook is partially based on Opscode's `users` cookbook and\n`users::sysadmins` recipe.\n\nThis cookbook also provides a library part that can be used to\ncentrally configure users of your system in a consistent, data-driven\nway. You can use the library part even when still using old opscode's\nor 37signals' cookbook to actually create shell accounts. See \"usage\"\nsection for details.\n\nRequirements\n============\n\nNo other cookbook is required.\n\nAttributes\n==========\n\n* `users.supergroup` -- group that is active on all machines, and has\n  superuser rights. Default: `sysadmin`. Don't change the default to\n  be compatible with Opscode's cookbooks\n* `users.active_groups` -- names of groups to create shell accounts\n  for on the machine.\n  \n  `users.supergroup`, if defined, will be added to this list.\n  \n  If this attribute is not defined, `active_groups` attribute will be\n  tried for compatibility with 37signals' cookbook.\n  \n  Groups in this list will be created as shell groups and users will\n  be added to them, unless `groups` data bag item for the group exists\n  and has `shell` parameter set to `false`.\n\nUsage\n=====\n\nTwo data bags need to be created: `users` and `groups`. Second one can\nbe empty.\n\nThe users data bag\n------------------\n\nKeys recognized:\n\n* `id` -- ID of data bag item, default username\n* `username` -- username if different from `id`; it should be used for\n  username policies requiring characters illegal in IDs (e.g. dots)\n* `groups` -- list of groups user belongs to\n* `comment` (optional) -- usually user's real name\n* `shell` -- whether this is a shell account. Can be true (default),\n  false, or a string value. If true or unset, use default shell\n* `ssh_keys` or `ssh_key` (optional) -- a string or list of strings\n  containing public SSH keys of the user\n* `openid` (optional) -- OpenID URL of the user, added for supergroup\n  members to Apache's mod\\_auth\\_openid config\n* `gid` (optional) -- force user's primary group (name or numeric)\n* `uid` (optional) -- force user's numeric id\n\nArbitrary other keys may be used by other cookbooks.\n\nThe groups data bag\n-------------------\n\nKeys recognized:\n\n* `id` -- group name\n* `gid` (optional) -- force numeric group id\n* `shell` -- whether to create a shell group (boolean, defaults to true).\n* `user_attributes` -- dictionary of attributes that will be applied\n  to group members. Adding other groups by\n  `group[\"user_attributes\"][\"groups\"]` won't work; if group\n  inheritance is needed, some other way will be provided.\n\nArbitrary other keys may be used by other cookbooks.\n\nThe GenericUsers::User class\n----------------------------\n\nA library class is provided to encapsulate common logic and move it\nout of cookbooks. This logic concerns mostly user attribute defaults\nprovided in groups' `user_attributes` dictionary. To get new `User`\ninstances, following methods are provided:\n\n* `GenericUsers::User.new(item)` -- takes a data bag item from\n  `:users` data bag for initialization\n* `GenericUsers::User.get(id)` -- fetches a `:users` data bag item,\n  returns `User` instance\n* `GenericUsers::User.find(query)` -- searches for `:user` data bag\n  items by Chef search query, returns array of `User` instances\n\nAttributes of original data bag items are processed for convenience:\n\n* `:groups` attribute is a list even if data bag item's attribute is a\n  bare string\n* `:username` attribute, if not provided, is initialized to be equal\n  to `:id`\n\nDictionary access on User instance return user's direct attribute if\nit exists. Otherwise, user's groups are iterated to find one, whose\n`:user_attributes` dictionary defines such attribute. First found\nvalue is used.\n\nTo use all defined values (directly from user item and from all groups\nthat define the value), `get_all` method is used. When called only\nwith parameter name, it return an array of arrays: each array in the\nlist is a list of attribute values. If provided with a block that\ntakes two parameters, this block is used together with `inject` method\nto flatten the list; use `&:+` to concatenate the list and `&:|` to\nget a list of unique values. An example to clarify:\n\n    user.get_all(:foo) => [[1], [2, 3], [1, 2, 4]]\n    user.get_all(:foo, &:+) => [1, 2, 3, 1, 2, 4]\n    user.get_all(:foo, &:|) => [1, 2, 3, 4]\n\nConvenience methods\n-------------------\n\n* `GenericUsers::get_group(group_id)` -- returns data bag item or\n  \"imaginary group\" Mash (containing two attributes: `:id`, and\n  `:imaginary => true`) if group is not found.\n\nTests and docs\n==============\n\nLibraary part has an RSpec test suite provided in the `spec.rb` file,\nand yardoc generated documentation in `doc` subdirectory. Run `bundle`\nto get all needed software, `rake test` to test the library part, and\n`rake doc` to regenerate documentation.\n"
+}

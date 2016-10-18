@@ -1,0 +1,126 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/servivum/debian",
+    "repository_url": "https://hub.docker.com/v2/repositories/servivum/debian",
+    "tags_url": "https://hub.docker.com/v2/repositories/servivum/debian/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/servivum/debian/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/servivum/debian/autobuild",
+    "user": "servivum",
+    "name": "debian",
+    "namespace": "servivum",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 1059,
+    "last_updated": "2016-09-23T21:48:54.498727Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 113571943,
+        "id": 1629907,
+        "repository": 460504,
+        "creator": 468761,
+        "last_updater": 477131,
+        "last_updated": "2016-09-23T21:48:53.924807Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "jessie",
+        "full_size": 113571598,
+        "id": 1629905,
+        "repository": 460504,
+        "creator": 468761,
+        "last_updater": 477131,
+        "last_updated": "2016-09-23T21:46:35.619916Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Servivum/docker-debian"
+  },
+  "name": "servivum/debian Docker container",
+  "description": "Debian Docker Base Image with Useful Tools",
+  "readme": "![Debian Jessie](https://img.shields.io/badge/Debian-Jessie-brightgreen.svg?style=flat-square) [![License MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT) [![Travis](https://img.shields.io/travis/servivum/docker-debian.svg?style=flat-square)](https://travis-ci.org/servivum/docker-debian)\n\n# Debian Docker Base Image with Useful Tools\n\nDockerfile for extending official Debian image with useful tools, e.g. Git, Wget, etc. The Image is a good starting \npoint to create your own small images with some handy tools. See [Docker Hub](https://hub.docker.com/r/servivum/debian) \nfor more details about the image.\n\n## What's inside?\n\n- ca-certificates: Brings root certs for trusting secured connections with common CAs. \n- cron: Use Cron jobs for scheduling tasks like cleanup processes.\n- curl: Swiss army knife to use various number of protocols.\n- git: THE version control system.\n- nano: Easy editor for modifying files.\n- openssh-server: For connecting to the container via SSH and executing commands within.\n- rsync: Use it for copying files from server A to server B.\n- ssmtp: Tiny mail server for sending mails from your application to the world. \n- supervisor: Helper for running multiple processes in a container, e.g. cron and openssh-server.\n- unzip: Unpack ZIP archives.\n- vim: Powerful editor for nerds.\n- wget: The standard for downloading archives.\n\n## Supported Tags\n\n- `jessie`, `latest` [(Dockerfile)](https://github.com/servivum/docker-debian)\n\n## Log into container via SSH with public key\n\nMount your public key into the container and define the path with \nenvironment variable `SSH_AUTHORIZED_KEYS`. Example:\n\n```bash\ndocker run -d -P -v ~/.ssh/id_rsa.pub:/authorized_keys:ro -e \"SSH_AUTHORIZED_KEYS=/authorized_keys\" servivum/debian\n```\n\n## Use sSMTP with external SMTP relay server\n\nsSMTP is like a proxy which delegates the mails to a real MTA like \npostfix. With these environment variables it is possible to define a \nrelay server with the corresponding credentials.\n\n```bash\ndocker run -d -P \\\n-e \"SMTP_HOST=smtp.example.com\" \\\n-e \"SMTP_AUTH_USER=test@example.com\" \\\n-e \"SMTP_AUTH_PASS=secret\" \\\n-e \"SMTP_STARTTLS=true\" \\\nservivum/debian\n```\n",
+  "dockerfile": "# Debian Docker Base Image with Useful Tools\n\nFROM debian:jessie\nMAINTAINER Patrick Baber <patrick.baber@servivum.com>\n\n# Install utilities\nRUN apt-get update && apt-get install -y  --no-install-recommends \\\n\tca-certificates \\\n\tcron \\\n\tcurl \\\n\tgit \\\n\tnano \\\n\topenssh-server \\\n\trsync \\\n\tssmtp \\\n\tsupervisor \\\n\tunzip \\\n\tvim \\\n\twget && \\\n\n# Clean up\n    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n# Configure Supervisor\nCOPY etc/supervisor/supervisord.conf /etc/supervisor/supervisord.conf\n\n# Configure SSH\nENV NOTVISIBLE \"in users profile\"\nCOPY etc/supervisor/conf.d/sshd.conf /etc/supervisor/conf.d/sshd.conf\nRUN mkdir -p /var/run/sshd && \\\n    mkdir /root/.ssh && \\\n    sed 's@session\\s*required\\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd && \\\n    echo \"export VISIBLE=now\" >> /etc/profile\n\n# Configure cron\n# @TODO: Configure cron\n# https://github.com/mailtank-ru/rsstank/blob/master/docker/files/cron-supervisor.conf\n# https://www.ekito.fr/people/run-a-cron-job-with-docker/\nCOPY etc/supervisor/conf.d/cron.conf /etc/supervisor/conf.d/cron.conf\n\nCOPY entrypoint.sh /entrypoint.sh\nENTRYPOINT [\"/entrypoint.sh\"]\n\nEXPOSE 22\nCMD [\"/usr/bin/supervisord\", \"-c\", \"/etc/supervisor/supervisord.conf\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      22
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y  --no-install-recommends \tca-certificates \tcron \tcurl \tgit \tnano \topenssh-server \trsync \tssmtp \tsupervisor \tunzip \tvim \twget && ",
+      "mkdir -p /var/run/sshd &&     mkdir /root/.ssh &&     sed 's@session\\s*required\\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd &&     echo \"export VISIBLE=now\" >> /etc/profile"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "Patrick Baber <patrick.baber@servivum.com>",
+    "copy": "entrypoint.sh /entrypoint.sh",
+    "env": {
+      "NOTVISIBLE": "\"in",
+      "users": "profile\""
+    },
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"/usr/bin/supervisord\", \"-c\", \"/etc/supervisor/supervisord.conf\"]"
+  },
+  "source_repository_url": "https://github.com/Servivum/docker-debian.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Servivum/docker-debian",
+  "docker_repository": "servivum/debian",
+  "docker_image": "servivum/debian",
+  "parameters_schema": {
+    "NOTVISIBLE": {
+      "default": "\"in",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "users": {
+      "default": "profile\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        22
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "servivum/debian",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/servivum/debian",
+    "https://hub.docker.com/v2/repositories/servivum/debian",
+    "https://github.com/Servivum/docker-debian.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System/Linux/Debian"
+  ],
+  "info_url": "https://hub.docker.com/r/servivum/debian",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

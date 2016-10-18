@@ -1,0 +1,114 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/goller/cassandra",
+    "repository_url": "https://hub.docker.com/v2/repositories/goller/cassandra",
+    "tags_url": "https://hub.docker.com/v2/repositories/goller/cassandra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/goller/cassandra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/goller/cassandra/autobuild",
+    "user": "goller",
+    "name": "cassandra",
+    "namespace": "goller",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 191,
+    "last_updated": "2015-11-15T20:28:05.927449Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 290235083,
+        "id": 136622,
+        "repository": 114035,
+        "creator": 22851,
+        "last_updater": 22851,
+        "last_updated": "2015-11-15T20:28:11.528768Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "goller/cassandra"
+  },
+  "name": "goller/cassandra Docker container",
+  "description": "",
+  "readme": null,
+  "dockerfile": "# Cassandra\n#\n# VERSION               1.0\n\nFROM centos:centos7\n\n# Add source repositories\nADD src/epel7.repo /etc/yum.repos.d/epel7.repo\nADD src/datastax.repo /etc/yum.repos.d/datastax.repo\n\n# Install Java, Install packages (sshd + supervisord + monitoring tools + cassandra + datastax-agent)\nRUN yum install -y wget tar openssh-server openssh-clients supervisor dsc21 sysstat sudo which openssl hostname datastax-agent && \\\n\tyum clean all && \\\n\twget --progress=dot:giga -O /tmp/jdk.rpm --no-cookies --no-check-certificate --header \"Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie\" \"http://download.oracle.com/otn-pub/java/jdk/8u20-b26/jdk-8u20-linux-x64.rpm\" && \\\n\trpm -ivh /tmp/jdk.rpm && rm /tmp/jdk.rpm && \\\n\talternatives --install /usr/bin/java java /usr/java/default/bin/java 20000\n\n# Configure SSH server on port 2222\n# Create OpsCenter account\nRUN mkdir -p /var/run/sshd && chmod -rx /var/run/sshd && \\\n\tssh-keygen -t rsa -N '' -f /etc/ssh/ssh_host_rsa_key && \\\n\tsed -ri 's/#PermitRootLogin yes/PermitRootLogin yes/g' /etc/ssh/sshd_config && \\\n\tsed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config && \\\n\tsed -ri 's/#UsePAM no/UsePAM no/g' /etc/ssh/sshd_config && \\\n\tsed -ri 's/#Port 22/Port 2222/g' /etc/ssh/sshd_config && \\\n\tuseradd -m -G users,root -p $(openssl passwd -1 \"opscenter\") opscenter && \\\n\techo \"%root ALL=(ALL) NOPASSWD: ALL\" >> /etc/sudoers\n\n# Configure supervisord\nADD src/supervisord.conf /etc/supervisord.conf\nRUN mkdir -p /var/log/supervisor\n\n# Deploy startup script\nADD src/start.sh /usr/local/bin/start\n\n# Necessary since cassandra is trying to override the system limitations\n# See https://groups.google.com/forum/#!msg/docker-dev/8TM_jLGpRKU/dewIQhcs7oAJ\nRUN rm -f /etc/security/limits.d/cassandra.conf\n\n# Work around a nasty Cassandra packaging error\nRUN sed -i s/jamm-0.2.6.jar/jamm-0.2.8.jar/ /usr/share/cassandra/cassandra.in.sh\n\nEXPOSE 7199 7000 7002 9160 9042\nEXPOSE 2222 8012 61621\nUSER root\nCMD start\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "src/epel7.repo",
+        "dest": "/etc/yum.repos.d/epel7.repo"
+      },
+      {
+        "source": "src/datastax.repo",
+        "dest": "/etc/yum.repos.d/datastax.repo"
+      },
+      {
+        "source": "src/supervisord.conf",
+        "dest": "/etc/supervisord.conf"
+      },
+      {
+        "source": "src/start.sh",
+        "dest": "/usr/local/bin/start"
+      }
+    ],
+    "expose": [
+      7199,
+      2222
+    ],
+    "volume": [],
+    "run": [
+      "yum install -y wget tar openssh-server openssh-clients supervisor dsc21 sysstat sudo which openssl hostname datastax-agent && \tyum clean all && \twget --progress=dot:giga -O /tmp/jdk.rpm --no-cookies --no-check-certificate --header \"Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie\" \"http://download.oracle.com/otn-pub/java/jdk/8u20-b26/jdk-8u20-linux-x64.rpm\" && \trpm -ivh /tmp/jdk.rpm && rm /tmp/jdk.rpm && \talternatives --install /usr/bin/java java /usr/java/default/bin/java 20000",
+      "mkdir -p /var/run/sshd && chmod -rx /var/run/sshd && \tssh-keygen -t rsa -N '' -f /etc/ssh/ssh_host_rsa_key && \tsed -ri 's/#PermitRootLogin yes/PermitRootLogin yes/g' /etc/ssh/sshd_config && \tsed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config && \tsed -ri 's/#UsePAM no/UsePAM no/g' /etc/ssh/sshd_config && \tsed -ri 's/#Port 22/Port 2222/g' /etc/ssh/sshd_config && \tuseradd -m -G users,root -p $(openssl passwd -1 \"opscenter\") opscenter && \techo \"%root ALL=(ALL) NOPASSWD: ALL\" >> /etc/sudoers",
+      "mkdir -p /var/log/supervisor",
+      "rm -f /etc/security/limits.d/cassandra.conf",
+      "sed -i s/jamm-0.2.6.jar/jamm-0.2.8.jar/ /usr/share/cassandra/cassandra.in.sh"
+    ],
+    "workdir": [],
+    "from": "centos:centos7",
+    "user": "root",
+    "cmd": "start"
+  },
+  "source_repository_url": "https://github.com/goller/cassandra.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/goller/cassandra",
+  "docker_repository": "goller/cassandra",
+  "docker_image": "goller/cassandra",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        7199,
+        2222
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "goller/cassandra",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/goller/cassandra",
+    "https://hub.docker.com/v2/repositories/goller/cassandra",
+    "https://github.com/goller/cassandra.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/goller/cassandra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

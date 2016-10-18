@@ -1,0 +1,142 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/appelgriebsch/mongodb",
+    "repository_url": "https://hub.docker.com/v2/repositories/appelgriebsch/mongodb",
+    "tags_url": "https://hub.docker.com/v2/repositories/appelgriebsch/mongodb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/appelgriebsch/mongodb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/appelgriebsch/mongodb/autobuild",
+    "user": "appelgriebsch",
+    "name": "mongodb",
+    "namespace": "appelgriebsch",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 535,
+    "last_updated": "2016-09-23T18:55:58.021662Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 54413556,
+        "id": 2623488,
+        "repository": 415637,
+        "creator": 30548,
+        "last_updater": 30548,
+        "last_updated": "2016-09-23T18:52:07.716822Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.2",
+        "full_size": 54413532,
+        "id": 4231938,
+        "repository": 415637,
+        "creator": 30548,
+        "last_updater": 30548,
+        "last_updated": "2016-09-23T18:49:04.079537Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "stable",
+        "full_size": 54413581,
+        "id": 4231523,
+        "repository": 415637,
+        "creator": 30548,
+        "last_updater": 30548,
+        "last_updated": "2016-09-23T18:44:47.835629Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "appelgriebsch/dockers"
+  },
+  "name": "appelgriebsch/mongodb Docker container",
+  "description": "Configurable MongoDB container based on Alpine Linux",
+  "readme": " Overview\n----------\n\nMongoDB container that is completely configurable via environment variables:\n\n* **MONGO_BIND**: network interface to bind to (will expose a socket if set to localhost) - default: 127.0.0.1\n* **MONGO_PORT**: network port to listen to - default: 27017 (mongod service)\n* **MONGO_LOGLVL**: verbosity (log) level of mongodb server (logs will be written to stdout & stderr) - default: 0\n* **MONGO_TYPE**: mongodb type for this instance (normal, arbiter, config-server, shard-server) - default: normal\n* **MONGO_REPLSET**: name of replica set (if available) - default: not set\n* **MONGO_MASTER**: address of master (PRIMARY) server (ip:port) - default: not set\n* **MONGO_CONFIG**: address of config server (ip:port) - default: not set\n\nStandalone\n----------\n\nTo start a stand-alone instance just execute:\n\n`docker run --name=mongodb01 -d appelgriebsch/mongodb`\n\nThis will start a local mongodb instance with the default configuration (see values above), that only allows connection via shared unix socket.To connect to this instance you have to use the unix socket provided via the volume like this:\n\n`docker run --name=client01 --volumes-from=mongodb01 -i -t appelgriebsch/centos bash`\n\nand in this container you can than execute:\n\n`mongo --host /data/mongodb/<instance-hostname>/mongodb-<instance-port>.sock`\n\nReplicaSets\n----------\n\nTo build a cluster of mongodb instances you have to open the connection to the public interface. Therefore start the first instance (the MASTER or PRIMARY instance) like this:\n\n`docker run --name=mongodb01 -e MONGO_BIND=0.0.0.0 -e MONGO_REPLSET=replica01 -d appelgriebsch/mongodb`\n\nAdditional replicaset instances can be added like this:\n\n`docker run --name=mongodb<xy> --link=mongodb01:mongodb01 --volumes-from=mongodb01 -e MONGO_BIND=0.0.0.0 -e MONGO_REPLSET=replica01 -e MONGO_MASTER=mongodb01:27017 -d appelgriebsch/mongodb`\n\nNote: we are linking to the master (here: mongodb01) for easier IP address lookup within the secondary container. Additionally we share the data volume from the master (here: mongodb01) into the secondary container to have all data files on one mountable data directory, which allows easy backup later on.\n\nIf you want to add an arbiter to the replicaset you have to set the environment variable for the MONGO_TYPE from `normal` to `arbiter` accordingly.\n\nShards\n----------\n\nAny MONGO_TYPE other than `normal` and `arbiter` are not supported by the start_instance script. I'm working on those. Please stay tuned!\n\n**tbd**\n",
+  "dockerfile": "#\n# MongoDB Dockerfile\n# VERSION 3.2\n#\n\n# Pull Alpine Linux latest base image\nFROM alpine:latest\nMAINTAINER Andreas Gerlach <info@appelgriebsch.com>\nLABEL AUTHOR=\"Andreas Gerlach <info@appelgriebsch.com>\"\nLABEL NAME=\"mongodb\"\nLABEL VERSION=\"3.2\"\n\n# bind to localhost only (will expose a socket for connection)\nENV MONGO_BIND\t\t127.0.0.1\n# default tcp port for mongo server\nENV MONGO_PORT \t\t27017\n# verbose log level of mongodb server (0-5)\nENV MONGO_LOGLVL\t0\n# mode of node (e.g. normal, arbiter, config, shard)\nENV MONGO_TYPE\t\tnormal\n# name of replica set (if available)\n# ENV MONGO_REPLSET\n# address of master server (ip:port)\n# ENV MONGO_MASTER\n# address of config server (ip:port)\n# ENV MONGO_CONFIG\n\n# install mongodb and create a default YAML config file\nUSER root\n\nRUN \\\n  echo \"http://dl-4.alpinelinux.org/alpine/edge/testing\" >> /etc/apk/repositories && \\\n  apk update && apk upgrade && apk add bash curl mongodb && \\\n  rm -rf /var/cache/apk/* && \\\n  mkdir -p /data/mongodb && \\\n  chown -R mongodb:nobody /data/mongodb && \\\n  chmod -R 755 /data/mongodb && \\\n  echo \"# new YAML based config file for mongodb > 2.6\" > /etc/mongod.conf && \\\n  echo \"processManagement.fork: false\" >> /etc/mongod.conf && \\\n  echo \"systemLog.verbosity: 0\" >> /etc/mongod.conf && \\\n  echo \"net.bindIp: 127.0.0.1\" >> /etc/mongod.conf && \\\n  echo \"net.port: 27017\" >> /etc/mongod.conf && \\\n  echo \"storage.dbPath: /data/mongodb\" >> /etc/mongod.conf && \\\n  echo \"storage.directoryPerDB: true\" >> /etc/mongod.conf && \\\n  echo \"storage.mmapv1.smallFiles: true\" >> /etc/mongod.conf && \\\n  echo \"storage.journal.enabled: true\" >> /etc/mongod.conf\n\n# add startup-script\nADD start_instance.sh /tmp/\nRUN \\\n  chmod 755 /tmp/start_instance.sh\n\n# Define mountable directories.\nVOLUME /data/mongodb\n\n# Define working directory.\nWORKDIR /data/mongodb\n\n# Expose ports (mongodb - 27017, config-srv - 27018, shard-srv - 27019)\nEXPOSE $MONGO_PORT\n\n# run service\nUSER mongodb\nENTRYPOINT [\"/tmp/start_instance.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "start_instance.sh",
+        "dest": "/tmp/"
+      }
+    ],
+    "expose": [
+      "$MONGO_PORT"
+    ],
+    "volume": [
+      "/data/mongodb"
+    ],
+    "run": [
+      "  echo \"http://dl-4.alpinelinux.org/alpine/edge/testing\" >> /etc/apk/repositories &&   apk update && apk upgrade && apk add bash curl mongodb &&   rm -rf /var/cache/apk/* &&   mkdir -p /data/mongodb &&   chown -R mongodb:nobody /data/mongodb &&   chmod -R 755 /data/mongodb &&   echo \"# new YAML based config file for mongodb > 2.6\" > /etc/mongod.conf &&   echo \"processManagement.fork: false\" >> /etc/mongod.conf &&   echo \"systemLog.verbosity: 0\" >> /etc/mongod.conf &&   echo \"net.bindIp: 127.0.0.1\" >> /etc/mongod.conf &&   echo \"net.port: 27017\" >> /etc/mongod.conf &&   echo \"storage.dbPath: /data/mongodb\" >> /etc/mongod.conf &&   echo \"storage.directoryPerDB: true\" >> /etc/mongod.conf &&   echo \"storage.mmapv1.smallFiles: true\" >> /etc/mongod.conf &&   echo \"storage.journal.enabled: true\" >> /etc/mongod.conf",
+      "  chmod 755 /tmp/start_instance.sh"
+    ],
+    "workdir": [
+      "/data/mongodb"
+    ],
+    "from": "alpine:latest",
+    "maintainer": "Andreas Gerlach <info@appelgriebsch.com>",
+    "label": "VERSION=\"3.2\"",
+    "env": {
+      "MONGO_PORT": "\t\t27017"
+    },
+    "user": "mongodb",
+    "entrypoint": "[\"/tmp/start_instance.sh\"]"
+  },
+  "source_repository_url": "https://github.com/appelgriebsch/dockers.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/appelgriebsch/dockers",
+  "docker_repository": "appelgriebsch/mongodb",
+  "docker_image": "appelgriebsch/mongodb",
+  "parameters_schema": {
+    "MONGO_PORT": {
+      "default": "\t\t27017",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        "$MONGO_PORT"
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "appelgriebsch/mongodb",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/appelgriebsch/mongodb",
+    "https://hub.docker.com/v2/repositories/appelgriebsch/mongodb",
+    "https://github.com/appelgriebsch/dockers.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB"
+  ],
+  "info_url": "https://hub.docker.com/r/appelgriebsch/mongodb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

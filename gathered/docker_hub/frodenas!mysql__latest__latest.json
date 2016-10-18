@@ -1,0 +1,118 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/frodenas/mysql",
+    "repository_url": "https://hub.docker.com/v2/repositories/frodenas/mysql",
+    "tags_url": "https://hub.docker.com/v2/repositories/frodenas/mysql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/frodenas/mysql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/frodenas/mysql/autobuild",
+    "user": "frodenas",
+    "name": "mysql",
+    "namespace": "frodenas",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 271863,
+    "last_updated": "2016-07-20T20:52:40.504501Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 217542714,
+        "id": 46868,
+        "repository": 38526,
+        "creator": 25001,
+        "last_updater": 25001,
+        "last_updated": "2016-07-20T20:52:40.124369Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5.6",
+        "full_size": 217542677,
+        "id": 46866,
+        "repository": 38526,
+        "creator": 25001,
+        "last_updater": 25001,
+        "last_updated": "2016-07-20T20:50:18.312854Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "frodenas/docker-mysql"
+  },
+  "name": "frodenas/mysql Docker container",
+  "description": "A Docker Image for MySQL",
+  "readme": "# MySQL Dockerfile\n\nA Dockerfile that produces a Docker Image for [MySQL](http://www.mysql.com/).\n\n## MySQL version\n\nThe `master` branch currently hosts MySQL 5.6.\n\nDifferent versions of MySQL are located at the github repo [branches](https://github.com/frodenas/docker-mysql/branches).\n\n## Usage\n\n### Build the image\n\nTo create the image `frodenas/mysql`, execute the following command on the `docker-mysql` folder:\n\n```\n$ docker build -t frodenas/mysql .\n```\n\n### Run the image\n\nTo run the image and bind to host port 3306:\n\n```\n$ docker run -d --name mysql -p 3306:3306 frodenas/mysql\n```\n\nThe first time you run your container, a new user `admin` with all privileges will be created with a random password.\nTo get the password, check the logs of the container by running:\n\n```\ndocker logs <CONTAINER_ID>\n```\n\nYou will see an output like the following:\n\n```\n========================================================================\nMySQL User: \"admin\"\nMySQL Password: \"mKHBsVb2i7OrY26K\"\n========================================================================\n```\n\n#### Credentials\n\nIf you want to preset credentials instead of a random generated ones, you can set the following environment\nvariables:\n\n* `MYSQL_USERNAME` to set a specific username\n* `MYSQL_PASSWORD` to set a specific password\n\nOn this example we will preset our custom username and password:\n\n```\n$ docker run -d \\\n    --name mysql \\\n    -p 3306:3306 \\\n    -e MYSQL_USERNAME=myusername \\\n    -e MYSQL_PASSWORD=mypassword \\\n    frodenas/mysql\n```\n\n#### Databases\n\nIf you want to create a database at container's boot time, you can set the following environment variables:\n\n* `MYSQL_DBNAME` to create a database\n\nOn this example we will preset our custom username and password and we will create a database:\n\n```\n$ docker run -d \\\n    --name mysql \\\n    -p 3306:3306 \\\n    -e MYSQL_USERNAME=myusername \\\n    -e MYSQL_PASSWORD=mypassword \\\n    -e MYSQL_DBNAME=mydb \\\n    frodenas/mysql\n```\n\n#### Persist database data\n\nThe MySQL server is configured to store data in the `/data` directory inside the container. You can map the\ncontainer's `/data` volume to a volume on the host so the data becomes independent of the running container:\n\n```\n$ mkdir -p /tmp/mysql\n$ docker run -d \\\n    --name mysql \\\n    -p 3306:3306 \\\n    -v /tmp/mysql:/data \\\n    frodenas/mysql\n```\n\n## Copyright\n\nCopyright (c) 2014 Ferran Rodenas. See [LICENSE](https://github.com/frodenas/docker-mysql/blob/master/LICENSE) for details.\n",
+  "dockerfile": "FROM frodenas/ubuntu\nMAINTAINER Ferran Rodenas <frodenas@gmail.com>\n\n# Install MySQL 5.6\nRUN DEBIAN_FRONTEND=noninteractive \\\n    apt-get install -y --force-yes \\\n    mysql-server-5.6 && \\\n    service mysql stop && \\\n    sed -e 's/^datadir\\t.*$/datadir = \\/data/' -i /etc/mysql/my.cnf && \\\n    sed -e 's/^bind-address\\t.*$/bind-address = 0.0.0.0/' -i /etc/mysql/my.cnf && \\\n    cp /etc/mysql/my.cnf /usr/share/mysql/my-default.cnf && \\\n    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n# Add scripts\nADD scripts /scripts\nRUN chmod +x /scripts/*.sh\nRUN touch /.firstrun\n\n# Command to run\nENTRYPOINT [\"/scripts/run.sh\"]\nCMD [\"\"]\n\n# Expose listen port\nEXPOSE 3306\n\n# Expose our data directory\nVOLUME [\"/data\", \"/var/log/mysql\", \"/etc/mysql\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "scripts",
+        "dest": "/scripts"
+      }
+    ],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      "[\"/data\", \"/var/log/mysql\", \"/etc/mysql\"]"
+    ],
+    "run": [
+      "DEBIAN_FRONTEND=noninteractive     apt-get install -y --force-yes     mysql-server-5.6 &&     service mysql stop &&     sed -e 's/^datadir\\t.*$/datadir = \\/data/' -i /etc/mysql/my.cnf &&     sed -e 's/^bind-address\\t.*$/bind-address = 0.0.0.0/' -i /etc/mysql/my.cnf &&     cp /etc/mysql/my.cnf /usr/share/mysql/my-default.cnf &&     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "chmod +x /scripts/*.sh",
+      "touch /.firstrun"
+    ],
+    "workdir": [],
+    "from": "frodenas/ubuntu",
+    "maintainer": "Ferran Rodenas <frodenas@gmail.com>",
+    "entrypoint": "[\"/scripts/run.sh\"]",
+    "cmd": "[\"\"]"
+  },
+  "source_repository_url": "https://github.com/frodenas/docker-mysql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/frodenas/docker-mysql",
+  "docker_repository": "frodenas/mysql",
+  "docker_image": "frodenas/mysql",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "frodenas/mysql",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/frodenas/mysql",
+    "https://hub.docker.com/v2/repositories/frodenas/mysql",
+    "https://github.com/frodenas/docker-mysql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/frodenas/mysql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

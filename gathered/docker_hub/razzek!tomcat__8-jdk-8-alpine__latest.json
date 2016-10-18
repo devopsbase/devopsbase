@@ -1,0 +1,122 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/razzek/tomcat",
+    "repository_url": "https://hub.docker.com/v2/repositories/razzek/tomcat",
+    "tags_url": "https://hub.docker.com/v2/repositories/razzek/tomcat/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/razzek/tomcat/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/razzek/tomcat/autobuild",
+    "user": "razzek",
+    "name": "tomcat",
+    "namespace": "razzek",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 29,
+    "last_updated": "2016-08-21T02:53:59.976795Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "8-jdk-8-alpine",
+        "full_size": 66371136,
+        "id": 4426847,
+        "repository": 868632,
+        "creator": 413164,
+        "last_updater": 413164,
+        "last_updated": "2016-08-21T02:53:59.606395Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "mcnew/tomcat"
+  },
+  "name": "razzek/tomcat Docker container",
+  "description": "tomcat",
+  "readme": null,
+  "dockerfile": "FROM razzek/java:jdk-8-alpine\n\nENV CATALINA_HOME=/opt/tomcat CATALINA_BASE=/home/appuser/tomcat\nENV TOMCAT_NATIVE_LIBDIR=\"$CATALINA_HOME/native-jni-lib\"\nENV LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR\"\n\nARG TOMCAT_MAJOR=8\nARG TOMCAT_VERSION=8.5.4\nARG TOMCAT_TGZ_URL=https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz\n\nRUN mkdir -p \"$CATALINA_HOME\" \\\n && cd $CATALINA_HOME \\\n && apk add --no-cache gnupg \\\n && set -ex \\\n\t&& for key in \\\n\t\t05AB33110949707C93A279E3D3EFE6B686867BA6 \\\n\t\t07E48665A34DCAFAE522E5E6266191C37C037D42 \\\n\t\t47309207D818FFD8DCD3F83F1931D684307A10A5 \\\n\t\t541FBE7D8F78B25E055DDEE13C370389288584E7 \\\n\t\t61B832AC2F1C5A90F0F9B00A1C506407564C17A3 \\\n\t\t713DA88BE50911535FE716F5208B0AB1D63011C7 \\\n\t\t79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED \\\n\t\t9BA44C2621385CB966EBA586F72C284D731FABEE \\\n\t\tA27677289986DB50844682F8ACB77FC2E86E29AC \\\n\t\tA9C5DF4D22E99998D9875A5110C01C5A2F6059E7 \\\n\t\tDCFD35E0BF8CA7344752DE8B6FB21E8933C60243 \\\n\t\tF3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE \\\n\t\tF7DA48BB64BCB84ECBA7EE6935CD23C10D498E23 \\\n\t; do \\\n\t\tgpg --keyserver ha.pool.sks-keyservers.net --recv-keys \"$key\"; \\\n\tdone \\\n && set -x \\\n\t\\\n\t&& apk add --no-cache --virtual .fetch-deps \\\n\t\tca-certificates \\\n\t\ttar \\\n\t\topenssl \\\n\t&& wget -O tomcat.tar.gz \"$TOMCAT_TGZ_URL\" \\\n\t&& wget -O tomcat.tar.gz.asc \"$TOMCAT_TGZ_URL.asc\" \\\n\t&& gpg --batch --verify tomcat.tar.gz.asc tomcat.tar.gz \\\n\t&& tar -xvf tomcat.tar.gz --strip-components=1 \\\n        && mv temp $CATALINA_BASE \\\n        && mv work $CATALINA_BASE \\\n        && mv webapps $CATALINA_BASE \\\n        && mv logs $CATALINA_BASE \\\n        && mv conf $CATALINA_BASE \\\n        && mkdir -p $CATALINA_BASE/bin \\\n        && mkdir -p $CATALINA_BASE/lib \\\n        && chown -R appuser:appuser $CATALINA_BASE \\\n        && chmod o+rx lib bin bin/*.sh \\\n        && chmod o+r lib/*.jar bin/*.jar \\\n\t&& rm bin/*.bat \\\n\t&& rm tomcat.tar.gz* \\\n\t&& nativeBuildDir=\"$(mktemp -d)\" \\\n\t&& tar -xvf bin/tomcat-native.tar.gz -C \"$nativeBuildDir\" --strip-components=1 \\\n\t&& apk add --no-cache --virtual .native-build-deps \\\n\t\tapr-dev \\\n\t\tgcc \\\n\t\tlibc-dev \\\n\t\tmake \\\n\t\t\"openjdk${JAVA_VERSION%%[-~bu]*}\"=\"$JAVA_ALPINE_VERSION\" \\\n\t\topenssl-dev \\\n\t&& ( \\\n\t\texport CATALINA_HOME=\"$PWD\" \\\n\t\t&& cd \"$nativeBuildDir/native\" \\\n\t\t&& ./configure \\\n\t\t\t--libdir=\"$TOMCAT_NATIVE_LIBDIR\" \\\n\t\t\t--prefix=\"$CATALINA_HOME\" \\\n\t\t\t--with-apr=\"$(which apr-1-config)\" \\\n\t\t\t--with-java-home=\"$(docker-java-home)\" \\\n\t\t\t--with-ssl=yes \\\n\t\t&& make -j$(getconf _NPROCESSORS_ONLN) \\\n\t\t&& make install \\\n\t) \\\n\t&& runDeps=\"$( \\\n\t\tscanelf --needed --nobanner --recursive \"$TOMCAT_NATIVE_LIBDIR\" \\\n\t\t\t| awk '{ gsub(/,/, \"\\nso:\", $2); print \"so:\" $2 }' \\\n\t\t\t| sort -u \\\n\t\t\t| xargs -r apk info --installed \\\n\t\t\t| sort -u \\\n\t)\" \\\n\t&& apk add --virtual .tomcat-native-rundeps $runDeps \\\n\t&& apk del .fetch-deps .native-build-deps \\\n\t&& rm -rf \"$nativeBuildDir\" \\\n\t&& rm bin/tomcat-native.tar.gz \\\n && set -e \\\n\t&& nativeLines=\"$($CATALINA_HOME/bin/catalina.sh configtest 2>&1)\" \\\n\t&& nativeLines=\"$(echo \"$nativeLines\" | grep 'Apache Tomcat Native')\" \\\n\t&& nativeLines=\"$(echo \"$nativeLines\" | sort -u)\" \\\n\t&& if ! echo \"$nativeLines\" | grep 'INFO: Loaded APR based Apache Tomcat Native library' >&2; then \\\n\t\techo >&2 \"$nativeLines\"; \\\n\t\texit 1; \\\n\tfi\nUSER appuser\nWORKDIR $CATALINA_BASE\n\nEXPOSE 8080\nCMD [\"/usr/bin/tini\", \"--\", \"/opt/tomcat/bin/catalina.sh\", \"run\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "mkdir -p \"$CATALINA_HOME\"  && cd $CATALINA_HOME  && apk add --no-cache gnupg  && set -ex \t&& for key in \t\t05AB33110949707C93A279E3D3EFE6B686867BA6 \t\t07E48665A34DCAFAE522E5E6266191C37C037D42 \t\t47309207D818FFD8DCD3F83F1931D684307A10A5 \t\t541FBE7D8F78B25E055DDEE13C370389288584E7 \t\t61B832AC2F1C5A90F0F9B00A1C506407564C17A3 \t\t713DA88BE50911535FE716F5208B0AB1D63011C7 \t\t79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED \t\t9BA44C2621385CB966EBA586F72C284D731FABEE \t\tA27677289986DB50844682F8ACB77FC2E86E29AC \t\tA9C5DF4D22E99998D9875A5110C01C5A2F6059E7 \t\tDCFD35E0BF8CA7344752DE8B6FB21E8933C60243 \t\tF3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE \t\tF7DA48BB64BCB84ECBA7EE6935CD23C10D498E23 \t; do \t\tgpg --keyserver ha.pool.sks-keyservers.net --recv-keys \"$key\"; \tdone  && set -x \t\t&& apk add --no-cache --virtual .fetch-deps \t\tca-certificates \t\ttar \t\topenssl \t&& wget -O tomcat.tar.gz \"$TOMCAT_TGZ_URL\" \t&& wget -O tomcat.tar.gz.asc \"$TOMCAT_TGZ_URL.asc\" \t&& gpg --batch --verify tomcat.tar.gz.asc tomcat.tar.gz \t&& tar -xvf tomcat.tar.gz --strip-components=1         && mv temp $CATALINA_BASE         && mv work $CATALINA_BASE         && mv webapps $CATALINA_BASE         && mv logs $CATALINA_BASE         && mv conf $CATALINA_BASE         && mkdir -p $CATALINA_BASE/bin         && mkdir -p $CATALINA_BASE/lib         && chown -R appuser:appuser $CATALINA_BASE         && chmod o+rx lib bin bin/*.sh         && chmod o+r lib/*.jar bin/*.jar \t&& rm bin/*.bat \t&& rm tomcat.tar.gz* \t&& nativeBuildDir=\"$(mktemp -d)\" \t&& tar -xvf bin/tomcat-native.tar.gz -C \"$nativeBuildDir\" --strip-components=1 \t&& apk add --no-cache --virtual .native-build-deps \t\tapr-dev \t\tgcc \t\tlibc-dev \t\tmake \t\t\"openjdk${JAVA_VERSION%%[-~bu]*}\"=\"$JAVA_ALPINE_VERSION\" \t\topenssl-dev \t&& ( \t\texport CATALINA_HOME=\"$PWD\" \t\t&& cd \"$nativeBuildDir/native\" \t\t&& ./configure \t\t\t--libdir=\"$TOMCAT_NATIVE_LIBDIR\" \t\t\t--prefix=\"$CATALINA_HOME\" \t\t\t--with-apr=\"$(which apr-1-config)\" \t\t\t--with-java-home=\"$(docker-java-home)\" \t\t\t--with-ssl=yes \t\t&& make -j$(getconf _NPROCESSORS_ONLN) \t\t&& make install \t) \t&& runDeps=\"$( \t\tscanelf --needed --nobanner --recursive \"$TOMCAT_NATIVE_LIBDIR\" \t\t\t| awk '{ gsub(/,/, \"\\nso:\", $2); print \"so:\" $2 }' \t\t\t| sort -u \t\t\t| xargs -r apk info --installed \t\t\t| sort -u \t)\" \t&& apk add --virtual .tomcat-native-rundeps $runDeps \t&& apk del .fetch-deps .native-build-deps \t&& rm -rf \"$nativeBuildDir\" \t&& rm bin/tomcat-native.tar.gz  && set -e \t&& nativeLines=\"$($CATALINA_HOME/bin/catalina.sh configtest 2>&1)\" \t&& nativeLines=\"$(echo \"$nativeLines\" | grep 'Apache Tomcat Native')\" \t&& nativeLines=\"$(echo \"$nativeLines\" | sort -u)\" \t&& if ! echo \"$nativeLines\" | grep 'INFO: Loaded APR based Apache Tomcat Native library' >&2; then \t\techo >&2 \"$nativeLines\"; \t\texit 1; \tfi"
+    ],
+    "workdir": [
+      "$CATALINA_BASE"
+    ],
+    "from": "razzek/java:jdk-8-alpine",
+    "env": {
+      "CATALINA_HOME": "/opt/tomcat",
+      "CATALINA_BASE": "/home/appuser/tomcat",
+      "TOMCAT_NATIVE_LIBDIR": "\"$CATALINA_HOME/native-jni-lib\"",
+      "LD_LIBRARY_PATH": "\"${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR\""
+    },
+    "arg": "TOMCAT_TGZ_URL=https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz",
+    "user": "appuser",
+    "cmd": "[\"/usr/bin/tini\", \"--\", \"/opt/tomcat/bin/catalina.sh\", \"run\"]"
+  },
+  "source_repository_url": "https://github.com/mcnew/tomcat.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/mcnew/tomcat",
+  "docker_repository": "razzek/tomcat",
+  "docker_image": "razzek/tomcat",
+  "parameters_schema": {
+    "CATALINA_HOME": {
+      "default": "/opt/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CATALINA_BASE": {
+      "default": "/home/appuser/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_NATIVE_LIBDIR": {
+      "default": "\"$CATALINA_HOME/native-jni-lib\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LD_LIBRARY_PATH": {
+      "default": "\"${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "razzek/tomcat",
+  "revision": "8-jdk-8-alpine",
+  "uris": [
+    "https://hub.docker.com/r/razzek/tomcat",
+    "https://hub.docker.com/v2/repositories/razzek/tomcat",
+    "https://github.com/mcnew/tomcat.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/razzek/tomcat",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

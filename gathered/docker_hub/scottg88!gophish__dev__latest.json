@@ -1,0 +1,128 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/scottg88/gophish",
+    "repository_url": "https://hub.docker.com/v2/repositories/scottg88/gophish",
+    "tags_url": "https://hub.docker.com/v2/repositories/scottg88/gophish/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/scottg88/gophish/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/scottg88/gophish/autobuild",
+    "user": "scottg88",
+    "name": "gophish",
+    "namespace": "scottg88",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 1023,
+    "last_updated": "2016-10-16T16:09:53.471072Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "dev",
+        "full_size": 394856584,
+        "id": 2369580,
+        "repository": 566599,
+        "creator": 674670,
+        "last_updater": 674670,
+        "last_updated": "2016-10-16T16:09:53.094273Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 147562843,
+        "id": 2230258,
+        "repository": 566599,
+        "creator": 674670,
+        "last_updater": 674670,
+        "last_updated": "2016-03-23T03:05:07.828332Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "release-0.1.2",
+        "full_size": 147515049,
+        "id": 2230414,
+        "repository": 566599,
+        "creator": 674670,
+        "last_updater": 674670,
+        "last_updated": "2016-03-08T03:00:17.043765Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "scottg88/gophish-docker"
+  },
+  "name": "scottg88/gophish Docker container",
+  "description": "GoPhish docker container (GoPhish - github.com/gophish/gophish).",
+  "readme": "# GoPhish Docker Container\nThis Docker container runs the \"gophish\" phishing toolkit.\nSee the gophish project site at https://getgophish.com/ or the GitHub project at https://github.com/gophish/gophish\n\nDescription from the [GitHub page](https://github.com/gophish/gophish):\n\nGophish is an open-source phishing toolkit designed for businesses and penetration testers. It provides the ability to quickly and easily setup and execute phishing engagements and security awareness training.\n\n## Tags\nThe tags associated with this container are:\n\n__latest___: the latest _release_ version\n\n__release-x.x.x__: a specific release version\n\n__dev__: a build of the latest source commit as at build time\n\n## Running\nThe suggested way of running the container is to use Docker Compose. The docker-compose.yml uses a customised config.json file to enable HTTPS and mounts filesystem files into the container for the config, certificates and the database.\n\n__Download the docker-compose.yml and config.json files into /srv/gophish:__\n```\ngit clone https://github.com/scottg88/gophish-compose.git /srv/gophish\n```\n\nEdit the docker-compose.yml file for any environment-specific settings. E.g. update the \"volumes\" section if you do not like the default locations (also update the location you clone into above).\n\nCopy the \"admin\" and \"phish\" certificates to /srv/gophish/ (by default) and __update the permissions:__\n```\nchmod 0600 /srv/gophish/admin.* /srv/gophish/phish.*\n```\n\n__Start the container:__\n```\ndocker-compose up -d\n```\n\nAlternatively run the container directly (by default using HTTP and persisting the database to an unnamed volume, see the section on HTTPS for utilising HTTPS):\n```\ndocker run -d --name gophish -p 3333:3333 -p 80:80 --restart=always scottg88/gophish\n```\n\n## Upgrading\nUpgrading without Docker Compose and default _docker run_ settings from above:\n\n```\ndocker stop gophish\ndocker rename gophish gophish-old\ndocker run -d --name gophish -p 3333:3333 -p 80:80 --restart=always --volumes-from=gophish-old scottg88/gophish\ndocker rm gophish-old\n```\n\nEnsure the container name (\"gophish\") matches the name used in your environment.\n\nUpgrading with Docker Compose, perform the following from the folder holding docker-compose.yml:\n\n```\ndocker-compose stop\ndocker-compose down\ndocker-compose pull\ndocker-compose up -d\n```\n## Persisting Data\n### Database\nThe configuration file (config.json) is modified to place the database file (gophish.db) in a sub-directory. This allows a volume to be defined to persist the gophish database file.\n\n__Config snippet:__\n```\n\"db_path\" : \"database/gophish.db\",\n```\n\nA volume is defined in the Dockerfile persisting the database by default. Alternatively mount a volume against \"_/app/database_\" with _docker run_.\n\n## HTTPS\nTo use HTTPS with this container, overwrite the config file with a volume mount at _docker run_.\n\n__Config file:__ /app/config.json\n\n__Example config snippet:__\n```\n        \"admin_server\" : {\n                \"listen_url\" : \"0.0.0.0:3333\",\n                \"use_tls\" : true,\n                \"cert_path\" : \"admin.crt\",\n                \"key_path\" : \"admin.key\"\n        },\n        \"phish_server\" : {\n                \"listen_url\" : \"0.0.0.0:443\",\n                \"use_tls\" : true,\n                \"cert_path\" : \"phish.crt\",\n                \"key_path\": \"phish.key\"\n        },\n```\n\nIf using a config.json with the above settings, mount the following files at _docker run_:\n\n- /app/admin.crt (admin interface pub key)\n- /app/admin.key (admin interface priv key)\n- /app/phish.crt (phishing interface pub key)\n- /app/phish.key (phishing interface priv key)\n\n__Example__:\n```\ndocker run -d --name gophish --restart=always -p 3333:3333 -p 443:443 -v /path/to/config.json:/app/config.json -v /path/to/admin.crt:/app/admin.crt -v /path/to/admin.key:/app/admin.key -v /path/to/phish.crt:/app/phish.crt -v /path/to/phish.key:/app/phish.key scottg88/gophish\n```\n\n\n",
+  "dockerfile": "FROM golang:1.5\nMAINTAINER Scott Gillespie <github@scottgillespie.name>\n\nWORKDIR $GOPATH\nRUN go get -v github.com/gophish/gophish\nWORKDIR $GOPATH/src/github.com/gophish/gophish\nRUN go build -v\nRUN mkdir /app && cp -R $GOPATH/src/github.com/gophish/gophish/* /app/ && rm -rf $GOPATH\nWORKDIR /app\nRUN sed -i \"s|127.0.0.1|0.0.0.0|g\" config.json\nRUN sed -i \"s|gophish.db|database/gophish.db|g\" config.json\nRUN chmod +x ./gophish\n\nVOLUME [\"/app/database\"]\nEXPOSE 3333 80\nENTRYPOINT [\"./gophish\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3333
+    ],
+    "volume": [
+      "[\"/app/database\"]"
+    ],
+    "run": [
+      "go get -v github.com/gophish/gophish",
+      "go build -v",
+      "mkdir /app && cp -R $GOPATH/src/github.com/gophish/gophish/* /app/ && rm -rf $GOPATH",
+      "sed -i \"s|127.0.0.1|0.0.0.0|g\" config.json",
+      "sed -i \"s|gophish.db|database/gophish.db|g\" config.json",
+      "chmod +x ./gophish"
+    ],
+    "workdir": [
+      "$GOPATH",
+      "$GOPATH/src/github.com/gophish/gophish",
+      "/app"
+    ],
+    "from": "golang:1.5",
+    "maintainer": "Scott Gillespie <github@scottgillespie.name>",
+    "entrypoint": "[\"./gophish\"]"
+  },
+  "source_repository_url": "https://github.com/scottg88/gophish-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/scottg88/gophish-docker",
+  "docker_repository": "scottg88/gophish",
+  "docker_image": "scottg88/gophish",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        3333
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "scottg88/gophish",
+  "revision": "dev",
+  "uris": [
+    "https://hub.docker.com/r/scottg88/gophish",
+    "https://hub.docker.com/v2/repositories/scottg88/gophish",
+    "https://github.com/scottg88/gophish-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Version Control/Git"
+  ],
+  "info_url": "https://hub.docker.com/r/scottg88/gophish",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

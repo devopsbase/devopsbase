@@ -1,0 +1,191 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/denibertovic/postgres",
+    "repository_url": "https://hub.docker.com/v2/repositories/denibertovic/postgres",
+    "tags_url": "https://hub.docker.com/v2/repositories/denibertovic/postgres/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/denibertovic/postgres/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/denibertovic/postgres/autobuild",
+    "user": "denibertovic",
+    "name": "postgres",
+    "namespace": "denibertovic",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1062,
+    "last_updated": "2015-11-14T01:10:36.595060Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 171709948,
+        "id": 73773,
+        "repository": 73511,
+        "creator": 468,
+        "last_updater": 468,
+        "last_updated": "2015-11-14T01:10:51.831592Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "9.3",
+        "full_size": 171708160,
+        "id": 73790,
+        "repository": 73511,
+        "creator": 468,
+        "last_updater": 468,
+        "last_updated": "2015-11-14T01:08:17.946168Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "9.2",
+        "full_size": 189512735,
+        "id": 73784,
+        "repository": 73511,
+        "creator": 468,
+        "last_updater": 468,
+        "last_updated": "2015-11-14T01:05:52.530375Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "9.1",
+        "full_size": 127117077,
+        "id": 73780,
+        "repository": 73511,
+        "creator": 468,
+        "last_updater": 468,
+        "last_updated": "2015-11-14T01:03:00.361148Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "denibertovic/postgresql-dockerfile"
+  },
+  "name": "denibertovic/postgres Docker container",
+  "description": "PostgreSQL image (9.3, 9.2 and 9.1)",
+  "readme": "# PostgreSQL\r\n\r\nAvailable versions: 9.3, 9.2 and 9.1\r\n\r\n\r\nClone the repo\r\n\r\n    git clone https://github.com/denibertovic/postgresql-dockerfile\r\n\r\nBuild\r\n\r\n    cd 9.3/\r\n    docker build -t postgres:9.3 .\r\n\r\nOr pull from the index:\r\n\r\n    docker pull denibertovic/postgres:9.3\r\n\r\n\r\nRun it:\r\n    \r\n    docker run -p 5432:5432 -i denibertovic/postgres:9.3\r\n\r\n\r\nTest it (the default password is 'password'):\r\n\r\n    psql -Upostgres -h localhost\r\n\r\n\r\n### Evironment Variables in Dockerfile:\r\n\r\nPassword used for Postgres superuser (*change this*):\r\n\r\n    ENV PG_SUPER_PASS\r\n\r\n",
+  "dockerfile": "# PostgreSQL 9.3\n#\n# VERSION               0.0.2\n\nFROM      debian:wheezy\nMAINTAINER Deni Bertovic \"me@denibertovic.com\"\n\n# Credentials - !!CHANGE THIS!!\n# This will be used as the password for the postgres user\nENV PG_SUPER_PASS password\n\nENV DEBIAN_FRONTEND noninteractive\n\nADD ACCC4CF8.asc /tmp/ACCC4CF8.asc\nRUN apt-key add /tmp/ACCC4CF8.asc\nRUN echo \"deb http://apt.postgresql.org/pub/repos/apt/ wheezy-pgdg main\" > /etc/apt/sources.list.d/postgresql.list\n\nRUN apt-get -qq update\nRUN apt-get -qq -y install locales\nADD locale.gen /etc/locale.gen\n\n# Set a default language\nRUN echo 'LANG=\"en_US.UTF-8\"' > /etc/default/locale\nRUN echo 'LANGUAGE=\"en_US:en\"' >> /etc/default/locale\nRUN locale-gen en_US.UTF-8\nRUN update-locale en_US.UTF-8\n\nRUN apt-get -qq -y install postgresql-9.3 postgresql-client-9.3 postgresql-contrib-9.3 \\\n    postgresql-plpython-9.3 postgresql-plperl-9.3 postgresql-9.3-plv8 postgresql-9.3-postgis-2.1 \\\n    postgresql-9.3-ip4r postgresql-9.3-postgis-scripts\n\nADD start_postgres.sh /usr/local/bin/start_postgres.sh\nRUN /bin/chmod 755 /usr/local/bin/start_postgres.sh\n\nADD certs/server.crt /etc/postgresql/9.3/main/\nADD certs/server.key /etc/postgresql/9.3/main/\n\nADD pg_hba.conf     /etc/postgresql/9.3/main/\nADD pg_ident.conf   /etc/postgresql/9.3/main/\nADD postgresql.conf /etc/postgresql/9.3/main/\n\nRUN /bin/chown -R postgres. /etc/postgresql/9.3/main/\nRUN /bin/chmod 600 /etc/postgresql/9.3/main/server.key\n\nUSER postgres\n\n# Alter Postgres user password\nRUN  /etc/init.d/postgresql start &&\\\n      psql -Upostgres -Upostgres -c\"ALTER USER postgres WITH PASSWORD '$PG_SUPER_PASS';\"\n\n# Add VOLUMEs to allow backup of config, logs and databases\nVOLUME  [\"/etc/postgresql\", \"/var/log/postgresql\", \"/var/lib/postgresql\"]\n\nEXPOSE 5432\n\nCMD [\"/usr/local/bin/start_postgres.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "ACCC4CF8.asc",
+        "dest": "/tmp/ACCC4CF8.asc"
+      },
+      {
+        "source": "locale.gen",
+        "dest": "/etc/locale.gen"
+      },
+      {
+        "source": "start_postgres.sh",
+        "dest": "/usr/local/bin/start_postgres.sh"
+      },
+      {
+        "source": "certs/server.crt",
+        "dest": "/etc/postgresql/9.3/main/"
+      },
+      {
+        "source": "certs/server.key",
+        "dest": "/etc/postgresql/9.3/main/"
+      },
+      {
+        "source": "pg_hba.conf",
+        "dest": ""
+      },
+      {
+        "source": "pg_ident.conf",
+        "dest": ""
+      },
+      {
+        "source": "postgresql.conf",
+        "dest": "/etc/postgresql/9.3/main/"
+      }
+    ],
+    "expose": [
+      5432
+    ],
+    "volume": [
+      " [\"/etc/postgresql\", \"/var/log/postgresql\", \"/var/lib/postgresql\"]"
+    ],
+    "run": [
+      "apt-key add /tmp/ACCC4CF8.asc",
+      "echo \"deb http://apt.postgresql.org/pub/repos/apt/ wheezy-pgdg main\" > /etc/apt/sources.list.d/postgresql.list",
+      "apt-get -qq update",
+      "apt-get -qq -y install locales",
+      "echo 'LANG=\"en_US.UTF-8\"' > /etc/default/locale",
+      "echo 'LANGUAGE=\"en_US:en\"' >> /etc/default/locale",
+      "locale-gen en_US.UTF-8",
+      "update-locale en_US.UTF-8",
+      "apt-get -qq -y install postgresql-9.3 postgresql-client-9.3 postgresql-contrib-9.3     postgresql-plpython-9.3 postgresql-plperl-9.3 postgresql-9.3-plv8 postgresql-9.3-postgis-2.1     postgresql-9.3-ip4r postgresql-9.3-postgis-scripts",
+      "/bin/chmod 755 /usr/local/bin/start_postgres.sh",
+      "/bin/chown -R postgres. /etc/postgresql/9.3/main/",
+      "/bin/chmod 600 /etc/postgresql/9.3/main/server.key",
+      " /etc/init.d/postgresql start &&      psql -Upostgres -Upostgres -c\"ALTER USER postgres WITH PASSWORD '$PG_SUPER_PASS';\""
+    ],
+    "workdir": [],
+    "from": "     debian:wheezy",
+    "maintainer": "Deni Bertovic \"me@denibertovic.com\"",
+    "env": {
+      "PG_SUPER_PASS": "password",
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "user": "postgres",
+    "cmd": "[\"/usr/local/bin/start_postgres.sh\"]"
+  },
+  "source_repository_url": "https://github.com/denibertovic/postgresql-dockerfile.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/denibertovic/postgresql-dockerfile",
+  "docker_repository": "denibertovic/postgres",
+  "docker_image": "denibertovic/postgres",
+  "parameters_schema": {
+    "PG_SUPER_PASS": {
+      "default": "password",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5432
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "denibertovic/postgres",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/denibertovic/postgres",
+    "https://hub.docker.com/v2/repositories/denibertovic/postgres",
+    "https://github.com/denibertovic/postgresql-dockerfile.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/denibertovic/postgres",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

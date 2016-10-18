@@ -1,0 +1,142 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/qnib/logstash",
+    "repository_url": "https://hub.docker.com/v2/repositories/qnib/logstash",
+    "tags_url": "https://hub.docker.com/v2/repositories/qnib/logstash/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/qnib/logstash/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/qnib/logstash/autobuild",
+    "user": "qnib",
+    "name": "logstash",
+    "namespace": "qnib",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 4707,
+    "last_updated": "2016-05-10T14:47:21.467993Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 651094193,
+        "id": 39912,
+        "repository": 142169,
+        "creator": 14576,
+        "last_updater": 14576,
+        "last_updated": "2016-05-10T14:47:19.305576Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "1.3",
+        "full_size": 557702030,
+        "id": 39903,
+        "repository": 142169,
+        "creator": 14576,
+        "last_updater": 14576,
+        "last_updated": "2016-05-06T22:08:55.580100Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "fd22",
+        "full_size": 725826641,
+        "id": 1010443,
+        "repository": 142169,
+        "creator": 14576,
+        "last_updater": 14576,
+        "last_updated": "2016-04-06T12:49:26.665080Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "trunk",
+        "full_size": 784447165,
+        "id": 39982,
+        "repository": 142169,
+        "creator": 14576,
+        "last_updater": 14576,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "qnib/docker-logstash"
+  },
+  "name": "qnib/logstash Docker container",
+  "description": "",
+  "readme": "# docker-logstash\n\n- **qnib/logstash:latest**<br>\n  [![](https://badge.imagelayers.io/qnib/logstash:latest.svg)](https://imagelayers.io/?images=qnib/logstash:latest 'Details')\n- **qnib/logstash:trunk**<br>\n  [![](https://badge.imagelayers.io/qnib/logstash:trunk.svg)](https://imagelayers.io/?images=qnib/logstash:trunk 'Details')\n\nImage to take events in and pump them into Redis server (to be picked-up by 'real' elk instance).\n\n## Using it\nTo push logs into it just fire up the fig config:\n```\n~/git/docker-logstash $ fig up -d\nCreating dockerlogstash_logstash_1...\n~/git/docker-logstash $\n```\nAfter a couple of seconds logstash and redis should be up and running. To test it we are going to send a Log to Logstash and receive the latest\nlog within redis (RPOP: right pop).\n```\n~/git/docker-logstash $ echo \"TestLog1\"|nc -w1 192.168.59.103 5514\n~/git/docker-logstash $ redis-cli -h 192.168.59.103 RPOP logstash-syslog\n\"{\\\"message\\\":\\\"TestLog1\\\\n\\\",\\\"@version\\\":\\\"1\\\",\\\"@timestamp\\\":\\\"2015-02-17T09:31:27.159Z\\\",\\\"type\\\":\\\"syslog\\\",\\\"host\\\":\\\"192.168.59.3\\\",\\\"tags\\\":[\\\"_grokparsefailure\\\"],\\\"priority\\\":13,\\\"severity\\\":5,\\\"facility\\\":1,\\\"facility_label\\\":\\\"user-level\\\",\\\"severity_label\\\":\\\"Notice\\\"}\"\n```\n",
+  "dockerfile": "FROM qnib/java8\n\nADD etc/yum.repos.d/logstash.repo /etc/yum.repos.d/\n\n# logstash\nRUN echo \"2015-05-28.1\" && yum clean all &&  \\\n    useradd jls && \\\n    dnf install -y jq bc && \\\n    rpm --import https://packages.elastic.co/GPG-KEY-elasticsearch && \\\n    dnf install -y logstash && \\\n    /opt/logstash/bin/plugin install \\\n         logstash-codec-oldlogstashjson \\\n         logstash-input-elasticsearch \\\n         logstash-input-tcp \\\n         logstash-input-udp \\\n         logstash-input-syslog \\\n         logstash-filter-grok \\\n         logstash-filter-mutate \\\n         logstash-filter-zeromq \\\n         logstash-output-elasticsearch \\\n         logstash-output-kafka\nADD opt/qnib/bin/ /opt/qnib/bin/\nADD etc/supervisord.d/ /etc/supervisord.d/\nADD etc/consul.d/ /etc/consul.d/\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "etc/yum.repos.d/logstash.repo",
+        "dest": "/etc/yum.repos.d/"
+      },
+      {
+        "source": "opt/qnib/bin/",
+        "dest": "/opt/qnib/bin/"
+      },
+      {
+        "source": "etc/supervisord.d/",
+        "dest": "/etc/supervisord.d/"
+      },
+      {
+        "source": "etc/consul.d/",
+        "dest": "/etc/consul.d/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "echo \"2015-05-28.1\" && yum clean all &&      useradd jls &&     dnf install -y jq bc &&     rpm --import https://packages.elastic.co/GPG-KEY-elasticsearch &&     dnf install -y logstash &&     /opt/logstash/bin/plugin install          logstash-codec-oldlogstashjson          logstash-input-elasticsearch          logstash-input-tcp          logstash-input-udp          logstash-input-syslog          logstash-filter-grok          logstash-filter-mutate          logstash-filter-zeromq          logstash-output-elasticsearch          logstash-output-kafka"
+    ],
+    "workdir": [],
+    "from": "qnib/java8"
+  },
+  "source_repository_url": "https://github.com/qnib/docker-logstash.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/qnib/docker-logstash",
+  "docker_repository": "qnib/logstash",
+  "docker_image": "qnib/logstash",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "qnib/logstash",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/qnib/logstash",
+    "https://hub.docker.com/v2/repositories/qnib/logstash",
+    "https://github.com/qnib/docker-logstash.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Logging/Logstash"
+  ],
+  "info_url": "https://hub.docker.com/r/qnib/logstash",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

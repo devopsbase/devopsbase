@@ -1,0 +1,184 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/fliglio/rabbitmq",
+    "repository_url": "https://hub.docker.com/v2/repositories/fliglio/rabbitmq",
+    "tags_url": "https://hub.docker.com/v2/repositories/fliglio/rabbitmq/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/fliglio/rabbitmq/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/fliglio/rabbitmq/autobuild",
+    "user": "fliglio",
+    "name": "rabbitmq",
+    "namespace": "fliglio",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 265,
+    "last_updated": "2015-12-16T21:46:26.553420Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 201341051,
+        "id": 1573220,
+        "repository": 448765,
+        "creator": 874,
+        "last_updater": 874,
+        "last_updated": "2015-12-16T21:46:25.923291Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "fliglio/docker-rabbitmq"
+  },
+  "name": "fliglio/rabbitmq Docker container",
+  "description": "local-dev image for php apps using rabbitmq and chinchilla",
+  "readme": "\nlocal dev environment for Fliglio\n\n\n\n",
+  "dockerfile": "FROM ubuntu:14.04\n\n# Ensure UTF-8\nRUN locale-gen en_US.UTF-8\nENV LANG       en_US.UTF-8\nENV LC_ALL     en_US.UTF-8\n\n\nENV DEBIAN_FRONTEND noninteractive\n\nRUN apt-get update\nRUN apt-get install -y \\\n\tphp5-cli php5-fpm php5-mysql php5-pgsql php5-sqlite php5-curl \\\n\tphp5-gd php5-mcrypt php5-intl php5-imap php5-tidy php5-memcache\nRUN apt-get install -y \\\n\tnginx \\\n\tmemcached \\\n\tmysql-server mysql-client \\\n\tsupervisor\n\nRUN sed -i \"s/;date.timezone =.*/date.timezone = UTC/\" /etc/php5/fpm/php.ini\nRUN sed -i \"s/;date.timezone =.*/date.timezone = UTC/\" /etc/php5/cli/php.ini\n\nRUN mkdir -p /var/log/supervisor\nRUN mkdir -p /var/www\n\nRUN echo \"daemon off;\" >> /etc/nginx/nginx.conf\nRUN sed -i -e \"s/;daemonize\\s*=\\s*yes/daemonize = no/g\" /etc/php5/fpm/php-fpm.conf\nRUN sed -i \"s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/\" /etc/php5/fpm/php.ini\n \nADD nginx-site   /etc/nginx/sites-available/default\n\n# forward request and error logs to docker log collector\nRUN ln -sf /dev/stdout /var/log/nginx/access.log\nRUN ln -sf /dev/stdout /var/log/nginx/error.log\n\n\nRUN /usr/sbin/mysqld & \\\n\tsleep 10s &&\\\n\techo \"GRANT ALL ON *.* TO admin@'%' IDENTIFIED BY 'changeme' WITH GRANT OPTION; FLUSH PRIVILEGES\" | mysql\nRUN sed -i -e\"s/^bind-address\\s*=\\s*127.0.0.1/bind-address = 0.0.0.0/\" /etc/mysql/my.cnf\n\n# consul\nRUN apt-get install -y unzip\nADD https://releases.hashicorp.com/consul/0.6.0/consul_0.6.0_linux_amd64.zip /tmp/consul.zip\nRUN cd /tmp && unzip consul.zip && chmod 755 consul && mv consul /bin/consul && rm consul.zip\n\nADD https://releases.hashicorp.com/consul/0.6.0/consul_0.6.0_web_ui.zip /tmp/webui.zip\nRUN mkdir /ui && cd /ui && unzip /tmp/webui.zip && rm /tmp/webui.zip\n\n# rabbitmq\nRUN apt-get install -y rabbitmq-server\nRUN rabbitmq-plugins enable rabbitmq_management\n\n# chinchilla\nRUN apt-get install -y curl\nADD https://drone.io/github.com/benschw/chinchilla/files/chinchilla.gz /tmp/chinchilla.gz\nRUN cd /tmp && gunzip chinchilla.gz && chmod 755 chinchilla && mv chinchilla /bin/chinchilla\n\nADD configure-chinchilla.sh /tmp/configure-chinchilla.sh\n\n# configure\nADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf\n\nADD phinx.php /etc/phinx.php\nADD migrate.sh /usr/local/bin/migrate.sh\nADD run.sh /usr/local/bin/run.sh\n\nEXPOSE 80\nEXPOSE 3306\nEXPOSE 8500\nEXPOSE 15672\n\nCMD [\"/usr/local/bin/run.sh\"]\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "nginx-site",
+        "dest": ""
+      },
+      {
+        "source": "https://releases.hashicorp.com/consul/0.6.0/consul_0.6.0_linux_amd64.zip",
+        "dest": "/tmp/consul.zip"
+      },
+      {
+        "source": "https://releases.hashicorp.com/consul/0.6.0/consul_0.6.0_web_ui.zip",
+        "dest": "/tmp/webui.zip"
+      },
+      {
+        "source": "https://drone.io/github.com/benschw/chinchilla/files/chinchilla.gz",
+        "dest": "/tmp/chinchilla.gz"
+      },
+      {
+        "source": "configure-chinchilla.sh",
+        "dest": "/tmp/configure-chinchilla.sh"
+      },
+      {
+        "source": "supervisord.conf",
+        "dest": "/etc/supervisor/conf.d/supervisord.conf"
+      },
+      {
+        "source": "phinx.php",
+        "dest": "/etc/phinx.php"
+      },
+      {
+        "source": "migrate.sh",
+        "dest": "/usr/local/bin/migrate.sh"
+      },
+      {
+        "source": "run.sh",
+        "dest": "/usr/local/bin/run.sh"
+      }
+    ],
+    "expose": [
+      80,
+      3306,
+      8500,
+      15672
+    ],
+    "volume": [],
+    "run": [
+      "locale-gen en_US.UTF-8",
+      "apt-get update",
+      "apt-get install -y \tphp5-cli php5-fpm php5-mysql php5-pgsql php5-sqlite php5-curl \tphp5-gd php5-mcrypt php5-intl php5-imap php5-tidy php5-memcache",
+      "apt-get install -y \tnginx \tmemcached \tmysql-server mysql-client \tsupervisor",
+      "sed -i \"s/;date.timezone =.*/date.timezone = UTC/\" /etc/php5/fpm/php.ini",
+      "sed -i \"s/;date.timezone =.*/date.timezone = UTC/\" /etc/php5/cli/php.ini",
+      "mkdir -p /var/log/supervisor",
+      "mkdir -p /var/www",
+      "echo \"daemon off;\" >> /etc/nginx/nginx.conf",
+      "sed -i -e \"s/;daemonize\\s*=\\s*yes/daemonize = no/g\" /etc/php5/fpm/php-fpm.conf",
+      "sed -i \"s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/\" /etc/php5/fpm/php.ini",
+      "ln -sf /dev/stdout /var/log/nginx/access.log",
+      "ln -sf /dev/stdout /var/log/nginx/error.log",
+      "/usr/sbin/mysqld & \tsleep 10s &&\techo \"GRANT ALL ON *.* TO admin@'%' IDENTIFIED BY 'changeme' WITH GRANT OPTION; FLUSH PRIVILEGES\" | mysql",
+      "sed -i -e\"s/^bind-address\\s*=\\s*127.0.0.1/bind-address = 0.0.0.0/\" /etc/mysql/my.cnf",
+      "apt-get install -y unzip",
+      "cd /tmp && unzip consul.zip && chmod 755 consul && mv consul /bin/consul && rm consul.zip",
+      "mkdir /ui && cd /ui && unzip /tmp/webui.zip && rm /tmp/webui.zip",
+      "apt-get install -y rabbitmq-server",
+      "rabbitmq-plugins enable rabbitmq_management",
+      "apt-get install -y curl",
+      "cd /tmp && gunzip chinchilla.gz && chmod 755 chinchilla && mv chinchilla /bin/chinchilla"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "env": {
+      "LANG": "",
+      "": "en_US.UTF-8",
+      "LC_ALL": "",
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "cmd": "[\"/usr/local/bin/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/fliglio/docker-rabbitmq.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/fliglio/docker-rabbitmq",
+  "docker_repository": "fliglio/rabbitmq",
+  "docker_image": "fliglio/rabbitmq",
+  "parameters_schema": {
+    "LANG": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "en_US.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LC_ALL": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80,
+        3306,
+        8500,
+        15672
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "fliglio/rabbitmq",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/fliglio/rabbitmq",
+    "https://hub.docker.com/v2/repositories/fliglio/rabbitmq",
+    "https://github.com/fliglio/docker-rabbitmq.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/fliglio/rabbitmq",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

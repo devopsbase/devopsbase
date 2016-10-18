@@ -1,0 +1,54 @@
+{
+  "name": "mode_example Chef cookbook",
+  "chef_cookbook_name": "mode_example",
+  "revision": "1.0.3",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/mode_example",
+    "https://supermarket.chef.io/cookbooks/mode_example/download",
+    "https://supermarket.chef.io/cookbooks/mode_example/versions/1.0.3",
+    "https://supermarket.chef.io/cookbooks/mode_example/versions/1.0.3/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/mode_example/versions/1.0.3",
+    "https://supermarket.chef.io/api/v1/cookbooks/mode_example",
+    "https://supermarket.chef.io/api/v1/cookbooks/mode_example/versions/1.0.3/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Test",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/mode_example",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/mode_example/versions/1.0.3/download",
+  "deprecated": false,
+  "created": "2016-03-31T07:18:42.154Z",
+  "updated": "2016-03-31T22:35:10.172Z",
+  "description": "Contains tests to show unexpected behavior for the mode property on a Chef resource",
+  "maintainer": {
+    "name": "kevindickerson",
+    "email": "kevin.dickerson@loom.technology"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 807,
+  "downloads_count_revision": 213,
+  "repository_url": "https://github.com/kevindickerson-cookbooks/mode_example",
+  "issues_url": "https://github.com/kevindickerson-cookbooks/mode_example/issues",
+  "chef_source_url": "https://github.com/kevindickerson-cookbooks/mode_example",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# mode_example\n\n[![Build Status](https://travis-ci.org/kevindickerson-cookbooks/mode_example.svg?branch=master)](https://travis-ci.org/kevindickerson-cookbooks/example) [![Cookbook Version](https://img.shields.io/cookbook/v/mode_example.svg)](https://supermarket.chef.io/cookbooks/mode_example)\n\nThis cookbook exists to show Chef users how to use the `mode` property, which is available to several common Chef resources, like [file][file] and [directory][directory].\n\nThis cookbook is just a long-winded way to show that there are several varying ways to set the `mode` property on a Chef resource.\n\nThis cookbook doesn't actually do anything. It just has unit and integration tests, and a test cookbook to configure the state of a virtual machine. InSpec verifies the configuration.\n\n## Overview\n\nIf you're new to Ruby, you might be unfamiliar with how Ruby interprets and coerces strings, integers, and octal numbers. Take a look at the following examples.\n\n```ruby\nirb(main):001:0> puts 'this is a string'\nthis is a string\n=> nil\nirb(main):002:0> puts \"This is also a string\"\nThis is also a string\n=> nil\nirb(main):003:0> puts '0644'\n0644\n=> nil\nirb(main):004:0> puts 0644\n420\n=> nil\nirb(main):005:0> puts 644\n644\n=> nil\nirb(main):006:0> puts 0o644\n420\n=> nil\n```\n\nNotice that `0644` and `0o644` are ways to write *octal* numbers in Ruby. This may be a gotcha, since the documentation for quite a few resources—including [file][file] and [directory][directory]—mentions that you can use a Fixnum or a String as a value for your `mode` properties.\n\nThe Chef resource documentation doesn't have many examples to show how to use Fixnum and String property values. I wrote some InSpec integration tests to help illustrate how to avoid common usage problems. Leading zeroes may result in unexpected values. There are some examples in the tests in this cookbook of how to use special modes (4-digit modes) correctly with both Fixnum and String property values.\n\n## Testing\n\n### Supported platforms\n\nKeep in mind that the `mode` property will operate differently on different platforms. (For example, this cookbook doesn't really make sense if you're testing against Windows.)\n\nWe only need Ubuntu to illustrate the examples.\n\nPlatform | Version\n---------|----------\nubuntu   | 14.04\n\n### Unit tests\n\nTo run the ChefSpec unit tests, just run the following command in your shell.\n\n```shell\n$ rspec\n```\n\n### Integration tests\n\nTo run the InSpec-driven test suite, run the following command in the directory where you have downloaded or cloned this cookbook.\n\n**Note:** Make sure you've installed ChefDK v0.12.0 or greater.\n\n```shell\n$ kitchen verify\n```\n\n#### The test cookbook\n\nThis cookbook uses a single test cookbook to configure the virtual machine, located in [test/cookbooks/mode_example_test][test-cookbook].\n\nLocate and read through [test/cookbooks/mode_example_test/recipes/file.rb][test-file]. It just writes out a few files using the `mode` property in a few different ways.\n\n#### The integration test suite\n\nLocate and read through [test/integration/mode_example/fixnum_mode_spec.rb][fixnum] and [test/integration/mode_example/string_mode_spec.rb][string]. It simply shows that we have some expectations that the mode we intended was actually the mode we wrote to the file.\n\nThis shows that there are different ways to send values to the `mode` parameter of your resources. It's a pretty common parameter that you'll use with a lot of basic and common resources.\n\n## Discussion\n\n### Static linting\n\nStatic linting will catch problems outlined in this cookbook. If you use Foodcritic, you may inadvertently [trigger Foodcritic rule FC006](http://www.foodcritic.io/#FC006). This is for good reason—you might end up configuring files to have a different modes than you intended them to have.\n\n### Examples of unintended modes\n\n#### Example 1\n\nThis example produces a file with a mode of 1217, not 644. This is because Ruby coerces a Fixnum to octal if it has a leftmost digit of `0`.\n\n```ruby\nfile '/home/vagrant/some_file' do\n  owner 'vagrant'\n  group 'vagrant'\n  mode 644\n  action :create\nend\n```\n\nIn shell:\n\n```shell\n$ stat -c '%a' /home/vagrant/some_file\n1217\n```\n\nIn Ruby:\n\n```ruby\n> 01217 == 655\n=> true\n```\n\n#### Example 2\n\nIn this example if the mode is set to `0644`, the mode results to 644, despite the fact that the Fixnum has a leftmost digit of `0`.\n\n```ruby\nfile '/home/vagrant/some_file' do\n  owner 'vagrant'\n  group 'vagrant'\n  mode 0644\n  action :create\nend\n```\n\nIn shell:\n\n```shell\n$ stat -c '%a' /home/vagrant/some_file\n644\n```\n\n#### Example 3\n\nThis example also produces a file with a mode of 644.\n\n```ruby\nfile '/home/vagrant/some_file' do\n  owner 'vagrant'\n  group 'vagrant'\n  mode '644'\n  action :create\nend\n```\n\nIn shell:\n\n```shell\n$ stat -c '%a' /home/vagrant/some_file\n644\n```\n[file]: https://docs.chef.io/resource_file.html\n[test-cookbook]: https://github.com/kevindickerson-cookbooks/mode_example/tree/master/test/cookbooks/mode_example_test\n[test-file]: https://github.com/kevindickerson-cookbooks/mode_example/blob/master/test/cookbooks/mode_example_test/recipes/file.rb\n[fixnum]: https://github.com/kevindickerson-cookbooks/mode_example/blob/master/test/integration/mode_example/fixnum_mode_spec.rb\n[string]: https://github.com/kevindickerson-cookbooks/mode_example/blob/master/test/integration/mode_example/string_mode_spec.rb\n[directory]: https://docs.chef.io/resource_directory.html\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": "= 14.04",
+      "one_of_group": "os"
+    }
+  ]
+}

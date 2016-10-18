@@ -1,0 +1,187 @@
+{
+  "name": "omnibus Chef cookbook",
+  "chef_cookbook_name": "omnibus",
+  "revision": "4.2.8",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/omnibus",
+    "https://supermarket.chef.io/cookbooks/omnibus/download",
+    "https://supermarket.chef.io/cookbooks/omnibus/versions/4.2.8",
+    "https://supermarket.chef.io/cookbooks/omnibus/versions/4.2.8/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/omnibus/versions/4.2.8",
+    "https://supermarket.chef.io/api/v1/cookbooks/omnibus",
+    "https://supermarket.chef.io/api/v1/cookbooks/omnibus/versions/4.2.8/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Operating System/macOS",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Build"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/omnibus",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/omnibus/versions/4.2.8/download",
+  "deprecated": false,
+  "created": "2013-04-20T01:07:51.000Z",
+  "updated": "2016-10-10T20:20:46.728Z",
+  "description": "Prepares a machine to be an Omnibus builder.",
+  "maintainer": {
+    "name": "chef",
+    "email": "releng@chef.io"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 9,
+  "downloads_count": 33855933,
+  "downloads_count_revision": 49,
+  "repository_url": "https://github.com/chef-cookbooks/omnibus",
+  "issues_url": "https://github.com/chef-cookbooks/omnibus/issues",
+  "chef_source_url": "https://github.com/chef-cookbooks/omnibus",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "omnibus Cookbook\n================\n\n[![Cookbook Version](https://img.shields.io/cookbook/v/omnibus.svg)](https://supermarket.chef.io/cookbooks/omnibus)\n\nPrepares a machine to be an Omnibus builder.\n\nThis project is managed by the CHEF Release Engineering team. For more information on the Release Engineering team's contribution, triage, and release process, please consult the [CHEF Release Engineering OSS Management Guide](https://docs.google.com/a/opscode.com/document/d/1oJB0vZb_3bl7_ZU2YMDBkMFdL-EWplW1BJv_FXTUOzg/edit).\n\nAnnouncement\n------------\nStarting with omnibus cookbook version 4.0.0:\n* Chef 11 is no longer supported, since 12.5.1 is required to use [chef-ingredient](https://github.com/chef-cookbooks/chef-ingredient). If needed, you can pin to omnibus version `3.2.x` to preserve the old functionality.\n* Instead of compiling everything from source in this cookbook, the [omnibus-toolchain](https://github.com/chef/omnibus-toolchain) package will be installed. This package contains patch, bash, make, git, ruby, rubygems, and bundler (built from [omnibus-software](https://github.com/chef/omnibus-software) definitions).\n\nRequirements\n------------\nThis cookbook requires Chef 12.5.1+.\n\nFor a full list of supported platforms and external cookbook requirements, please see the `metadata.rb` file at the root of the cookbook.\n\nRecipes\n-------\nThe default recipe is the main entrypoint for the cookbook and does the following:\n\n- Ensures all required Omnibus-related directories are created and owned by the build user.\n- Ensures a sane build tool-chain is installed and configured (using the [build-essential](http://community.opscode.com/cookbooks/build-essential) cookbook)\n- Ensures the necessary tools to run an Omnibus project (ruby, git, etc) are installed (using the [omnibus-toolchain](https://github.com/chef/omnibus-toolchain) package)\n- Includes a platform-specific recipe to apply additional tweaks as appropriate.\n\nAll other recipes should be treated as \"private\" and are not meant to be used individually. They only exist to support the `default` recipe.\n\n\nAttributes\n----------\n| Attribute     | Default                                               | Description                                              |\n|---------------|-------------------------------------------------------|----------------------------------------------------------|\n| `build_user`  | `omnibus`                                             | The user to execute Omnibus builds as                    |\n| `base_dir`    | Windows: `C:/omnibus-ruby` *nix: `/var/cache/omnibus` | The \"base\" directory where Omnibus will store its data. |\n\nResources\n---------\n\n### omnibus_build\n\nThis resource is used to execute a build of an Omnibus project.\n\n#### Attributes\n\n| Attribute          | Default                                               | Description                           |\n|--------------------|-------------------------------------------------------|---------------------------------------|\n| `project_name`     |                                                       | The name of the Omnibus project to build |\n| `project_dir`      |                                                       | The directory to install Omnibus |\n| `install_dir`      | `/opt/<PROJECT>`                                      | The installation of the project being built |\n| `base_dir`         | Windows: `C:/omnibus-ruby` *nix: `/var/cache/omnibus` | The base directory for Omnibus |\n| `log_level`        | `:internal`                                           | Log level used during the build. Valid values include: `:internal, :debug, :info, :warn, :error, :fatal` |\n| `config_file`      | `<PROJECT_DIR>/omnibus.rb`                            | Omnibus configuration file used for the build. |\n| `config_overrides` | `{}`                                                  | Overrides for one or more Omnibus config options |\n| `expire_cache`     | `false`                                               | Indiciates the Omnibus cache (including git cache) should be wiped before building.  |\n| `build_user`       | `node['omnibus']['build_user']`                       | The user to execute the Omnibus build as. |\n| `environment`      | `{}`                                                  | Environment variables to set in the underlying build process. |\n\n#### Example Usage\n\n```ruby\nomnibus_build 'harmony' do\n  project\\_dir 'https://github.com/chef/omnibus-harmony.git'\n  log_level :internal\n  config_override(\n    append_timestamp: true\n  )\nend\n```\n\nUsage\n-----\nInclude the `omnibus::default` recipe in your node's run list and override the cookbook's default attributes as desired. At the very least you will want to override `node['omnibus']['install_dir']` to match the installation directory of your Omnibus project.\n\nUsing Test Kitchen with Docker\n------------------------------\n\nThe following assumes you are on a Mac OS X workstation and have installed and\nstarted [Kitematic](https://kitematic.com/).\n\n* Install [kitchen-docker](https://github.com/portertech/kitchen-docker) into your local ChefDK install:\n```\n$ chef gem install kitchen-docker\nSuccessfully installed kitchen-docker-2.3.0\n1 gem installed\n```\n\n* Set environment variables to point kitchen-docker at your local Kitematic instance:\n```\n# Bash\nexport DOCKER_HOST=tcp://192.168.99.100:2376\nexport DOCKER_CERT_PATH=$HOME/.docker/machine/certs\nexport DOCKER_TLS_VERIFY=1\n\n# Fish\nset -gx DOCKER_HOST \"tcp://192.168.99.100:2376\"\nset -gx DOCKER_CERT_PATH \"$HOME/.docker/machine/certs\"\nset -gx DOCKER_TLS_VERIFY 1\n```\n\n* Run Test Kitchen with the provided `.kitchen.docker.yml`:\n```\nKITCHEN_LOCAL_YAML=.kitchen.docker.yml kitchen verify languages-ruby-ubuntu-1204\n```\n\nLicense & Authors\n-----------------\n- Author: Seth Vargo (<sethvargo@gmail.com>)\n- Author: Yvonne Lam (<yvonne@chef.io>)\n- Author: Seth Chisamore (<schisamo@chef.io>)\n- Author: Stephen Delano (<stephen@chef.io>)\n\n```text\nCopyright 2012-2016, Chef Software, Inc. (<legal@chef.io>)\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "freebsd",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "mac_os_x",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "oracle",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "solaris2",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "suse",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "windows",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 6.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef-sugar",
+      "revision": ">= 3.2.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef-ingredient",
+      "revision": ">= 0.18.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/git",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/homebrew",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/languages",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/remote_install",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/windows",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/wix",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/windows-sdk",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

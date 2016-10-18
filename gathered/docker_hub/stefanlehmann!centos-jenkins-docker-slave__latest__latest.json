@@ -1,0 +1,142 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/stefanlehmann/centos-jenkins-docker-slave",
+    "repository_url": "https://hub.docker.com/v2/repositories/stefanlehmann/centos-jenkins-docker-slave",
+    "tags_url": "https://hub.docker.com/v2/repositories/stefanlehmann/centos-jenkins-docker-slave/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/stefanlehmann/centos-jenkins-docker-slave/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/stefanlehmann/centos-jenkins-docker-slave/autobuild",
+    "user": "stefanlehmann",
+    "name": "centos-jenkins-docker-slave",
+    "namespace": "stefanlehmann",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 4219,
+    "last_updated": "2016-09-06T22:37:10.098313Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 143949948,
+        "id": 1162165,
+        "repository": 368232,
+        "creator": 474160,
+        "last_updater": 474160,
+        "last_updated": "2016-09-06T22:37:09.558849Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "java7",
+        "full_size": 151139187,
+        "id": 2539746,
+        "repository": 368232,
+        "creator": 474160,
+        "last_updater": 474160,
+        "last_updated": "2016-09-06T22:34:44.464205Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "withdockerclient",
+        "full_size": 175985760,
+        "id": 3569168,
+        "repository": 368232,
+        "creator": 474160,
+        "last_updater": 474160,
+        "last_updated": "2016-09-06T22:31:46.836391Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "oraclejava7",
+        "full_size": 286539642,
+        "id": 2540198,
+        "repository": 368232,
+        "creator": 474160,
+        "last_updater": 474160,
+        "last_updated": "2016-09-06T22:28:22.915318Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "stefanleh/centos-jenkins-docker-slave"
+  },
+  "name": "stefanlehmann/centos-jenkins-docker-slave Docker container",
+  "description": "A jenkins docker slave image, based on centos:latest. Can be used OOTB with the docker-plugin.",
+  "readme": "### centos-jenkins-docker-slave\n\n[![](https://badge.imagelayers.io/stefanlehmann/centos-jenkins-docker-slave:latest.svg)](https://imagelayers.io/?images=stefanlehmann/centos-jenkins-docker-slave:latest 'Get your own badge on imagelayers.io')\n\nA jenkins docker slave image, based on **centos:latest**.\n\nCan be used Out-Of-The-Box with the [docker-plugin](https://wiki.jenkins-ci.org/display/JENKINS/Docker+Plugin \"docker-plugin\") for [Jenkins](https://jenkins-ci.org/ \"Jenkins CI Server\").\n\nThe image on [DockerHub](https://hub.docker.com/r/stefanlehmann/centos-jenkins-docker-slave/ \"DockerHub\") is built automatically from the Dockerfile here.\n\n#### Installed packages\n\n| Package                     | Comment                                                                          |\n|-----------------------------|----------------------------------------------------------------------------------|\n| openssh-server              | Jenkins communicates via ssh with its slaves.                                    |\n| git                         | Most projects use GIT for version control.                                       |\n| lsof                        | Needed by one of my projects for determining if a particular component is running. |\n| unzip                       | Also needed by one of my projects for unzipping 3rd party content.               |\n| jdk-7u79-linux-x64          | Oracle Java JDK 1.7.0 is needed for building my java projects.                   |\n\n#### User\n\njenkins:jenkins (with uid 1000)\n",
+  "dockerfile": "# This Dockerfile is used to build an image containing basic stuff to be used as a Jenkins slave build node.\n# It is based on instructions from https://wiki.jenkins-ci.org/display/JENKINS/Docker+Plugin and Dockerfile \n# from https://hub.docker.com/r/evarga/jenkins-slave/\n\nFROM centos:latest\nMAINTAINER Stefan Lehmann <stefan.lehmann@unic.com>\n\n# Install a basic SSH server GIT, UNZIP, WGET and LSOF\nRUN yum install -y openssh-server git unzip lsof wget\n\nRUN wget --no-cookies --no-check-certificate --header \"Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie\" \"http://download.oracle.com/otn-pub/java/jdk/7u79-b15/jdk-7u79-linux-x64.rpm\" \\\n    && yum localinstall -y jdk-7u79-linux-x64.rpm \\\n    && rm -f jdk-7u79-linux-x64.rpm \\\n    && yum clean all\n\n# update sshd settings, create jenkins user, set jenkins user pw, generate ssh keys\nRUN sed -i 's|session    required     pam_loginuid.so|session    optional     pam_loginuid.so|g' /etc/pam.d/sshd \\\n    && mkdir -p /var/run/sshd \\\n    && useradd -u 1000 -m -s /bin/bash jenkins \\\n    && echo \"jenkins:jenkins\" | chpasswd \\\n    && /usr/bin/ssh-keygen -A \\\n    && echo export JAVA_HOME=\"/usr/java/jdk1.7.0_79/\" >> /etc/environment\n\n# Standard SSH port\nEXPOSE 22\nCMD [\"/usr/sbin/sshd\", \"-D\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      22
+    ],
+    "volume": [],
+    "run": [
+      "yum install -y openssh-server git unzip lsof wget",
+      "wget --no-cookies --no-check-certificate --header \"Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie\" \"http://download.oracle.com/otn-pub/java/jdk/7u79-b15/jdk-7u79-linux-x64.rpm\"     && yum localinstall -y jdk-7u79-linux-x64.rpm     && rm -f jdk-7u79-linux-x64.rpm     && yum clean all",
+      "sed -i 's|session    required     pam_loginuid.so|session    optional     pam_loginuid.so|g' /etc/pam.d/sshd     && mkdir -p /var/run/sshd     && useradd -u 1000 -m -s /bin/bash jenkins     && echo \"jenkins:jenkins\" | chpasswd     && /usr/bin/ssh-keygen -A     && echo export JAVA_HOME=\"/usr/java/jdk1.7.0_79/\" >> /etc/environment"
+    ],
+    "workdir": [],
+    "from": "centos:latest",
+    "maintainer": "Stefan Lehmann <stefan.lehmann@unic.com>",
+    "cmd": "[\"/usr/sbin/sshd\", \"-D\"]"
+  },
+  "source_repository_url": "https://github.com/stefanleh/centos-jenkins-docker-slave.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/stefanleh/centos-jenkins-docker-slave",
+  "docker_repository": "stefanlehmann/centos-jenkins-docker-slave",
+  "docker_image": "stefanlehmann/centos-jenkins-docker-slave",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        22
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "stefanlehmann/centos-jenkins-docker-slave",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/stefanlehmann/centos-jenkins-docker-slave",
+    "https://hub.docker.com/v2/repositories/stefanlehmann/centos-jenkins-docker-slave",
+    "https://github.com/stefanleh/centos-jenkins-docker-slave.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Test",
+    "Type/Devopsware/Integration/Jenkins",
+    "Type/Infrastructure/Operating System/Linux/CentOS"
+  ],
+  "info_url": "https://hub.docker.com/r/stefanlehmann/centos-jenkins-docker-slave",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

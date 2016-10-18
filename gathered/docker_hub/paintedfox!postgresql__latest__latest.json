@@ -1,0 +1,111 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/paintedfox/postgresql",
+    "repository_url": "https://hub.docker.com/v2/repositories/paintedfox/postgresql",
+    "tags_url": "https://hub.docker.com/v2/repositories/paintedfox/postgresql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/paintedfox/postgresql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/paintedfox/postgresql/autobuild",
+    "user": "paintedfox",
+    "name": "postgresql",
+    "namespace": "paintedfox",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 72,
+    "pull_count": 122043,
+    "last_updated": "2015-11-13T00:28:48.530889Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 184384986,
+        "id": 7088,
+        "repository": 3898,
+        "creator": 4274,
+        "last_updater": 4274,
+        "last_updated": "2015-11-13T00:28:54.127375Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "Painted-Fox/docker-postgresql"
+  },
+  "name": "paintedfox/postgresql Docker container",
+  "description": "A docker image for running Postgresql.",
+  "readme": "# docker-postgresql\n\nA Dockerfile that produces a container that will run [PostgreSQL][postgresql].\n\n[postgresql]: http://www.postgresql.org/\n\n## Image Creation\n\nThis example creates the image with the tag `paintedfox/postgresql`, but you can\nchange this to use your own username.\n\n```\n$ docker build -t=\"paintedfox/postgresql\" .\n```\n\nAlternately, you can run the following if you have *make* installed...\n\n```\n$ make\n```\n\nYou can also specify a custom docker username like so:\n\n```\n$ make DOCKER_USER=paintedfox\n```\n\n## Container Creation / Running\n\nThe PostgreSQL server is configured to store data in `/data` inside the\ncontainer.  You can map the container's `/data` volume to a volume on the host\nso the data becomes independant of the running container. There is also an \nadditional volume at `/var/log/postgresql` which exposes PostgreSQL's logs.\n\nThis example uses `/tmp/postgresql` to store the PostgreSQL data, but you can\nmodify this to your needs.\n\nWhen the container runs, it creates a superuser with a random password.  You\ncan set the username and password for the superuser by setting the container's\nenvironment variables.  This lets you discover the username and password of the\nsuperuser from within a linked container or from the output of `docker inspect\npostgresql`.\n\nIf you set DB=database_name, when the container runs it will create a new\ndatabase with the USER having full ownership of it.\n\n``` shell\n$ mkdir -p /tmp/postgresql\n$ docker run -d --name=\"postgresql\" \\\n             -p 127.0.0.1:5432:5432 \\\n             -v /tmp/postgresql:/data \\\n             -e USER=\"super\" \\\n             -e DB=\"database_name\" \\\n             -e PASS=\"$(pwgen -s -1 16)\" \\\n             paintedfox/postgresql\n```\n\nAlternately, you can run the following if you have *make* installed...\n\n``` shell\n$ make run\n```\n\nYou can also specify a custom port to bind to on the host, a custom data\ndirectory, and the superuser username and password on the host like so:\n\n``` shell\n$ sudo mkdir -p /srv/docker/postgresql\n$ make run PORT=127.0.0.1:5432 \\\n           DATA_DIR=/srv/docker/postgresql \\\n           USER=super \\\n           PASS=$(pwgen -s -1 16)\n```\n\n## Connecting to the Database\n\nTo connect to the PostgreSQL server, you will need to make sure you have\na client.  You can install the `postgresql-client` on your host machine by\nrunning the following (Ubuntu 12.04LTS):\n\n``` shell\n$ sudo apt-get install postgresql-client\n```\n\nAs part of the startup for PostgreSQL, the container will generate a random\npassword for the superuser.  To view the login in run `docker logs\n<container_name>` like so:\n\n``` shell\n$ docker logs postgresql\nPOSTGRES_USER=super\nPOSTGRES_PASS=b2rXEpToTRoK8PBx\nPOSTGRES_DATA_DIR=/data\nStarting PostgreSQL...\nCreating the superuser: super\n2014-02-07 03:30:55 UTC LOG:  database system was interrupted; last known up at 2014-02-01 07:06:21 UTC\n2014-02-07 03:30:55 UTC LOG:  database system was not properly shut down; automatic recovery in progress\n2014-02-07 03:30:55 UTC LOG:  record with zero length at 0/17859E8\n2014-02-07 03:30:55 UTC LOG:  redo is not required\n2014-02-07 03:30:55 UTC LOG:  database system is ready to accept connections\n2014-02-07 03:30:55 UTC LOG:  autovacuum launcher started\n```\n\nThen you can connect to the PostgreSQL server from the host with the following\ncommand:\n\n``` shell\n$ psql -h 127.0.0.1 -U super template1\n```\n\nThen enter the password from the `docker logs` command when prompted.\n\n## Linking with the Database Container\n\nYou can link a container to the database container.  You may want to do this to\nkeep web application processes that need to connect to the database in\na separate container.\n\nTo demonstrate this, we can spin up a new container like so:\n\n``` shell\n$ docker run -t -i --link postgresql:db ubuntu bash\n```\n\nThis assumes you're already running the database container with the name\n*postgresql*.  The `--link postgresql:db` will give the linked container the\nalias *db* inside of the new container.\n\nFrom the new container you can connect to the database by running the following\ncommands:\n\n``` shell\n$ apt-get install -y postgresql-client\n$ psql -U \"$DB_ENV_USER\" \\\n       -h \"$DB_PORT_5432_TCP_ADDR\" \\\n       -p \"$DB_PORT_5432_TCP_PORT\"\n```\n\nIf you ran the *postgresql* container with the flags `-e USER=<user>` and `-e\nPASS=<pass>`, then the linked container should have these variables available\nin its environment.  Since we aliased the database container with the name\n*db*, the environment variables from the database container are copied into the\nlinked container with the prefix `DB_ENV_`.\n",
+  "dockerfile": "# Postgresql (http://www.postgresql.org/)\n\nFROM phusion/baseimage:0.9.13\nMAINTAINER Ryan Seto <ryanseto@yak.net>\n\n# Ensure we create the cluster with UTF-8 locale\nRUN locale-gen en_US.UTF-8 && \\\n    echo 'LANG=\"en_US.UTF-8\"' > /etc/default/locale\n\n# Disable SSH (Not using it at the moment).\nRUN rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh\n\n# Install the latest postgresql\nRUN echo \"deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main\" > /etc/apt/sources.list.d/pgdg.list && \\\n    apt-get update && \\\n    DEBIAN_FRONTEND=noninteractive \\\n    apt-get install -y --force-yes \\\n        postgresql-9.3 postgresql-client-9.3 postgresql-contrib-9.3 && \\\n    /etc/init.d/postgresql stop\n\n# Install other tools.\nRUN DEBIAN_FRONTEND=noninteractive apt-get install -y pwgen inotify-tools\n\n# Clean up APT when done.\nRUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\n# Cofigure the database to use our data dir.\nRUN sed -i -e\"s/data_directory =.*$/data_directory = '\\/data'/\" /etc/postgresql/9.3/main/postgresql.conf\n# Allow connections from anywhere.\nRUN sed -i -e\"s/^#listen_addresses =.*$/listen_addresses = '*'/\" /etc/postgresql/9.3/main/postgresql.conf\nRUN echo \"host    all    all    0.0.0.0/0    md5\" >> /etc/postgresql/9.3/main/pg_hba.conf\n\nEXPOSE 5432\nADD scripts /scripts\nRUN chmod +x /scripts/start.sh\nRUN touch /firstrun\n\n# Add daemon to be run by runit.\nRUN mkdir /etc/service/postgresql\nRUN ln -s /scripts/start.sh /etc/service/postgresql/run\n\n# Expose our data, log, and configuration directories.\nVOLUME [\"/data\", \"/var/log/postgresql\", \"/etc/postgresql\"]\n\n# Use baseimage-docker's init system.\nCMD [\"/sbin/my_init\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "scripts",
+        "dest": "/scripts"
+      }
+    ],
+    "expose": [
+      5432
+    ],
+    "volume": [
+      "[\"/data\", \"/var/log/postgresql\", \"/etc/postgresql\"]"
+    ],
+    "run": [
+      "locale-gen en_US.UTF-8 &&     echo 'LANG=\"en_US.UTF-8\"' > /etc/default/locale",
+      "rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh",
+      "echo \"deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main\" > /etc/apt/sources.list.d/pgdg.list &&     apt-get update &&     DEBIAN_FRONTEND=noninteractive     apt-get install -y --force-yes         postgresql-9.3 postgresql-client-9.3 postgresql-contrib-9.3 &&     /etc/init.d/postgresql stop",
+      "DEBIAN_FRONTEND=noninteractive apt-get install -y pwgen inotify-tools",
+      "apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "sed -i -e\"s/data_directory =.*$/data_directory = '\\/data'/\" /etc/postgresql/9.3/main/postgresql.conf",
+      "sed -i -e\"s/^#listen_addresses =.*$/listen_addresses = '*'/\" /etc/postgresql/9.3/main/postgresql.conf",
+      "echo \"host    all    all    0.0.0.0/0    md5\" >> /etc/postgresql/9.3/main/pg_hba.conf",
+      "chmod +x /scripts/start.sh",
+      "touch /firstrun",
+      "mkdir /etc/service/postgresql",
+      "ln -s /scripts/start.sh /etc/service/postgresql/run"
+    ],
+    "workdir": [],
+    "from": "phusion/baseimage:0.9.13",
+    "maintainer": "Ryan Seto <ryanseto@yak.net>",
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "git://github.com/Painted-Fox/docker-postgresql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Painted-Fox/docker-postgresql",
+  "docker_repository": "paintedfox/postgresql",
+  "docker_image": "paintedfox/postgresql",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5432
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "paintedfox/postgresql",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/paintedfox/postgresql",
+    "https://hub.docker.com/v2/repositories/paintedfox/postgresql",
+    "git://github.com/Painted-Fox/docker-postgresql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/paintedfox/postgresql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

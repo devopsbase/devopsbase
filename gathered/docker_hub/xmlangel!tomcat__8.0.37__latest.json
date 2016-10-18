@@ -1,0 +1,141 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/xmlangel/tomcat",
+    "repository_url": "https://hub.docker.com/v2/repositories/xmlangel/tomcat",
+    "tags_url": "https://hub.docker.com/v2/repositories/xmlangel/tomcat/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/xmlangel/tomcat/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/xmlangel/tomcat/autobuild",
+    "user": "xmlangel",
+    "name": "tomcat",
+    "namespace": "xmlangel",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 17,
+    "last_updated": "2016-09-25T13:10:01.776030Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "8.0.37",
+        "full_size": 377059470,
+        "id": 5053984,
+        "repository": 938109,
+        "creator": 1096809,
+        "last_updater": 1096809,
+        "last_updated": "2016-09-25T13:10:01.402912Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 377059457,
+        "id": 5051133,
+        "repository": 938109,
+        "creator": 1096809,
+        "last_updater": 1096809,
+        "last_updated": "2016-09-25T13:03:44.661072Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "xmlangel/tomcat"
+  },
+  "name": "xmlangel/tomcat Docker container",
+  "description": "tomcat",
+  "readme": "docker-tomcat\n=============\n\nUbuntu 14.04, Oracle JDK 8 and Tomcat 8 based docker container..\n\n# Description\nYou should run this container on the background and mount the volume with your web app inside.\n\nIncludes:\n\n - Oracle JDK 1.8.102\n - Tomcat 8.0.37\n - Git, wget, curl, build-essential\n \n## Volumes\nExports a volume on `/opt/tomcat/webapps`.\nYou can mount the volume on run to a local directory containing your war file or exploded war directory.\nIf you need the management app, remember to have a copy on your hosts volume mount point.\n\n## Ports\nTwo ports are exposed:\n\n - 8080: default Tomcat port.\n  \n - 8009: default Tomcat debug port.\n\nRemember to map the ports to the docker host on run.\n\n\n# How to run the container\n## Using docker\nYou need docker v1.3+ installed. To get the container up and running, run:\n \n```\nsudo docker run -d -p 8080:8080 -p 8009:8009 -v /opt/tomcat/webapps:/opt/tomcat/webapps tomcat:8\n```\nRemember to change `/opt/tomcat/webapps` to the directory where your app is stored.\n\n## Using docker compose\nIf you have `docker-compose` installed, you can just launch:\n\n```\nsudo docker-compose up\n```\n\n## A warning regarding admin user for tomcat management console\nPlease note that the image contains a `tomcat-users.xml` file, including an `admin` user (password `admin`). For the time being, should you wish to change that, fork this repo and modify the xml file accordingly.\n\n#Sample app\nhttp://localhost:8080/sample/\n\n",
+  "dockerfile": "FROM xmlangel/oracle-jdk:8u102\n\nMAINTAINER Kwangmyung Kim <kwangmyung.kim@gmail.com>\n\nENV TOMCAT_VERSION 8.0.37\n\n#add user\nRUN useradd -ms /bin/bash tomcat\n\n# Get Tomcat\nRUN wget --quiet --no-cookies http://apache.rediris.es/tomcat/tomcat-8/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz -O /tmp/tomcat.tgz \\\n&& tar xzvf /tmp/tomcat.tgz -C /opt\\\n&& mv /opt/apache-tomcat-${TOMCAT_VERSION} /opt/tomcat \\\n&& rm /tmp/tomcat.tgz \\\n&& rm -rf /opt/tomcat/webapps/examples \\\n&& rm -rf /opt/tomcat/webapps/docs \\\n&& rm -rf /opt/tomcat/webapps/ROOT\n\n# Add admin/admin user\nADD tomcat-users.xml /opt/tomcat/conf/\n\nENV CATALINA_HOME /opt/tomcat\nENV PATH $PATH:$CATALINA_HOME/bin\n\nEXPOSE 8080\n\nEXPOSE 8009\n\nRUN chown tomcat:tomcat -R $CATALINA_HOME\n\nVOLUME \"/opt/tomcat/webapps\"\n\nWORKDIR /opt/tomcat\n\nUSER tomcat\n\n# Launch Tomcat\nCMD [\"/opt/tomcat/bin/catalina.sh\", \"run\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "tomcat-users.xml",
+        "dest": "/opt/tomcat/conf/"
+      }
+    ],
+    "expose": [
+      8080,
+      8009
+    ],
+    "volume": [
+      "\"/opt/tomcat/webapps\""
+    ],
+    "run": [
+      "useradd -ms /bin/bash tomcat",
+      "wget --quiet --no-cookies http://apache.rediris.es/tomcat/tomcat-8/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz -O /tmp/tomcat.tgz && tar xzvf /tmp/tomcat.tgz -C /opt&& mv /opt/apache-tomcat-${TOMCAT_VERSION} /opt/tomcat && rm /tmp/tomcat.tgz && rm -rf /opt/tomcat/webapps/examples && rm -rf /opt/tomcat/webapps/docs && rm -rf /opt/tomcat/webapps/ROOT",
+      "chown tomcat:tomcat -R $CATALINA_HOME"
+    ],
+    "workdir": [
+      "/opt/tomcat"
+    ],
+    "from": "xmlangel/oracle-jdk:8u102",
+    "maintainer": "Kwangmyung Kim <kwangmyung.kim@gmail.com>",
+    "env": {
+      "TOMCAT_VERSION": "8.0.37",
+      "CATALINA_HOME": "/opt/tomcat",
+      "PATH": "$PATH:$CATALINA_HOME/bin"
+    },
+    "user": "tomcat",
+    "cmd": "[\"/opt/tomcat/bin/catalina.sh\", \"run\"]"
+  },
+  "source_repository_url": "https://github.com/xmlangel/tomcat.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/xmlangel/tomcat",
+  "docker_repository": "xmlangel/tomcat",
+  "docker_image": "xmlangel/tomcat",
+  "parameters_schema": {
+    "TOMCAT_VERSION": {
+      "default": "8.0.37",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CATALINA_HOME": {
+      "default": "/opt/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:$CATALINA_HOME/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080,
+        8009
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "xmlangel/tomcat",
+  "revision": "8.0.37",
+  "uris": [
+    "https://hub.docker.com/r/xmlangel/tomcat",
+    "https://hub.docker.com/v2/repositories/xmlangel/tomcat",
+    "https://github.com/xmlangel/tomcat.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/xmlangel/tomcat",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

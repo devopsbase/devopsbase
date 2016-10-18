@@ -1,0 +1,137 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/orchardup/postgresql",
+    "repository_url": "https://hub.docker.com/v2/repositories/orchardup/postgresql",
+    "tags_url": "https://hub.docker.com/v2/repositories/orchardup/postgresql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/orchardup/postgresql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/orchardup/postgresql/autobuild",
+    "user": "orchardup",
+    "name": "postgresql",
+    "namespace": "orchardup",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 29,
+    "pull_count": 212315,
+    "last_updated": "2015-11-13T06:04:56.784706Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "9.1",
+        "full_size": 134093340,
+        "id": 10695,
+        "repository": 6252,
+        "creator": 3431,
+        "last_updater": 2185,
+        "last_updated": "2015-11-13T06:04:59.872476Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 174587404,
+        "id": 10689,
+        "repository": 6252,
+        "creator": 3431,
+        "last_updater": 2185,
+        "last_updated": "2015-11-13T06:03:14.624383Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "9.3",
+        "full_size": 175674231,
+        "id": 10702,
+        "repository": 6252,
+        "creator": 3431,
+        "last_updater": 2185,
+        "last_updated": "2015-11-13T06:01:46.585216Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "orchardup/docker-postgresql"
+  },
+  "name": "orchardup/postgresql Docker container",
+  "description": "https://github.com/orchardup/docker-postgresql",
+  "readme": "docker-postgresql\n=================\n\n**Note:** There is now an [official Postgres image](https://registry.hub.docker.com/_/postgres/) available so this image is no longer maintained. We recommend you switch to using that image. You cannot configure its database name, username and password, but it does set up a user called `postgres` (no password) and a database called `postgres` which you can use instead.\n\nPostgreSQL 9.3 for Docker.\n\n    $ docker run -d -p 5432:5432 -e POSTGRESQL_USER=test -e POSTGRESQL_PASS=oe9jaacZLbR9pN -e POSTGRESQL_DB=test orchardup/postgresql\n    da809981545f\n    $ psql -h localhost -U test test\n    Password for user test:\n    psql (9.3.2, server 9.3.4)\n    SSL connection (cipher: DHE-RSA-AES256-SHA, bits: 256)\n    Type \"help\" for help.\n\n    test=#\n\n(Example assumes PostgreSQL client is installed on Docker host.)\n\n\n## Environment variables\n\n - `POSTGRESQL_DB`: A database that is automatically created if it doesn't exist. Default: `docker`\n - `POSTGRESQL_USER`: A user to create that has access to the database specified by `POSTGRESQL_DB`. Default: `docker`\n - `POSTGRESQL_PASS`: The password for `POSTGRESQL_USER`. Default: `docker`\n\n\n\n",
+  "dockerfile": "FROM ubuntu:14.04\nMAINTAINER Ben Firshman \"ben@orchardup.com\"\n\nRUN locale-gen en_US.UTF-8\nRUN update-locale LANG=en_US.UTF-8\n\nRUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get install -y -q postgresql-9.3 postgresql-contrib-9.3 postgresql-9.3-postgis-2.1 libpq-dev sudo\n\n# /etc/ssl/private can't be accessed from within container for some reason\n# (@andrewgodwin says it's something AUFS related)\nRUN mkdir /etc/ssl/private-copy; mv /etc/ssl/private/* /etc/ssl/private-copy/; rm -r /etc/ssl/private; mv /etc/ssl/private-copy /etc/ssl/private; chmod -R 0700 /etc/ssl/private; chown -R postgres /etc/ssl/private\n\nADD postgresql.conf /etc/postgresql/9.3/main/postgresql.conf\nADD pg_hba.conf /etc/postgresql/9.3/main/pg_hba.conf\nRUN chown postgres:postgres /etc/postgresql/9.3/main/*.conf\nADD run /usr/local/bin/run\nRUN chmod +x /usr/local/bin/run\n\nVOLUME [\"/var/lib/postgresql\"]\nEXPOSE 5432\nCMD [\"/usr/local/bin/run\"]\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "postgresql.conf",
+        "dest": "/etc/postgresql/9.3/main/postgresql.conf"
+      },
+      {
+        "source": "pg_hba.conf",
+        "dest": "/etc/postgresql/9.3/main/pg_hba.conf"
+      },
+      {
+        "source": "run",
+        "dest": "/usr/local/bin/run"
+      }
+    ],
+    "expose": [
+      5432
+    ],
+    "volume": [
+      "[\"/var/lib/postgresql\"]"
+    ],
+    "run": [
+      "locale-gen en_US.UTF-8",
+      "update-locale LANG=en_US.UTF-8",
+      "apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get install -y -q postgresql-9.3 postgresql-contrib-9.3 postgresql-9.3-postgis-2.1 libpq-dev sudo",
+      "mkdir /etc/ssl/private-copy; mv /etc/ssl/private/* /etc/ssl/private-copy/; rm -r /etc/ssl/private; mv /etc/ssl/private-copy /etc/ssl/private; chmod -R 0700 /etc/ssl/private; chown -R postgres /etc/ssl/private",
+      "chown postgres:postgres /etc/postgresql/9.3/main/*.conf",
+      "chmod +x /usr/local/bin/run"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "Ben Firshman \"ben@orchardup.com\"",
+    "cmd": "[\"/usr/local/bin/run\"]"
+  },
+  "source_repository_url": "git://github.com/orchardup/docker-postgresql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/orchardup/docker-postgresql",
+  "docker_repository": "orchardup/postgresql",
+  "docker_image": "orchardup/postgresql",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5432
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "orchardup/postgresql",
+  "revision": "9.1",
+  "uris": [
+    "https://hub.docker.com/r/orchardup/postgresql",
+    "https://hub.docker.com/v2/repositories/orchardup/postgresql",
+    "git://github.com/orchardup/docker-postgresql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Version Control/Git",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/orchardup/postgresql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

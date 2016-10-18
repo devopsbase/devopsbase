@@ -1,0 +1,142 @@
+{
+  "name": "graphite Chef cookbook",
+  "chef_cookbook_name": "graphite",
+  "revision": "1.0.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/graphite",
+    "https://supermarket.chef.io/cookbooks/graphite/download",
+    "https://supermarket.chef.io/cookbooks/graphite/versions/1.0.2",
+    "https://supermarket.chef.io/cookbooks/graphite/versions/1.0.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/graphite/versions/1.0.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/graphite",
+    "https://supermarket.chef.io/api/v1/cookbooks/graphite/versions/1.0.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Monitoring & Trending",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Monitoring/Graphite",
+    "Type/Middleware/Data Store/Graph"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/graphite",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/graphite/versions/1.0.2/download",
+  "deprecated": false,
+  "created": "2011-02-21T01:54:12.000Z",
+  "updated": "2016-01-29T22:30:59.492Z",
+  "description": "Installs/Configures graphite",
+  "maintainer": {
+    "name": "heavywater",
+    "email": "ops@hw-ops.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 66,
+  "downloads_count": 27185684,
+  "downloads_count_revision": 1010971,
+  "repository_url": "https://github.com/hw-cookbooks/graphite",
+  "issues_url": "https://github.com/hw-cookbooks/graphite/issues",
+  "chef_source_url": "https://github.com/hw-cookbooks/graphite",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Graphite Cookbook\n\n[![Build Status](https://travis-ci.org/hw-cookbooks/graphite.png?branch=teh-futur)](https://travis-ci.org/hw-cookbooks/graphite)\n[![Code Climate](https://codeclimate.com/github/hw-cookbooks/graphite.png)](https://codeclimate.com/github/hw-cookbooks/graphite)\n\n## Description\n\nLibrary cookbook for installation and configuration of [Graphite](http://graphite.readthedocs.org) via Chef\n\nConsult the Graphite documentation for more information:\n\n- http://graphite.readthedocs.org/en/latest/\n- http://graphite.wikidot.com/\n- https://github.com/graphite-project\n\n## Platforms\n\n* Ubuntu\n* Debian\n* RHEL and derivatives (Centos, Amazon Linux, Oracle Linux, Scientific Linux)\n* Fedora\n\n## Attributes\nSee\n[default attributes](https://github.com/hw-cookbooks/graphite/blob/master/attributes/default.rb#L48)\nfor platform specific packages installed.\n\n- `node['graphite']['version']` - package version to install, defaults to '0.9.12'\n- `node['graphite']['twisted_version']` - twisted version to pin to,\n  defaults to '13.1'\n- `node['graphite']['django_version']` - django version to use,\n  defaults to '1.5.5'\n- `node['graphite']['user']` - graphite user, 'graphite'\n- `node['graphite']['group']` - graphite group, 'graphite'\n- `node['graphite']['base_dir']` - default base dir, '/opt/graphite'\n- `node['graphite']['doc_root']` - doc root for graphite-web, '/opt/graphite/webapp'\n- `node['graphite']['storage_dir'] ` - storage dir, '/opt/graphite/storage'\n- `node['graphite']['install_type']` - 'package' or 'source'. Setting\n  this to source will use latest github master branch\n- `default['graphite']['package_names']` - package name hash, indexed\n  by 'install_type' attribute.\n- `default['graphite']['graph_templates']` - graphite template config hash\n\n### Adjusting package source location\n\nYou can override the\n`node['graphite']['package_names'][#{name}]['source']` attribute,\nwhere `#{name}` is one of `whisper`, `carbon` or `graphite_web`, to\nset a custom install path. By default a source install will use the\ngithub master branch.\n\n## Recipes\n### default\n\nNo-op, assuming cookbook inclusion in a custom wrapper.\n\n### packages\n\nJust install all packages, carbon and web\n\n### carbon\n\nInstall all carbon packages, setup the graphite user, storage paths\nand write the carbon configuration. Does not start any services.\n\n### web\n\nSet up just about everything for graphite web, except configure it and\nstart the service. Use the `graphite_web_config` resource and the\n`uwsgi` recipe for those two things.\n\nSome of this weirdness may not really be needed, so send us a PR if\nyou fix it before us. For example, I'd love some way to remove that\nexecute block for selinux and there's probably a better way to manage\nall those files and directories.\n\n### uwsgi\n\nStart a uwsgi runit service for graphite-web. That's it.\n\n### Various internal recipes\n\nView the code for additional stub recipes that perform smaller pieces\nof functionality such as setup the user or install specific packages,\nthe all begin with an underscore `_`.\n\nIt's like a treasure hunt.\n\n## Custom Resources\n\n### Carbon daemons\nManagement for the various\n[Carbon](https://github.com/graphite-project/carbon) services which\nreceive your metrics and write them to disk.\n\n* `graphite_service`: sets up a carbon service with runit, essentially\n   a glorified `runit_service`. Carbon configuration should be defined\n   first with one of the `graphite_carbon_*` resources. Multiple\n   daemons can be run by using multiple resources with names such as\n   `cache:a`, `cache:b`, etc..\n* `graphite_carbon_aggregator`: data driven resource for carbon-aggregator configuration\n* `graphite_carbon_cache`: data driven resource for carbon-cache configuration\n* `graphite_carbon_relay`: data driven resource for carbon-cache configuration\n\n### Storage\n[Whisper](https://github.com/graphite-project/whisper) is\npretty much a requirement right now, so these resources assume whisper\nlibraries should be installed. Feel free to implement something else in\nyour own wrapper if you live on the edge and prefer [Ceres](https://github.com/graphite-project/ceres).\n\n* `graphite_storage`: makes a directory intended for graphite storage,\n  installs whisper\n* `graphite_storage_schema`: data driven resource for storage schema \n\n### Graphite Web\nWrite the configuration file for [Graphite Web](https://github.com/graphite-project/graphite-web)\n\n* `graphite_web_config`: data driven python config file writer for\n   graphite web. Assumes the whole file is managed, typically this is\n   the path to local_settings.py. Custom python code can be placed in\n   the optional 'dynamic template', by default a file named\n   'local_settings_dynamic.py' that is optimistically loaded if\n   present.\n\nYes it's [writing python via ruby](https://github.com/hw-cookbooks/graphite/blob/master/libraries/chef_graphite_python.rb#L14).\n\nA runit service definition is provided to [start a uwsgi process](https://github.com/hw-cookbooks/graphite/blob/master/example/graphite_example/recipes/single_node.rb#L105), but note that choice of web server for proxying to the application server is left up to you. No more hard Apache dependency!\n\n### Accumulators\nDue to the graphite config file format, the data driven resources use\nan accumulator pattern to find the appropriate resources in the run\ncontext and extract provided configuration data. You should never need\nto use these directly, but you're welcome to go crazy.\n\n* `graphite_carbon_conf_accumulator`: lookup named carbon resources in\n  run context and gather config\n* `graphite_storage_conf_accumulator`: lookup named storage schema\n  resources in run context and gather config\n\nIf you look at the\n[example cookbook recipe](https://github.com/hw-cookbooks/graphite/blob/master/example/graphite_example/recipes/single_node.rb#L6)\nyou probably notice that many of the resources simply take a single `config`\nattribute, which is basically a hash of the configuration to be written.\n\nThis can come from attributes in a wrapper cookbook or via data bags\nif you like. Be as creative as you can tolerate.\n\nAccumulator pattern came from excellent work by [Mathieu Sauve-Frankel](https://github.com/kisoku/chef-accumulator)\n\n## Usage\n\nIt's a library cookbook, intended to be used in your custom wrapper\ncookbook to behave as needed. It's the building materials, not the\nhouse.\n\nWe have purposefully left out web server configuration to remove the\ndependency, so you're free to use whatever works in your environment.\nThis avoids the need for this cookbook to keep up to date with\nconfiguration that isn't really graphite specific.\n\nFor example usage consult the reference cookbook [example](https://github.com/hw-cookbooks/graphite/tree/master/example/graphite_example/recipes)\n\nFeel free to ask us questions anytime on irc: #heavywater on freenode\n\n## Examples\n\nYou can find example usage in the graphite_example cookbook that is included in the [git repository](https://github.com/hw-cookbooks/graphite/blob/master/example/graphite_example/recipes/single_node.rb).\n\n## Data Bags\n\nSure, use em if you like. Even encrypt them.\n\n## Amazon Web Services\n\nDue to the old version of Chef used on Amazon Web Services in order to\nsuccessfully run this cookbook you may need to add the\n[`delayed_evaluator`](http://community.opscode.com/cookbooks/delayed_evaluator)\nrecipe to your run list before the `graphite` recipe.\n\n## Development / Contributing\n\n* Source hosted at [GitHub][repo]\n* Report issues/questions/feature requests on [GitHub Issues][issues]\n\nPull requests are very welcome! Make sure your patches are well tested.\nIdeally create a topic branch for every separate change you make. For\nexample:\n\n1. Fork the repo\n2. Create your feature branch (`git checkout -b my-new-feature`)\n3. Write some tests, see [ChefSpec](https://github.com/sethvargo/chefspec)\n4. Commit your awesome changes (`git commit -am 'Added some feature'`)\n4. Push to the branch (`git push origin my-new-feature`)\n5. Create a new Pull Request and tell us about it your changes.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "oracle",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/python",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/runit",
+      "revision": "~> 1.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/memcached",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum-epel",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "recommends": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/systemd",
+      "revision": ">= 0.0.0"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/graphiti",
+      "revision": ">= 0.0.0"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/delayed_evaluator",
+      "revision": ">= 0.0.0"
+    }
+  ]
+}

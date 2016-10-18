@@ -1,0 +1,176 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/tenstartups/rails",
+    "repository_url": "https://hub.docker.com/v2/repositories/tenstartups/rails",
+    "tags_url": "https://hub.docker.com/v2/repositories/tenstartups/rails/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/tenstartups/rails/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/tenstartups/rails/autobuild",
+    "user": "tenstartups",
+    "name": "rails",
+    "namespace": "tenstartups",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 4776,
+    "last_updated": "2016-10-15T03:37:23.221360Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "alpine",
+        "full_size": 171478852,
+        "id": 4633159,
+        "repository": 130570,
+        "creator": 111505,
+        "last_updater": 111505,
+        "last_updated": "2016-10-15T03:37:22.856944Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 448103388,
+        "id": 81642,
+        "repository": 130570,
+        "creator": 111505,
+        "last_updater": 111505,
+        "last_updated": "2016-10-15T03:21:23.158315Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "tenstartups/rails-docker"
+  },
+  "name": "tenstartups/rails Docker container",
+  "description": "",
+  "readme": "# Rails Base Docker image\n\nA minimal base docker image for Rails projects\n",
+  "dockerfile": "#\n# Rails application docker image\n#\n# http://github.com/tenstartups/railsapp-docker\n#\n\nFROM tenstartups/alpine:latest\n\nMAINTAINER Marc Lennox <marc.lennox@gmail.com>\n\n# Set environment.\nENV \\\n  TERM=xterm-color \\\n  HOME=/home/rails \\\n  BUNDLE_PATH=./vendor/bundle \\\n  BUNDLE_APP_CONFIG=./.bundle \\\n  BUNDLE_SILENCE_ROOT_WARNING=true \\\n  NOKOGIRI_USE_SYSTEM_LIBRARIES=true \\\n  PAGER=more \\\n  RUBY_MAJOR=2.3 \\\n  RUBY_VERSION=2.3.1 \\\n  RUBY_DOWNLOAD_SHA256=b87c738cb2032bf4920fef8e3864dc5cf8eae9d89d8d523ce0236945c5797dcd\n\n# Install base packages.\nRUN \\\n  echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories && \\\n  apk --update add \\\n    autoconf \\\n    build-base \\\n    bzip2-dev \\\n    ca-certificates \\\n    file \\\n    font-bitstream-type1 \\\n    git \\\n    graphviz \\\n    imagemagick \\\n    libffi-dev \\\n    libgcrypt-dev \\\n    libpq \\\n    libxml2-dev \\\n    libxslt-dev \\\n    linux-headers \\\n    nodejs \\\n    openssl-dev \\\n    postgresql \\\n    postgresql-dev \\\n    # https://bugs.ruby-lang.org/issues/11869 and https://github.com/docker-library/ruby/issues/75\n    readline-dev \\\n    rsync \\\n    tzdata \\\n    xz \\\n    yaml-dev \\\n    zlib-dev \\\n    && \\\n  rm -rf /var/cache/apk/*\n\n  # Install ruby from source.\n  RUN \\\n    curl -fSL -o ruby.tar.gz \"http://cache.ruby-lang.org/pub/ruby/${RUBY_MAJOR}/ruby-${RUBY_VERSION}.tar.gz\" && \\\n    echo \"${RUBY_DOWNLOAD_SHA256} *ruby.tar.gz\" | sha256sum -c - && \\\n    mkdir -p /usr/src && \\\n    tar -xzf ruby.tar.gz -C /usr/src && \\\n    mv \"/usr/src/ruby-$RUBY_VERSION\" /usr/src/ruby && \\\n    rm ruby.tar.gz && \\\n    cd /usr/src/ruby && \\\n    { echo '#define ENABLE_PATH_CHECK 0'; echo; cat file.c; } > file.c.new && mv file.c.new file.c && \\\n    autoconf && \\\n    # the configure script does not detect isnan/isinf as macros\n    ac_cv_func_isnan=yes ac_cv_func_isinf=yes ./configure --disable-install-doc && \\\n    make -j\"$(getconf _NPROCESSORS_ONLN)\" && \\\n    make install && \\\n    gem update --system && \\\n  rm -r /usr/src/ruby\n\n  # Install ruby gems.\n  RUN \\\n    mkdir -p /usr/local/etc/ && \\\n    echo \"gem: --no-document\" > /usr/local/etc/gemrc && \\\n    gem install aws-sdk bundler --no-document\n\n# Define working directory.\nWORKDIR ${HOME}\n\n# Add files.\nCOPY entrypoint.rb /docker-entrypoint\nCOPY bundle-gems.rb /usr/local/bin/bundle-gems\nCOPY compile-assets.rb /usr/local/bin/compile-assets\n\n# Define working directory.\nWORKDIR /usr/src/app\n\n# Define the entrypoint\nENTRYPOINT [\"/docker-entrypoint\"]\n\n# Declare build arguments\nONBUILD ARG BUILD_REVISION=unspecified\nONBUILD ARG BUNDLE_GEMS=true\nONBUILD ARG COMPILE_ASSETS=true\nONBUILD ARG RAILS_BUILD_ENVIRONMENTS=staging,production\nONBUILD ARG CACHE_BUNDLED_GEMS=false\nONBUILD ARG CACHE_COMPILED_ASSETS=false\nONBUILD ARG AWS_ACCESS_KEY_ID\nONBUILD ARG AWS_SECRET_ACCESS_KEY\nONBUILD ARG AWS_REGION=us-east-1\nONBUILD ARG AWS_S3_BUCKET_NAME\n\n# Copy the rest of the application into place.\nONBUILD ADD . /usr/src/app\n\n# Execute scripts to bundle gem and compile assets\nONBUILD RUN /usr/local/bin/bundle-gems\nONBUILD RUN /usr/local/bin/compile-assets\n\n# Dump the revision argument to file if present\nONBUILD RUN echo ${BUILD_REVISION} > ./REVISION\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "  echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories &&   apk --update add     autoconf     build-base     bzip2-dev     ca-certificates     file     font-bitstream-type1     git     graphviz     imagemagick     libffi-dev     libgcrypt-dev     libpq     libxml2-dev     libxslt-dev     linux-headers     nodejs     openssl-dev     postgresql     postgresql-dev     # https://bugs.ruby-lang.org/issues/11869 and https://github.com/docker-library/ruby/issues/75"
+    ],
+    "workdir": [
+      "${HOME}",
+      "/usr/src/app"
+    ],
+    "from": "tenstartups/alpine:latest",
+    "maintainer": "Marc Lennox <marc.lennox@gmail.com>",
+    "env": {
+      "": "",
+      "TERM": "xterm-color",
+      "HOME": "/home/rails",
+      "BUNDLE_PATH": "./vendor/bundle",
+      "BUNDLE_APP_CONFIG": "./.bundle",
+      "BUNDLE_SILENCE_ROOT_WARNING": "true",
+      "NOKOGIRI_USE_SYSTEM_LIBRARIES": "true",
+      "PAGER": "more",
+      "RUBY_MAJOR": "2.3",
+      "RUBY_VERSION": "2.3.1",
+      "RUBY_DOWNLOAD_SHA256": "b87c738cb2032bf4920fef8e3864dc5cf8eae9d89d8d523ce0236945c5797dcd"
+    },
+    "copy": "compile-assets.rb /usr/local/bin/compile-assets",
+    "entrypoint": "[\"/docker-entrypoint\"]",
+    "onbuild": "RUN echo ${BUILD_REVISION} > ./REVISION"
+  },
+  "source_repository_url": "https://github.com/tenstartups/rails-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/tenstartups/rails-docker",
+  "docker_repository": "tenstartups/rails",
+  "docker_image": "tenstartups/rails",
+  "parameters_schema": {
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TERM": {
+      "default": "xterm-color",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/home/rails",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_PATH": {
+      "default": "./vendor/bundle",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_APP_CONFIG": {
+      "default": "./.bundle",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUNDLE_SILENCE_ROOT_WARNING": {
+      "default": "true",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NOKOGIRI_USE_SYSTEM_LIBRARIES": {
+      "default": "true",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PAGER": {
+      "default": "more",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RUBY_MAJOR": {
+      "default": "2.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RUBY_VERSION": {
+      "default": "2.3.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RUBY_DOWNLOAD_SHA256": {
+      "default": "b87c738cb2032bf4920fef8e3864dc5cf8eae9d89d8d523ce0236945c5797dcd",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "tenstartups/rails",
+  "revision": "alpine",
+  "uris": [
+    "https://hub.docker.com/r/tenstartups/rails",
+    "https://hub.docker.com/v2/repositories/tenstartups/rails",
+    "https://github.com/tenstartups/rails-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby"
+  ],
+  "info_url": "https://hub.docker.com/r/tenstartups/rails",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,134 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jeremyot/cassandra",
+    "repository_url": "https://hub.docker.com/v2/repositories/jeremyot/cassandra",
+    "tags_url": "https://hub.docker.com/v2/repositories/jeremyot/cassandra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jeremyot/cassandra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jeremyot/cassandra/autobuild",
+    "user": "jeremyot",
+    "name": "cassandra",
+    "namespace": "jeremyot",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 4,
+    "pull_count": 682,
+    "last_updated": "2016-07-16T19:10:11.432098Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "2.2",
+        "full_size": 153781053,
+        "id": 748029,
+        "repository": 39262,
+        "creator": 37127,
+        "last_updater": 37127,
+        "last_updated": "2016-07-16T19:10:11.079846Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 148846300,
+        "id": 48302,
+        "repository": 39262,
+        "creator": 37127,
+        "last_updater": 37127,
+        "last_updated": "2016-02-02T01:42:49.296926Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "2.1",
+        "full_size": 148847849,
+        "id": 748030,
+        "repository": 39262,
+        "creator": 37127,
+        "last_updater": 37127,
+        "last_updated": "2016-02-02T01:36:29.115550Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "2.0",
+        "full_size": 142300839,
+        "id": 48301,
+        "repository": 39262,
+        "creator": 37127,
+        "last_updater": 37127,
+        "last_updated": "2015-11-05T08:09:11.083433Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "JeremyOT/cassandra-container"
+  },
+  "name": "jeremyot/cassandra Docker container",
+  "description": "Cassandra standalone and cluster deployment made easy",
+  "readme": "Cassandra\n=========\n\nCassandra 2.2.0\n\nUsage\n-----\nIn the simplest case, you can start a single node with `docker run jeremyot/cassandra`. The new node\nwill be configured to listen on the address asigned to the eth0 interface and will accept RPC connectons\non all interfaces.\n\nDeploying a cluster is almost as easy. The container includes tooling to automatically bootstrap a cluster\nusing etcd. For example:\n\n```bash\nETCD=`docker run -d jeremyot/etcd`\nETCD_ADDR=`docker inspect --format '{{ .NetworkSettings.IPAddress }}' ${ETCD}`\ndocker run -d jeremyot/cassandra autoscale \"${ETCD_ADDR}:4001\" service/cassandra\ndocker run -d jeremyot/cassandra autoscale \"${ETCD_ADDR}:4001\" service/cassandra --join\ndocker run -d jeremyot/cassandra autoscale \"${ETCD_ADDR}:4001\" service/cassandra --join\n```\n\nwill start a three node cassandra cluster. You can verify with\n\n```bash\nCASSANDRA_ADDR=`docker inspect --format \"{{ .NetworkSettings.IPAddress }}\" \\`docker ps -lq\\``\ndocker run -it --rm jeremyot/cassandra nodetool -h $CASSANDRA_ADDR status\n```\n\nYou should see a normal `nodetool status` printout displaying information on all three nodes.\n\nTo persist data across restarts, be sure to mount Cassandra's data directory with `-v /host/path/to/cassandra:/var/cassandra`.\n\nConfiguration\n-------------\n\nCassandra may be configured by passing arguments when starting the container. A YAML library is included which will convert\narbitrary arguments to YAML and write to `cassandra.yaml`. YAML paths passed as arguments are flattened and prefixed with `--`.\n\nFor example: `--rpc_address=0.0.0.0` becomes `rpc_address: 0.0.0.0` and `--some.key=value` becomes `some: {key: value}`. To\nsupport complex structures, values may also be passed as YAML strings. `--some.key=\"{k1: [1, 2, 3], k2: [2, 3, 4]}\"` becomes\n\n```yaml\nsome:\n  key:\n    k1: [1, 2, 3]\n    k2: [2, 3, 4]\n```\n\n### Special parameters\n\nFor convenience, a few special arguments are supported:\n\n- `--listen_interface=\"etho\"`: configures cassandra to bind to the specified interface.\n- `--seeds=\"10.0.0.2, 10.0.0.3\"`: a shortcut for using SimpleSeedProvider with the specified seeds.\n- `--etc_seeds=\"127.0.0.1:4001/v2/keys/service/key\"`: queries etcd for the initial list of keys, registered at the specified path.\n  (used by autoscale). Will start as a standalone node if no results are found.\n- `--logger=INFO,stdout,R`: sets the logger in `log4j-server.properties`.\n- `--infer_address=google.com`: uses a connection to the specified address to infer which address Cassandra should bind to. useful\n   for containers with multiple ethernet devices. Allows you to specify a remote host (e.g. another node in the Cassandra cluster)\n   and know that Cassandra will be accessible to it.\n- `--join`: Used with `--etc_seeds` to prevent bootstrapping as a standalone node. Will wait until some seeds are returned from etcd\n   before continuing.\n\nTools\n-----\nAlong with Cassandra, there are a few tools included with this container. They are as follows:\n\n- `autoscale`: as shown above, uses etcd to bootstrap a cluster. May be followed by the standard cassandra configuration arguments.\n- `etcdmon`: a subcomponent of `autoscale`, uses `etcdmon` (https://github.com/JeremyOT/etcdmon) to register the server's\n  status with etcd. Additional arguments may be passed in the form `<ETCDMON_PARAMS> -- <CASSANDRA_PARAMS>`.\n- `nodetool`: runs `nodetool` and supports any standard `nodetool` arguments.\n- `cqlsh`: runs `cqlsh` and supports any standard `cqlsh` arguments.\n\n#### `autoscale`\n\nAutoscaling may be used in a few different ways. Called with `autoscale 10.0.0.8:4001 service/cassandra`, Cassandra will infer its\n`listen_address` by making a connection to `10.0.0.8`. It will then attempt to retrieve a list of seeds by querying\n`http://10.0.0.8:4001/v2/keys/service/cassandra`, using its own address as the only seed if none are found. Finally, etcdmon will\nupdate `http://10.0.0.8:4001/v2/keys/service/cassandra/<node_address>` with `value={\"host\": <node_address>}&ttl=30`, pinging etcd every 10\nseconds. Alternatively `autoscale 10.0.0.8:4001 service/cassandra <interface_name>` may be used to bind to the specified interface,\nand `autoscale 10.0.0.8:4001 service/cassandra <remote_address>` will infer the address by making a connection to the specified\nremote address. If the third argument does not begin with `--`, it will first be treated as an interface, then used to infer\nthe address if no matching interface is found. In all three cases, standard configuration options may be appended.\n\nNote: The address executable, used by the autoscale commands, is built from https://github.com/JeremyOT/address. It is pre-compiled to avoid the need to install Go inside the container.\n\nSnapshots\n---------\n\nThis container can be used to create and export Cassandra snapshots as tar files (optionall compressed) with the following command:\n\n```bash\ndocker run -i --volumes-from=<running_cassandra_container_id> --net=container:<running_cassandra_container_id> jeremyot/cassandra snapshot <options> (<keyspace> ... ) (> <output.tar>)\n```\n\nAdditional options let you specify compression, keyspaces and/or an output file to write to instead of stdout.\n\nUse `docker run -i jeremyot/cassandra snapshot --help` for more information.\n",
+  "dockerfile": "FROM debian:wheezy\nMAINTAINER jeremyot@gmail.com\n\nRUN apt-get update && apt-get install procps libsnappy-dev curl libjna-java python-yaml -y; \\\n    curl -L -b \"oraclelicense=accept-securebackup-cookie\" http://download.oracle.com/otn-pub/java/jdk/8u65-b17/jre-8u65-linux-x64.tar.gz > /tmp/jre.tar.gz; \\\n    mkdir -p /usr/lib/java; \\\n    tar -xvzf /tmp/jre.tar.gz -C /usr/lib/java; \\\n    ln -s /usr/lib/java/jre1.8.0_65/bin/java /usr/bin/java; \\\n    rm /tmp/jre.tar.gz; \\\n    curl -L http://debian.datastax.com/debian/repo_key | apt-key add - ; \\\n    mkdir -p /usr/lib/cassandra; \\\n    mkdir -p /tmp/cassandra; \\\n    curl -L http://apache.claz.org/cassandra/2.2.7/apache-cassandra-2.2.7-bin.tar.gz > /tmp/cassandra/apache-cassandra-2.2.7-bin.tar.gz; \\\n    cd /tmp/cassandra; \\\n    tar xzvf apache-cassandra-2.2.7-bin.tar.gz; \\\n    cp -r apache-cassandra-2.2.7/* /usr/lib/cassandra; \\\n    apt-get remove --purge curl -y; apt-get autoremove -y; apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*;\nCOPY etcdmon /usr/bin/etcdmon\nCOPY address /usr/bin/address\nCOPY snapshot /usr/bin/snapshot\nCOPY load-snapshot /usr/bin/load-snapshot\nCOPY run.sh /var/cassandra/run.sh\nCOPY config.py /var/cassandra/config.py\nVOLUME [\"/var/cassandra/commitlog\", \"/var/cassandra/saved_caches\", \"/var/cassandra/data\", \"/var/cassandra/config\", \"/var/log/cassandra\"]\nEXPOSE 7199 7000 7001 9160 9042\nENTRYPOINT [\"/var/cassandra/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      7199
+    ],
+    "volume": [
+      "[\"/var/cassandra/commitlog\", \"/var/cassandra/saved_caches\", \"/var/cassandra/data\", \"/var/cassandra/config\", \"/var/log/cassandra\"]"
+    ],
+    "run": [
+      "apt-get update && apt-get install procps libsnappy-dev curl libjna-java python-yaml -y;     curl -L -b \"oraclelicense=accept-securebackup-cookie\" http://download.oracle.com/otn-pub/java/jdk/8u65-b17/jre-8u65-linux-x64.tar.gz > /tmp/jre.tar.gz;     mkdir -p /usr/lib/java;     tar -xvzf /tmp/jre.tar.gz -C /usr/lib/java;     ln -s /usr/lib/java/jre1.8.0_65/bin/java /usr/bin/java;     rm /tmp/jre.tar.gz;     curl -L http://debian.datastax.com/debian/repo_key | apt-key add - ;     mkdir -p /usr/lib/cassandra;     mkdir -p /tmp/cassandra;     curl -L http://apache.claz.org/cassandra/2.2.7/apache-cassandra-2.2.7-bin.tar.gz > /tmp/cassandra/apache-cassandra-2.2.7-bin.tar.gz;     cd /tmp/cassandra;     tar xzvf apache-cassandra-2.2.7-bin.tar.gz;     cp -r apache-cassandra-2.2.7/* /usr/lib/cassandra;     apt-get remove --purge curl -y; apt-get autoremove -y; apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*;"
+    ],
+    "workdir": [],
+    "from": "debian:wheezy",
+    "maintainer": "jeremyot@gmail.com",
+    "copy": "config.py /var/cassandra/config.py",
+    "entrypoint": "[\"/var/cassandra/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/JeremyOT/cassandra-container.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/JeremyOT/cassandra-container",
+  "docker_repository": "jeremyot/cassandra",
+  "docker_image": "jeremyot/cassandra",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        7199
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jeremyot/cassandra",
+  "revision": "2.2",
+  "uris": [
+    "https://hub.docker.com/r/jeremyot/cassandra",
+    "https://hub.docker.com/v2/repositories/jeremyot/cassandra",
+    "https://github.com/JeremyOT/cassandra-container.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/jeremyot/cassandra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

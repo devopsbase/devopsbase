@@ -1,0 +1,123 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/fulbito/redis",
+    "repository_url": "https://hub.docker.com/v2/repositories/fulbito/redis",
+    "tags_url": "https://hub.docker.com/v2/repositories/fulbito/redis/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/fulbito/redis/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/fulbito/redis/autobuild",
+    "user": "fulbito",
+    "name": "redis",
+    "namespace": "fulbito",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 170,
+    "last_updated": "2016-10-03T09:13:51.879699Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 190369978,
+        "id": 1397847,
+        "repository": 413316,
+        "creator": 155343,
+        "last_updater": 431516,
+        "last_updated": "2016-10-03T09:13:45.694504Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "fulbito/fulbito-docker"
+  },
+  "name": "fulbito/redis Docker container",
+  "description": "redis",
+  "readme": "# Docker based development environment #\r\n\r\nThis README would normally document whatever steps are necessary to get your application up and running.\r\n\r\n### How do I get set up? ###\r\n1. create a common folder fulbito \r\n```\r\n#!shell\r\nmkdir fulbito && cd fulbito\r\n```\r\n2. clone all projects\r\n```\r\n#!shell\r\ngit clone git@bitbucket.org:fulbito/fulbito-docker.git\r\ngit clone git@bitbucket.org:fulbito/fulbito-core.git\r\ngit clone git@bitbucket.org:fulbito/fulbito-frontend.git\r\n```\r\n3. create vagrant virtual machine and log into \r\n```\r\n#!shell\r\ncd fulbito-docker\r\nvagran up\r\nvagrant ssh\r\n```\r\n4. build base images \r\n```\r\ncd /fulbito/fulbito-docker/fulbito-base\r\ndocker build -t fulbito/fulbito-base .\r\n\r\ncd /fulbito/fulbito-docker/cassandra-base\r\ndocker build -t fulbito/cassandra-base .\r\n```\r\n5. build images \r\n```\r\n#!shell\r\ncd /fulbito/fulbito-docker\r\ndocker-compose build\r\n```\r\n5. rerun docker-compose build if something was wrong\r\n6. the same ^^ unitl all is ok\r\n7. up all images\r\n```\r\n#!shell\r\ndocker-compose up [-d] \r\n```\r\nuse -d option to run in detached mode\r\n\r\n8. Add `192.168.92.8 fulbito-dev.com` to /etc/hosts in your host machine\r\n\r\n9. check services\r\n\r\nhttp://fulbito-dev.com/ -> rest app\r\n\r\nfulbito-dev.com:3306 -> mysql\r\n\r\n\r\n### How work ###\r\n\r\nThis project is used to recreate the whole development environment used for fulbito, it need few services each one live into a container. The services used are: \r\n\r\n* web -> Web Rest api (Python django rest)\r\n* db -> Mysql database\r\n* cassandra -> NO-SQL Cassandra\r\n* rabbitMQ -> Message queues\r\n* worker -> app worker message consumer\r\n* redis -> celery result backend\r\n* frontend -> Frontend (SPA based on reactjs) (not used)\r\n\r\nEach services is a docker container and we use docker-compose to organize this dockerized applications. The main container is web it is the rest application and use db, and cassandra instance to work, db and mongo db are linked to web so when we start the web container db and cassandra are started and linked to web. \r\n\r\n>Compose is a tool for defining and running complex applications with Docker. With Compose, you define a multi-container >application in a single file, then spin your application up in a single command which does everything that needs to be done >to get it running.\r\n\r\nThe containers that need persistent data like db or mongodb use a volumes container, volumes container are containers that only exist with the intention of link a host folder  where the persistent files are stored into a container. So when the mysqld or mongodb container will destroyed the related data is kept by the host. In our case the folder for persistent data is /volumes\r\n\r\nIs not good idea development frontend project into docker frontend container so i recommend not use it. Is better if you use your host machine to do it. See the docker frontend project to starting with.\r\n\r\n### Some usefully docker-compose commands\r\n\r\nremember that docker-compose command runs on /fulbito/fulbito-docker\r\n\r\n#### Omit Frontend container\r\n\r\nTo omit start frontend container use. \r\n```\r\n#!shell\r\ndocker-compose up [-d] \r\n```\r\n#### Use terminal into container \r\n\r\nWe can't login to containers by ssh so to use the bin/bash into any container we need start it with bin/bash as service. for instance to run bin/bash in web container we need.\r\n\r\n1. Start web use above command with -d, we need do it to start linked containers to (mysql, mongodb)\r\n2. Stop web but with end the linked\r\n```\r\n#!shell\r\ndocker-compose stop web \r\n```\r\n3. run bin/bash as service \r\n```\r\n#!shell\r\ndocker-compose run  --service-port web /bin/bash\r\n```\r\n\r\n#### See logs\r\n\r\nto see logs from all running containers use \r\n```\r\n#!shell\r\ndocker-compose logs\r\n```\r\nfor specific\r\n```\r\n#!shell\r\ndocker-compose logs web\r\n```\r\n\r\n#### Check status for all containers\r\n\r\n```\r\n#!shell\r\ndocker-compose ps\r\n```\r\n\r\n\r\n#### Stop all containers\r\n\r\n```\r\n#!shell\r\ndocker-compose stop\r\n```\r\n\r\n#### See environment variables into container\r\n\r\n```\r\n#!shell\r\ndocker-compose run web env\r\n```\r\n\r\n#### remove all containers \r\n\r\n```\r\n#!shell\r\ndocker rm $(docker ps -a -q)\r\n```\r\n",
+  "dockerfile": "FROM fulbito/fulbito-base\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\nRUN groupadd -r redis && useradd -r -g redis redis\n\nRUN apt-get update && apt-get install -y --no-install-recommends \\\n\t\tca-certificates \\\n\t\tcurl \\\n\t&& rm -rf /var/lib/apt/lists/*\n\n# grab gosu for easy step-down from root\nRUN gpg --keyserver pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4\nRUN curl -o /usr/local/bin/gosu -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture)\" \\\n\t&& curl -o /usr/local/bin/gosu.asc -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture).asc\" \\\n\t&& gpg --verify /usr/local/bin/gosu.asc \\\n\t&& rm /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu\n\nENV REDIS_VERSION 3.0.3\nENV REDIS_DOWNLOAD_URL http://download.redis.io/releases/redis-3.0.3.tar.gz\nENV REDIS_DOWNLOAD_SHA1 0e2d7707327986ae652df717059354b358b83358\n\n# for redis-sentinel see: http://redis.io/topics/sentinel\nRUN buildDeps='gcc libc6-dev make' \\\n\t&& set -x \\\n\t&& apt-get update && apt-get install -y $buildDeps --no-install-recommends \\\n\t&& rm -rf /var/lib/apt/lists/* \\\n\t&& mkdir -p /usr/src/redis \\\n\t&& curl -sSL \"$REDIS_DOWNLOAD_URL\" -o redis.tar.gz \\\n\t&& echo \"$REDIS_DOWNLOAD_SHA1 *redis.tar.gz\" | sha1sum -c - \\\n\t&& tar -xzf redis.tar.gz -C /usr/src/redis --strip-components=1 \\\n\t&& rm redis.tar.gz \\\n\t&& make -C /usr/src/redis \\\n\t&& make -C /usr/src/redis install \\\n\t&& rm -r /usr/src/redis \\\n\t&& apt-get purge -y --auto-remove $buildDeps\n\nRUN mkdir /data && chown redis:redis /data\nVOLUME /data\nWORKDIR /data\n\nCOPY docker-entrypoint.sh /entrypoint.sh\nENTRYPOINT [\"/entrypoint.sh\"]\n\nEXPOSE 6379\nCMD [ \"redis-server\" ]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      6379
+    ],
+    "volume": [
+      "/data"
+    ],
+    "run": [
+      "groupadd -r redis && useradd -r -g redis redis",
+      "apt-get update && apt-get install -y --no-install-recommends \t\tca-certificates \t\tcurl \t&& rm -rf /var/lib/apt/lists/*",
+      "gpg --keyserver pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4",
+      "curl -o /usr/local/bin/gosu -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture)\" \t&& curl -o /usr/local/bin/gosu.asc -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture).asc\" \t&& gpg --verify /usr/local/bin/gosu.asc \t&& rm /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu",
+      "buildDeps='gcc libc6-dev make' \t&& set -x \t&& apt-get update && apt-get install -y $buildDeps --no-install-recommends \t&& rm -rf /var/lib/apt/lists/* \t&& mkdir -p /usr/src/redis \t&& curl -sSL \"$REDIS_DOWNLOAD_URL\" -o redis.tar.gz \t&& echo \"$REDIS_DOWNLOAD_SHA1 *redis.tar.gz\" | sha1sum -c - \t&& tar -xzf redis.tar.gz -C /usr/src/redis --strip-components=1 \t&& rm redis.tar.gz \t&& make -C /usr/src/redis \t&& make -C /usr/src/redis install \t&& rm -r /usr/src/redis \t&& apt-get purge -y --auto-remove $buildDeps",
+      "mkdir /data && chown redis:redis /data"
+    ],
+    "workdir": [
+      "/data"
+    ],
+    "from": "fulbito/fulbito-base",
+    "env": {
+      "REDIS_VERSION": "3.0.3",
+      "REDIS_DOWNLOAD_URL": "http://download.redis.io/releases/redis-3.0.3.tar.gz",
+      "REDIS_DOWNLOAD_SHA1": "0e2d7707327986ae652df717059354b358b83358"
+    },
+    "copy": "docker-entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[ \"redis-server\" ]"
+  },
+  "source_repository_url": "git@bitbucket.org:fulbito/fulbito-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/fulbito/fulbito-docker",
+  "docker_repository": "fulbito/redis",
+  "docker_image": "fulbito/redis",
+  "parameters_schema": {
+    "REDIS_VERSION": {
+      "default": "3.0.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REDIS_DOWNLOAD_URL": {
+      "default": "http://download.redis.io/releases/redis-3.0.3.tar.gz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REDIS_DOWNLOAD_SHA1": {
+      "default": "0e2d7707327986ae652df717059354b358b83358",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        6379
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "fulbito/redis",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/fulbito/redis",
+    "https://hub.docker.com/v2/repositories/fulbito/redis",
+    "git@bitbucket.org:fulbito/fulbito-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Key-Value/Redis"
+  ],
+  "info_url": "https://hub.docker.com/r/fulbito/redis",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,102 @@
+{
+  "name": "apache-hadoop-plugin Juju charm",
+  "juju_charm_name": "apache-hadoop-plugin",
+  "revision": "cs:trusty/apache-hadoop-plugin-14",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/apache-hadoop-plugin",
+    "https://jujucharms.com/apache-hadoop-plugin/trusty",
+    "https://jujucharms.com/apache-hadoop-plugin/trusty/14",
+    "https://api.jujucharms.com/v5/apache-hadoop-plugin",
+    "https://api.jujucharms.com/v5/trusty/apache-hadoop-plugin",
+    "https://api.jujucharms.com/v5/trusty/apache-hadoop-plugin-14"
+  ],
+  "labels": [
+    "Juju charm",
+    "applications",
+    "bigdata",
+    "hadoop",
+    "apache",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Mode/CLI",
+    "Style/Virtualization Level/Application",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Processing/Hadoop/Hive"
+  ],
+  "info_url": "https://jujucharms.com/apache-hadoop-plugin",
+  "package_url": "https://api.jujucharms.com/v5/trusty/apache-hadoop-plugin-14/archive",
+  "created": "2016-05-05T17:34:52.575Z",
+  "updated": "2016-05-05T17:34:52.575Z",
+  "description": "Simplified connection point for Apache Hadoop platform\n\nHadoop is a software platform that lets one easily write and run applications that process vast amounts of data.\nThis charm provides a simplified connection point for client / workload services, such as Apache Hive or Apache Pig, which require access to Apache Hadoop.\n",
+  "maintainer": {
+    "name": "bigdata-charmers"
+  },
+  "juju_charm_subordinate": true,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "bigdata-charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/hadoop-plugin",
+      "self_resolve": true,
+      "juju_interface": "hadoop-plugin",
+      "juju_name": "hadoop-plugin",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/dfs",
+      "self_resolve": true,
+      "juju_interface": "dfs",
+      "juju_name": "namenode",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/mapred",
+      "self_resolve": true,
+      "juju_interface": "mapred",
+      "juju_name": "resourcemanager",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "dfs_blocksize": {
+      "type": "int",
+      "description": "The default block size for new files (default to 128MB). Increase\nthis in larger deployments for better large data set performance.\n",
+      "default": 134217728,
+      "mapping": "charm_option"
+    },
+    "dfs_replication": {
+      "type": "int",
+      "description": "Default block replication. The actual number of replications can be\nspecified when the file is created. The default is used if\nreplication is not specified at file creation time.\n",
+      "default": 3,
+      "mapping": "charm_option"
+    },
+    "hadoop_version": {
+      "type": "string",
+      "description": "Hadoop version\n",
+      "default": "2.7.2",
+      "mapping": "charm_option"
+    },
+    "resources_mirror": {
+      "type": "string",
+      "description": "URL from which to fetch resources (e.g., Hadoop binaries) instead of Launchpad.\n",
+      "default": "",
+      "mapping": "charm_option"
+    }
+  },
+  "license": "## Overview\n\nThe Apache Hadoop software library is a framework that allows for the\ndistributed processing of large data sets across clusters of computers\nusing a simple programming model.\n\nThis charm plugs in to a workload charm to provide the\n[Apache Hadoop 2.7.1](http://hadoop.apache.org/docs/r2.7.1/)\nlibraries and configuration for the workload to use.\n\n## Usage\n\nThis charm is intended to be deployed via one of the\n[apache bundles](https://jujucharms.com/u/bigdata-charmers/#bundles).\nFor example:\n\n    juju quickstart apache-analytics-sql\n\nThis will deploy the Apache Hadoop platform with a workload node\nwhich is running Apache Hive to perform SQL-like queries against your data.\n\nIf you wanted to also wanted to be able to analyze your data using Apache Pig,\nyou could deploy it and attach it to the same plugin:\n\n    juju deploy apache-pig pig\n    juju add-relation plugin pig\n\n\n## Deploying in Network-Restricted Environments\n\nThe Apache Hadoop charms can be deployed in environments with limited network\naccess. To deploy in this environment, you will need a local mirror to serve\nthe packages and resources required by these charms.\n\n\n### Mirroring Packages\n\nYou can setup a local mirror for apt packages using squid-deb-proxy.\nFor instructions on configuring juju to use this, see the\n[Juju Proxy Documentation](https://juju.ubuntu.com/docs/howto-proxies.html).\n\n\n### Mirroring Resources\n\nIn addition to apt packages, the Apache Hadoop charms require a few binary\nresources, which are normally hosted on Launchpad. If access to Launchpad\nis not available, the `jujuresources` library makes it easy to create a mirror\nof these resources:\n\n    sudo pip install jujuresources\n    juju-resources fetch --all /path/to/resources.yaml -d /tmp/resources\n    juju-resources serve -d /tmp/resources\n\nThis will fetch all of the resources needed by this charm and serve them via a\nsimple HTTP server. The output from `juju-resources serve` will give you a\nURL that you can set as the `resources_mirror` config option for this charm.\nSetting this option will cause all resources required by this charm to be\ndownloaded from the configured URL.\n\nYou can fetch the resources for all of the Apache Hadoop charms\n(`apache-hadoop-hdfs-master`, `apache-hadoop-yarn-master`,\n`apache-hadoop-compute-slave`, `apache-hadoop-plugin`, etc) into a single\ndirectory and serve them all with a single `juju-resources serve` instance.\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Hadoop\n\n- [Apache Hadoop](http://hadoop.apache.org/) home page\n- [Apache Hadoop bug trackers](http://hadoop.apache.org/issue_tracking.html)\n- [Apache Hadoop mailing lists](http://hadoop.apache.org/mailing_lists.html)\n- [Apache Hadoop Juju Charm](http://jujucharms.com/?text=hadoop)\n",
+  "readme": "## Overview\n\nThe Apache Hadoop software library is a framework that allows for the\ndistributed processing of large data sets across clusters of computers\nusing a simple programming model.\n\nThis charm plugs in to a workload charm to provide the\n[Apache Hadoop 2.7.1](http://hadoop.apache.org/docs/r2.7.1/)\nlibraries and configuration for the workload to use.\n\n## Usage\n\nThis charm is intended to be deployed via one of the\n[apache bundles](https://jujucharms.com/u/bigdata-charmers/#bundles).\nFor example:\n\n    juju quickstart apache-analytics-sql\n\nThis will deploy the Apache Hadoop platform with a workload node\nwhich is running Apache Hive to perform SQL-like queries against your data.\n\nIf you wanted to also wanted to be able to analyze your data using Apache Pig,\nyou could deploy it and attach it to the same plugin:\n\n    juju deploy apache-pig pig\n    juju add-relation plugin pig\n\n\n## Deploying in Network-Restricted Environments\n\nThe Apache Hadoop charms can be deployed in environments with limited network\naccess. To deploy in this environment, you will need a local mirror to serve\nthe packages and resources required by these charms.\n\n\n### Mirroring Packages\n\nYou can setup a local mirror for apt packages using squid-deb-proxy.\nFor instructions on configuring juju to use this, see the\n[Juju Proxy Documentation](https://juju.ubuntu.com/docs/howto-proxies.html).\n\n\n### Mirroring Resources\n\nIn addition to apt packages, the Apache Hadoop charms require a few binary\nresources, which are normally hosted on Launchpad. If access to Launchpad\nis not available, the `jujuresources` library makes it easy to create a mirror\nof these resources:\n\n    sudo pip install jujuresources\n    juju-resources fetch --all /path/to/resources.yaml -d /tmp/resources\n    juju-resources serve -d /tmp/resources\n\nThis will fetch all of the resources needed by this charm and serve them via a\nsimple HTTP server. The output from `juju-resources serve` will give you a\nURL that you can set as the `resources_mirror` config option for this charm.\nSetting this option will cause all resources required by this charm to be\ndownloaded from the configured URL.\n\nYou can fetch the resources for all of the Apache Hadoop charms\n(`apache-hadoop-hdfs-master`, `apache-hadoop-yarn-master`,\n`apache-hadoop-compute-slave`, `apache-hadoop-plugin`, etc) into a single\ndirectory and serve them all with a single `juju-resources serve` instance.\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Hadoop\n\n- [Apache Hadoop](http://hadoop.apache.org/) home page\n- [Apache Hadoop bug trackers](http://hadoop.apache.org/issue_tracking.html)\n- [Apache Hadoop mailing lists](http://hadoop.apache.org/mailing_lists.html)\n- [Apache Hadoop Juju Charm](http://jujucharms.com/?text=hadoop)\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

@@ -1,0 +1,116 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/artificial/iojs-nvm",
+    "repository_url": "https://hub.docker.com/v2/repositories/artificial/iojs-nvm",
+    "tags_url": "https://hub.docker.com/v2/repositories/artificial/iojs-nvm/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/artificial/iojs-nvm/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/artificial/iojs-nvm/autobuild",
+    "user": "artificial",
+    "name": "iojs-nvm",
+    "namespace": "artificial",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 179,
+    "last_updated": "2015-10-20T02:08:34.832515Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 119851074,
+        "id": 166553,
+        "repository": 155235,
+        "creator": 91960,
+        "last_updater": 101598,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "artificialio/docker-sails"
+  },
+  "name": "artificial/iojs-nvm Docker container",
+  "description": "",
+  "readme": "##io.js\n\nThe goal of this image is to be a minimally sized (~306MB) docker image that still allows to build native addons such as node-sass or bcrypt. Furthermore it is installing nvm which is then used to install the latest iojs without the need for sudo.\n\nThis image is the basis for all [SANE](http://sanestack.com/) docker images.\n\nRight now the only tag supported is `latest`, which automatically installs the latest nvm and io.js. Tags can easily be added if needed. Just request it: [github.com/artificialio/docker-sails/issues](https://github.com/artificialio/docker-sails/issues)\n",
+  "dockerfile": "############################################################\n# Dockerfile for Node Version Manager (nvm) - base image\n# artificial:nvm-iojs-base\n############################################################\n\nFROM debian:latest\n\nMAINTAINER Markus Padourek <markus@artificial.io>\nMAINTAINER Kris Williams <kris@kris.net>\n\nENV NODE_VERSION iojs\nENV HOME /home\nENV NVM_DIR $HOME/.nvm\nENV DEBIAN_FRONTEND noninteractive\n\nCOPY sources.list /etc/apt/sources.list\n\nRUN rm /bin/sh && ln -s /bin/bash /bin/sh && \\\n    apt-get update && \\\n    # backports git for newer git, needed for nvm install\n    apt-get -y --no-install-recommends -t wheezy-backports install git && \\\n    apt-get install -y --no-install-recommends \\\n      # uncomment if you need to use sudo\n      # sudo\n      # a lot of fat comes from this package... see if we can pare it down\n      # c compiler is necessary for native modules\n      build-essential \\\n      gyp \\\n      libssl-dev \\\n      adduser \\\n      ca-certificates \\\n      curl \\\n    && \\\n    # create \"sane\" group\n    addgroup --gid=1000 sane && \\\n    # create \"sane\" user\n    adduser --system --uid=1000 --home $HOME --shell /bin/bash sane >> /dev/null 2>&1  && \\\n    # install sudo to use it\n    echo \"sane ALL=(ALL) NOPASSWD: ALL\" >> /etc/sudoers && \\\n    chown -R sane:sane $HOME && \\\n    mkdir -p /server && \\\n    chown -R sane:sane /server && \\\n    chown -R sane:sane /usr/local && \\\n    # clean-up packages\n    rm -rf /var/lib/apt/lists/* && \\\n    apt-get clean\n\nUSER sane\n\n# install node version manager\nRUN touch $HOME/.bashrc && \\\n    echo $NODE_VERSION > $HOME/.nvmrc && \\\n    NVM_VERSION=\"$(curl -s -L http://latest.nvm.sh -o /dev/null -D - | grep -Ei '^Location: .*tag/v[0-9.]+' | grep -oEi 'v[0-9.]+')\" && \\\n    curl https://raw.githubusercontent.com/creationix/nvm/$NVM_VERSION/install.sh | sh && \\\n    # install node\n    source $NVM_DIR/nvm.sh && \\\n    nvm install $NODE_VERSION >> /dev/null 2>&1 && \\\n    nvm alias default $NODE_VERSION\n\n# default start command\nCMD \\\n    # start nvm in non-interactive shell\n    source $NVM_DIR/nvm.sh && \\\n    # install any node version present in /server/.nvmrc\n    nvm install >> /dev/null 2>&1 && \\\n    # print version information and exit\n    npm version\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "rm /bin/sh && ln -s /bin/bash /bin/sh &&     apt-get update &&     # backports git for newer git, needed for nvm install",
+      "touch $HOME/.bashrc &&     echo $NODE_VERSION > $HOME/.nvmrc &&     NVM_VERSION=\"$(curl -s -L http://latest.nvm.sh -o /dev/null -D - | grep -Ei '^Location: .*tag/v[0-9.]+' | grep -oEi 'v[0-9.]+')\" &&     curl https://raw.githubusercontent.com/creationix/nvm/$NVM_VERSION/install.sh | sh &&     # install node"
+    ],
+    "workdir": [],
+    "from": "debian:latest",
+    "maintainer": "Kris Williams <kris@kris.net>",
+    "env": {
+      "NODE_VERSION": "iojs",
+      "HOME": "/home",
+      "NVM_DIR": "$HOME/.nvm",
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "copy": "sources.list /etc/apt/sources.list",
+    "user": "sane",
+    "cmd": "    # start nvm in non-interactive shell"
+  },
+  "source_repository_url": "https://github.com/artificialio/docker-sails.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/artificialio/docker-sails",
+  "docker_repository": "artificial/iojs-nvm",
+  "docker_image": "artificial/iojs-nvm",
+  "parameters_schema": {
+    "NODE_VERSION": {
+      "default": "iojs",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/home",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NVM_DIR": {
+      "default": "$HOME/.nvm",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "artificial/iojs-nvm",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/artificial/iojs-nvm",
+    "https://hub.docker.com/v2/repositories/artificial/iojs-nvm",
+    "https://github.com/artificialio/docker-sails.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://hub.docker.com/r/artificial/iojs-nvm",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

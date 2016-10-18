@@ -1,0 +1,68 @@
+{
+  "name": "generic_dns Chef cookbook",
+  "chef_cookbook_name": "generic_dns",
+  "revision": "1.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/generic_dns",
+    "https://supermarket.chef.io/cookbooks/generic_dns/download",
+    "https://supermarket.chef.io/cookbooks/generic_dns/versions/1.0.1",
+    "https://supermarket.chef.io/cookbooks/generic_dns/versions/1.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/generic_dns/versions/1.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/generic_dns",
+    "https://supermarket.chef.io/api/v1/cookbooks/generic_dns/versions/1.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Network/DNS"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/generic_dns",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/generic_dns/versions/1.0.1/download",
+  "deprecated": false,
+  "created": "2014-06-17T18:51:24.904Z",
+  "updated": "2014-06-17T18:51:25.053Z",
+  "description": "Generic DNS LWRPs and DNS templates",
+  "maintainer": {
+    "name": "promisedlandt",
+    "email": "cookbooks@promisedlandt.de"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 1277362,
+  "downloads_count_revision": 1277362,
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# generic_dns\n\nProvides a set of LWRPs to manage DNS records, using Amazon Route 53 or DNSimple.\n\nAlso provides DNS templates for commonly used services, such as Google Mail.\n\n# Platforms\n\nTested on Ubuntu 12.04 and Debian 6.0.6.\n\n# Requirements\n\nChef 11\n\n# Examples\n\n```\nnode.set[:generic_dns][:default_dns_provider] = :amazon\n\n# Add subdomain1 to example.com using Route 53\ngeneric_dns_record \"subdomain1\" do\n  value \"192.168.1.1\"\n  domain \"example.com\"\n  aws_access_key_id     \"ASDASDASDASD\"\n  aws_secret_access_key \"GSDFGSDFDFGF\"\nend\n\n# Let's add a CNAME record using DNSimple\ngeneric_dns_record \"mail\" do\n  value \"ghs.google.com\"\n  domain \"example.com\"\n  type \"CNAME\"\n  ttl 86400\n  aws_access_key_id     \"ASDASDASDASD\"\n  aws_secret_access_key \"GSDFGSDFDFGF\"\nend\n\n# Apply the google mail template to add MX records and a TXT spf record\ngeneric_dns_template \"google_mail\" do\n  domain \"example.com\"\n  aws_access_key_id     \"ASDASDASDASD\"\n  aws_secret_access_key \"GSDFGSDFDFGF\"\nend\n```\n\n# Authentication\n\nYou can either provide authentication via resource attributes (see generic_dns_record attributes), or as node attributes.  \nFor node attributes, use `node[:dnsimple][:username]` and `node[:dnsimple][:password]` or `node[:amazon_dns][:aws_access_key_id]` and `node[:amazon_dns][:aws_secret_access_key]`.\n\n# Templates\n\nTemplates are simply a number of predefined DNS records.  \nFor example, the google_mail template will add an MX record with the 5 gmail servers and their priorities, as well as a TXT record used in SPF.\n\nThe following templates are available:\n\nTemplate | Description\n---------|------------\ngoogle_mail | Set up [Google Mail](https://mail.google.com/)\n\n# Recipes\n\n## generic_dns::default\n\nInstalls prequisites for either the [amazon_dns](https://github.com/promisedlandt/cookbook-amazon_dns) or [dnsimple](https://github.com/aetrion/chef-dnsimple) cookbook.\n\n# Attributes\n\n## default\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\ndefault_dns_provider | The dns provider you want to use, amazon or dnsimple | String, Symbol | :amazon\n\n# Resources / Providers\n\n## generic_dns_record\n\nCreates a record using either DNSimple or Amazon Route 53.  \nIf using Amazon, creates a zone as needed.\n\n### Attributes\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\ndns_provider | Which DNS provider to use, overrides node attribute | String, Symbol | \nname | Name of the dns entry, can be \"subdomain\" or \"subdomain.example.com\" | String | name\ndomain | Name of the domain to add the entry to (set this or zone_id) | String |\nvalue | Value for the DNS record. Not needed for Amazon alias records | String, Array | \ntype | DNS record type | String | A\nttl | Time to live | Integer, String | 3600\nweight | For weighted record sets. Amazon only | Integer, String |\nzone_id | Zone_id of the zone to add the entry to (set this or domain). Amazon only | String |\nalias_target | Targets for alias records. Hash that needs they keys `:dns_name` and `:hosted_zone_id`. Amazon only | Hash\naws_access_key_id | Your AWS access key ID. Amazon only | String\naws_secret_access_key | Your AWS secret access key. Amazon only | String\ndnsimple_username | Username for your DNSimple account. DNSimple only | String\ndnsimple_password | Password for your DNSimple account. DNSimple only | String\n\n### Actions\n\nName | Description | Default\n-----|-------------|--------\ncreate_or_update | Create or update the record | yes\n\n## generic_dns_template\n\nCreates DNS records from predefined templates\n\n### Attributes\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\ndns_provider | Which DNS provider to use, overrides node attribute | String, Symbol | \ntemplate_name | Name of the template to apply | String | name\ndomain | Name of the domain to add the entry to | String |\naws_access_key_id | Your AWS access key ID. Amazon only | String\naws_secret_access_key | Your AWS secret access key. Amazon only | String\ndnsimple_username | Username for your DNSimple account. DNSimple only | String\ndnsimple_password | Password for your DNSimple account. DNSimple only | String\n\n### Actions\n\nName | Description | Default\n-----|-------------|--------\ncreate_or_update | Create or update the record | yes\n\n## generic_dns_from_databag\n\nSets up DNS records and templates from a data bag.\n\nThe data bag items need the following structure:\n\n```\n{\n  \"id\": \"example_com\",\n  \"domain_name\": \"example.com\",\n  \"templates\": [\n    \"google_mail\"\n  ],\n  \"records\": [\n    { \"name\": \"promisedlandt.de\",\n      \"content\": \"192.168.1.1\" },\n    { \"name\": \"subdomain1\",\n      \"type\": \"AAAA\",\n      \"ttl\": 3600,\n      \"content\": \"2001:0db8:0000:0000:0000:ff00:0042:8329\" }\n  ]\n}\n```\n\nYou can authenticate either by passing the usual attributes, or from an encrypted data bag.  \nIf you decide to go the data bag route, for AWS, you need the keys \"aws_access_key_id\" and \"aws_secret_access_key\".  \nFor DNSimple, you need \"login\" and \"password\".\n\n### Attributes\n\nAttribute | Description | Type | Default\n----------|-------------|------|--------\ndns_provider | Which DNS provider to use, overrides node attribute | String, Symbol | \ndns_data_bag_name | Name of the data bag you store your DNS info in | String | name\ncredentials_data_bag_name | Name of the data bag your credentials are stored it (if you don't specify them directly) | String |\ncredentials_data_bag_item | Item in your credentials data bag | String |\naws_access_key_id | Your AWS access key ID. Amazon only | String\naws_secret_access_key | Your AWS secret access key. Amazon only | String\ndnsimple_username | Username for your DNSimple account. DNSimple only | String\ndnsimple_password | Password for your DNSimple account. DNSimple only | String\n\n### Actions\n\nName | Description | Default\n-----|-------------|--------\ncreate_or_update | Create or update the records / templates | yes\n\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/amazon_dns",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/dnsimple",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

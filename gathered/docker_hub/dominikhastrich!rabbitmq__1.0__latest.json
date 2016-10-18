@@ -1,0 +1,148 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dominikhastrich/rabbitmq",
+    "repository_url": "https://hub.docker.com/v2/repositories/dominikhastrich/rabbitmq",
+    "tags_url": "https://hub.docker.com/v2/repositories/dominikhastrich/rabbitmq/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dominikhastrich/rabbitmq/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dominikhastrich/rabbitmq/autobuild",
+    "user": "dominikhastrich",
+    "name": "rabbitmq",
+    "namespace": "dominikhastrich",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 61,
+    "last_updated": "2015-09-24T12:13:24.488984Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1.0",
+        "full_size": 87541735,
+        "id": 971609,
+        "repository": 334473,
+        "creator": 422553,
+        "last_updater": 422553,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 87541747,
+        "id": 971606,
+        "repository": 334473,
+        "creator": 422553,
+        "last_updater": 422553,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "dominikhastrich/docker-rabbitmq"
+  },
+  "name": "dominikhastrich/rabbitmq Docker container",
+  "description": "RabbitMQ with web-stomp and mqtt support",
+  "readme": "# docker-rabbitmq\n\nOfficial RabbitMQ image extended by enabled Mqtt, Stomp and Web-Stomp Plugins  \nOptionally the management tag also enables management plugin  \nFurther uses NGINX as proxy to expose web-stomp via port 80\n\n| port | target |\n|------|--------|\n| 5672 | AQMP |\n| 15672 | Management interface (only with management tag) |\n| 61613 | Stomp |\n| 15674 | Web-Stomp (SockJS) |\n| 80 | Proxy to Web-Stomp (SockJS) |\n\nUses *latest* tag of the image\n",
+  "dockerfile": "FROM nginx:latest\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\nRUN groupadd -r rabbitmq && useradd -r -d /var/lib/rabbitmq -m -g rabbitmq rabbitmq\n\nRUN apt-get update && apt-get install -y curl ca-certificates --no-install-recommends && rm -rf /var/lib/apt/lists/*\n\n# grab gosu for easy step-down from root\nRUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4\nRUN curl -o /usr/local/bin/gosu -SL \"https://github.com/tianon/gosu/releases/download/1.3/gosu-$(dpkg --print-architecture)\" \\\n\t&& curl -o /usr/local/bin/gosu.asc -SL \"https://github.com/tianon/gosu/releases/download/1.3/gosu-$(dpkg --print-architecture).asc\" \\\n\t&& gpg --verify /usr/local/bin/gosu.asc \\\n\t&& rm /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu\n\n# grab tini for signal processing and zombie killing\nRUN set -x \\\n\t&& curl -fSL \"https://github.com/krallin/tini/releases/download/v0.5.0/tini\" -o /usr/local/bin/tini \\\n\t&& chmod +x /usr/local/bin/tini \\\n\t&& tini -h\n\n# Add the officially endorsed Erlang debian repository:\n# See:\n#  - http://www.erlang.org/download.html\n#  - https://www.erlang-solutions.com/downloads/download-erlang-otp\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 434975BD900CCBE4F7EE1B1ED208507CA14F4FCA\nRUN echo 'deb http://packages.erlang-solutions.com/debian wheezy contrib' > /etc/apt/sources.list.d/erlang.list\n\n# get logs to stdout (thanks @dumbbell for pushing this upstream! :D)\nENV RABBITMQ_LOGS=- RABBITMQ_SASL_LOGS=-\n# https://github.com/rabbitmq/rabbitmq-server/commit/53af45bf9a162dec849407d114041aad3d84feaf\n\n# http://www.rabbitmq.com/install-debian.html\n# \"Please note that the word testing in this line refers to the state of our release of RabbitMQ, not any particular Debian distribution.\"\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys F78372A06FF50C80464FC1B4F7B8CEA6056E8E56\nRUN echo 'deb http://www.rabbitmq.com/debian/ testing main' > /etc/apt/sources.list.d/rabbitmq.list\n\nENV RABBITMQ_VERSION 3.5.4-1\n\nRUN apt-get update && apt-get install -y rabbitmq-server=$RABBITMQ_VERSION --no-install-recommends && rm -rf /var/lib/apt/lists/*\n\n# /usr/sbin/rabbitmq-server has some irritating behavior, and only exists to \"su - rabbitmq /usr/lib/rabbitmq/bin/rabbitmq-server ...\"\nENV PATH /usr/lib/rabbitmq/bin:$PATH\n\nRUN echo '[{rabbit, [{loopback_users, []}]}].' > /etc/rabbitmq/rabbitmq.config\n\nVOLUME /var/lib/rabbitmq\n\n# add a symlink to the .erlang.cookie in /root so we can \"docker exec rabbitmqctl ...\" without gosu\nRUN ln -sf /var/lib/rabbitmq/.erlang.cookie /root/\n\n#COPY docker-entrypoint.sh /\n#ENTRYPOINT [\"/docker-entrypoint.sh\"]\n\nEXPOSE 5672\n\nCOPY rabbitmq.config /etc/rabbitmq/rabbitmq.config\n\nRUN rabbitmq-plugins enable rabbitmq_stomp\nRUN rabbitmq-plugins enable rabbitmq_web_stomp\n\nCOPY nginx.conf /etc/nginx/nginx.conf\n\nEXPOSE 61613\nEXPOSE 15674\n\nCOPY run.sh /run.sh\n\nCMD [\"/bin/bash\",\"/run.sh\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5672,
+      61613,
+      15674
+    ],
+    "volume": [
+      "/var/lib/rabbitmq"
+    ],
+    "run": [
+      "groupadd -r rabbitmq && useradd -r -d /var/lib/rabbitmq -m -g rabbitmq rabbitmq",
+      "apt-get update && apt-get install -y curl ca-certificates --no-install-recommends && rm -rf /var/lib/apt/lists/*",
+      "gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4",
+      "curl -o /usr/local/bin/gosu -SL \"https://github.com/tianon/gosu/releases/download/1.3/gosu-$(dpkg --print-architecture)\" \t&& curl -o /usr/local/bin/gosu.asc -SL \"https://github.com/tianon/gosu/releases/download/1.3/gosu-$(dpkg --print-architecture).asc\" \t&& gpg --verify /usr/local/bin/gosu.asc \t&& rm /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu",
+      "set -x \t&& curl -fSL \"https://github.com/krallin/tini/releases/download/v0.5.0/tini\" -o /usr/local/bin/tini \t&& chmod +x /usr/local/bin/tini \t&& tini -h",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 434975BD900CCBE4F7EE1B1ED208507CA14F4FCA",
+      "echo 'deb http://packages.erlang-solutions.com/debian wheezy contrib' > /etc/apt/sources.list.d/erlang.list",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys F78372A06FF50C80464FC1B4F7B8CEA6056E8E56",
+      "echo 'deb http://www.rabbitmq.com/debian/ testing main' > /etc/apt/sources.list.d/rabbitmq.list",
+      "apt-get update && apt-get install -y rabbitmq-server=$RABBITMQ_VERSION --no-install-recommends && rm -rf /var/lib/apt/lists/*",
+      "echo '[{rabbit, [{loopback_users, []}]}].' > /etc/rabbitmq/rabbitmq.config",
+      "ln -sf /var/lib/rabbitmq/.erlang.cookie /root/",
+      "rabbitmq-plugins enable rabbitmq_stomp",
+      "rabbitmq-plugins enable rabbitmq_web_stomp"
+    ],
+    "workdir": [],
+    "from": "nginx:latest",
+    "env": {
+      "RABBITMQ_LOGS": "-",
+      "RABBITMQ_SASL_LOGS": "-",
+      "RABBITMQ_VERSION": "3.5.4-1",
+      "PATH": "/usr/lib/rabbitmq/bin:$PATH"
+    },
+    "copy": "run.sh /run.sh",
+    "cmd": "[\"/bin/bash\",\"/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/dominikhastrich/docker-rabbitmq.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/dominikhastrich/docker-rabbitmq",
+  "docker_repository": "dominikhastrich/rabbitmq",
+  "docker_image": "dominikhastrich/rabbitmq",
+  "parameters_schema": {
+    "RABBITMQ_LOGS": {
+      "default": "-",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_SASL_LOGS": {
+      "default": "-",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_VERSION": {
+      "default": "3.5.4-1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/usr/lib/rabbitmq/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5672,
+        61613,
+        15674
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dominikhastrich/rabbitmq",
+  "revision": "1.0",
+  "uris": [
+    "https://hub.docker.com/r/dominikhastrich/rabbitmq",
+    "https://hub.docker.com/v2/repositories/dominikhastrich/rabbitmq",
+    "https://github.com/dominikhastrich/docker-rabbitmq.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/dominikhastrich/rabbitmq",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

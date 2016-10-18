@@ -1,0 +1,43 @@
+{
+  "name": "kitchen-test-helper Chef cookbook",
+  "chef_cookbook_name": "kitchen-test-helper",
+  "revision": "1.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/kitchen-test-helper",
+    "https://supermarket.chef.io/cookbooks/kitchen-test-helper/download",
+    "https://supermarket.chef.io/cookbooks/kitchen-test-helper/versions/1.0.0",
+    "https://supermarket.chef.io/cookbooks/kitchen-test-helper/versions/1.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/kitchen-test-helper/versions/1.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/kitchen-test-helper",
+    "https://supermarket.chef.io/api/v1/cookbooks/kitchen-test-helper/versions/1.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Test"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/kitchen-test-helper",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/kitchen-test-helper/versions/1.0.0/download",
+  "deprecated": false,
+  "created": "2015-11-30T03:30:32.501Z",
+  "updated": "2016-08-05T15:11:35.540Z",
+  "description": "Suite of chef/kitchen testing tools",
+  "maintainer": {
+    "name": "kvincent",
+    "email": "kristopher.brett.vincent@outlook.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 4,
+  "downloads_count": 346,
+  "downloads_count_revision": 290,
+  "repository_url": "https://github.com/GannettDigital/kitchen-test-helper",
+  "issues_url": "https://github.com/GannettDigital/kitchen-test-helper/issues",
+  "chef_source_url": "https://github.com/GannettDigital/kitchen-test-helper",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# kitchen-test-helper\nThis cookbook provides a suite of tools to assist with testing chef cookbooks when using [test-kitchen](https://github.com/test-kitchen/test-kitchen) and [serverspec](http://serverspec.org/).\n\n- [Node attributes][node-attributes-dump] dumped to .json file for access within serverspec tests.\n- [Databag Faker][data-bag-faker] - Fakes databags to simulate a managed chef environment returning databags.\n  - [Creating Fake Databags][create-databags]\n  - [Creating Fake Databags With Secure Information][secure-databags]\n  - [Creating Multiple Fake Databags][multiple-databags]\n\n[node-attributes-dump]: #node-attributes-dump\n[data-bag-faker]: #databag-faker\n[create-databags]: #creating-faked-databags\n[secure-databags]: #creating-faked-databags-with-secure-content\n[multiple-databags]: #multiple-databags\n\nBuild Status: [![Build Status](https://travis-ci.org/kbvincent/kitchen-test-helper.svg?branch=master)](https://travis-ci.org/kbvincent/kitchen-test-helper)\n\n\n## Node Attributes Dump\n\nIncluding this cookbook will create a `.json` file with the contents of all of the current node's attributes.  The contents of the variables can then be used within your serverspec tests.\n\n### How to use\n\nInclude in Berksfile:\n```ruby\nsource 'https://supermarket.chef.io'\n\nmetadata\n\ngroup :integration do\n  cookbook 'kitchen-test-helper'\nend\n```\n\nAdd `kitchen-test-helper` to the top of the run list in the `.kitchen.yml` configuration:\n```ruby\n---\ndriver:\n  name: vagrant\n\nprovisioner:\n  name: chef_zero\n\nplatforms:\n  - name: centos-6.6\n\nsuites:\n  - name: default\n    run_list:\n      - recipe[kitchen-test-helper]\n      - recipe[<<<<>>>>>]\n```\n\nUse the following `spec_helper.rb` file when attempting to use node attributes within serverspec tests.  It will correctly configure the backend for either windows or linux systems, as well as set the `$node` variable with the contents of the dumped `node.json` file.\n```ruby\nrequire 'serverspec'\nrequire 'pathname'\nrequire 'json'\n\nif ENV['OS'] == 'Windows_NT'\n  set :backend, :cmd\n  # On Windows, set the target host's OS explicitely\n  set :os, :family => 'windows'\n  $node = ::JSON.parse(File.read('c:\\windows\\temp\\serverspec\\node.json'))\nelse\n  set :backend, :exec\n  $node = ::JSON.parse(File.read('/tmp/serverspec/node.json'))\nend\n\nset :path, '/sbin:/usr/local/sbin:$PATH' unless os[:family] == 'windows'\n```\n\nHow to use the node's variables in serverspec tests:\n```ruby\ndescribe file(\"#{$node['python']['prefix_dir']}/bin/python2.7\") do\n  it { should exist }\nend\n\ndescribe file(\"#{$node['nginx']['dir']}/www\") do\n  it { should exist }\n  it { should be_directory }\n  it { should be_mode 755 }\n  it { should be_owned_by \"#{$node['nginx']['user']}\" }\n  it { should be_grouped_into \"#{$node['nginx']['group']}\" }\nend\n```\n\n\n\n\n\n## Databag Faker\nSome cookbooks require databags to be created in order for the cookbook to correctly be ran.\n\nThis recipe will build a databag, place it in the correct local databag location, and allow future cookbooks to use the created databags as if they had been read from a chef server.\n\nTo use this recipe, include it in your `kitchen.yml` run_list, before any other recipes:\n\n```ruby\n---\ndriver:\n  name: vagrant\n\nprovisioner:\n  name: chef_zero\n\nplatforms:\n  - name: centos-6.6\n\nsuites:\n  - name: default\n    run_list:\n      - recipe['kitchen-test-helper']\n      - recipe[<<<<>>>>>]\n```\n\n##### Creating Faked Databags\nTo add a databag, add fake_databags to the attributes in your `kitchen.yml` following the example below.\nThis will create a databag item named `tuser.json` and will put it in the `users` databag.\n\n```ruby\n---\ndriver:\n  name: vagrant\n\nprovisioner:\n  name: chef_zero\n\nplatforms:\n  - name: centos-6.6\n\nsuites:\n  - name: default\n    run_list:\n      - recipe['kitchen-test-helper']\n      - recipe[<<<<>>>>>]\n    attributes:\n        fake_databags:\n          - data_bag: 'users'\n            content:\n                id: 'tuser'\n                user.first_name: 'test'\n                user.last_name: 'user'\n                user.email: 'test_user@test.com'\n```\n\nThe resulting databag (`users/tuser`) would look like this:\n```Json\n{\n    \"id\": \"tuser\",\n    \"user.first_name\": \"test\",\n    \"user.last_name\": \"user\",\n    \"user.email\": \"test_user@test.com\"\n}\n```\n\n##### Creating Faked Databags with Secure Content\nSome recipes require an SSH key, or other secure information that we do not want committed to github.\n\nFollowing the same example as above, we will add a data_bag item to the fake_databags array, but this time we will include a key that has an environment variable setting it's value.\n\nFirst we need to export the environment variable:\n```Bash\nexport ENV_VARIABLE_NAME=\"{{VARIABLE CONTENT}}\"\n```\n\nExample:\n```Bash\nexport TEST_GIT_SSH_KEY=\"FakeKeyValueFakeKeyValue\"\n```\n\n\n```ruby\nsuites:\n  - name: default\n    run_list:\n      - recipe['kitchen-test-helper']\n      - recipe[<<<<>>>>>]\n    attributes:\n      fake_databags:\n        - data_bag: 'git-credentials'\n          content:\n            id: 'test'\n            key: \"<%= ENV['TEST_GIT_SSH_KEY'] %>\"\n            user.name: 'TestUser'\n            user.email: 'testuser@gmail.com'\n```\n\nThe resulting databag (`git-credentials/test`) would look like this:\n```Json\n{\n    \"id\": \"test\",\n    \"key\": \"FakeKeyValueFakeKeyValue\",\n    \"user.name\": \"TestUser\",\n    \"user.email\": \"testuser@gmail.com\"\n}\n```\n\n##### Multiple Databags\nTo create multiple databags within the same 'kitchen.yml', follow this example:\nThis will create a databag named `test.json` within the `git-credentials` folder, as well as a databag named `test2.json` within the `aws-credentials` folder.\n\n```ruby\nsuites:\n  - name: default\n    run_list:\n      - recipe['kitchen-test-helper']\n      - recipe[<<<<>>>>>]\n    attributes:\n      fake_databags:\n        - data_bag: 'git-credentials'\n          content:\n              id: 'test'\n              key: \"FakeKeyValueFakeKeyValue\"\n              user.name: 'TestUser'\n              user.email: 'testuser@gmail.com'\n        - data_bag: 'aws-credentials'\n          content:\n              id: 'test2'\n              key: \"FakeKeyValueFakeKeyValue\"\n              user.name: 'TestUser2'\n              user.email: 'testuser2@gmail.com’\n```\n\nThe resulting databags would look like this:\n###### `git-credentials/test`\n```Json\n{\n    \"id\": \"test\",\n    \"key\": \"FakeKeyValueFakeKeyValue\",\n    \"user.name\": \"TestUser\",\n    \"user.email\": \"testuser@gmail.com\"\n}\n```\n\n###### `aws-credentials/test2`\n```Json\n{\n    \"id\": \"test2\",\n    \"key\": \"FakeKeyValueFakeKeyValue\",\n    \"user.name\": \"TestUser2\",\n    \"user.email\": \"testuser2@gmail.com\"\n}\n```\n\n"
+}

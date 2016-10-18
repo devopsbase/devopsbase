@@ -1,0 +1,117 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kamermans/docker-megacli",
+    "repository_url": "https://hub.docker.com/v2/repositories/kamermans/docker-megacli",
+    "tags_url": "https://hub.docker.com/v2/repositories/kamermans/docker-megacli/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kamermans/docker-megacli/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kamermans/docker-megacli/autobuild",
+    "user": "kamermans",
+    "name": "docker-megacli",
+    "namespace": "kamermans",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 297,
+    "last_updated": "2016-09-07T20:32:11.444716Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1.0",
+        "full_size": 79224910,
+        "id": 4721992,
+        "repository": 529762,
+        "creator": 162389,
+        "last_updater": 162389,
+        "last_updated": "2016-09-07T20:32:08.310567Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 79224910,
+        "id": 2011747,
+        "repository": 529762,
+        "creator": 162389,
+        "last_updater": 162389,
+        "last_updated": "2016-09-07T20:14:16.159807Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "kamermans/docker-megacli"
+  },
+  "name": "kamermans/docker-megacli Docker container",
+  "description": "Docker container for running MegaCLI on Debian / Ubuntu / RedHat / CentOS",
+  "readme": "# docker-megacli\nDocker container for running MegaCLI and StorCLI on Debian / Ubuntu / RedHat / CentOS\n\n## Using MegaCLI\nMegaCLI is a very complicated tool that requires you to enter case-sensitive arguments\nthat seem to have no rhyme or reason.  It is virually impossible to guess a command,\nand even the executable `MegaCli` can be found spelled in many different cases.  To add\nto the madness, there is abysmal support for Debian-based distros like Ubuntu.  Since\nthis container runs CentOS inside a Docker container, it can run seemlessly on Ubuntu\nfrom the CentOS runtime and RPM package.\n\n> Note: There is a similar command called StorCLI, also made by LSI.  This command is\n> also included as `storcli` inside this container.\n\n### Running the container\nYou can run this container without installing anything except Docker:\n\n    docker run --rm -ti --privileged kamermans/docker-megacli\n\n\n> Note that the `--rm` will delete the container for you when you exit it, and\n> `privileged` mode is required so the container can talk directly to the hardware.\n\nOnce you start the container, you will find yourself at a bash prompt:\n\n```\nsteve@steve-hq:~$ docker run --rm -ti --privileged kamermans/docker-megacli\n\n      MegaCLI SAS RAID Management Tool  Ver 8.07.14 Dec 16, 2013\n      Storage Command Line Tool  Ver 1.03.11 Jan 30, 2013\n\n[root@ed2f45d425f2 megacli]#\n```\n\nYou are dropped into the `/megacli` directory, which has lots of helpful scripts in it\nto get you going:\n\n```\n[root@ed2f45d425f2 megacli]# ls -1\nMegaSAS.log\nlist_adapters\nlist_drive_summary\nlist_enclosures\nlist_logical_drives\nlist_physical_drives\nshow_battery_status\nshow_cheat_sheet_urls\nshow_event_log\nshow_full_config\nshow_summary\nsilence_alarm\n```\n\n> Note: All of the scripts are non-destructive, they simply show you information about\n> your RAID Controller.\n\nThis directory (`/megacli`) is in your `PATH`, so you can run those commands from anywhere.\nYou should probably start by taking a look at the controller summary:\n\n```\n[root@ed2f45d425f2 megacli]# show_summary\n\nSystem\n        Operating System:  Linux version 3.16.0-49-generic\n        Driver Version: 06.803.01.00-rc1\n        CLI Version: 8.07.14\n\nHardware\n        Controller\n                 ProductName       : PERC H700 Integrated(Bus 0, Dev 0)\n                 SAS Address       : 5782bcb0204ea700\n                 FW Package Version: 12.3.0-0032\n                 Status            : Need Attention\n        BBU\n                 BBU Type          : BBU\n                 Status            : Replace Battery pack        PD\n```\n\nWell, it seems my battery (BBU) is dead, great.\n\nLet's see how this script works:\n\n```\n[root@ed2f45d425f2 megacli]# cat show_summary\n#!/bin/sh -e\n\nMegaCli -ShowSummary -aALL\n```\n\nAs you can see, these scripts are mostly one-liners that you could also run manually.\n\nYou can get a full list of the MegaCLI commands with `man megacli`.  It is a huge,\nvirtually-uncommented list of commands, so you probably want to check out a cheat\nsheet for more information, so try `show_cheat_sheet_urls`:\n\n```\n[root@ed2f45d425f2 megacli]# show_cheat_sheet_urls\nhttp://erikimh.com/megacli-cheatsheet/\nhttps://things.maths.cam.ac.uk/computing/docs/public/megacli_raid_lsi.html\nhttp://www.vmwareadmins.com/megacli-working-examples-cheat-sheet/\nhttp://hwraid.le-vert.net/wiki/LSIMegaRAIDSAS\n```\n\n## Updating the container\nYou can update this container with `docker pull`:\n\n    docker pull kamermans/docker-megacli\n\n",
+  "dockerfile": "FROM centos:7\n\nENV PATH \"/opt/MegaRAID/storcli:/opt/MegaRAID/MegaCli:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"\n\nRUN yum -y install \\\n        bash-completion \\\n        nano \\\n        less \\\n        dmidecode \\\n    && yum clean all \\\n    && mkdir -p /megacli \\\n    && curl -sSL http://srkdev.com/megacli/MegaCli-8.07.14-1.noarch.rpm > /tmp/megacli.rpm \\\n    && curl -sSL http://srkdev.com/megacli/storcli-1.03.11-1.noarch.rpm > /tmp/storcli.rpm \\\n    && rpm -ivh /tmp/*.rpm \\\n    && rm /tmp/*.rpm \\\n    && cd /megacli \\\n    && ln -s $(command -v MegaCli64) /usr/local/sbin/megacli \\\n    && ln -s $(command -v MegaCli64) /usr/local/sbin/megacli64 \\\n    && ln -s $(command -v MegaCli64) /usr/local/sbin/Megacli \\\n    && ln -s $(command -v MegaCli64) /usr/local/sbin/Megacli64 \\\n    && ln -s $(command -v MegaCli64) /usr/local/sbin/MegaCLI \\\n    && ln -s $(command -v MegaCli64) /usr/local/sbin/MegaCLI64 \\\n    && ln -s $(command -v MegaCli64) /usr/local/sbin/MegaCli \\\n    && ln -s $(command -v storcli64) /usr/local/sbin/storcli \\\n    && ln -s $(command -v storcli64) /usr/local/sbin/storcli64 \\\n    && ln -s $(command -v storcli64) /usr/local/sbin/Storcli \\\n    && ln -s $(command -v storcli64) /usr/local/sbin/Storcli64 \\\n    && ln -s $(command -v storcli64) /usr/local/sbin/StorCLI \\\n    && ln -s $(command -v storcli64) /usr/local/sbin/StorCLI64 \\\n    && ln -s $(command -v storcli64) /usr/local/sbin/StorCli \\\n    && echo 'megacli -v | grep \"^.*Tool\"' >> ~/.bashrc \\\n    && echo 'storcli -v | grep \"^.*Tool\"' >> ~/.bashrc\n\nCOPY resources/megacli_profile.sh /etc/profile.d/\nCOPY resources/scripts /megacli\n\nWORKDIR \"/megacli\"\n\nCMD [\"bash\", \"-l\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "yum -y install         bash-completion         nano         less         dmidecode     && yum clean all     && mkdir -p /megacli     && curl -sSL http://srkdev.com/megacli/MegaCli-8.07.14-1.noarch.rpm > /tmp/megacli.rpm     && curl -sSL http://srkdev.com/megacli/storcli-1.03.11-1.noarch.rpm > /tmp/storcli.rpm     && rpm -ivh /tmp/*.rpm     && rm /tmp/*.rpm     && cd /megacli     && ln -s $(command -v MegaCli64) /usr/local/sbin/megacli     && ln -s $(command -v MegaCli64) /usr/local/sbin/megacli64     && ln -s $(command -v MegaCli64) /usr/local/sbin/Megacli     && ln -s $(command -v MegaCli64) /usr/local/sbin/Megacli64     && ln -s $(command -v MegaCli64) /usr/local/sbin/MegaCLI     && ln -s $(command -v MegaCli64) /usr/local/sbin/MegaCLI64     && ln -s $(command -v MegaCli64) /usr/local/sbin/MegaCli     && ln -s $(command -v storcli64) /usr/local/sbin/storcli     && ln -s $(command -v storcli64) /usr/local/sbin/storcli64     && ln -s $(command -v storcli64) /usr/local/sbin/Storcli     && ln -s $(command -v storcli64) /usr/local/sbin/Storcli64     && ln -s $(command -v storcli64) /usr/local/sbin/StorCLI     && ln -s $(command -v storcli64) /usr/local/sbin/StorCLI64     && ln -s $(command -v storcli64) /usr/local/sbin/StorCli     && echo 'megacli -v | grep \"^.*Tool\"' >> ~/.bashrc     && echo 'storcli -v | grep \"^.*Tool\"' >> ~/.bashrc"
+    ],
+    "workdir": [
+      "\"/megacli\""
+    ],
+    "from": "centos:7",
+    "env": {
+      "PATH": "\"/opt/MegaRAID/storcli:/opt/MegaRAID/MegaCli:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\""
+    },
+    "copy": "resources/scripts /megacli",
+    "cmd": "[\"bash\", \"-l\"]"
+  },
+  "source_repository_url": "https://github.com/kamermans/docker-megacli.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/kamermans/docker-megacli",
+  "docker_repository": "kamermans/docker-megacli",
+  "docker_image": "kamermans/docker-megacli",
+  "parameters_schema": {
+    "PATH": {
+      "default": "\"/opt/MegaRAID/storcli:/opt/MegaRAID/MegaCli:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kamermans/docker-megacli",
+  "revision": "1.0",
+  "uris": [
+    "https://hub.docker.com/r/kamermans/docker-megacli",
+    "https://hub.docker.com/v2/repositories/kamermans/docker-megacli",
+    "https://github.com/kamermans/docker-megacli.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/CLI",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Type/Infrastructure/Operating System/Linux/RedHat",
+    "Type/Infrastructure/Operating System/Linux/CentOS",
+    "Type/Infrastructure/Operating System/Linux/Debian"
+  ],
+  "info_url": "https://hub.docker.com/r/kamermans/docker-megacli",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

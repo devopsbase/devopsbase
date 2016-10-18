@@ -1,0 +1,118 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kevensen/centos-xrdp",
+    "repository_url": "https://hub.docker.com/v2/repositories/kevensen/centos-xrdp",
+    "tags_url": "https://hub.docker.com/v2/repositories/kevensen/centos-xrdp/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kevensen/centos-xrdp/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kevensen/centos-xrdp/autobuild",
+    "user": "kevensen",
+    "name": "centos-xrdp",
+    "namespace": "kevensen",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 329,
+    "last_updated": "2016-09-06T22:46:31.831438Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 144913343,
+        "id": 1753303,
+        "repository": 484405,
+        "creator": 421487,
+        "last_updater": 421487,
+        "last_updated": "2016-09-06T22:46:31.320601Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "kevensen/openshift-kiosk"
+  },
+  "name": "kevensen/centos-xrdp Docker container",
+  "description": "Build a CentOS based container running an XRDP server.",
+  "readme": "# CentOS XRDP\nRun Firefox inside a CentOS 6 based docker container.  This is the second container you should build, after kevensen/centos-vnc-firefox.\n\nOr simply pull the image\n```\ndocker pull docker.io/kevensen/centos-xrdp\n```\n\n## Build the Container\n```\ndocker build -t kevensen/centos-xrdp .\n```\n\n## Run the Container\nRun the container and test the connection with your favorite XRDP viewer.  The password is `kioskuser`.\n```\ndocker run -d -p 3389:3389 --link vnc --name xrdp kevensen/centos-xrdp\n```\n",
+  "dockerfile": "# Using CentOS 6 base image\n# Version 1\n\n# Pull the CentOS image from the local repository\nFROM centos:6\nMAINTAINER Ken Evensen <kevensen@redhat.com>\n\nLABEL io.openshift.expose-services=\"3389:tcp\"\n\nUSER root\n\nENV HOME /home/1001\n\nRUN yum install -y tigervnc-server && \\\n    yum clean all && \\\n    rm -rf /var/cache/yum/*\n\nRUN yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm && \\\n    yum install -y --setopt=tsflags=nodocs \\\n                   xrdp \\\n                   supervisor && \\\n    yum clean all && \\\n    rm -rf /var/cache/yum/*\n\nRUN useradd -u 1001 -r -g 0 -d ${HOME} -s /sbin/nologin -c \"Kiosk User\" kioskuser\n\nADD xrdp_config /usr/bin/\n\nRUN chmod a+x /usr/bin/xrdp_config && \\\n    chmod g+w /etc/xrdp && \\\n    chmod u+s /usr/sbin/xrdp-sesman && \\\n    chmod u+s /usr/sbin/xrdp && \\\n    mkdir -p /home/1001 && \\\n    chown -R 1001:0 ${HOME} \n\nADD supervisord.conf /etc/supervisord/supervisord.conf\nEXPOSE 3389\nWORKDIR ${HOME}\n\nUSER kioskuser\n\nENTRYPOINT /usr/bin/xrdp_config; /usr/bin/supervisord -c /etc/supervisord/supervisord.conf\n\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "xrdp_config",
+        "dest": "/usr/bin/"
+      },
+      {
+        "source": "supervisord.conf",
+        "dest": "/etc/supervisord/supervisord.conf"
+      }
+    ],
+    "expose": [
+      3389
+    ],
+    "volume": [],
+    "run": [
+      "yum install -y tigervnc-server &&     yum clean all &&     rm -rf /var/cache/yum/*",
+      "yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm &&     yum install -y --setopt=tsflags=nodocs                    xrdp                    supervisor &&     yum clean all &&     rm -rf /var/cache/yum/*",
+      "useradd -u 1001 -r -g 0 -d ${HOME} -s /sbin/nologin -c \"Kiosk User\" kioskuser",
+      "chmod a+x /usr/bin/xrdp_config &&     chmod g+w /etc/xrdp &&     chmod u+s /usr/sbin/xrdp-sesman &&     chmod u+s /usr/sbin/xrdp &&     mkdir -p /home/1001 &&     chown -R 1001:0 ${HOME} "
+    ],
+    "workdir": [
+      "${HOME}"
+    ],
+    "from": "centos:6",
+    "maintainer": "Ken Evensen <kevensen@redhat.com>",
+    "label": "io.openshift.expose-services=\"3389:tcp\"",
+    "user": "kioskuser",
+    "env": {
+      "HOME": "/home/1001"
+    },
+    "entrypoint": "/usr/bin/xrdp_config; /usr/bin/supervisord -c /etc/supervisord/supervisord.conf"
+  },
+  "source_repository_url": "https://github.com/kevensen/openshift-kiosk.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/kevensen/openshift-kiosk",
+  "docker_repository": "kevensen/centos-xrdp",
+  "docker_image": "kevensen/centos-xrdp",
+  "parameters_schema": {
+    "HOME": {
+      "default": "/home/1001",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3389
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kevensen/centos-xrdp",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/kevensen/centos-xrdp",
+    "https://hub.docker.com/v2/repositories/kevensen/centos-xrdp",
+    "https://github.com/kevensen/openshift-kiosk.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Build",
+    "Type/Infrastructure/Operating System/Linux/CentOS"
+  ],
+  "info_url": "https://hub.docker.com/r/kevensen/centos-xrdp",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

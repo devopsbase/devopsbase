@@ -1,0 +1,147 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/henkel/jenkins-slave-osmosis",
+    "repository_url": "https://hub.docker.com/v2/repositories/henkel/jenkins-slave-osmosis",
+    "tags_url": "https://hub.docker.com/v2/repositories/henkel/jenkins-slave-osmosis/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/henkel/jenkins-slave-osmosis/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/henkel/jenkins-slave-osmosis/autobuild",
+    "user": "henkel",
+    "name": "jenkins-slave-osmosis",
+    "namespace": "henkel",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 661,
+    "last_updated": "2016-10-13T21:31:17.631294Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 373253980,
+        "id": 729958,
+        "repository": 282963,
+        "creator": 397556,
+        "last_updater": 397556,
+        "last_updated": "2016-10-13T21:31:17.295296Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "henkel/jenkins-slave-osmosis"
+  },
+  "name": "henkel/jenkins-slave-osmosis Docker container",
+  "description": "Jenkins build node with osmosis, mapsforge-map-writer plugin and phyghtmap.",
+  "readme": "Docker image with osmosis, mapsforge-map-writer plugin and phyghtmap. The image can be used stand-alone or as a SSH based Jenkins slave. \n\n\n### Osmosis\nOsmosis is a command line Java application for processing OSM data. The tool consists of pluggable components that can be chained to perform a larger operation. For example, it has components for reading/writing databases and files, deriving/applying changes to data sources, and sorting data.\n\n> [wiki.openstreetmap.org](http://wiki.openstreetmap.org/wiki/Osmosis)\n\n\n### How to use this image stand-alone\n\nThe following docker command runs the image, maps the user's home directory into /opt/osmosis and opens an interactive shell. \n```console\n$ docker run --rm  -i -t -v ~:/opt/osmosis henkel/jenkins-slave-osmosis:latest bash\n```\n\nNow osmosis is ready to process OpenStreetMap data in directory /opt/osmosis.\n```console\n$ osmosis --rbf /opt/osmosis/germany-latest.osm.pbf --tee 1 --bounding-box left=8.30 bottom=48.86 right=8.59 top=49.03 --wx /opt/osmosis/karlsruhe.osm\n```\n\n\n### How to use this image with Jenkins\nJenkins is able to automatically pull the image and launch the build slave using its Could feature.\n\nAdd a new Docker Template to Jenkins' Docker Cloud:\n\n1. Docker Image: henkel/jenkins-slave-osmosis:latest\n2. Volumes: *your local path*:/opt/osmosis\n3. Labels: osmosis\n4. Usage: Only build jobs with label restrictions matching this node\n5. Launch Method: Docker SSH computer launcher\n6. Credentials: jenkins/jenkins\n\nJenkins executes build scripts via a non-interactive SSH shell. You might want to load the environment explicitly at the beginning of your script so that the path to osmosis is properly configured.\n\n```console\n#!/bin/bash\n. /etc/profile\n```\n",
+  "dockerfile": "FROM ubuntu:trusty\n\nMAINTAINER Philipp Henkel <weltraumpilot@googlemail.com>\n\n# Versions\nENV OSMOSIS_VERSION 0.44.1\nENV MAPSFORGE_VERSION 0.5.2\nENV PHYGHTMAP_VERSION 1.74\n\n# Install a basic SSH server\nRUN apt-get update && apt-get install -y openssh-server\nRUN sed -i 's|session    required     pam_loginuid.so|session    optional     pam_loginuid.so|g' /etc/pam.d/sshd\nRUN mkdir -p /var/run/sshd\n\n# Standard SSH port\nEXPOSE 22\n\n# Install JDK 7 (latest edition)\nRUN apt-get update && apt-get install -y openjdk-7-jdk\n\n# Add user jenkins to the image\nRUN adduser --quiet jenkins\n\n# Set password for the jenkins user (you may want to alter this).\nRUN echo \"jenkins:jenkins\" | chpasswd\n\n# Install git\nRUN apt-get update && apt-get -y install git\n\n# Install Osmosis\nRUN wget http://bretth.dev.openstreetmap.org/osmosis-build/osmosis-$OSMOSIS_VERSION.tgz\nRUN mkdir osmosis\nRUN tar xvfz osmosis-$OSMOSIS_VERSION.tgz --directory=osmosis\nRUN rm osmosis-$OSMOSIS_VERSION.tgz\nRUN chmod a+x osmosis/bin/osmosis\nENV PATH /osmosis/bin:$PATH\nRUN echo 'export PATH=$PATH:/osmosis/bin' > /etc/profile.d/osmosis.sh\nRUN chmod 775 /etc/profile.d/osmosis.sh\n\n# Install Osmosis Mapsforge Map Writer\nRUN wget http://ci.mapsforge.org/job/$MAPSFORGE_VERSION/lastSuccessfulBuild/artifact/mapsforge-map-writer/build/libs/mapsforge-map-writer-release-$MAPSFORGE_VERSION.jar\nRUN mv mapsforge-map-writer-release-$MAPSFORGE_VERSION.jar osmosis/lib/default/\n\n# Install Python\nRUN apt-get update && apt-get -y install python2.7 python-pip\nRUN pip install sh && \\\n    pip install logging && \\\n    pip install setuptools\n\n# Install phyghtmap\nRUN apt-get update && apt-get -y install python-matplotlib python-beautifulsoup python-numpy python-gdal\nRUN wget http://katze.tfiu.de/projects/phyghtmap/phyghtmap_$PHYGHTMAP_VERSION.orig.tar.gz\nRUN tar -xzf phyghtmap_$PHYGHTMAP_VERSION.orig.tar.gz\nRUN cd phyghtmap-$PHYGHTMAP_VERSION && python setup.py install\nRUN rm phyghtmap_$PHYGHTMAP_VERSION.orig.tar.gz\nRUN rm -rf phyghtmap-$PHYGHTMAP_VERSION\n\n# Clean out the apt-cache and cleaning out tmp\nRUN apt-get clean\nRUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nCMD [\"/usr/sbin/sshd\", \"-D\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      22
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y openssh-server",
+      "sed -i 's|session    required     pam_loginuid.so|session    optional     pam_loginuid.so|g' /etc/pam.d/sshd",
+      "mkdir -p /var/run/sshd",
+      "apt-get update && apt-get install -y openjdk-7-jdk",
+      "adduser --quiet jenkins",
+      "echo \"jenkins:jenkins\" | chpasswd",
+      "apt-get update && apt-get -y install git",
+      "wget http://bretth.dev.openstreetmap.org/osmosis-build/osmosis-$OSMOSIS_VERSION.tgz",
+      "mkdir osmosis",
+      "tar xvfz osmosis-$OSMOSIS_VERSION.tgz --directory=osmosis",
+      "rm osmosis-$OSMOSIS_VERSION.tgz",
+      "chmod a+x osmosis/bin/osmosis",
+      "echo 'export PATH=$PATH:/osmosis/bin' > /etc/profile.d/osmosis.sh",
+      "chmod 775 /etc/profile.d/osmosis.sh",
+      "wget http://ci.mapsforge.org/job/$MAPSFORGE_VERSION/lastSuccessfulBuild/artifact/mapsforge-map-writer/build/libs/mapsforge-map-writer-release-$MAPSFORGE_VERSION.jar",
+      "mv mapsforge-map-writer-release-$MAPSFORGE_VERSION.jar osmosis/lib/default/",
+      "apt-get update && apt-get -y install python2.7 python-pip",
+      "pip install sh &&     pip install logging &&     pip install setuptools",
+      "apt-get update && apt-get -y install python-matplotlib python-beautifulsoup python-numpy python-gdal",
+      "wget http://katze.tfiu.de/projects/phyghtmap/phyghtmap_$PHYGHTMAP_VERSION.orig.tar.gz",
+      "tar -xzf phyghtmap_$PHYGHTMAP_VERSION.orig.tar.gz",
+      "cd phyghtmap-$PHYGHTMAP_VERSION && python setup.py install",
+      "rm phyghtmap_$PHYGHTMAP_VERSION.orig.tar.gz",
+      "rm -rf phyghtmap-$PHYGHTMAP_VERSION",
+      "apt-get clean",
+      "rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+    ],
+    "workdir": [],
+    "from": "ubuntu:trusty",
+    "maintainer": "Philipp Henkel <weltraumpilot@googlemail.com>",
+    "env": {
+      "OSMOSIS_VERSION": "0.44.1",
+      "MAPSFORGE_VERSION": "0.5.2",
+      "PHYGHTMAP_VERSION": "1.74",
+      "PATH": "/osmosis/bin:$PATH"
+    },
+    "cmd": "[\"/usr/sbin/sshd\", \"-D\"]"
+  },
+  "source_repository_url": "https://github.com/henkel/jenkins-slave-osmosis.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/henkel/jenkins-slave-osmosis",
+  "docker_repository": "henkel/jenkins-slave-osmosis",
+  "docker_image": "henkel/jenkins-slave-osmosis",
+  "parameters_schema": {
+    "OSMOSIS_VERSION": {
+      "default": "0.44.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAPSFORGE_VERSION": {
+      "default": "0.5.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PHYGHTMAP_VERSION": {
+      "default": "1.74",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/osmosis/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        22
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "henkel/jenkins-slave-osmosis",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/henkel/jenkins-slave-osmosis",
+    "https://hub.docker.com/v2/repositories/henkel/jenkins-slave-osmosis",
+    "https://github.com/henkel/jenkins-slave-osmosis.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Build",
+    "Type/Devopsware/Integration/Jenkins",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/JavaScript/Node.js"
+  ],
+  "info_url": "https://hub.docker.com/r/henkel/jenkins-slave-osmosis",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

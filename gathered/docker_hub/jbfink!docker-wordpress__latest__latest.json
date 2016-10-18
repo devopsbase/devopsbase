@@ -1,0 +1,123 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/jbfink/docker-wordpress",
+    "repository_url": "https://hub.docker.com/v2/repositories/jbfink/docker-wordpress",
+    "tags_url": "https://hub.docker.com/v2/repositories/jbfink/docker-wordpress/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/jbfink/docker-wordpress/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/jbfink/docker-wordpress/autobuild",
+    "user": "jbfink",
+    "name": "docker-wordpress",
+    "namespace": "jbfink",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 5,
+    "pull_count": 3351,
+    "last_updated": "2015-10-12T02:31:37.125655Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 161395701,
+        "id": 5118,
+        "repository": 3500,
+        "creator": 96,
+        "last_updater": 96,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "jbfink/docker-wordpress"
+  },
+  "name": "jbfink/docker-wordpress Docker container",
+  "description": "Same as jbfink/wordpress, just a trusted build!",
+  "readme": "(note: docker-wordpress *no longer* contains an sshd. It was probably a mistake to put one in in the first place, and you can now spawn arbitrary processes with use of the [docker exec](http://blog.docker.com/2014/10/docker-1-3-signed-images-process-injection-security-options-mac-shared-directories/) command. So do that, instead, like this:\n\n```\ndocker exec -i -t docker-wordpress bash\n```\n\neasy!)\n\n(note: [Eugene Ware](http://github.com/eugeneware) has a Docker wordpress container build on nginx with some other goodies; you can check out his work [here](http://github.com/eugeneware/docker-wordpress-nginx).)\n\n\n(N.B. the way that Docker handles permissions may vary depending on your current Docker version. If you're getting errors like\n```\ndial unix /var/run/docker.sock: permission denied\n```\nwhen you run the below commands, simply use sudo. This is a [known issue](https://twitter.com/docker/status/366040073793323008).)\n\n\nThis repo contains a recipe for making a [Docker](http://docker.io) container for Wordpress, using Linux, Apache and MySQL. \nTo build, make sure you have Docker [installed](http://www.docker.io/gettingstarted/), clone this repo somewhere, and then run:\n```\ndocker build -rm -t <yourname>/wordpress .\n```\n\nOr, alternately, build DIRECTLY from the github repo like some sort of AMAZING FUTURO JULES-VERNESQUE SEA EXPLORER:\n```\ndocker build -rm -t <yourname>/wordpress git://github.com/jbfink/docker-wordpress.git\n```\n\nThen run it, specifying your desired ports! Woo! \n```\ndocker run --name wordpress -d -p <http_port>:80 <yourname>/wordpress \n```\n\n\nCheck docker logs after running to see MySQL root password and Wordpress MySQL password, as so\n\n```\necho $(docker logs wordpress | grep password)\n```\n\n(note: you won't need the mysql root or the wordpress db password normally)\n\n\nYour wordpress container should now be live, open a web browser and go to http://localhost:<http_port>, then fill out the form. No need to mess with wp-config.php, it's been auto-generated with proper values. \n\n\nYou can shutdown your wordpress container like this:\n```\ndocker stop wordpress\n```\n\nAnd start it back up like this:\n```\ndocker start wordpress\n```\n\nEnjoy your wordpress install courtesy of Docker!\n",
+  "dockerfile": "FROM ubuntu:latest\nMAINTAINER John Fink <john.fink@gmail.com>\nRUN apt-get update # Fri Oct 24 13:09:23 EDT 2014\nRUN apt-get -y upgrade\nRUN DEBIAN_FRONTEND=noninteractive apt-get -y install mysql-client mysql-server apache2 libapache2-mod-php5 pwgen python-setuptools vim-tiny php5-mysql  php5-ldap\nRUN easy_install supervisor\nADD ./scripts/start.sh /start.sh\nADD ./scripts/foreground.sh /etc/apache2/foreground.sh\nADD ./configs/supervisord.conf /etc/supervisord.conf\nADD ./configs/000-default.conf /etc/apache2/sites-available/000-default.conf\nRUN rm -rf /var/www/\nADD https://wordpress.org/latest.tar.gz /wordpress.tar.gz\nRUN tar xvzf /wordpress.tar.gz \nRUN mv /wordpress /var/www/\nRUN chown -R www-data:www-data /var/www/\nRUN chmod 755 /start.sh\nRUN chmod 755 /etc/apache2/foreground.sh\nRUN mkdir /var/log/supervisor/\nEXPOSE 80\nCMD [\"/bin/bash\", \"/start.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./scripts/start.sh",
+        "dest": "/start.sh"
+      },
+      {
+        "source": "./scripts/foreground.sh",
+        "dest": "/etc/apache2/foreground.sh"
+      },
+      {
+        "source": "./configs/supervisord.conf",
+        "dest": "/etc/supervisord.conf"
+      },
+      {
+        "source": "./configs/000-default.conf",
+        "dest": "/etc/apache2/sites-available/000-default.conf"
+      },
+      {
+        "source": "https://wordpress.org/latest.tar.gz",
+        "dest": "/wordpress.tar.gz"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update # Fri Oct 24 13:09:23 EDT 2014",
+      "apt-get -y upgrade",
+      "DEBIAN_FRONTEND=noninteractive apt-get -y install mysql-client mysql-server apache2 libapache2-mod-php5 pwgen python-setuptools vim-tiny php5-mysql  php5-ldap",
+      "easy_install supervisor",
+      "rm -rf /var/www/",
+      "tar xvzf /wordpress.tar.gz ",
+      "mv /wordpress /var/www/",
+      "chown -R www-data:www-data /var/www/",
+      "chmod 755 /start.sh",
+      "chmod 755 /etc/apache2/foreground.sh",
+      "mkdir /var/log/supervisor/"
+    ],
+    "workdir": [],
+    "from": "ubuntu:latest",
+    "maintainer": "John Fink <john.fink@gmail.com>",
+    "cmd": "[\"/bin/bash\", \"/start.sh\"]"
+  },
+  "source_repository_url": "git://github.com/jbfink/docker-wordpress.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/jbfink/docker-wordpress",
+  "docker_repository": "jbfink/docker-wordpress",
+  "docker_image": "jbfink/docker-wordpress",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "jbfink/docker-wordpress",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/jbfink/docker-wordpress",
+    "https://hub.docker.com/v2/repositories/jbfink/docker-wordpress",
+    "git://github.com/jbfink/docker-wordpress.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Build"
+  ],
+  "info_url": "https://hub.docker.com/r/jbfink/docker-wordpress",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

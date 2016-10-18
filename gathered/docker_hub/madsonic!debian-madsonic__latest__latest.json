@@ -1,0 +1,182 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/madsonic/debian-madsonic",
+    "repository_url": "https://hub.docker.com/v2/repositories/madsonic/debian-madsonic",
+    "tags_url": "https://hub.docker.com/v2/repositories/madsonic/debian-madsonic/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/madsonic/debian-madsonic/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/madsonic/debian-madsonic/autobuild",
+    "user": "madsonic",
+    "name": "debian-madsonic",
+    "namespace": "madsonic",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 438,
+    "last_updated": "2016-10-03T10:50:22.013092Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 665699942,
+        "id": 633895,
+        "repository": 265384,
+        "creator": 129986,
+        "last_updater": 378859,
+        "last_updated": "2016-10-03T10:50:21.259206Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "7860",
+        "full_size": 652408666,
+        "id": 2576634,
+        "repository": 265384,
+        "creator": 378859,
+        "last_updater": 378859,
+        "last_updated": "2016-04-07T16:49:09.342722Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "7960",
+        "full_size": 653003286,
+        "id": 2576630,
+        "repository": 265384,
+        "creator": 378859,
+        "last_updater": 378859,
+        "last_updated": "2016-04-07T16:48:57.744871Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "MadMarty/debian-madsonic"
+  },
+  "name": "madsonic/debian-madsonic Docker container",
+  "description": "Debian 8 image running latest Beta Madsonic release",
+  "readme": "Madsonic Debian docker image \n============================\n\n**Application**\n\n[Madsonic](http://beta.madsonic.org/pages/index.jsp)\n\n**Application description**\n\nMadsonic is a web-based media streamer and jukebox Server. \nBased on Java technology, Madsonic runs on most platforms,\nincluding Windows, Mac, Linux, OSX, and Unix variants.\n\n**Build notes**\n\nLatest beta release of Madsonic.\n\n**Usage**\n\n```\ndocker run -d \\\n\t-p 4040:4040 \\\n\t-p 4050:4050 \\\n\t--name=<container name> \\\n\t-e CONTEXT_PATH=<root path> \\\n\t-e SSL=<yes|no> \\\n\t-v <path for media files>:/media \\\n\t-v <path for config files>:/config \\\n\t-v /etc/localtime:/etc/localtime:ro \\\n\tmadsonic/debian-madsonic\n```\n\nPlease replace all user variables in the above command defined by <> with the correct values.\n\n**Access application**\n\n`http://<host ip>:4040`\n\n**Example**\n\n```\ndocker run -d \\\n\t-p 4040:4040 \\\n\t-p 4050:4050 \\\n\t--name=madsonic \\\n\t-e CONTEXT_PATH=\\ \\\n\t-e SSL=yes \\\n\t-v /media/music/:/media \\\n\t-v /apps/docker/madsonic:/config \\\n\t-v /etc/localtime:/etc/localtime:ro \\\n\tmadsonic/debian-madsonic\n```\n",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER madsonic (support@madsonic.org)\n\n# Let the container know that there is no tty\nENV DEBIAN_FRONTEND noninteractive\nENV HOME /root\n\n# Madsonic Package Information\nENV PKG_NAME madsonic\nENV PKG_VER 6.1\nENV PKG_BUILD 8740\nENV PKG_DATE 20161001\n\n# Use init system\nCMD [\"/sbin/my_init\"]\n\n# Fix ids\nRUN usermod -u 99 nobody\nRUN usermod -g 100 nobody\n\n# Add Oracle Java8 Repo\nRUN echo \"deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main\" >> /etc/apt/sources.list.d/webupd8team-java.list \\\n  && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 \\\n  && echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections\n\n# Install apt packages\nRUN apt-get update && apt-get install -y \\\n  ca-certificates \\\n  locales \\\n  oracle-java8-installer \\\n  oracle-java8-set-default \\\n  unzip \\\n  wget\n\n# download madsonic\nRUN mkdir -p /var/madsonic/transcode \\\n  && wget -O /var/madsonic/madsonic.zip http://www.madsonic.org/download/${PKG_VER}/${PKG_DATE}_${PKG_NAME}-${PKG_VER}.${PKG_BUILD}-standalone.zip \\\n  && wget -O /var/madsonic/transcode.zip http://www.madsonic.org/download/transcode/${PKG_DATE}_${PKG_NAME}-transcode-linux-x64.zip\n\n# Install Madsonic\nRUN mkdir -p /var/madsonic/transcode \\\n  && unzip /var/madsonic/madsonic.zip -d /var/madsonic \\\n  && unzip /var/madsonic/transcode.zip -d /var/madsonic \\\n  && chown -R nobody:users /var/madsonic \\\n  && chmod -R 755 /var/madsonic \\\n  && rm /var/madsonic/madsonic.zip \\\n  && rm /var/madsonic/transcode.zip\n\n# Force Madsonic to run in foreground\nRUN sed -i 's/-jar madsonic-booter.jar > \\${LOG} 2>\\&1 \\&/-jar madsonic-booter.jar > \\${LOG} 2>\\&1/g' /var/madsonic/madsonic.sh\n\n # apt clean\nRUN apt-get clean \\\n  && rm -rf /var/lib/apt/lists/* \\\n  && rm -rf /tmp/*\n\n# Set Locale env\nENV LANG C.UTF-8\n\n# default http https port\nEXPOSE 4040 4050\n\n# App configuration\nVOLUME /config\n\n# media directory\nVOLUME /media\n\n# Copy start.sh script\nADD ./start.sh /start.sh\nRUN chmod +x /start.sh\nRUN chown -R nobody:users /start.sh\n\n# run App as user\nUSER nobody\nENTRYPOINT [\"/start.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "./start.sh",
+        "dest": "/start.sh"
+      }
+    ],
+    "expose": [
+      4040
+    ],
+    "volume": [
+      "/config",
+      "/media"
+    ],
+    "run": [
+      "usermod -u 99 nobody",
+      "usermod -g 100 nobody",
+      "echo \"deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main\" >> /etc/apt/sources.list.d/webupd8team-java.list   && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886   && echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections",
+      "apt-get update && apt-get install -y   ca-certificates   locales   oracle-java8-installer   oracle-java8-set-default   unzip   wget",
+      "mkdir -p /var/madsonic/transcode   && wget -O /var/madsonic/madsonic.zip http://www.madsonic.org/download/${PKG_VER}/${PKG_DATE}_${PKG_NAME}-${PKG_VER}.${PKG_BUILD}-standalone.zip   && wget -O /var/madsonic/transcode.zip http://www.madsonic.org/download/transcode/${PKG_DATE}_${PKG_NAME}-transcode-linux-x64.zip",
+      "mkdir -p /var/madsonic/transcode   && unzip /var/madsonic/madsonic.zip -d /var/madsonic   && unzip /var/madsonic/transcode.zip -d /var/madsonic   && chown -R nobody:users /var/madsonic   && chmod -R 755 /var/madsonic   && rm /var/madsonic/madsonic.zip   && rm /var/madsonic/transcode.zip",
+      "sed -i 's/-jar madsonic-booter.jar > \\${LOG} 2>\\&1 \\&/-jar madsonic-booter.jar > \\${LOG} 2>\\&1/g' /var/madsonic/madsonic.sh",
+      "apt-get clean   && rm -rf /var/lib/apt/lists/*   && rm -rf /tmp/*",
+      "chmod +x /start.sh",
+      "chown -R nobody:users /start.sh"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "madsonic (support@madsonic.org)",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "HOME": "/root",
+      "PKG_NAME": "madsonic",
+      "PKG_VER": "6.1",
+      "PKG_BUILD": "8740",
+      "PKG_DATE": "20161001",
+      "LANG": "C.UTF-8"
+    },
+    "cmd": "[\"/sbin/my_init\"]",
+    "user": "nobody",
+    "entrypoint": "[\"/start.sh\"]"
+  },
+  "source_repository_url": "https://github.com/MadMarty/debian-madsonic.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/MadMarty/debian-madsonic",
+  "docker_repository": "madsonic/debian-madsonic",
+  "docker_image": "madsonic/debian-madsonic",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PKG_NAME": {
+      "default": "madsonic",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PKG_VER": {
+      "default": "6.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PKG_BUILD": {
+      "default": "8740",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PKG_DATE": {
+      "default": "20161001",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "C.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        4040
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "madsonic/debian-madsonic",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/madsonic/debian-madsonic",
+    "https://hub.docker.com/v2/repositories/madsonic/debian-madsonic",
+    "https://github.com/MadMarty/debian-madsonic.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Test",
+    "Type/Infrastructure/Operating System/Linux/Debian"
+  ],
+  "info_url": "https://hub.docker.com/r/madsonic/debian-madsonic",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,228 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kardasz/tomcat-libav",
+    "repository_url": "https://hub.docker.com/v2/repositories/kardasz/tomcat-libav",
+    "tags_url": "https://hub.docker.com/v2/repositories/kardasz/tomcat-libav/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kardasz/tomcat-libav/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kardasz/tomcat-libav/autobuild",
+    "user": "kardasz",
+    "name": "tomcat-libav",
+    "namespace": "kardasz",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 27969,
+    "last_updated": "2016-06-08T13:18:22.794241Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 341850980,
+        "id": 1813222,
+        "repository": 496641,
+        "creator": 382131,
+        "last_updater": 382131,
+        "last_updated": "2016-06-08T13:18:22.356317Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "kardasz/docker-tomcat-libav"
+  },
+  "name": "kardasz/tomcat-libav Docker container",
+  "description": "Tomcat 8 with libav (Debian 8)",
+  "readme": "# docker-tomcat-libav\n",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER Krzysztof Kardasz <krzysztof@kardasz.eu>\n\n# Update system and install required packages\nENV DEBIAN_FRONTEND noninteractive\nRUN \\\n    apt-get update && \\\n    apt-get -y upgrade && \\\n    apt-get -y dist-upgrade && \\\n    apt-get -y install wget curl ca-certificates libav-tools libavcodec-extra mediainfo libimage-exiftool-perl\n\n# grab gosu for easy step-down from root\nRUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4\nRUN curl -o /usr/local/bin/gosu -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture)\" \\\n    && curl -o /usr/local/bin/gosu.asc -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture).asc\" \\\n    && gpg --verify /usr/local/bin/gosu.asc \\\n    && rm /usr/local/bin/gosu.asc \\\n    && chmod +x /usr/local/bin/gosu\n\n# Default to UTF-8 file.encoding\nENV LANG C.UTF-8\n\n# Download Oracle JDK\nENV ORACLE_JDK_VERSION jdk-8u92\nENV ORACLE_JDK_URL     http://download.oracle.com/otn-pub/java/jdk/8u92-b14/jdk-8u92-linux-x64.tar.gz\nRUN mkdir -p /opt/jdk/$ORACLE_JDK_VERSION && \\\n    wget --header \"Cookie: oraclelicense=accept-securebackup-cookie\" -O /opt/jdk/$ORACLE_JDK_VERSION/$ORACLE_JDK_VERSION.tar.gz $ORACLE_JDK_URL && \\\n    tar -zxf /opt/jdk/$ORACLE_JDK_VERSION/$ORACLE_JDK_VERSION.tar.gz --strip-components=1 -C /opt/jdk/$ORACLE_JDK_VERSION && \\\n    chown -R root:root /opt/jdk/$ORACLE_JDK_VERSION && \\\n    rm /opt/jdk/$ORACLE_JDK_VERSION/$ORACLE_JDK_VERSION.tar.gz && \\\n    update-alternatives --install /usr/bin/java java /opt/jdk/$ORACLE_JDK_VERSION/bin/java 100 && \\\n    update-alternatives --install /usr/bin/javac javac /opt/jdk/$ORACLE_JDK_VERSION/bin/javac 100\n\nENV JAVA_HOME /opt/jdk/$ORACLE_JDK_VERSION\nENV JAVA_VERSION 8u92\nENV JAVA_TRUSTSTORE ${JAVA_HOME}/jre/lib/security/cacerts\nENV JAVA_TRUSTSTORE_PASSWORD changeit\nENV JAVA_OPTS \"-Djavax.net.ssl.trustStore=${JAVA_TRUSTSTORE} -Djavax.net.ssl.trustStorePassword=${JAVA_TRUSTSTORE_PASSWORD}\"\n\n# see https://www.apache.org/dist/tomcat/tomcat-8/KEYS\nRUN gpg --keyserver pool.sks-keyservers.net --recv-keys \\\n\t05AB33110949707C93A279E3D3EFE6B686867BA6 \\\n\t07E48665A34DCAFAE522E5E6266191C37C037D42 \\\n\t47309207D818FFD8DCD3F83F1931D684307A10A5 \\\n\t541FBE7D8F78B25E055DDEE13C370389288584E7 \\\n\t61B832AC2F1C5A90F0F9B00A1C506407564C17A3 \\\n\t79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED \\\n\t9BA44C2621385CB966EBA586F72C284D731FABEE \\\n\tA27677289986DB50844682F8ACB77FC2E86E29AC \\\n\tA9C5DF4D22E99998D9875A5110C01C5A2F6059E7 \\\n\tDCFD35E0BF8CA7344752DE8B6FB21E8933C60243 \\\n\tF3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE \\\n\tF7DA48BB64BCB84ECBA7EE6935CD23C10D498E23\n\n# Use the default unprivileged account. This could be considered bad practice\n# on systems where multiple processes end up being executed by 'daemon' but\n# here we only ever run one process anyway.\nENV RUN_USER            tomcat\nENV RUN_USER_UID        5888\nENV RUN_GROUP           tomcat\nENV RUN_GROUP_GID       5888\n\nENV TOMCAT_MAJOR 8\nENV TOMCAT_VERSION 8.0.35\nENV TOMCAT_TGZ_URL https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz\n\nENV CATALINA_HOME /usr/local/tomcat\n\nENV PATH $CATALINA_HOME/bin:$JAVA_HOME/bin:$PATH\n\nRUN mkdir -p \"$CATALINA_HOME\"\n\nWORKDIR $CATALINA_HOME\n\nRUN set -x \\\n\t&& curl -fSL \"$TOMCAT_TGZ_URL\" -o tomcat.tar.gz \\\n\t&& curl -fSL \"$TOMCAT_TGZ_URL.asc\" -o tomcat.tar.gz.asc \\\n\t&& gpg --verify tomcat.tar.gz.asc \\\n\t&& tar -xvf tomcat.tar.gz --strip-components=1 \\\n\t&& rm bin/*.bat \\\n\t&& rm tomcat.tar.gz*\n\nRUN mkdir -p ${CATALINA_HOME}/webapp\n\nCOPY docker-entrypoint.sh /entrypoint.sh\n\nRUN chmod a+x /entrypoint.sh\n\nENTRYPOINT [\"/entrypoint.sh\"]\n\nEXPOSE 8080\n\nCMD [\"catalina.sh\", \"run\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "    apt-get update &&     apt-get -y upgrade &&     apt-get -y dist-upgrade &&     apt-get -y install wget curl ca-certificates libav-tools libavcodec-extra mediainfo libimage-exiftool-perl",
+      "gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4",
+      "curl -o /usr/local/bin/gosu -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture)\"     && curl -o /usr/local/bin/gosu.asc -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture).asc\"     && gpg --verify /usr/local/bin/gosu.asc     && rm /usr/local/bin/gosu.asc     && chmod +x /usr/local/bin/gosu",
+      "mkdir -p /opt/jdk/$ORACLE_JDK_VERSION &&     wget --header \"Cookie: oraclelicense=accept-securebackup-cookie\" -O /opt/jdk/$ORACLE_JDK_VERSION/$ORACLE_JDK_VERSION.tar.gz $ORACLE_JDK_URL &&     tar -zxf /opt/jdk/$ORACLE_JDK_VERSION/$ORACLE_JDK_VERSION.tar.gz --strip-components=1 -C /opt/jdk/$ORACLE_JDK_VERSION &&     chown -R root:root /opt/jdk/$ORACLE_JDK_VERSION &&     rm /opt/jdk/$ORACLE_JDK_VERSION/$ORACLE_JDK_VERSION.tar.gz &&     update-alternatives --install /usr/bin/java java /opt/jdk/$ORACLE_JDK_VERSION/bin/java 100 &&     update-alternatives --install /usr/bin/javac javac /opt/jdk/$ORACLE_JDK_VERSION/bin/javac 100",
+      "gpg --keyserver pool.sks-keyservers.net --recv-keys \t05AB33110949707C93A279E3D3EFE6B686867BA6 \t07E48665A34DCAFAE522E5E6266191C37C037D42 \t47309207D818FFD8DCD3F83F1931D684307A10A5 \t541FBE7D8F78B25E055DDEE13C370389288584E7 \t61B832AC2F1C5A90F0F9B00A1C506407564C17A3 \t79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED \t9BA44C2621385CB966EBA586F72C284D731FABEE \tA27677289986DB50844682F8ACB77FC2E86E29AC \tA9C5DF4D22E99998D9875A5110C01C5A2F6059E7 \tDCFD35E0BF8CA7344752DE8B6FB21E8933C60243 \tF3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE \tF7DA48BB64BCB84ECBA7EE6935CD23C10D498E23",
+      "mkdir -p \"$CATALINA_HOME\"",
+      "set -x \t&& curl -fSL \"$TOMCAT_TGZ_URL\" -o tomcat.tar.gz \t&& curl -fSL \"$TOMCAT_TGZ_URL.asc\" -o tomcat.tar.gz.asc \t&& gpg --verify tomcat.tar.gz.asc \t&& tar -xvf tomcat.tar.gz --strip-components=1 \t&& rm bin/*.bat \t&& rm tomcat.tar.gz*",
+      "mkdir -p ${CATALINA_HOME}/webapp",
+      "chmod a+x /entrypoint.sh"
+    ],
+    "workdir": [
+      "$CATALINA_HOME"
+    ],
+    "from": "debian:jessie",
+    "maintainer": "Krzysztof Kardasz <krzysztof@kardasz.eu>",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "LANG": "C.UTF-8",
+      "ORACLE_JDK_VERSION": "jdk-8u92",
+      "ORACLE_JDK_URL": "",
+      "": "5888",
+      "JAVA_HOME": "/opt/jdk/$ORACLE_JDK_VERSION",
+      "JAVA_VERSION": "8u92",
+      "JAVA_TRUSTSTORE": "${JAVA_HOME}/jre/lib/security/cacerts",
+      "JAVA_TRUSTSTORE_PASSWORD": "changeit",
+      "JAVA_OPTS": "\"-Djavax.net.ssl.trustStore",
+      "${JAVA_TRUSTSTORE}": "-Djavax.net.ssl.trustStorePassword",
+      "RUN_USER": "",
+      "RUN_USER_UID": "",
+      "RUN_GROUP": "",
+      "RUN_GROUP_GID": "",
+      "TOMCAT_MAJOR": "8",
+      "TOMCAT_VERSION": "8.0.35",
+      "TOMCAT_TGZ_URL": "https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz",
+      "CATALINA_HOME": "/usr/local/tomcat",
+      "PATH": "$CATALINA_HOME/bin:$JAVA_HOME/bin:$PATH"
+    },
+    "copy": "docker-entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"catalina.sh\", \"run\"]"
+  },
+  "source_repository_url": "https://github.com/kardasz/docker-tomcat-libav.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/kardasz/docker-tomcat-libav",
+  "docker_repository": "kardasz/tomcat-libav",
+  "docker_image": "kardasz/tomcat-libav",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LANG": {
+      "default": "C.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ORACLE_JDK_VERSION": {
+      "default": "jdk-8u92",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ORACLE_JDK_URL": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "5888",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_HOME": {
+      "default": "/opt/jdk/$ORACLE_JDK_VERSION",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_VERSION": {
+      "default": "8u92",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_TRUSTSTORE": {
+      "default": "${JAVA_HOME}/jre/lib/security/cacerts",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_TRUSTSTORE_PASSWORD": {
+      "default": "changeit",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JAVA_OPTS": {
+      "default": "\"-Djavax.net.ssl.trustStore",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "${JAVA_TRUSTSTORE}": {
+      "default": "-Djavax.net.ssl.trustStorePassword",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RUN_USER": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RUN_USER_UID": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RUN_GROUP": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RUN_GROUP_GID": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_MAJOR": {
+      "default": "8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_VERSION": {
+      "default": "8.0.35",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_TGZ_URL": {
+      "default": "https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CATALINA_HOME": {
+      "default": "/usr/local/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$CATALINA_HOME/bin:$JAVA_HOME/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kardasz/tomcat-libav",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/kardasz/tomcat-libav",
+    "https://hub.docker.com/v2/repositories/kardasz/tomcat-libav",
+    "https://github.com/kardasz/docker-tomcat-libav.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/kardasz/tomcat-libav",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

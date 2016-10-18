@@ -1,0 +1,64 @@
+{
+  "name": "chef-3scale Chef cookbook",
+  "chef_cookbook_name": "chef-3scale",
+  "revision": "0.2.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/chef-3scale",
+    "https://supermarket.chef.io/cookbooks/chef-3scale/download",
+    "https://supermarket.chef.io/cookbooks/chef-3scale/versions/0.2.0",
+    "https://supermarket.chef.io/cookbooks/chef-3scale/versions/0.2.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/chef-3scale/versions/0.2.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/chef-3scale",
+    "https://supermarket.chef.io/api/v1/cookbooks/chef-3scale/versions/0.2.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Mode/API"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/chef-3scale",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/chef-3scale/versions/0.2.0/download",
+  "deprecated": false,
+  "created": "2015-11-05T21:01:49.956Z",
+  "updated": "2016-02-26T23:43:54.116Z",
+  "description": "Install and configures the 3scale API gateway",
+  "maintainer": {
+    "name": "3scale",
+    "email": "support@3scale.net"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 2065,
+  "downloads_count_revision": 240,
+  "repository_url": "https://github.com/3scale/chef-3scale",
+  "issues_url": "https://github.com/3scale/chef-3scale/issues",
+  "chef_source_url": "https://github.com/3scale/chef-3scale",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# 3scale API gateway cookbook\n\nThis [cookbook](https://github.com/3scale/chef-3scale) installs the 3scale API gateway. [3scale](http://www.3scale.net/platform-features/) is an API management platform that makes it easy to open, distribute, control, and monetize your API. The API gateway is the simplest and most performant way to integrate your API with the 3scale platform.\n\nRunning the cookbook will install [Openresty](http://openresty.org/), which the 3scale API gateway is based upon, plus all the required system dependencies. \n\nThe cookbook not only installs the API gateway but it will also deploy your 3scale Nginx configuration files, specifically tailored for your API configuration. The result of running this cookbook will be an up-and-running API gateway listening for incoming authenticated requests.\n\n## Attributes\n\nThere are 4 attributes that you will need to set to configure how you use the cookbook. All of them are under the `3scale` namespace:\n\n\n| Attribute                                | Description      |Default                      |\n|:-----------------------------------------|:-------------|:---------------------------------|\n| `['3scale']['config-source']`                | Where your Nginx configuration files will be taken from. Three options: \"local\", \"url\" or \"3scale\". More on this the section “Applying your own 3scale configuration”.    | `'local'`\n| `['3scale']['provider-key']`                 | The key that identifies you as a 3scale customer. It can be found in the \"Account\" menu of your 3scale admin portal. | `'REPLACE_WITH_3SCALE_PROVIDER_KEY'`\n| `['3scale']['admin-domain']`               | If your 3scale admin portal domain is \"mycompany-admin.3scale.net\", then the value of this attribute should be \"mycompany\". | `'REPLACE_WITH_3SCALE_ADMIN_URL_PART'`\n| `['3scale']['config-version']` | Version id. If not included, the current configuration from your 3scale account will be used.  If included, the value must be a timestamp of one deployment, formatted like in the following example: \"2015-09-15-041532\". See the \"Rollback process\" section for more information on this. | `nil`\n| `['3scale']['config-url']` | URL endpoint from where the configuration files are downloaded when `[3scale][config-source] = \"url\"`. The URL endpoint pointed here should host a zip bundle with the files. Example: \"https://s3.amazonaws.com/my-bucket-name/bundle.zip\"  | `nil`\n\n\nThe default value for each of those attributes is defined [here](https://github.com/3scale/chef-3scale/blob/master/attributes/default.rb).\n\n\nThis cookbook uses and depends on the [Openresty cookbook](https://github.com/priestjim/chef-openresty). Therefore attributes of that cookbook are also available to you. You can see a full list [here](https://github.com/priestjim/chef-openresty#attributes). \n\nSince you will be using the Nginx configuration files that 3scale generates for you, you will not be able to use the attributes of the Openresty cookbook that are related to configuration parameters that go in the nginx.conf file.\n\n## Usage\n\nInclude `chef-3scale` in your node's `run_list`:\n\n```json\n{\n  \"run_list\": [\n    \"recipe[chef-3scale::default]\"\n  ]\n}\n```\n\n## Applying your own 3scale configuration\n\nFor the API gateway to be configured for your own API endpoints, you need to deploy it using your own set of Nginx configuration files. \n\nThere are three ways to apply your own configuration files to the cookbook:\n\n### Option 1: Local configuration files \n\nconfigure your API in 3scale using the “On-premise Gateway” option\nclick on “Download the Nginx Config files” at the bottom of the screen\ndrop those files on the  `/files/default/config/` directory of the cookbook \n\nTo use this option you will need to set the `['3scale']['config-source']` attribute to `“local”` in your node or role description.\n\n###  Option 2: Fetch configuration files from your 3scale account\n\nWith this option the cookbook will automatically fetch the Nginx configuration files from your 3scale account when running the deployment.\n\nTo use this option you will need to set the following attributes in your node or role description:  \n\n- **['3scale']['config-source']** = “3scale”   \n- **['3scale']['provider-key']**  = (see attributes section)  \n- **['3scale']['admin-domain']**  = (see attributes section)  \n\n### Option 3: Fetch configuration files from any URL endpoint\n\nWith this option the cookbook will automatically fetch the Nginx configuration files from the URL endpoint specified in the `[3scale][config-ur]` attribute. That endpoint should host a zip bundle of the configuration files.\n  \nTo use this option you will need to set the following attributes in your node or role description:  \n\n- **['3scale']['config-source']** = “url”   \n- **['3scale']['config-url']**    = (see attributes section)  \n  \n\n#### Note\nIn all three deployment options the Nginx configuration files will be copied to a subdirectory in the `/var/chef/cache/` and symlinked to the Nginx working directory (`/etc/nginx/`).\n\n## Rollback process\n\nThe chef-3scale cookbook allows rolling back to a previously deployed version of the configuration. This is useful if you have a node where the API gateway had already been deployed one or multiple times, and you want to deploy it again but using the configuration files from one of the previous deployments instead of using the latest version.\n\nThe built-in way to roll back is by using the `['3scale']['config-version']` attribute. Here is an example of a full node description using the rollback attribute:\n\n\n```json\n{\n  \"3scale\": {\n    \"provider-key\": \"YOURPROVIDERKEY\",\n    \"admin-domain\": \"mycompany\",\n    \"config-version\": \"2015-09-15-050545\"\n  },\n  \"openresty\": {\n    \"source\": {\n      \"prefix\": \"/etc\"\n    }\n  },\n  \"run_list\": [\n    \"recipe[chef-3scale::default]\"\n  ]\n}\n```\n\nThe value of the attribute must be the timestamp generated by the cookbook when running a deployment. This attribute is always logged and printed to the screen while running the cookbook:\n\n```\n 3SCALE - deploying gateway with LATEST configuration version: 2015-09-15-050545\n```\n\nWhen a gateway has been deployed using one of the previous versions of the configuration, the logged message will be slightly different:\n\n```\n 3SCALE - rolling back to configuration version: 2015-09-15-050545\n```\n\nThe rollback process will symlink the configuration files located at:\n\n```\n  /var/chef/cache/<config-version-attribute>/*\n```\n\nto the Nginx configuration directory and then reload the gateway.\n\n## Troubleshooting\n\nIf you are having problems deploying your API gateway when running the cookbook, then the best first step is to look at Chef’s own logs. Here you can find some useful debugging tips: https://docs.chef.io/debug.html\n\nIf the deployment completed successfully but the issue is that the API gateway is not running as expected, then the problem most probably is in the Nginx configuration files you deployed. The best place to start troubleshooting is the Nginx error log, located at `/var/log/nginx/error.log`\n\nIf there are no errors in the Nginx log, you might want to double check how you have configured your API in 3scale. There are plenty of resources available on our [support portal](https://support.3scale.net), such as [this debugging guide](https://support.3scale.net/howtos/api-configuration#debugging).\n\n## Supported platforms\n\nThis cookbook has been tested on the following platforms:\n\n- Ubuntu (versions: 14.04 LTS)  \n- CentOS (versions: 7.1, 6.7)  \n\n## License and Authors\n\nAuthor:: Victor Delgado (<victor@3scale.net>)\n\n```text\nThe MIT License (MIT)\n\nCopyright (c) 2015 3scale Inc. (https://3scale.net)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n```\n\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/openresty",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

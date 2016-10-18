@@ -1,0 +1,136 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/rootree/rails-nginx-unicorn",
+    "repository_url": "https://hub.docker.com/v2/repositories/rootree/rails-nginx-unicorn",
+    "tags_url": "https://hub.docker.com/v2/repositories/rootree/rails-nginx-unicorn/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/rootree/rails-nginx-unicorn/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/rootree/rails-nginx-unicorn/autobuild",
+    "user": "rootree",
+    "name": "rails-nginx-unicorn",
+    "namespace": "rootree",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 8,
+    "pull_count": 1338,
+    "last_updated": "2016-06-17T15:09:22.579872Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 483243569,
+        "id": 188625,
+        "repository": 162824,
+        "creator": 244551,
+        "last_updater": 244551,
+        "last_updated": "2016-06-17T15:09:22.199800Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "rootree-dev/dockerfiles"
+  },
+  "name": "rootree/rails-nginx-unicorn Docker container",
+  "description": "",
+  "readme": "# Rails(+ Nginx, Unicorn) Dockerfile\n\nEasy useable docker for rails. less configuration, affordable production.\n\n## What's include\n\n* unicorn, nginx, foreman\n* mysql, postgresql lib\n\n# Usage\n\n* Create `Dockerfile` to your project and paste below code.\n\n```\n# Dockerfile\nFROM seapy/rails-nginx-unicorn\nMAINTAINER rootree(dev@rootree.net)\n\nEXPOSE 80\n```\n\n* Add `unicorn` gem(maybe uncomment `gem 'unicorn'` in `Gemfile`)\n\n## Build and run docker\n\n```\n# build your dockerfile\n$ docker build -t your/project .\n\n# run container\n$ docker run -d -p 80:80 -e SECRET_KEY_BASE=secretkey your/project\n```\n\n## Screencast\n\n[Easy Ruby On Rails deploy on Docker](http://youtu.be/QgmzBuPuM6I)\n\n\n# Custom pre-install lib\n\nif your rails app required pre-install lib like imagemagick(or others) use [`rails-nginx-unicorn-pro`](https://github.com/seapy/dockerfiles/tree/master/rails-nginx-unicorn-pro)\n\n\n# Customize Nginx, Unicorn, foreman config\n\n## Nginx\n\n```\n# your Dockerfile\n...\nADD config/your-custom-nginx.conf /etc/nginx/sites-enabled/default\n...\n```\n\n## Unicorn\n\nplace your unicorn config to `config/unicorn.rb`\n\n## foreman\n\nplace your Procfile to app root\n\n\n# Use a specific version of Ruby, Nginx\n\nChange `FROM` instruction your Dockerfile\n\n```\n# Dockerfile\nFROM seapy/rails-nginx-unicorn:ruby2.2.0-nginx1.6.0\n...\n```\n\n\n# TODO\n\n* github connection setting(like bitbucket)\n",
+  "dockerfile": "FROM ubuntu:trusty\nMAINTAINER dev@rootree.net <rootree-dev>\n\nRUN apt-get update\n\n# Install ruby dependencies\nRUN apt-get install -y wget curl \\\n    build-essential git git-core \\\n    zlib1g-dev libssl-dev libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt1-dev\n\nRUN apt-get update\n\n# Install ruby-install\nRUN cd /tmp &&\\\n  wget -O ruby-install-0.6.0.tar.gz https://github.com/postmodern/ruby-install/archive/v0.6.0.tar.gz &&\\\n  tar -xzvf ruby-install-0.6.0.tar.gz &&\\\n  cd ruby-install-0.6.0/ &&\\\n  make install\n\n# Install MRI Ruby\nRUN ruby-install ruby 2.3.1\n\n# Add Ruby binaries to $PATH\nENV PATH /opt/rubies/ruby-2.3.1/bin:$PATH\n\n# Add options to gemrc\nRUN echo \"install: --no-document\\nupdate: --no-document\" > ~/.gemrc\n\n# Install bundler\nRUN gem install bundler\n\nRUN apt-get update\n\n# Install nodejs\nRUN curl -sL https://deb.nodesource.com/setup | sudo bash\nRUN apt-get install -qq -y nodejs\n\n# Intall software-properties-common for add-apt-repository\nRUN apt-get install -qq -y software-properties-common\n\n# Install Rust\nRUN curl -sSf https://static.rust-lang.org/rustup.sh | sudo sh -s -- --channel=nightly\n\n# Install Nginx.\nRUN add-apt-repository -y ppa:nginx/stable\nRUN apt-get update\nRUN apt-get install -qq -y nginx\nRUN echo \"\\ndaemon off;\" >> /etc/nginx/nginx.conf\nRUN chown -R www-data:www-data /var/lib/nginx\n# Add default nginx config\nADD nginx-sites.conf /etc/nginx/sites-enabled/default\n\n# Install php5 for inicis\nRUN apt-get install -yq php5-cli php5-mcrypt php5-mysql\nRUN php5enmod mcrypt\n\n## Install MySQL(for mysql, mysql2 gem)\nRUN apt-get install -qq -y libmysqlclient-dev\n\n# Install nmatrix\nRUN apt-get install -qq -y libatlas-base-dev\nRUN update-alternatives --set liblapack.so.3 /usr/lib/atlas-base/atlas/liblapack.so.3\nRUN update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so\nRUN update-alternatives --set libblas.so.3 /usr/lib/atlas-base/atlas/libblas.so.3\nRUN update-alternatives --set libblas.so /usr/lib/atlas-base/atlas/libblas.so\n\n# Hangul Problem\nRUN locale-gen en_US.UTF-8\nRUN echo 'LC_ALL=en_US.UTF-8' > /etc/default/locale\nRUN echo 'LANG=en_US.UTF-8' >> /etc/default/locale\n\n# Install Rails App\nWORKDIR /app\nONBUILD ADD Gemfile /app/Gemfile\nONBUILD ADD Gemfile.lock /app/Gemfile.lock\nONBUILD RUN bundle install --without development test\nONBUILD ADD . /app\nONBUILD RUN bundle exec rake assets:precompile RDB_URL=\"mysql://buildtest:buildtest@localhost/buildtest\" RAILS_ENV=production\nONBUILD RUN cd /app && git rev-parse HEAD > public/version.html\n\n# Add default unicorn config\nADD unicorn.rb /app/config/unicorn.rb\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "nginx-sites.conf",
+        "dest": "/etc/nginx/sites-enabled/default"
+      },
+      {
+        "source": "unicorn.rb",
+        "dest": "/app/config/unicorn.rb"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update",
+      "apt-get install -y wget curl     build-essential git git-core     zlib1g-dev libssl-dev libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt1-dev",
+      "apt-get update",
+      "cd /tmp &&  wget -O ruby-install-0.6.0.tar.gz https://github.com/postmodern/ruby-install/archive/v0.6.0.tar.gz &&  tar -xzvf ruby-install-0.6.0.tar.gz &&  cd ruby-install-0.6.0/ &&  make install",
+      "ruby-install ruby 2.3.1",
+      "echo \"install: --no-document\\nupdate: --no-document\" > ~/.gemrc",
+      "gem install bundler",
+      "apt-get update",
+      "curl -sL https://deb.nodesource.com/setup | sudo bash",
+      "apt-get install -qq -y nodejs",
+      "apt-get install -qq -y software-properties-common",
+      "curl -sSf https://static.rust-lang.org/rustup.sh | sudo sh -s -- --channel=nightly",
+      "add-apt-repository -y ppa:nginx/stable",
+      "apt-get update",
+      "apt-get install -qq -y nginx",
+      "echo \"\\ndaemon off;\" >> /etc/nginx/nginx.conf",
+      "chown -R www-data:www-data /var/lib/nginx",
+      "apt-get install -yq php5-cli php5-mcrypt php5-mysql",
+      "php5enmod mcrypt",
+      "apt-get install -qq -y libmysqlclient-dev",
+      "apt-get install -qq -y libatlas-base-dev",
+      "update-alternatives --set liblapack.so.3 /usr/lib/atlas-base/atlas/liblapack.so.3",
+      "update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so",
+      "update-alternatives --set libblas.so.3 /usr/lib/atlas-base/atlas/libblas.so.3",
+      "update-alternatives --set libblas.so /usr/lib/atlas-base/atlas/libblas.so",
+      "locale-gen en_US.UTF-8",
+      "echo 'LC_ALL=en_US.UTF-8' > /etc/default/locale",
+      "echo 'LANG=en_US.UTF-8' >> /etc/default/locale"
+    ],
+    "workdir": [
+      "/app"
+    ],
+    "from": "ubuntu:trusty",
+    "maintainer": "dev@rootree.net <rootree-dev>",
+    "env": {
+      "PATH": "/opt/rubies/ruby-2.3.1/bin:$PATH"
+    },
+    "onbuild": "RUN cd /app && git rev-parse HEAD > public/version.html"
+  },
+  "source_repository_url": "git@github.com:rootree-dev/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/rootree-dev/dockerfiles",
+  "docker_repository": "rootree/rails-nginx-unicorn",
+  "docker_image": "rootree/rails-nginx-unicorn",
+  "parameters_schema": {
+    "PATH": {
+      "default": "/opt/rubies/ruby-2.3.1/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "rootree/rails-nginx-unicorn",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/rootree/rails-nginx-unicorn",
+    "https://hub.docker.com/v2/repositories/rootree/rails-nginx-unicorn",
+    "git@github.com:rootree-dev/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/rootree/rails-nginx-unicorn",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

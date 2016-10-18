@@ -1,0 +1,90 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/svenmalvik/httpd",
+    "repository_url": "https://hub.docker.com/v2/repositories/svenmalvik/httpd",
+    "tags_url": "https://hub.docker.com/v2/repositories/svenmalvik/httpd/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/svenmalvik/httpd/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/svenmalvik/httpd/autobuild",
+    "user": "svenmalvik",
+    "name": "httpd",
+    "namespace": "svenmalvik",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 55,
+    "last_updated": "2016-10-13T07:02:53.369839Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 127473256,
+        "id": 5297727,
+        "repository": 963975,
+        "creator": 52392,
+        "last_updater": 52392,
+        "last_updated": "2016-10-13T07:02:52.972576Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "svenmalvik/httpd"
+  },
+  "name": "svenmalvik/httpd Docker container",
+  "description": "... with consul-template",
+  "readme": "------ PREPARATION ---------\n sudo yum install -y bind-utils dnsmasq\n\n>> vi /etc/resolv.conf\nsearch localdomain\nnameserver 127.0.0.1\nnameserver --the original--\n>>\n\n>> vi /etc/dnsmasq.d/10-consul.conf\nserver=/consul/127.0.0.1#8600\n<<\n\ndocker run -d --name consul -p 8400:8400 -p 8500:8500 -p 8600:53/udp -h node1 progrium/consul -server -bootstrap -ui-dir /ui\nCONSUL=<HOST_IP>:8500\ncurl -X PUT $CONSUL/v1/kv/config/webapp/TEST -d \"Dies ist ein Test\"\n\n------ END PREPARATION ---------\n\n------ LIVE DEMO ---------\n### Service Discovery ###\ndocker run -d -p 8080:80 --name helloworld svenmalvik/helloworld\n### CHANGE HOST_IP ### curl -X PUT -d '{ \"ID\": \"helloworld\",\"Name\": \"helloworld\",\"Address\": \"<HOST_IP>\",\"Port\": 8080}' http://$CONSUL/v1/agent/service/register\ncurl $CONSUL/v1/catalog/services\ncurl $CONSUL/v1/catalog/service/helloworld\ndig @localhost -p 8600 helloworld.service.consul\ndig @localhost -p 8600 helloworld.service.consul SRV\ndig helloworld.service.consul\n\n### consul template ###\ndocker run -it -p 80:80 --name httpd --entrypoint bash --env CONSUL=$CONSUL svenmalvik/httpd\nconsul-template -consul=$CONSUL -template \"/etc/consul-templates/app.conf.tmpl:/usr/local/apache2/conf/extra/app.conf:httpd -k restart\" -once\ncurl helloworld.service.consul\ndocker stop helloworld; docker rm helloworld\n\n### envconsul ###\ndocker run -it -p 8080:80 --name helloworld --entrypoint bash --env CONSUL=$CONSUL svenmalvik/helloworld \n/opt/envconsul -consul $CONSUL -sanitize -upcase -prefix config/webapp /go/bin/helloworld\ncurl helloworld.service.consul\ncurl -X PUT $CONSUL/v1/kv/config/webapp/TEST -d \"This is a test\"\ncurl helloworld.service.consul\n\n### Clean up ###\ncurl -X DELETE $CONSUL/v1/agent/service/deregister/helloworld\ncurl -X PUT $CONSUL/v1/kv/config/webapp/TEST -d \"Dies ist ein Test\"\ndocker stop helloworld httpd; docker rm helloworld httpd\n------ END OF LIVE DEMO ---------\n",
+  "dockerfile": "FROM httpd:2.4\n\nRUN apt-get update -y && apt-get install -y vim httpie unzip curl wget\n\nRUN wget -P /tmp https://releases.hashicorp.com/consul-template/0.16.0/consul-template_0.16.0_linux_386.zip && \\\n    unzip /tmp/consul-template_0.16.0_linux_386.zip -d /usr/local/bin/\n\nRUN mkdir /etc/consul-templates\nCOPY app.conf.tmpl /etc/consul-templates/\nCOPY app.conf /usr/local/apache2/conf/extra/\nCOPY httpd.conf /usr/local/apache2/conf/\nCOPY start.sh /usr/local/apache2/\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update -y && apt-get install -y vim httpie unzip curl wget",
+      "wget -P /tmp https://releases.hashicorp.com/consul-template/0.16.0/consul-template_0.16.0_linux_386.zip &&     unzip /tmp/consul-template_0.16.0_linux_386.zip -d /usr/local/bin/",
+      "mkdir /etc/consul-templates"
+    ],
+    "workdir": [],
+    "from": "httpd:2.4",
+    "copy": "start.sh /usr/local/apache2/"
+  },
+  "source_repository_url": "https://github.com/svenmalvik/httpd.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/svenmalvik/httpd",
+  "docker_repository": "svenmalvik/httpd",
+  "docker_image": "svenmalvik/httpd",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "svenmalvik/httpd",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/svenmalvik/httpd",
+    "https://hub.docker.com/v2/repositories/svenmalvik/httpd",
+    "https://github.com/svenmalvik/httpd.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Orchestration/Consul"
+  ],
+  "info_url": "https://hub.docker.com/r/svenmalvik/httpd",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

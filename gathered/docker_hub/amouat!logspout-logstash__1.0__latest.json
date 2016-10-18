@@ -1,0 +1,112 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/amouat/logspout-logstash",
+    "repository_url": "https://hub.docker.com/v2/repositories/amouat/logspout-logstash",
+    "tags_url": "https://hub.docker.com/v2/repositories/amouat/logspout-logstash/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/amouat/logspout-logstash/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/amouat/logspout-logstash/autobuild",
+    "user": "amouat",
+    "name": "logspout-logstash",
+    "namespace": "amouat",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 62660,
+    "last_updated": "2016-07-26T15:53:04.543071Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1.0",
+        "full_size": 5574180,
+        "id": 4002808,
+        "repository": 819902,
+        "creator": 22149,
+        "last_updater": 22149,
+        "last_updated": "2016-07-26T15:53:02.734389Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 5574171,
+        "id": 4002467,
+        "repository": 819902,
+        "creator": 22149,
+        "last_updater": 22149,
+        "last_updated": "2016-07-26T15:49:45.636018Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "amouat/logspout-logstash-fork"
+  },
+  "name": "amouat/logspout-logstash Docker container",
+  "description": "Logspout based on Alpine official image with logstash plug-in",
+  "readme": "# logspout\n\n_Fork of logspout rebased on Alpine 3.4 and with logstash plugin._\n\n[![CircleCI](https://img.shields.io/circleci/project/gliderlabs/logspout/release.svg)](https://circleci.com/gh/gliderlabs/logspout)\n[![Docker Hub](https://img.shields.io/badge/docker-ready-blue.svg)](https://registry.hub.docker.com/u/gliderlabs/logspout/)\n[![IRC Channel](https://img.shields.io/badge/irc-%23gliderlabs-blue.svg)](https://kiwiirc.com/client/irc.freenode.net/#gliderlabs)\n\n> Docker Hub automated builds for `gliderlabs/logspout:latest` and `progrium/logspout:latest` are now pointing to the `release` branch. For `master`, use `gliderlabs/logspout:master`. Individual versions are also available as saved images in [releases](https://github.com/gliderlabs/logspout/releases).\n\nLogspout is a log router for Docker containers that runs inside Docker. It attaches to all containers on a host, then routes their logs wherever you want. It also has an extensible module system.\n\nIt's a mostly stateless log appliance. It's not meant for managing log files or looking at history. It is just a means to get your logs out to live somewhere else, where they belong.\n\nFor now it only captures stdout and stderr, but a module to collect container syslog is planned.\n\n## Getting logspout\n\nLogspout is a very small Docker container (15.2MB virtual, based on [Alpine](https://github.com/gliderlabs/docker-alpine)). Pull the latest release from the index:\n\n\t$ docker pull gliderlabs/logspout:latest\n\nYou can also download and load a specific version:\n\n\t$ curl -s dl.gliderlabs.com/logspout/v2.tgz | docker load\n\n## Using logspout\n\n#### Route all container output to remote syslog\n\nThe simplest way to use logspout is to just take all logs and ship to a remote syslog. Just pass a syslog URI (or several comma separated URIs) as the command. Here we show use of the `tls` encrypted transport option in the URI. Also, we always mount the Docker Unix socket with `-v` to `/var/run/docker.sock`:\n\n\t$ docker run --name=\"logspout\" \\\n\t\t--volume=/var/run/docker.sock:/var/run/docker.sock \\\n\t\tgliderlabs/logspout \\\n\t\tsyslog+tls://logs.papertrailapp.com:55555\n\nlogspout will gather logs from other containers that are started **without the `-t` option** and are configured with a logging driver that works with `docker logs` (`journald` and `json-file`).\n\nTo see what data is used for syslog messages, see the [syslog adapter](http://github.com/gliderlabs/logspout/blob/master/adapters) docs.\n\n#### Ignoring specific containers\n\nYou can tell logspout to ignore specific containers by setting an environment variable when starting your container, like so:-\n\n    $ docker run -d -e 'LOGSPOUT=ignore' image\n\nOr, by adding a label which you define by setting an environment variable when running logspout:\n\n    $ docker run --name=\"logspout\" \\\n        -e EXCLUDE_LABEL=logspout.exclude \\\n        --volume=/var/run/docker.sock:/var/run/docker.sock \\\n        gliderlabs/logspout\n    $ docker run -d --label logspout.exclude=true image\n\n#### Inspect log streams using curl\n\nUsing the [httpstream module](http://github.com/gliderlabs/logspout/blob/master/httpstream), you can connect with curl to see your local aggregated logs in realtime. You can do this without setting up a route URI.\n\n\t$ docker run -d --name=\"logspout\" \\\n\t\t--volume=/var/run/docker.sock:/var/run/docker.sock \\\n\t\t--publish=127.0.0.1:8000:80 \\\n\t\tgliderlabs/logspout\n\t$ curl http://127.0.0.1:8000/logs\n\nYou should see a nicely colored stream of all your container logs. You can filter by container name and more. You can also get JSON objects, or you can upgrade to WebSocket and get JSON logs in your browser.\n\nSee [httpstream module](http://github.com/gliderlabs/logspout/blob/master/httpstream) for all options.\n\n#### Create custom routes via HTTP\n\nUsing the [routesapi module](http://github.com/gliderlabs/logspout/blob/master/routesapi) logspout can also expose a `/routes` resource to create and manage routes.\n\n\t$ curl $(docker port `docker ps -lq` 8000)/routes \\\n\t\t-X POST \\\n\t\t-d '{\"source\": {\"filter\": \"db\", \"types\": [\"stderr\"]}, \"target\": {\"type\": \"syslog\", \"addr\": \"logs.papertrailapp.com:55555\"}}'\n\nThat example creates a new syslog route to [Papertrail](https://papertrailapp.com) of only `stderr` for containers with `db` in their name.\n\nRoutes are stored on disk, so by default routes are ephemeral. You can mount a volume to `/mnt/routes` to persist them.\n\nSee [routesapi module](http://github.com/gliderlabs/logspout/blob/master/routesapi) for all options.\n\n## Modules\n\nThe standard distribution of logspout comes with all modules defined in this repository. You can remove or add new modules with custom builds of logspout. Just edit the `modules.go` file and do a `docker build`.\n\n### Builtin modules\n\n * adapters/raw\n * adapters/syslog\n * transports/tcp\n * transports/tls\n * transports/udp\n * httpstream\n * routesapi\n\n### Third-party modules\n\n * [logspout-kafka](https://github.com/gettyimages/logspout-kafka)\n * logspout-redis...\n * [logspout-logstash](https://github.com/looplab/logspout-logstash)\n * [logspout-redis-logstash](https://github.com/rtoma/logspout-redis-logstash)\n\n### Loggly support\n\nUse logspout to stream your docker logs to Loggly via the [Loggly syslog endpoint](https://www.loggly.com/docs/streaming-syslog-without-using-files/).  \n```\n$ docker run --name logspout -d --volume=/var/run/docker.sock:/var/run/docker.sock \\\n    -e SYSLOG_STRUCTURED_DATA=\"<Loggly API Key>@41058 tag=\\\"some tag name\\\"\" \\\n    gliderlabs/logspout \\\n    syslog+tcp://logs-01.loggly.com:514\n```\n\n\n## Contributing\n\nAs usual, pull requests are welcome. You can also propose releases by opening a PR against the `release` branch from `master`. Please be sure to bump the version and update `CHANGELOG.md` and include your changelog text in the PR body.\n\nDiscuss logspout development with us on Freenode in `#gliderlabs`.\n\n## Sponsor\n\nThis project was made possible by [DigitalOcean](http://digitalocean.com) and [Deis](http://deis.io).\n\n## License\n\nBSD\n<img src=\"https://ga-beacon.appspot.com/UA-58928488-2/logspout/readme?pixel\" />\n",
+  "dockerfile": "FROM alpine:3.4\nVOLUME /mnt/routes\nEXPOSE 80\n\nCOPY . /src\nRUN cd /src && ./build.sh \"$(cat VERSION)\"\n\nONBUILD COPY ./build.sh /src/build.sh\nONBUILD COPY ./modules.go /src/modules.go\nONBUILD RUN cd /src && ./build.sh \"$(cat VERSION)-custom\"\nCOPY entrypoint.sh /usr/local/bin/\nENTRYPOINT [\"entrypoint.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "/mnt/routes"
+    ],
+    "run": [
+      "cd /src && ./build.sh \"$(cat VERSION)\""
+    ],
+    "workdir": [],
+    "from": "alpine:3.4",
+    "copy": "entrypoint.sh /usr/local/bin/",
+    "onbuild": "RUN cd /src && ./build.sh \"$(cat VERSION)-custom\"",
+    "entrypoint": "[\"entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/amouat/logspout-logstash-fork.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/amouat/logspout-logstash-fork",
+  "docker_repository": "amouat/logspout-logstash",
+  "docker_image": "amouat/logspout-logstash",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "amouat/logspout-logstash",
+  "revision": "1.0",
+  "uris": [
+    "https://hub.docker.com/r/amouat/logspout-logstash",
+    "https://hub.docker.com/v2/repositories/amouat/logspout-logstash",
+    "https://github.com/amouat/logspout-logstash-fork.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Logging/Logstash"
+  ],
+  "info_url": "https://hub.docker.com/r/amouat/logspout-logstash",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

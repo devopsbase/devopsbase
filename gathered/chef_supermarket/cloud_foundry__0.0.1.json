@@ -1,0 +1,41 @@
+{
+  "name": "cloud_foundry Chef cookbook",
+  "chef_cookbook_name": "cloud_foundry",
+  "revision": "0.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/cloud_foundry",
+    "https://supermarket.chef.io/cookbooks/cloud_foundry/download",
+    "https://supermarket.chef.io/cookbooks/cloud_foundry/versions/0.0.1",
+    "https://supermarket.chef.io/cookbooks/cloud_foundry/versions/0.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/cloud_foundry/versions/0.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/cloud_foundry",
+    "https://supermarket.chef.io/api/v1/cookbooks/cloud_foundry/versions/0.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Operating Systems & Virtualization",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Cloud Platform/Cloud Foundry"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/cloud_foundry",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/cloud_foundry/versions/0.0.1/download",
+  "deprecated": false,
+  "created": "2011-12-01T01:08:42.000Z",
+  "updated": "2011-12-24T15:22:45.000Z",
+  "description": "Installs/Configures cloud_foundry",
+  "maintainer": {
+    "name": "andreacampi",
+    "email": "andrea.campi@zephirworks.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 5,
+  "downloads_count": 2536207,
+  "downloads_count_revision": 1268001,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "DESCRIPTION\n===========\n\nA Chef cookbook to manage applications and services on\n[Cloud Foundry](http://www.cloudfoundry.org/).\nIt is designed to be compatible with any installation of CloudFoundry, whether\n[hosted](http://www.cloudfoundry.com/), self-hosted or based on \n[Micro Cloud Foundry](https://www.cloudfoundry.com/micro).\n\nThis cookbook provides:\n\n* a `cloud_foundry_app` LWRP you can use to create, update and delete application\ninstances; bind apps to services; and start, stop and restart instances;\n* a `cloud_foundry_service` LWRP that lets you create services (and more in the future);\n* a `cloud_foundry_deploy` definition that enables you to continuously deploy an\napplication from a git repository, in a similar way to the standard `deploy_revision`\nresource.\n\nREQUIREMENTS\n============\n\nThe cloud\\_foundry cookbook requires the `vmc` gem; the `cloud_foundry::default`\nrecipe will install it automatically.\n\nCloud Foundry is a Platform as a Service (PaaS) solution; as such, chances are\nyou can't or won't run chef-client on your CF instance. This cookbook assumes\nyou will use a separated, trusted host as a controller for your CF cloud.\n\nSecurity best practice\n----------------------\n\nThe cloud\\_foundry cookbook will needs valid credentials to your CF cloud, and\nthe underlying `VMC` gem will save access tokens locally. You should take\nappropriate measures to ensure this host is not compromised. It is highly\nrecommended that you use a dedicate CF account for this purpose and that you\nuse a dedicated server (a basic virtual machine will suffice) that is running\nno other services accessible from outside your trusted network.\n\nATTRIBUTES\n==========\n\nUSAGE\n=====\n\nThis document assumes you are already somewhat familiar with CF and its core\nconcepts; if you are not, you should start by reading up on CF at\n[Cloud Foundry](http://www.cloudfoundry.org/).\n\ncloud\\_foundry\\_app\n-------------------\n\nThe `cloud_foundry_app` resource requires the following attributes:\n\n* _target_ the URL to the CF instance;\n* _admin_ the login to use when connecting to CF;\n* _admin\\_password_ the password to use when connecting to CF.\n\nFor example, this is how you log in to CF:\n\n    cloud_foundry_app \"test\" do\n      target \"http://api.vcap.me\"\n      admin \"chef@example.com\"\n      admin_password \"chefpassword\"\n      action :login\n    end\n\nTo help debug any issue with CF (or with the cookbook), you can optionally\nset the _target_ attribute to true.\n\nThe `cloud_foundry_app` resource understand the following actions:\n\n* _login_ lets you log in to CF. Credentials are cached for subsequent\nactions, until another login is performed;\n* _create_ creates a new application, unless it already exists, in which\ncase it silently does nothing. The _create_ action takes a few attributes:\n  * _framework_ one of the frameworks supported by your CF instance. Run\n  `vmc frameworks` for a list of the possible values;\n  * _runtime_ one of the runtimes supported by your CF instance; you can\n  find all of them by running `vmc runtimes`;\n  * _uris_ an array of URLs this app should reply to;\n  * _instances_ the number of instances to start; optional, it defaults to 1;\n  * _mem\\_quota_ the amount of RAM to reserve for this app; optional, it\n  defaults to 256MB.\n* _bind_ binds one or more services to an app. The services are specified with\na _services_ attribute that takes an array of service aliases (you can get a\nlist by running services). Note that any service bound to the app but not\npresent in the array will be unbound;\n* _update_ updates attributes for an existing app, or creates it if it doesn't\nexist yet; it also binds services to the app. It takes the same attribute as\n_create_ and _bind_;\n* _upload_ uploads new and updated code for an existing application, created\nwith the _create_ action. You must set the _path_ attribute to the absolute\npath to a directory containing your application;\n* _start_, _stop_ and _restart_ do what you would expect;\n\nAs usual with Chef, you can combine actions together to perform more complex\noperations at the same time. For instance, you can replicate what `vmc push`\ndoes with this resource:\n\n    cloud_foundry_app \"hello_world\" do\n      target \"http://api.vcap.me\"\n      admin \"chef@example.com\"\n      admin_password \"chefpassword\"\n\n      framework \"sinatra\"\n      runtime \"ruby19\"\n      uris [ \"helloworld.vcap.me\", \"helloworld.example.com\" ]\n      instances 42\n\n      path \"/tmp/helloworld\"\n\n      action :create:, :upload\n    end\n\ncloud\\_foundry\\_service\n-----------------------\n\nThe `cloud_foundry_service` resource requires the following attributes:\n\n* _target_ the URL to the CF instance;\n* _admin_ the login to use when connecting to CF;\n* _admin\\_password_ the password to use when connecting to CF.\n\nThe `cloud_foundry_service` resource implements the following actions:\n\n* _create_ provisions a service; you specify the type of service with the\n_service_ attribute. See `vmc services` for a list of permissible service\nnames.\n\ncloud\\_foundry\\_deploy\n----------------------\n\nThe `cloud_foundry_deploy` definition builds upon the _cloud\\_foundry_ LWRPs\nto provide a drop-in replacement for _deploy\\_revision_ to deploy an app to CF.\n\nIt takes the same attributes as the _:update_ and _:upload_ actions of the\n`cloud_foundry_app` resource, and a few extra attributes:\n\n* _repository_ the URL to the git repository containing the app;\n* _revision_ the git \"ref\" to deploy (it can the name of a branch, a tag or the\nSHA-1 of a commit);\n* _enable\\_submodules_ if true, git submodules will be updated after `git clone` or\n`git update` is done;\n* _deploy\\_key_ a private key to use when doing git over SSH.\n\nSee _examples/deploy.rb_ for a real-world example of using `cloud\\_foundry\\_deploy`\ntogether with a data bag to perform continuous deployment of a set of apps.\n"
+}

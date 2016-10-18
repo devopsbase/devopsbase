@@ -1,0 +1,152 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/groupeforum/wordpress",
+    "repository_url": "https://hub.docker.com/v2/repositories/groupeforum/wordpress",
+    "tags_url": "https://hub.docker.com/v2/repositories/groupeforum/wordpress/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/groupeforum/wordpress/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/groupeforum/wordpress/autobuild",
+    "user": "groupeforum",
+    "name": "wordpress",
+    "namespace": "groupeforum",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 286,
+    "last_updated": "2015-11-03T15:15:38.834104Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 187078614,
+        "id": 832472,
+        "repository": 308721,
+        "creator": 348216,
+        "last_updater": 348216,
+        "last_updated": "2015-11-03T15:15:44.574941Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "apache",
+        "full_size": 187078526,
+        "id": 1031058,
+        "repository": 308721,
+        "creator": 348216,
+        "last_updater": 348216,
+        "last_updated": "2015-11-03T15:15:42.314341Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "fpm",
+        "full_size": 177891553,
+        "id": 1031055,
+        "repository": 308721,
+        "creator": 348216,
+        "last_updater": 348216,
+        "last_updated": "2015-11-03T15:15:22.610984Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "groupeforum/docker-wordpress"
+  },
+  "name": "groupeforum/wordpress Docker container",
+  "description": "A WordPress Docker image.",
+  "readme": null,
+  "dockerfile": "FROM php:5.6-apache\n\nMAINTAINER Florian Girardey <florian@girardey.net>\n\n# Enable Apache mod_rewrite\nRUN a2enmod rewrite && a2enmod expires\n\n# install the PHP extensions we need\nRUN apt-get update && apt-get install -q -y libpng12-dev libjpeg-dev libapache2-mod-xsendfile libxml2-dev exim4 mailutils \\\n\t&& rm -rf /var/lib/apt/lists/* \\\n\t&& docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \\\n\t&& docker-php-ext-install gd \\\n\t&& docker-php-ext-install soap \\\n\t&& docker-php-ext-install opcache\nRUN docker-php-ext-install mysqli\n\n# Install xdebug\nRUN pecl install xdebug\n\n# Fix permissions on all of the files\nRUN usermod -u 1000 www-data\n\n# Setup APACHE environment variables\nENV APACHE_RUN_USER www-data\nENV APACHE_RUN_GROUP www-data\nENV APACHE_LOG_DIR /var/log/apache2\nENV APACHE_LOCK_DIR /var/lock/apache2\nENV APACHE_PID_FILE /var/run/apache2.pid\n\n# Update the default apache site with the config we created.\nCOPY apache-config.conf /etc/apache2/sites-enabled/000-default.conf\n\n# Add PHP Configuration file for OPcache\nCOPY php-opcache.ini /usr/local/etc/php/conf.d/php-opcache.ini\n\n# Add PHP Configuration file for WordPress\nCOPY php-wordpress.ini /usr/local/etc/php/conf.d/php-wordpress.ini\n\n# Add PHP Configuration file for SMTP\nCOPY php-smtp.ini /usr/local/etc/php/conf.d/php-smtp.ini\n\n# Add the Entrypoint script\nCOPY docker-entrypoint.sh /root/entrypoint.sh\nRUN chmod +x /root/entrypoint.sh\n\nVOLUME /var/www/html\n\nENTRYPOINT [\"/root/entrypoint.sh\"]\nCMD [\"apache2-foreground\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "/var/www/html"
+    ],
+    "run": [
+      "a2enmod rewrite && a2enmod expires",
+      "apt-get update && apt-get install -q -y libpng12-dev libjpeg-dev libapache2-mod-xsendfile libxml2-dev exim4 mailutils \t&& rm -rf /var/lib/apt/lists/* \t&& docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \t&& docker-php-ext-install gd \t&& docker-php-ext-install soap \t&& docker-php-ext-install opcache",
+      "docker-php-ext-install mysqli",
+      "pecl install xdebug",
+      "usermod -u 1000 www-data",
+      "chmod +x /root/entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "php:5.6-apache",
+    "maintainer": "Florian Girardey <florian@girardey.net>",
+    "env": {
+      "APACHE_RUN_USER": "www-data",
+      "APACHE_RUN_GROUP": "www-data",
+      "APACHE_LOG_DIR": "/var/log/apache2",
+      "APACHE_LOCK_DIR": "/var/lock/apache2",
+      "APACHE_PID_FILE": "/var/run/apache2.pid"
+    },
+    "copy": "docker-entrypoint.sh /root/entrypoint.sh",
+    "entrypoint": "[\"/root/entrypoint.sh\"]",
+    "cmd": "[\"apache2-foreground\"]"
+  },
+  "source_repository_url": "https://github.com/groupeforum/docker-wordpress.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/groupeforum/docker-wordpress",
+  "docker_repository": "groupeforum/wordpress",
+  "docker_image": "groupeforum/wordpress",
+  "parameters_schema": {
+    "APACHE_RUN_USER": {
+      "default": "www-data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APACHE_RUN_GROUP": {
+      "default": "www-data",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APACHE_LOG_DIR": {
+      "default": "/var/log/apache2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APACHE_LOCK_DIR": {
+      "default": "/var/lock/apache2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APACHE_PID_FILE": {
+      "default": "/var/run/apache2.pid",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "groupeforum/wordpress",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/groupeforum/wordpress",
+    "https://hub.docker.com/v2/repositories/groupeforum/wordpress",
+    "https://github.com/groupeforum/docker-wordpress.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image"
+  ],
+  "info_url": "https://hub.docker.com/r/groupeforum/wordpress",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,153 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/praekeltfoundation/python-base",
+    "repository_url": "https://hub.docker.com/v2/repositories/praekeltfoundation/python-base",
+    "tags_url": "https://hub.docker.com/v2/repositories/praekeltfoundation/python-base/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/praekeltfoundation/python-base/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/praekeltfoundation/python-base/autobuild",
+    "user": "praekeltfoundation",
+    "name": "python-base",
+    "namespace": "praekeltfoundation",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 808,
+    "last_updated": "2016-10-13T08:11:04.011943Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 73632743,
+        "id": 2086540,
+        "repository": 542146,
+        "creator": 589290,
+        "last_updater": 842481,
+        "last_updated": "2016-10-13T08:11:02.682259Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "debian",
+        "full_size": 73632743,
+        "id": 3862249,
+        "repository": 542146,
+        "creator": 842481,
+        "last_updater": 842481,
+        "last_updated": "2016-10-13T08:11:01.500661Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "alpine",
+        "full_size": 24248256,
+        "id": 3101477,
+        "repository": 542146,
+        "creator": 842481,
+        "last_updater": 842481,
+        "last_updated": "2016-10-13T08:08:29.237587Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "praekeltfoundation/dockerfiles"
+  },
+  "name": "praekeltfoundation/python-base Docker container",
+  "description": "Base Python image for Praekelt Foundation projects",
+  "readme": "# dockerfiles\nDockerfiles for base images that make creating correct, minimal images for applications easier.\n\n## Images\n#### `praekeltfoundation/base`\nProvides Debian and Alpine Linux base images with a few utility scripts and `dumb-init`.\n\n#### `praekeltfoundation/python-base`\nProvides Debian- and Alpine Linux-based Python 2 images with the same utility scripts and `dumb-init` setup as the `base` image. Also configures `pip` to not use a cache and to use the Praekelt Foundation Python Package Index. For more information about our Package Index, see [`praekeltfoundation/debian-wheel-mirror`](https://github.com/praekeltfoundation/debian-wheel-mirror).\n\n#### `praekeltfoundation/python3-base`\nSame as the `python-base` image but with Python 3.\n\n#### `praekeltfoundation/pypy-base`\nSame as the `python-base` image but with [PyPy](http://pypy.org) instead of the standard CPython Python implementation.\n\n#### Tags\nIn general, the images are tagged with their operating system, so `:alpine` or `:debian`. The `:latest` tags always point to the `:debian` images.\n\n### Building the images\nYou can emulate what Travis does, changing `$BASE_OS` and `$VARIANT` for the image you want:\n```shell\nIMAGE_USER=praekeltfoundation IMAGE_NAME=base\nBASE_OS=debian VARIANT=python\n\nIMAGE_TAG=\"$IMAGE_USER/${VARIANT:+$VARIANT-}$IMAGE_NAME:$BASE_OS\"\nDOCKERFILE=\"$BASE_OS/${VARIANT:-Dockerfile}${VARIANT:+.dockerfile}\"\n\ndocker build -t \"$IMAGE_TAG\" -f \"$DOCKERFILE\" .\n```\n\n## Common Docker problems\n### `apt-get` wasn't designed for containers\n`apt-get` caches a lot of files such as package indexes and package (.deb) files by default. We want to keep our Docker images as small as possible and most of these cached files are not useful to us. Also, we probably want to run `apt-get update` every time something is installed because we have no guarantee when it was last run. Unlike a regular machine - Docker containers generally won't run `apt-get update` automatically at a regular interval.\n\nAnother problem is that it's a pain to remember the correct `apt-get` options to get `apt-get` to install packages quietly, without prompting, and without extra packages that we don't need.\n\n##### Our solution:\nTwo simple scripts that wrap `apt-get install` and `apt-get purge` to make it easy to run the commands correctly. Simply use [`apt-get-install.sh`](debian/scripts/apt-get-install.sh) to install packages and [`apt-get-purge.sh`](debian/scripts/apt-get-purge.sh) to remove packages.\n\n### PID 1 and the zombie reaping problem\nFor a complete explanation of this problem see [this](https://blog.phusion.nl/2015/01/20/docker-and-the-pid-1-zombie-reaping-problem/) excellent blog post by Phusion. Suffice to say, many programs expect the system they're running on to have an init system that will manage/clean up child processes but most Docker containers don't have an init system.\n\n##### Our solution:\nUsing a very very simple init system that reaps orphaned child processes and passes through signals to the main process. We use the (badly named) [`dumb-init`](https://github.com/Yelp/dumb-init) by Yelp.\n\nThis program is the default entrypoint on the `debian-base` image so using it should be automatic most of the time - simply specify a `CMD []` in your Dockerfile.\n\n### Shell parent processes\nIt's quite easy to accidentally get Docker to run your containers with `/bin/sh -c` as the entrypoint. The problem with this is that your process then runs under a shell. i.e. the process with PID == 1 is a shell (`/bin/sh`) - and your process is a child of that process. Shells don't usually pass signals down to their child processes so it becomes difficult to send signals and handle graceful shutdowns of your process. Commands like `docker stop` and `docker kill` are effectively broken. With a shell parent process, `docker stop` will simply time out trying to tell your process to stop and will kill the process.\n\nThere is a subtle difference between the two forms of the [Dockerfile `CMD` directive](https://docs.docker.com/engine/reference/builder/#cmd). In the (easiest to write) form, `CMD command arg1`, the command is actually wrapped in `/bin/sh -c`. In the other form, `CMD [\"command\", \"arg1\"]`, the command is not wrapped and the entrypoint is used if it is set. **Always prefer the second form.**\n\nAnother problem is that if the command is not wrapped in a shell, variables aren't evaluated in the `CMD` instruction because there is no shell to ever resolve the variables' values.\n\n##### Our solution:\n* A Bash script that evaluates each part of a command to resolve all the variables' values and then `exec`s the resulting command.\n* The images have this script launching `dumb-init` as the default `ENTRYPOINT`.\n* **Always using the `CMD [\"command\", \"arg1\"]` `CMD` format.**\n\n### Sourcing runtime environment variables\nThis is a bit of a niche problem-- but sometimes it is useful to provide environment variables at build-time using a separate file rather than by adding a bunch of `ENV` instructions in the Dockerfile. It's impossible to read environment variables using a `RUN` command as each `RUN` command is run in a subshell. One solution is to source the desired file at run-time and then hand over control to the actual process. It's important to do this in a way that doesn't result in a parent shell process.\n\n##### Our solution:\nA simple script that sources a file and then exec's a process: [`source-wrapper.sh`](common/scripts/source-wrapper.sh).\n\n### Docker volume owners\nThis problem will only apply in certain circumstances when using Docker volumes. The problem arises when the owner (user/group) of the volume on the host does not exist in the Docker container. This is very often the case as the volume directory on the host is likely owned by the current user while in the Docker container there is usually only one user - `root`. There are various obscure permissions problems that can occur in this case, particularly with certain build tools.\n\n##### Our solution:\nA *hack*. The [`create-volume-user.sh`](debian/scripts/create-volume-user.sh) script can create a user and group with UID/GID that match those of the volume owner. This must happen at container runtime as the UID/GID of the volume can't be known before the volume is mounted.",
+  "dockerfile": "FROM python:2.7.12-alpine\nMAINTAINER Praekelt Foundation <dev@praekeltfoundation.org>\n\n# ca-certificates not installed in Alpine Python images for some reason:\n# https://github.com/docker-library/python/issues/109\nRUN apk add --no-cache ca-certificates\n\n# pip: Disable cache -- no Praekelt PyPi for Alpine yet...\nENV PIP_NO_CACHE_DIR=\"false\"\n\n# Install utility scripts\nCOPY ./common/scripts /scripts\n# COPY ./alpine/scripts /scripts\nENV PATH $PATH:/scripts\n\n# Install dinit (dumb-init)\nENV DINIT_VERSION=\"1.1.1\" \\\n    DINIT_SHA256=\"87bdb684cf9ad20dcbdec47ee62389168fb530c024ccd026d95f888f16136e44\"\nRUN set -x \\\n    && apk add --no-cache curl \\\n    && DINIT_FILE=\"dumb-init_${DINIT_VERSION}_amd64\" \\\n    && curl -sSL -o /usr/bin/dumb-init \"https://github.com/Yelp/dumb-init/releases/download/v$DINIT_VERSION/$DINIT_FILE\" \\\n    && echo \"$DINIT_SHA256 */usr/bin/dumb-init\" | sha256sum -c - \\\n    && chmod +x /usr/bin/dumb-init \\\n    && ln -s /usr/bin/dumb-init /usr/local/bin/dinit \\\n    && apk del curl\n\n# Set dinit as the default entrypoint\nENTRYPOINT [\"eval-args.sh\", \"dinit\"]\nCMD [\"python\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apk add --no-cache ca-certificates",
+      "set -x     && apk add --no-cache curl     && DINIT_FILE=\"dumb-init_${DINIT_VERSION}_amd64\"     && curl -sSL -o /usr/bin/dumb-init \"https://github.com/Yelp/dumb-init/releases/download/v$DINIT_VERSION/$DINIT_FILE\"     && echo \"$DINIT_SHA256 */usr/bin/dumb-init\" | sha256sum -c -     && chmod +x /usr/bin/dumb-init     && ln -s /usr/bin/dumb-init /usr/local/bin/dinit     && apk del curl"
+    ],
+    "workdir": [],
+    "from": "python:2.7.12-alpine",
+    "maintainer": "Praekelt Foundation <dev@praekeltfoundation.org>",
+    "env": {
+      "PIP_NO_CACHE_DIR": "\"false\"",
+      "PATH": "$PATH:/scripts",
+      "DINIT_VERSION": "\"1.1.1\"",
+      "": "",
+      "DINIT_SHA256": "\"87bdb684cf9ad20dcbdec47ee62389168fb530c024ccd026d95f888f16136e44\""
+    },
+    "copy": "./common/scripts /scripts",
+    "entrypoint": "[\"eval-args.sh\", \"dinit\"]",
+    "cmd": "[\"python\"]"
+  },
+  "source_repository_url": "https://github.com/praekeltfoundation/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/praekeltfoundation/dockerfiles",
+  "docker_repository": "praekeltfoundation/python-base",
+  "docker_image": "praekeltfoundation/python-base",
+  "parameters_schema": {
+    "PIP_NO_CACHE_DIR": {
+      "default": "\"false\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:/scripts",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DINIT_VERSION": {
+      "default": "\"1.1.1\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DINIT_SHA256": {
+      "default": "\"87bdb684cf9ad20dcbdec47ee62389168fb530c024ccd026d95f888f16136e44\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "praekeltfoundation/python-base",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/praekeltfoundation/python-base",
+    "https://hub.docker.com/v2/repositories/praekeltfoundation/python-base",
+    "https://github.com/praekeltfoundation/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Mode/Executable/Image"
+  ],
+  "info_url": "https://hub.docker.com/r/praekeltfoundation/python-base",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

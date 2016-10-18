@@ -1,0 +1,96 @@
+{
+  "name": "apache-hadoop-slave Juju charm",
+  "juju_charm_name": "apache-hadoop-slave",
+  "revision": "cs:trusty/apache-hadoop-slave-2",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/apache-hadoop-slave",
+    "https://jujucharms.com/apache-hadoop-slave/trusty",
+    "https://jujucharms.com/apache-hadoop-slave/trusty/2",
+    "https://api.jujucharms.com/v5/apache-hadoop-slave",
+    "https://api.jujucharms.com/v5/trusty/apache-hadoop-slave",
+    "https://api.jujucharms.com/v5/trusty/apache-hadoop-slave-2"
+  ],
+  "labels": [
+    "Juju charm",
+    "applications",
+    "bigdata",
+    "hadoop",
+    "apache",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Style/Virtualization Level/Application",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Middleware/Runtime/JavaScript/Node.js",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Store",
+    "Type/Middleware/Data Processing/Hadoop"
+  ],
+  "info_url": "https://jujucharms.com/apache-hadoop-slave",
+  "package_url": "https://api.jujucharms.com/v5/trusty/apache-hadoop-slave-2/archive",
+  "created": "2016-05-05T17:34:57.334Z",
+  "updated": "2016-05-05T17:34:57.334Z",
+  "description": "Combined slave node (DataNode + NodeManager) for Apache Hadoop.\n\nHadoop is a software platform that lets one easily write and run applications that process vast amounts of data.\nThis charm manages both the storage node (DataNode) for HDFS and the compute node (NodeManager) for Yarn.\n",
+  "maintainer": {
+    "name": "bigdata-charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "bigdata-charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    }
+  ],
+  "parameters": {
+    "ganglia_metrics": {
+      "type": "boolean",
+      "description": "Enable metrics using Ganglia, if related to the Ganglia charm via the\nganglia:master relation.  The Hadoop services *will* be restarted if\nthis option is enabled and the Ganglia service is related.\n",
+      "default": false,
+      "mapping": "charm_option"
+    },
+    "hadoop_version": {
+      "type": "string",
+      "description": "Hadoop version\n",
+      "default": "2.7.2",
+      "mapping": "charm_option"
+    },
+    "resources_mirror": {
+      "type": "string",
+      "description": "URL from which to fetch resources (e.g., Hadoop binaries) instead of Launchpad.\n",
+      "default": "",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/monitor",
+      "juju_interface": "monitor",
+      "juju_name": "ganglia",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/dfs-slave",
+      "juju_interface": "dfs-slave",
+      "juju_name": "namenode",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/mapred-slave",
+      "juju_interface": "mapred-slave",
+      "juju_name": "resourcemanager",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "## Overview\n\nThe Apache Hadoop software library is a framework that allows for the\ndistributed processing of large data sets across clusters of computers\nusing a simple programming model.\n\nThis charm deploys a slave node running the NodeManager component\n[Apache Hadoop 2.7.1](http://hadoop.apache.org/docs/r2.7.1/),\nwhich provides computation resources to the platform.\n\n## Usage\n\nThis charm is intended to be deployed via one of the\n[apache bundles](https://jujucharms.com/u/bigdata-charmers/#bundles).\nFor example:\n\n    juju quickstart apache-analytics-sql\n\nThis will deploy the Apache Hadoop platform with Apache Hive available to\nperform SQL-like queries against your data.\n\nYou can also manually load and run map-reduce jobs via the plugin charm\nincluded in the bigdata bundles linked above:\n\n    juju scp my-job.jar plugin/0:\n    juju ssh plugin/0\n    hadoop jar my-job.jar\n\n\n### Scaling\n\nThe nodemanager node is the \"workhorse\" of the Apache Hadoop platform.\nTo scale your deployment's performance, you can simply add more nodemanager \nunits.  For example, to add three mode units:\n\n    juju add-unit compute-slave -n 3\n\n\n## Monitoring\n\nThis charm supports monitoring via Ganglia.  To enable monitoring, you must\ndo **both** of the following (the order does not matter):\n\n * Add a relation to the [Ganglia charm][] via the `:master` relation\n * Enable the `ganglia_metrics` config option\n\nYou must **also** enable metrics on [yarn-master][] and / or [hdfs-master][]\nto initiate the restart of the NodeManager and / or DataNode components for\nthem to begin collecting metrics.\n\nFor example:\n\n    juju add-relation nodemnager ganglia:master\n    juju add-relation yarn-master ganglia:master\n    juju set nodemanager ganglia_metrics=true\n    juju set yarn-master ganglia_metrics=true\n\n\n## Deploying in Network-Restricted Environments\n\nThe Apache Hadoop charms can be deployed in environments with limited network\naccess. To deploy in this environment, you will need a local mirror to serve\nthe packages and resources required by these charms.\n\n\n### Mirroring Packages\n\nYou can setup a local mirror for apt packages using squid-deb-proxy.\nFor instructions on configuring juju to use this, see the\n[Juju Proxy Documentation](https://juju.ubuntu.com/docs/howto-proxies.html).\n\n\n### Mirroring Resources\n\nIn addition to apt packages, the Apache Hadoop charms require a few binary\nresources, which are normally hosted on Launchpad. If access to Launchpad\nis not available, the `jujuresources` library makes it easy to create a mirror\nof these resources:\n\n    sudo pip install jujuresources\n    juju-resources fetch --all /path/to/resources.yaml -d /tmp/resources\n    juju-resources serve -d /tmp/resources\n\nThis will fetch all of the resources needed by this charm and serve them via a\nsimple HTTP server. The output from `juju-resources serve` will give you a\nURL that you can set as the `resources_mirror` config option for this charm.\nSetting this option will cause all resources required by this charm to be\ndownloaded from the configured URL.\n\nYou can fetch the resources for all of the Apache Hadoop charms\n(`apache-hadoop-hdfs-master`, `apache-hadoop-yarn-master`,\n`apache-hadoop-hdfs-secondary`, `apache-hadoop-plugin`, etc) into a single\ndirectory and serve them all with a single `juju-resources serve` instance.\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Hadoop\n\n- [Apache Hadoop](http://hadoop.apache.org/) home page\n- [Apache Hadoop bug trackers](http://hadoop.apache.org/issue_tracking.html)\n- [Apache Hadoop mailing lists](http://hadoop.apache.org/mailing_lists.html)\n- [Apache Hadoop Juju Charm](http://jujucharms.com/?text=hadoop)\n\n\n[Ganglia charm]: http://jujucharms.com/ganglia/\n[yarn-master]: http://jujucharms.com/apache-hadoop-yarn-master/\n[hdfs-master]: http://jujucharms.com/apache-hadoop-hdfs-master/\n",
+  "readme": "## Overview\n\nThe Apache Hadoop software library is a framework that allows for the\ndistributed processing of large data sets across clusters of computers\nusing a simple programming model.\n\nThis charm deploys a slave node running the NodeManager component\n[Apache Hadoop 2.7.1](http://hadoop.apache.org/docs/r2.7.1/),\nwhich provides computation resources to the platform.\n\n## Usage\n\nThis charm is intended to be deployed via one of the\n[apache bundles](https://jujucharms.com/u/bigdata-charmers/#bundles).\nFor example:\n\n    juju quickstart apache-analytics-sql\n\nThis will deploy the Apache Hadoop platform with Apache Hive available to\nperform SQL-like queries against your data.\n\nYou can also manually load and run map-reduce jobs via the plugin charm\nincluded in the bigdata bundles linked above:\n\n    juju scp my-job.jar plugin/0:\n    juju ssh plugin/0\n    hadoop jar my-job.jar\n\n\n### Scaling\n\nThe nodemanager node is the \"workhorse\" of the Apache Hadoop platform.\nTo scale your deployment's performance, you can simply add more nodemanager \nunits.  For example, to add three mode units:\n\n    juju add-unit compute-slave -n 3\n\n\n## Monitoring\n\nThis charm supports monitoring via Ganglia.  To enable monitoring, you must\ndo **both** of the following (the order does not matter):\n\n * Add a relation to the [Ganglia charm][] via the `:master` relation\n * Enable the `ganglia_metrics` config option\n\nYou must **also** enable metrics on [yarn-master][] and / or [hdfs-master][]\nto initiate the restart of the NodeManager and / or DataNode components for\nthem to begin collecting metrics.\n\nFor example:\n\n    juju add-relation nodemnager ganglia:master\n    juju add-relation yarn-master ganglia:master\n    juju set nodemanager ganglia_metrics=true\n    juju set yarn-master ganglia_metrics=true\n\n\n## Deploying in Network-Restricted Environments\n\nThe Apache Hadoop charms can be deployed in environments with limited network\naccess. To deploy in this environment, you will need a local mirror to serve\nthe packages and resources required by these charms.\n\n\n### Mirroring Packages\n\nYou can setup a local mirror for apt packages using squid-deb-proxy.\nFor instructions on configuring juju to use this, see the\n[Juju Proxy Documentation](https://juju.ubuntu.com/docs/howto-proxies.html).\n\n\n### Mirroring Resources\n\nIn addition to apt packages, the Apache Hadoop charms require a few binary\nresources, which are normally hosted on Launchpad. If access to Launchpad\nis not available, the `jujuresources` library makes it easy to create a mirror\nof these resources:\n\n    sudo pip install jujuresources\n    juju-resources fetch --all /path/to/resources.yaml -d /tmp/resources\n    juju-resources serve -d /tmp/resources\n\nThis will fetch all of the resources needed by this charm and serve them via a\nsimple HTTP server. The output from `juju-resources serve` will give you a\nURL that you can set as the `resources_mirror` config option for this charm.\nSetting this option will cause all resources required by this charm to be\ndownloaded from the configured URL.\n\nYou can fetch the resources for all of the Apache Hadoop charms\n(`apache-hadoop-hdfs-master`, `apache-hadoop-yarn-master`,\n`apache-hadoop-hdfs-secondary`, `apache-hadoop-plugin`, etc) into a single\ndirectory and serve them all with a single `juju-resources serve` instance.\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Hadoop\n\n- [Apache Hadoop](http://hadoop.apache.org/) home page\n- [Apache Hadoop bug trackers](http://hadoop.apache.org/issue_tracking.html)\n- [Apache Hadoop mailing lists](http://hadoop.apache.org/mailing_lists.html)\n- [Apache Hadoop Juju Charm](http://jujucharms.com/?text=hadoop)\n\n\n[Ganglia charm]: http://jujucharms.com/ganglia/\n[yarn-master]: http://jujucharms.com/apache-hadoop-yarn-master/\n[hdfs-master]: http://jujucharms.com/apache-hadoop-hdfs-master/\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

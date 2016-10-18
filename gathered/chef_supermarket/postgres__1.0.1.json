@@ -1,0 +1,78 @@
+{
+  "name": "postgres Chef cookbook",
+  "chef_cookbook_name": "postgres",
+  "revision": "1.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/postgres",
+    "https://supermarket.chef.io/cookbooks/postgres/download",
+    "https://supermarket.chef.io/cookbooks/postgres/versions/1.0.1",
+    "https://supermarket.chef.io/cookbooks/postgres/versions/1.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/postgres/versions/1.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/postgres",
+    "https://supermarket.chef.io/api/v1/cookbooks/postgres/versions/1.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Databases",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Image/VM Image/AMI",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/postgres",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/postgres/versions/1.0.1/download",
+  "deprecated": false,
+  "created": "2013-02-25T01:58:39.000Z",
+  "updated": "2015-10-22T00:55:00.222Z",
+  "description": "Installs/Configures postgres from sources, optimized for SmartOS, and ready for streaming replication",
+  "maintainer": {
+    "name": "sax",
+    "email": "ops@wanelo.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 8,
+  "downloads_count": 4994686,
+  "downloads_count_revision": 1255270,
+  "repository_url": "https://github.com/wanelo-chef/postgres",
+  "issues_url": "https://github.com/wanelo-chef/postgres",
+  "chef_source_url": "https://github.com/wanelo-chef/postgres",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Postgres\n========\n\n## Description\n\nThis cookbook is meant to build from sources PostgreSQL 9.2.+ \nand install it into /opt/local/postgresql-VERSION folder.  It\nsupports multiple co-existing installations of PostgreSQL, and \nsets up the data directory based on major/minor versions of PG \n(so /var/pgsql/data92 for Postgres 9.2.1 and 9.2.2 for example).\n\nAdditionally, scalability parameters are adjusted to be suitable\nfor high-performance PostgreSQL installation.  \n\nStreaming replication is automatically enabled on the master, but \nwal_segments may need to be increased depending on the write load.\n\n## Requirements\n\nJoyent SmartOS base64 1.8.1, but might work on others.\n\n##Attributes\n\n```ruby\ndefault['postgres']['user']                    = \"postgres\"\ndefault['postgres']['group']                   = \"postgres\"\ndefault['postgres']['service']                 = \"postgres\"\n\n                                               # VERSION_ABBR is the major/minor version, ie 92 for 9.2.1\n                                               # Patch version changes in PG are binary swappable\ndefault['postgres']['data_dir']                = \"/var/pgsql/data%VERSION_ABBR%\"\n\n# Do not use a globally-used directory such as /var/log, as ownership is changed\n# to allow writing by the postgres user\ndefault['postgres']['log_file']                = \"/var/log/postgres-%VERSION%/stderr.log\"\ndefault['postgres']['prefix_dir']              = \"/opt/local/postgres-%VERSION%\"\ndefault['postgres']['version']                 = \"9.2.4\"\ndefault['postgres']['remote_tar']              = \"http://ftp.postgresql.org/pub/source/v%VERSION%/postgresql-%VERSION%.tar.gz\"\n\ndefault['postgres']['client']['install_via']   = 'package'    ## package or source\ndefault['postgres']['client']['version']       = '9.2.4'\ndefault['postgres']['client']['packages']      = %w(postgresql92-client)\n\ndefault['postgres']['config']['encoding']      = \"UTF8\"\ndefault['postgres']['config']['locale']        = \"en_US.UTF-8\"\n\ndefault['postgres']['config']['stats_temp_directory']       \n                                               = \"/tmp/pg_stats_temp_directory\"\n\n# shared_buffers_mb will be automatically set to 25% of available RAM, up to 8Gb\n# unless specified explicitly. cache size is auto-set to 70% of available RAM.\ndefault['postgres']['config']['shared_buffers_mb']            = nil\ndefault['postgres']['config']['effective_cache_size_mb']      = nil\ndefault['postgres']['config']['max_connections']              = 400\ndefault['postgres']['config']['checkpoint_segments']          = 64\ndefault['postgres']['config']['checkpoint_completion_target'] = 0.9\n\n# Change this to a larger value to keep more WAL logs. The number of segments defines\n# how far behind a replica can fall and then still catch up to the master. Each segment is 16Mb.\ndefault['postgres']['config']['wal_keep_segments']            = 128\n\n# These below have been tuned for PostgreSQL on Joyent SmartOS\ndefault['postgres']['config']['temp_buffers_mb']              = 8\ndefault['postgres']['config']['work_mem_mb']                  = 8\ndefault['postgres']['config']['maintenance_work_mem_mb']      = 16\ndefault['postgres']['config']['random_page_cost']             = 2.0 # tuned for SmartOS\n\n# -1 disables, otherwise number of milliseconds for slow query log\ndefault['postgres']['config']['log_min_duration_statement_ms'] = 50\ndefault['postgres']['config']['log_destination']               = 'stderr'\n# suggested prefix for pgfouine compatibility (not yet verified)\ndefault['postgres']['config']['log_line_prefix']              = ''\n\n# Replication\n# Setting this to 'on' allows standby replicas to run read only queries\ndefault['postgres']['config']['max_standby_streaming_delay']  = '30s'\n\n\ndefault['postgres']['config']['listen_port']                  = 5432\n\n# User either list_addresses (array of IPs) or listen_interfaces, but not both.\ndefault['postgres']['listen_addresses']                  = []\n# On multi-homed default SmartOS installs, net0 will be a public IP and net1 will be a private IP\n# lo0 will be localhost\ndefault['postgres']['listen_interfaces']                 = [\"net1\", \"lo0\"]\ndefault['postgres']['connections']  = {\n    \"127.0.0.1/0\" => \"trust\"\n}\n\n```\n\n##Recipes\n\n* `postgres::server` - compile PostgreSQL from source\n* `postgres::client` - install client binaries and libraries\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "smartos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/resource-control",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/rbac",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/smf",
+      "revision": ">= 0.6.8",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ipaddr_extensions",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

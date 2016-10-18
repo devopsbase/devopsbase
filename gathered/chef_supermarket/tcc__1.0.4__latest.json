@@ -1,0 +1,49 @@
+{
+  "name": "tcc Chef cookbook",
+  "chef_cookbook_name": "tcc",
+  "revision": "1.0.4",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/tcc",
+    "https://supermarket.chef.io/cookbooks/tcc/download",
+    "https://supermarket.chef.io/cookbooks/tcc/versions/1.0.4",
+    "https://supermarket.chef.io/cookbooks/tcc/versions/1.0.4/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/tcc/versions/1.0.4",
+    "https://supermarket.chef.io/api/v1/cookbooks/tcc",
+    "https://supermarket.chef.io/api/v1/cookbooks/tcc/versions/1.0.4/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/tcc",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/tcc/versions/1.0.4/download",
+  "deprecated": false,
+  "created": "2014-07-02T13:18:43.000Z",
+  "updated": "2014-07-02T21:41:56.000Z",
+  "description": "Installs/Configures tcc",
+  "maintainer": {
+    "name": "lgazo",
+    "email": "gazo@seges.sk"
+  },
+  "license": "All rights reserved",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 2517404,
+  "downloads_count_revision": 1258754,
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "tcc Cookbook\n============\nHandles the installation and configuration of Tomcat Control Center environment and its instances.\n\nhttps://github.com/seges/tomcat-control-center\n\nRequirements\n------------\n\n#### packages\nSee metadata.rb\n\nAttributes\n----------\n\n#### tcc::default\n<table>\n  <tr>\n    <th>Key</th>\n    <th>Type</th>\n    <th>Description</th>\n    <th>Default</th>\n  </tr>\n  <tr>\n    <td><tt>['tcc']['user']</tt></td>\n    <td>String</td>\n    <td>Main TCC user (not particular instance user)</td>\n    <td><tt>tcc</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['tcc']['group']</tt></td>\n    <td>String</td>\n    <td>Main TCC group</td>\n    <td><tt>tcc</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['tcc']['home']</tt></td>\n    <td>String</td>\n    <td>Where TCC home is and later the TCC installation is usually placed - usually at TCC's user home</td>\n    <td><tt>e.g. /home/tcc</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['tcc']['location']</tt></td>\n    <td>String</td>\n    <td>Where TCC installation resides - usually at TCC's user home/platform/tcc</td>\n    <td><tt>/home/tcc/tcc</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['tcc']['bundle_url']</tt></td>\n    <td>String</td>\n    <td>Where to download TCC bundle (tar.gz) from</td>\n    <td><tt>http://seges.github.io/download/tcc/tcc-1.5.1.tar.gz</tt></td>\n  </tr>\n\n</table>\n\n#### tcc::templates\n<table>\n  <tr>\n    <th>Key</th>\n    <th>Type</th>\n    <th>Description</th>\n    <th>Default</th>\n  </tr>\n  <tr>\n    <td><tt>['tcc']['templates']</tt></td>\n    <td>Hash</td>\n    <td>Contains a map of templates. Key is a template name. It contains list of params: type, libs. Currently only supported type = \"tomcat7\". \"libs\" is an array of objects with keys: repo, artifact_id. Now supported \"repo\" is \"maven\" only. \"artifact_id\" is in the colon-separated Maven artifact notation.</td>\n    <td><tt></tt></td>\n  </tr>\n</table>\n\n#### tcc::instances\n<table>\n  <tr>\n    <th>Key</th>\n    <th>Type</th>\n    <th>Description</th>\n    <th>Default</th>\n  </tr>\n  <tr>\n    <td><tt>['tcc']['instances']</tt></td>\n    <td>Hash</td>\n    <td>Contains a map of instances. Key is an instance name. It contains list of params: template, user. \"template\" is the name of a template defined in node['tcc']['templates']. \"user\" is the assigned user for the instance.</td>\n    <td><tt></tt></td>\n  </tr>\n  <tr>\n    <td><tt>['tcc']['template_cookbooks']</tt></td>\n    <td>String</td>\n    <td>Defines the cookbook where templates for resources and setenv are located. It should be overriden by every wrapper cookbook because that cookbook contains proper TCC configurations</td>\n    <td><tt></tt></td>\n  </tr>\n\n</table>\n\n\n\nUsage\n-----\n#### tcc::default\nInstalls Tomcat Control Center environment for the specified user.\n\ne.g.\nJust include `tcc` in your node's `run_list`:\n\n```json\n{\n  \"name\":\"my_node\",\n  \"run_list\": [\n    \"recipe[tcc]\"\n  ]\n}\n```\n\n#### tcc::instances\nInstalls general environmnent for all instances. Utilizes TCC's central resource management.\n\nIn the wrapper cookbook you have to create CSV resource templates in the pattern:\n\n```\nresources-<type>.csv.<environment>.erb\n```\n\n```\nsetenv.csv.<environment>.erb\n```\n\nwhere:\n\n- `type` - one of known TCC resource types - connector, db, env, mail, rmi\n- `environment` - chef's configured environment assigned to the node\n\n#### tcc::newrelic\n\nUtilizes the list of TCC instances defined in node.tcc.instances in order to create NewRelic Java configuration. It automatically installs NewRelic server monitoring as well.\n\nLater on if you want to enable NewRelic for an instance, all you need to do is to enable NewRelic agent in setenv.csv.<environment>.erb template and the configuration will be automatically taken.\n\nThe recipe needs at least following attributes if you are going to include it in wrapper cookbook:\n\n```\ndefault['newrelic']['license'] = \"supersecretlicensekey_from_newrelic\"\ndefault['newrelic']['server_monitoring']['license'] = default['newrelic']['license']\ndefault['newrelic']['application_monitoring']['license'] = default['newrelic']['license']\ndefault['newrelic']['plugin_monitoring']['license'] = default['newrelic']['license']\noverride['newrelic']['java-agent']['execute_install'] = false\n```\n\nYou will find the generated configuration in <instance_home>/newrelic/newrelic.yml\n\nNOTE: unless https://github.com/escapestudios-cookbooks/newrelic/pull/47 is merged the recipe creates just required directories\n\nContributing\n------------\n\n1. Fork the repository on Github - https://github.com/seges/chef-cookbook-tcc\n2. Create a named feature branch (like `add_component_x`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n\nLicense and Authors\n-------------------\nAuthor:: Ladislav Gazo (<gazo@seges.sk>)\nCopyright:: 2014, Seges Ltd.\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/newrelic",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

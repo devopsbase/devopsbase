@@ -1,0 +1,249 @@
+{
+  "name": "hadoop Juju charm",
+  "juju_charm_name": "hadoop",
+  "revision": "cs:trusty/hadoop-16",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/hadoop",
+    "https://jujucharms.com/hadoop/trusty",
+    "https://jujucharms.com/hadoop/trusty/16",
+    "https://api.jujucharms.com/v5/hadoop",
+    "https://api.jujucharms.com/v5/trusty/hadoop",
+    "https://api.jujucharms.com/v5/trusty/hadoop-16"
+  ],
+  "labels": [
+    "Juju charm",
+    "applications",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Style/Virtualization Level/Application",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Middleware/Data Processing/Hadoop"
+  ],
+  "info_url": "https://jujucharms.com/hadoop",
+  "package_url": "https://api.jujucharms.com/v5/trusty/hadoop-16/archive",
+  "created": "2015-06-17T09:33:30.091Z",
+  "updated": "2015-06-17T09:33:30.091Z",
+  "description": "Software platform for processing vast amounts of data\n\nHadoop is a software platform that lets one easily write and\nrun applications that process vast amounts of data.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/dfs",
+      "self_resolve": true,
+      "juju_interface": "dfs",
+      "juju_name": "datanode",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/elasticsearch",
+      "self_resolve": true,
+      "juju_interface": "elasticsearch",
+      "juju_name": "elasticsearch",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/dfs",
+      "self_resolve": true,
+      "juju_interface": "dfs",
+      "juju_name": "mapred-namenode",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/mapred",
+      "self_resolve": true,
+      "juju_interface": "mapred",
+      "juju_name": "nodemanager",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/dfs",
+      "self_resolve": true,
+      "juju_interface": "dfs",
+      "juju_name": "secondarynamenode",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "dfs_block_size": {
+      "type": "int",
+      "description": "The default block size for new files (default to 64MB).  Increase this in\nlarger deployments for better large data set performance.\n",
+      "default": 134217728,
+      "mapping": "charm_option"
+    },
+    "dfs_datanode_max_xcievers": {
+      "type": "int",
+      "description": "The number of files that an datanode will serve at any one time.\nAn Hadoop HDFS datanode has an upper bound on the number of files that it\nwill serve at any one time. This defaults to 256 (which is low) in hadoop\n1.x - however this charm increases that to 4096.\n",
+      "default": 4096,
+      "mapping": "charm_option"
+    },
+    "dfs_heartbeat_interval": {
+      "type": "int",
+      "description": "Determines datanode heartbeat interval in seconds.\n",
+      "default": 3,
+      "mapping": "charm_option"
+    },
+    "dfs_namenode_handler_count": {
+      "type": "int",
+      "description": "The number of server threads for the namenode.  Increase this in larger\ndeployments to ensure the namenode can cope with the number of datanodes\nthat it has to deal with.\n",
+      "default": 10,
+      "mapping": "charm_option"
+    },
+    "dfs_namenode_heartbeat_recheck_interval": {
+      "type": "int",
+      "description": "Determines datanode recheck heartbeat interval in milliseconds\nIt is used to calculate the final tineout value for namenode. Calcultion process is    \nas follow: 10.30 minutes = 2 x (dfs.namenode.heartbeat.recheck-interval=5*60*1000)\n                           + 10 * 1000 * (dfs.heartbeat.interval=3)\n",
+      "default": 300000,
+      "mapping": "charm_option"
+    },
+    "dfs_replication": {
+      "type": "int",
+      "description": "Default block replication. The actual number of replications can be specified when\nthe file is created. The default is used if replication is not specified in create time\n",
+      "default": 1,
+      "mapping": "charm_option"
+    },
+    "hadoop_dir_base": {
+      "type": "string",
+      "description": "The directory under which all other hadoop data is stored.  Use this\nto take advantage of extra storage that might be avaliable.\n.\nYou can change this in a running deployment but all existing data in\nHDFS will be inaccessible; you can of course switch it back if you\ndo this by mistake.\n",
+      "default": "/usr/local/hadoop/data",
+      "mapping": "charm_option"
+    },
+    "hbase": {
+      "type": "boolean",
+      "description": "Setting this configuration parameter to 'True' configures HDFS for\nuse with HBase including turning on 'append' mode which is not\ndesirable in all deployment scenarios.\n",
+      "default": false,
+      "mapping": "charm_option"
+    },
+    "heap": {
+      "type": "int",
+      "description": "The maximum heap size in MB to allocate for daemons processes within the\nservice units managed by this charm.\n.\nThe recommended configurations vary based on role and the amount of\nraw disk storage available in the hadoop cluster:\n.\n * NameNode: 1GB of heap for every 100TB of raw data stored.\n * SecondaryNameNode: Must be paired with the NameNode.\n * JobTracker: 2GB.\n * DataNode: 1GB.\n * TaskTracker: 1GB.\n.\nThe above recommendations are taken from HBase: The Definitive Guide by\nLars George.\n.\nObviously you need to ensure that the servers supporting each service unit\nhave sufficient memory to accomodate this setting - it should be no more\nthan 75% of the total memory in the system excluding swap.\n.\nIf you are also mixing MapReduce and DFS roles on the same units you need to\ntake this into account as well (see README for more details).\n",
+      "default": 1024,
+      "mapping": "charm_option"
+    },
+    "io_file_buffer_size": {
+      "type": "int",
+      "description": "The size of buffer for use in sequence files. The size of this buffer should\nprobably be a multiple of hardware page size (4096 on Intel x86), and it\ndetermines how much data is buffered during read and write operations.\n",
+      "default": 4096,
+      "mapping": "charm_option"
+    },
+    "mapred_child_java_opts": {
+      "type": "string",
+      "description": "Java opts for the task tracker child processes. The following symbol,\nif present, will be interpolated: @taskid@ is replaced by current TaskID.\nAny other occurrences of '@' will go unchanged. For example, to enable\nverbose gc logging to a file named for the taskid in /tmp and to set\nthe heap maximum to be a gigabyte, pass a 'value' of:\n.\n  -Xmx1024m -verbose:gc -Xloggc:/tmp/@taskid@.gc\n.\nThe configuration variable mapred.child.ulimit can be used to control\nthe maximum virtual memory of the child processes.\n",
+      "default": "-Xmx200m",
+      "mapping": "charm_option"
+    },
+    "mapred_job_tracker_handler_count": {
+      "type": "int",
+      "description": "The number of server threads for the JobTracker. This should be roughly\n4% of the number of tasktracker nodes.\n",
+      "default": 10,
+      "mapping": "charm_option"
+    },
+    "mapreduce_framework_name": {
+      "type": "string",
+      "description": "Execution framework set to Hadoop YARN.** DO NOT CHANGE **\n",
+      "default": "yarn",
+      "mapping": "charm_option"
+    },
+    "mapreduce_reduce_shuffle_parallelcopies": {
+      "type": "int",
+      "description": "The default number of parallel transfers run by reduce during the\ncopy(shuffle) phase.\n",
+      "default": 5,
+      "mapping": "charm_option"
+    },
+    "mapreduce_task_io_sort_factor": {
+      "type": "int",
+      "description": "More streams merged at once while sorting files.. This\ndetermines the number of open file handles.\n",
+      "default": 10,
+      "mapping": "charm_option"
+    },
+    "mapreduce_task_io_sort_mb": {
+      "type": "int",
+      "description": "Higher memory-limit while sorting data for efficiency..\n",
+      "default": 100,
+      "mapping": "charm_option"
+    },
+    "pig": {
+      "type": "boolean",
+      "description": "To install Apache Pig on all service units alongside Hadoop set this\nconfiguration to 'True'.\n.\nApache Pig is a platform for analyzing large data sets that consists\nof a high-level language for expressing data analysis programs, coupled\nwith infrastructure for evaluating these programs. The salient property\nof Pig programs is that their structure is amenable to substantial\nparallelization, which in turns enables them to handle very large data\nsets.\n",
+      "default": false,
+      "mapping": "charm_option"
+    },
+    "source": {
+      "type": "string",
+      "description": "Location and packages to install hadoop:\n.\n * dev:     Install using the hadoop packages from\n            ppa:hadoop-ubuntu/dev.\n * testing: Install using the hadoop packages from\n            ppa:hadoop-ubuntu/testing.\n * stable:  Install using the hadoop packages from\n            ppa:hadoop-ubuntu/stable.\n.\nThe packages provided in the hadoop-ubuntu team PPA's are based\ndirectly on upstream hadoop releases but are not fully built from\nsource.\n",
+      "default": "stable",
+      "mapping": "charm_option"
+    },
+    "tasktracker_http_threads": {
+      "type": "int",
+      "description": "The number of worker threads that for the http server. This is used for\nmap output fetching.\n",
+      "default": 40,
+      "mapping": "charm_option"
+    },
+    "webhdfs": {
+      "type": "boolean",
+      "description": "Hadoop includes a RESTful API over HTTP to HDFS.  Setting this flag\nto True enables this part of the HDFS service.\n",
+      "default": false,
+      "mapping": "charm_option"
+    },
+    "yarn_nodemanager_aux-services": {
+      "type": "string",
+      "description": "Shuffle service that needs to be set for Map Reduce applications.\n",
+      "default": "mapreduce_shuffle",
+      "mapping": "charm_option"
+    },
+    "yarn_nodemanager_aux-services_mapreduce_shuffle_class": {
+      "type": "string",
+      "description": "Shuffle service that needs to be set for Map Reduce applications.\n",
+      "default": "org.apache.hadoop.mapred.ShuffleHandler",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/monitor",
+      "juju_interface": "monitor",
+      "juju_name": "ganglia",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/dfs",
+      "juju_interface": "dfs",
+      "juju_name": "namenode",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/mapred",
+      "juju_interface": "mapred",
+      "juju_name": "resourcemanager",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "## Overview\n**What is Apache Hadoop?**\nThe Apache Hadoop software library is a framework that allows for the\ndistributed processing of large data sets across clusters of computers\nusing a simple programming model.\n\nIt is designed to scale up from single servers to thousands of machines,\neach offering local computation and storage. Rather than rely on hardware\nto deliver high-avaiability, the library itself is designed to detect\nand handle failures at the application layer, so delivering a\nhighly-availabile service on top of a cluster of computers, each of\nwhich may be prone to failures.\n\nApache Hadoop 2.2.0 consists of significant improvements over the previous stable release (hadoop-1.x).\n\nHere is a short overview of the improvments to both HDFS and MapReduce.\n- **HDFS Federation**\n  In order to scale the name service horizontally, federation uses multiple independent    \n  Namenodes/Namespaces. The Namenodes are federated, that is, the Namenodes are independent\n  and don't require coordination with each other. The datanodes are used as common storage for\n  blocks by all the Namenodes. Each datanode registers with all the Namenodes in the cluster.\n  Datanodes send periodic heartbeats and block reports and handles commands from the Namenodes.\n\n  More details are available in the HDFS Federation document: \n  <http://hadoop.apache.org/docs/r2.2.0/hadoop-project-dist/hadoop-hdfs/Federation.html>\n\n- **MapReduce NextGen aka YARN aka MRv2**\n  The new architecture introduced in hadoop-0.23, divides the two major functions of the     \n  JobTracker: resource management and job life-cycle management into separate components.\n  The new ResourceManager manages the global assignment of compute resources to\n  applications and the per-application ApplicationMaster manages the application‚\n  scheduling and coordination.\n  An application is either a single job in the sense of classic MapReduce jobs or a DAG of    \n  such jobs.\n \n  The ResourceManager and per-machine NodeManager daemon, which manages the user processes on\n  that machine, form the computation fabric.\n\n  The per-application ApplicationMaster is, in effect, a framework specific library and is    \n  tasked with negotiating resources from the ResourceManager and working with the NodeManager  \n  (s) to execute and monitor the tasks.\n\nMore details are available in the YARN document:\n<http://hadoop.apache.org/docs/r2.2.0/hadoop-yarn/hadoop-yarn-site/YARN.html>\n\n## Usage\n\nThis charm supports the following Hadoop roles:\n\n- HDFS: namenode, secondarynamenode and datanode ( TBD HDFS Federation) \n- YARN: ResourceManager, NodeManager\n\nThis supports deployments of Hadoop in a number of configurations.\n\n### Simple Usage: Combined HDFS and MapReduce\n\nIn this configuration, the YARN ResourceManager is deployed on the same\nservice units as HDFS namenode and the HDFS datanodes also run YARN NodeManager::\n    \n    juju deploy hadoop hadoop-master\n    juju deploy hadoop hadoop-slavecluster\n    juju add-unit -n 2 hadoop-slavecluster\n    juju add-relation hadoop-master:namenode hadoop-slavecluster:datanode\n    juju add-relation hadoop-master:resourcemanager hadoop-slavecluster:nodemanager\n\n\n### Scale Out Usage: Separate HDFS and MapReduce\n\nIn this configuration the HDFS and YARN deployments operate on\ndifferent service units as separate services::\n\n    juju deploy hadoop hdfs-namenode\n    juju deploy hadoop hdfs-datacluster\n    juju add-unit -n 2 hdfs-datacluster\n    juju add-relation hdfs-namenode:namenode hdfs-datacluster:datanode\n\n    juju deploy hadoop mapred-resourcemanager\n    juju deploy hadoop mapred-taskcluster\n    juju add-unit -n 2 mapred-taskcluster\n    juju add-relation mapred-resourcemanager:mapred-namenode hdfs-namenode:namenode\n    juju add-relation mapred-taskcluster:mapred-namenode hdfs-namenode:namenode    \n    juju add-relation mapred-resourcemanager:resourcemanager mapred-taskcluster:nodemanager\n\nIn the long term juju should support improved placement of services to\nbetter support this type of deployment.  This would allow mapreduce services\nto be deployed onto machines with more processing power and hdfs services\nto be deployed onto machines with larger storage.\n\n### TO deploy a Hadoop service with elasticsearch service::\n    # deploy ElasticSearch locally:\n    juju deploy elasticsearch elasticsearch\n    # elasticsearch-hadoop.jar file will be added to LIBJARS path \n    # Recommanded to use hadoop -libjars option to included elk jar file\n    juju add-unit -n elasticsearch\n    # deploy hive service by any senarios mentioned above\n    # associate Hive with elasticsearch\n    juju add-relation hadoop-master:elasticsearch elasticsearch:client\n## Known Limitations and Issues\n\nNote that removing the relation between namenode and datanode is destructive!\nThe role of the service is determined at the point that the relation is added\n(it must be qualified) and CANNOT be changed later!\n\nA single hdfs-master can support multiple slave service deployments::\n\n    juju deploy hadoop hdfs-datacluster-02\n    juju add-unit -n 2 hdfs-datacluster-02\n    juju add-relation hdfs-namenode:namenode hdfs-datacluster-02:datanode\n\n\n\n# Configuration\n **dfs_namenode_handler_count:**\n      The number of server threads for the namenode.  Increase this in larger\n      deployments to ensure the namenode can cope with the number of datanodes\n      that it has to deal with.\n **dfs_replication:**\n      Default block replication. The actual number of replications can be specified when\n      the file is created. The default is used if replication is not specified in create time\n **dfs_block_size:**\n      The default block size for new files (default to 64MB).  Increase this in\n      larger deployments for better large data set performance.\n **io_file_buffer_size:**\n      The size of buffer for use in sequence files. The size of this buffer should\n      probably be a multiple of hardware page size (4096 on Intel x86), and it\n      determines how much data is buffered during read and write operations.\n **dfs_datanode_max_xcievers:**\n      The number of files that an datanode will serve at any one time.\n      An Hadoop HDFS datanode has an upper bound on the number of files that it\n      will serve at any one time. This defaults to 256 (which is low) in hadoop\n      1.x - however this charm increases that to 4096.\n **mapreduce_framework_name:**\n      Execution framework set to Hadoop YARN.\n **mapreduce_reduce_shuffle_parallelcopies:**\n      The default number of parallel transfers run by reduce during the\n      copy(shuffle) phase.\n **mapred_child_java_opts:**\n      Java opts for the task tracker child processes. The following symbol,\n      if present, will be interpolated: @taskid@ is replaced by current TaskID.\n      Any other occurrences of '@' will go unchanged. For example, to enable\n      verbose gc logging to a file named for the taskid in /tmp and to set\n      the heap maximum to be a gigabyte, pass a 'value' of:\n      .\n        -Xmx1024m -verbose:gc -Xloggc:/tmp/@taskid@.gc\n      .\n      The configuration variable mapred.child.ulimit can be used to control\n      the maximum virtual memory of the child processes.\n **mapreduce_task_io_sort_factor:**\n      More streams merged at once while sorting files.. This\n      determines the number of open file handles.\n **mapreduce_task_io_sort_mb:**\n      Higher memory-limit while sorting data for efficiency..\n **mapred_job_tracker_handler_count:**\n      The number of server threads for the JobTracker. This should be roughly\n      4% of the number of tasktracker nodes.\n **tasktracker_http_threads:**\n      The number of worker threads that for the http server. This is used for\n      map output fetching.\n **hadoop_dir_base:**\n      The directory under which all other hadoop data is stored.  Use this\n      to take advantage of extra storage that might be avaliable.\n      .\n      You can change this in a running deployment but all existing data in\n      HDFS will be inaccessible; you can of course switch it back if you\n      do this by mistake.\n **yarn_nodemanager_aux-services:**\n      Shuffle service that needs to be set for Map Reduce applications.\n **yarn_nodemanager_aux-services_mapreduce_shuffle_class:**\n      Shuffle service that needs to be set for Map Reduce applications.\n\n# Contact Information\namir sanjar <amir.sanjar@canonical.com>\n## Hadoop\n\n- [Apache Hadoop](http://hadoop.apache.org/) home page\n- [Apache Hadoop bug trackers](http://hadoop.apache.org/issue_tracking.html)\n- [Apache Hadoop mailing lists](http://hadoop.apache.org/mailing_lists.html)\n- [Apache Hadoop Juju Charm](http://jujucharms.com/?text=hadoop)\n",
+  "readme": "## Overview\n**What is Apache Hadoop?**\nThe Apache Hadoop software library is a framework that allows for the\ndistributed processing of large data sets across clusters of computers\nusing a simple programming model.\n\nIt is designed to scale up from single servers to thousands of machines,\neach offering local computation and storage. Rather than rely on hardware\nto deliver high-avaiability, the library itself is designed to detect\nand handle failures at the application layer, so delivering a\nhighly-availabile service on top of a cluster of computers, each of\nwhich may be prone to failures.\n\nApache Hadoop 2.2.0 consists of significant improvements over the previous stable release (hadoop-1.x).\n\nHere is a short overview of the improvments to both HDFS and MapReduce.\n- **HDFS Federation**\n  In order to scale the name service horizontally, federation uses multiple independent    \n  Namenodes/Namespaces. The Namenodes are federated, that is, the Namenodes are independent\n  and don't require coordination with each other. The datanodes are used as common storage for\n  blocks by all the Namenodes. Each datanode registers with all the Namenodes in the cluster.\n  Datanodes send periodic heartbeats and block reports and handles commands from the Namenodes.\n\n  More details are available in the HDFS Federation document: \n  <http://hadoop.apache.org/docs/r2.2.0/hadoop-project-dist/hadoop-hdfs/Federation.html>\n\n- **MapReduce NextGen aka YARN aka MRv2**\n  The new architecture introduced in hadoop-0.23, divides the two major functions of the     \n  JobTracker: resource management and job life-cycle management into separate components.\n  The new ResourceManager manages the global assignment of compute resources to\n  applications and the per-application ApplicationMaster manages the application‚\n  scheduling and coordination.\n  An application is either a single job in the sense of classic MapReduce jobs or a DAG of    \n  such jobs.\n \n  The ResourceManager and per-machine NodeManager daemon, which manages the user processes on\n  that machine, form the computation fabric.\n\n  The per-application ApplicationMaster is, in effect, a framework specific library and is    \n  tasked with negotiating resources from the ResourceManager and working with the NodeManager  \n  (s) to execute and monitor the tasks.\n\nMore details are available in the YARN document:\n<http://hadoop.apache.org/docs/r2.2.0/hadoop-yarn/hadoop-yarn-site/YARN.html>\n\n## Usage\n\nThis charm supports the following Hadoop roles:\n\n- HDFS: namenode, secondarynamenode and datanode ( TBD HDFS Federation) \n- YARN: ResourceManager, NodeManager\n\nThis supports deployments of Hadoop in a number of configurations.\n\n### Simple Usage: Combined HDFS and MapReduce\n\nIn this configuration, the YARN ResourceManager is deployed on the same\nservice units as HDFS namenode and the HDFS datanodes also run YARN NodeManager::\n    \n    juju deploy hadoop hadoop-master\n    juju deploy hadoop hadoop-slavecluster\n    juju add-unit -n 2 hadoop-slavecluster\n    juju add-relation hadoop-master:namenode hadoop-slavecluster:datanode\n    juju add-relation hadoop-master:resourcemanager hadoop-slavecluster:nodemanager\n\n\n### Scale Out Usage: Separate HDFS and MapReduce\n\nIn this configuration the HDFS and YARN deployments operate on\ndifferent service units as separate services::\n\n    juju deploy hadoop hdfs-namenode\n    juju deploy hadoop hdfs-datacluster\n    juju add-unit -n 2 hdfs-datacluster\n    juju add-relation hdfs-namenode:namenode hdfs-datacluster:datanode\n\n    juju deploy hadoop mapred-resourcemanager\n    juju deploy hadoop mapred-taskcluster\n    juju add-unit -n 2 mapred-taskcluster\n    juju add-relation mapred-resourcemanager:mapred-namenode hdfs-namenode:namenode\n    juju add-relation mapred-taskcluster:mapred-namenode hdfs-namenode:namenode    \n    juju add-relation mapred-resourcemanager:resourcemanager mapred-taskcluster:nodemanager\n\nIn the long term juju should support improved placement of services to\nbetter support this type of deployment.  This would allow mapreduce services\nto be deployed onto machines with more processing power and hdfs services\nto be deployed onto machines with larger storage.\n\n### TO deploy a Hadoop service with elasticsearch service::\n    # deploy ElasticSearch locally:\n    juju deploy elasticsearch elasticsearch\n    # elasticsearch-hadoop.jar file will be added to LIBJARS path \n    # Recommanded to use hadoop -libjars option to included elk jar file\n    juju add-unit -n elasticsearch\n    # deploy hive service by any senarios mentioned above\n    # associate Hive with elasticsearch\n    juju add-relation hadoop-master:elasticsearch elasticsearch:client\n## Known Limitations and Issues\n\nNote that removing the relation between namenode and datanode is destructive!\nThe role of the service is determined at the point that the relation is added\n(it must be qualified) and CANNOT be changed later!\n\nA single hdfs-master can support multiple slave service deployments::\n\n    juju deploy hadoop hdfs-datacluster-02\n    juju add-unit -n 2 hdfs-datacluster-02\n    juju add-relation hdfs-namenode:namenode hdfs-datacluster-02:datanode\n\n\n\n# Configuration\n **dfs_namenode_handler_count:**\n      The number of server threads for the namenode.  Increase this in larger\n      deployments to ensure the namenode can cope with the number of datanodes\n      that it has to deal with.\n **dfs_replication:**\n      Default block replication. The actual number of replications can be specified when\n      the file is created. The default is used if replication is not specified in create time\n **dfs_block_size:**\n      The default block size for new files (default to 64MB).  Increase this in\n      larger deployments for better large data set performance.\n **io_file_buffer_size:**\n      The size of buffer for use in sequence files. The size of this buffer should\n      probably be a multiple of hardware page size (4096 on Intel x86), and it\n      determines how much data is buffered during read and write operations.\n **dfs_datanode_max_xcievers:**\n      The number of files that an datanode will serve at any one time.\n      An Hadoop HDFS datanode has an upper bound on the number of files that it\n      will serve at any one time. This defaults to 256 (which is low) in hadoop\n      1.x - however this charm increases that to 4096.\n **mapreduce_framework_name:**\n      Execution framework set to Hadoop YARN.\n **mapreduce_reduce_shuffle_parallelcopies:**\n      The default number of parallel transfers run by reduce during the\n      copy(shuffle) phase.\n **mapred_child_java_opts:**\n      Java opts for the task tracker child processes. The following symbol,\n      if present, will be interpolated: @taskid@ is replaced by current TaskID.\n      Any other occurrences of '@' will go unchanged. For example, to enable\n      verbose gc logging to a file named for the taskid in /tmp and to set\n      the heap maximum to be a gigabyte, pass a 'value' of:\n      .\n        -Xmx1024m -verbose:gc -Xloggc:/tmp/@taskid@.gc\n      .\n      The configuration variable mapred.child.ulimit can be used to control\n      the maximum virtual memory of the child processes.\n **mapreduce_task_io_sort_factor:**\n      More streams merged at once while sorting files.. This\n      determines the number of open file handles.\n **mapreduce_task_io_sort_mb:**\n      Higher memory-limit while sorting data for efficiency..\n **mapred_job_tracker_handler_count:**\n      The number of server threads for the JobTracker. This should be roughly\n      4% of the number of tasktracker nodes.\n **tasktracker_http_threads:**\n      The number of worker threads that for the http server. This is used for\n      map output fetching.\n **hadoop_dir_base:**\n      The directory under which all other hadoop data is stored.  Use this\n      to take advantage of extra storage that might be avaliable.\n      .\n      You can change this in a running deployment but all existing data in\n      HDFS will be inaccessible; you can of course switch it back if you\n      do this by mistake.\n **yarn_nodemanager_aux-services:**\n      Shuffle service that needs to be set for Map Reduce applications.\n **yarn_nodemanager_aux-services_mapreduce_shuffle_class:**\n      Shuffle service that needs to be set for Map Reduce applications.\n\n# Contact Information\namir sanjar <amir.sanjar@canonical.com>\n## Hadoop\n\n- [Apache Hadoop](http://hadoop.apache.org/) home page\n- [Apache Hadoop bug trackers](http://hadoop.apache.org/issue_tracking.html)\n- [Apache Hadoop mailing lists](http://hadoop.apache.org/mailing_lists.html)\n- [Apache Hadoop Juju Charm](http://jujucharms.com/?text=hadoop)\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

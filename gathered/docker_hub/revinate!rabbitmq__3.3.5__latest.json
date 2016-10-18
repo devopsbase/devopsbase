@@ -1,0 +1,170 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/revinate/rabbitmq",
+    "repository_url": "https://hub.docker.com/v2/repositories/revinate/rabbitmq",
+    "tags_url": "https://hub.docker.com/v2/repositories/revinate/rabbitmq/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/revinate/rabbitmq/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/revinate/rabbitmq/autobuild",
+    "user": "revinate",
+    "name": "rabbitmq",
+    "namespace": "revinate",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 262,
+    "last_updated": "2016-08-29T21:03:32.369954Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "3.3.5",
+        "full_size": 102271984,
+        "id": 2800921,
+        "repository": 656896,
+        "creator": 289975,
+        "last_updater": 289975,
+        "last_updated": "2016-08-29T21:03:31.958480Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.3.5-auth-http",
+        "full_size": 102288035,
+        "id": 2917356,
+        "repository": 656896,
+        "creator": 289975,
+        "last_updater": 289975,
+        "last_updated": "2016-08-29T21:00:42.173501Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.5.7",
+        "full_size": 102429603,
+        "id": 2981741,
+        "repository": 656896,
+        "creator": 289975,
+        "last_updater": 289975,
+        "last_updated": "2016-08-29T20:59:08.791311Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "revinate-docker/docker-rabbitmq"
+  },
+  "name": "revinate/rabbitmq Docker container",
+  "description": "RabbitMQ for local development and test automation",
+  "readme": null,
+  "dockerfile": "FROM ubuntu:trusty\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\nRUN groupadd -r rabbitmq && useradd -r -d /var/lib/rabbitmq -m -g rabbitmq rabbitmq\n\n# grab gosu for easy step-down from root\nENV GOSU_VERSION 1.7\nRUN set -x \\\n\t&& apt-get update && apt-get install -y --no-install-recommends ca-certificates wget python erlang-nox && rm -rf /var/lib/apt/lists/* \\\n\t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \\\n\t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \\\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n\t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\n\t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu \\\n\t&& gosu nobody true\n\nENV RABBITMQ_VERSION 3.3.5\nENV RABBITMQ_DEBIAN_VERSION 3.3.5-1\n\nRUN wget -O /tmp/rmq-server.deb http://www.rabbitmq.com/releases/rabbitmq-server/v${RABBITMQ_VERSION}/rabbitmq-server_${RABBITMQ_DEBIAN_VERSION}_all.deb \\\n  && dpkg -i /tmp/rmq-server.deb \\\n  && rm /tmp/rmq-server.deb \\\n\t&& rm -rf /var/lib/apt/lists/*\n\n# /usr/sbin/rabbitmq-server has some irritating behavior, and only exists to \"su - rabbitmq /usr/lib/rabbitmq/bin/rabbitmq-server ...\"\nENV PATH /usr/lib/rabbitmq/bin:$PATH\n\nRUN echo '[{rabbit, [{loopback_users, []}]}].' > /etc/rabbitmq/rabbitmq.config\n\n# set home so that any `--user` knows where to put the erlang cookie\nENV HOME /var/lib/rabbitmq\n\nRUN mkdir -p /var/lib/rabbitmq /etc/rabbitmq \\\n\t&& chown -R rabbitmq:rabbitmq /var/lib/rabbitmq /etc/rabbitmq \\\n\t&& chmod 777 /var/lib/rabbitmq /etc/rabbitmq\nVOLUME /var/lib/rabbitmq\n\n# add a symlink to the .erlang.cookie in /root so we can \"docker exec rabbitmqctl ...\" without gosu\nRUN ln -sf /var/lib/rabbitmq/.erlang.cookie /root/\n\nRUN ln -sf /usr/lib/rabbitmq/lib/rabbitmq_server-$RABBITMQ_VERSION/plugins /plugins\n\n# extra utilities to help with local development\nRUN rabbitmq-plugins enable rabbitmq_management\nADD http://hg.rabbitmq.com/rabbitmq-management/raw-file/rabbitmq_v3_3_5/bin/rabbitmqadmin /usr/sbin/rabbitmqadmin\nRUN chmod a+x /usr/sbin/rabbitmqadmin\n\nCOPY docker-entrypoint.sh /\nENTRYPOINT [\"/docker-entrypoint.sh\"]\n\nEXPOSE 4369 5671 5672 25672\nCMD [\"rabbitmq-server\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "http://hg.rabbitmq.com/rabbitmq-management/raw-file/rabbitmq_v3_3_5/bin/rabbitmqadmin",
+        "dest": "/usr/sbin/rabbitmqadmin"
+      }
+    ],
+    "expose": [
+      4369
+    ],
+    "volume": [
+      "/var/lib/rabbitmq"
+    ],
+    "run": [
+      "groupadd -r rabbitmq && useradd -r -d /var/lib/rabbitmq -m -g rabbitmq rabbitmq",
+      "set -x \t&& apt-get update && apt-get install -y --no-install-recommends ca-certificates wget python erlang-nox && rm -rf /var/lib/apt/lists/* \t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \t&& export GNUPGHOME=\"$(mktemp -d)\" \t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu \t&& gosu nobody true",
+      "wget -O /tmp/rmq-server.deb http://www.rabbitmq.com/releases/rabbitmq-server/v${RABBITMQ_VERSION}/rabbitmq-server_${RABBITMQ_DEBIAN_VERSION}_all.deb   && dpkg -i /tmp/rmq-server.deb   && rm /tmp/rmq-server.deb \t&& rm -rf /var/lib/apt/lists/*",
+      "echo '[{rabbit, [{loopback_users, []}]}].' > /etc/rabbitmq/rabbitmq.config",
+      "mkdir -p /var/lib/rabbitmq /etc/rabbitmq \t&& chown -R rabbitmq:rabbitmq /var/lib/rabbitmq /etc/rabbitmq \t&& chmod 777 /var/lib/rabbitmq /etc/rabbitmq",
+      "ln -sf /var/lib/rabbitmq/.erlang.cookie /root/",
+      "ln -sf /usr/lib/rabbitmq/lib/rabbitmq_server-$RABBITMQ_VERSION/plugins /plugins",
+      "rabbitmq-plugins enable rabbitmq_management",
+      "chmod a+x /usr/sbin/rabbitmqadmin"
+    ],
+    "workdir": [],
+    "from": "ubuntu:trusty",
+    "env": {
+      "GOSU_VERSION": "1.7",
+      "RABBITMQ_VERSION": "3.3.5",
+      "RABBITMQ_DEBIAN_VERSION": "3.3.5-1",
+      "PATH": "/usr/lib/rabbitmq/bin:$PATH",
+      "HOME": "/var/lib/rabbitmq"
+    },
+    "copy": "docker-entrypoint.sh /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"rabbitmq-server\"]"
+  },
+  "source_repository_url": "https://github.com/revinate-docker/docker-rabbitmq.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/revinate-docker/docker-rabbitmq",
+  "docker_repository": "revinate/rabbitmq",
+  "docker_image": "revinate/rabbitmq",
+  "parameters_schema": {
+    "GOSU_VERSION": {
+      "default": "1.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_VERSION": {
+      "default": "3.3.5",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_DEBIAN_VERSION": {
+      "default": "3.3.5-1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/usr/lib/rabbitmq/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "HOME": {
+      "default": "/var/lib/rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        4369
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "revinate/rabbitmq",
+  "revision": "3.3.5",
+  "uris": [
+    "https://hub.docker.com/r/revinate/rabbitmq",
+    "https://hub.docker.com/v2/repositories/revinate/rabbitmq",
+    "https://github.com/revinate-docker/docker-rabbitmq.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Test",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/revinate/rabbitmq",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

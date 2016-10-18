@@ -1,0 +1,97 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/abstracttechnology/django",
+    "repository_url": "https://hub.docker.com/v2/repositories/abstracttechnology/django",
+    "tags_url": "https://hub.docker.com/v2/repositories/abstracttechnology/django/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/abstracttechnology/django/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/abstracttechnology/django/autobuild",
+    "user": "abstracttechnology",
+    "name": "django",
+    "namespace": "abstracttechnology",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1257,
+    "last_updated": "2016-10-14T20:02:59.595426Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 234983045,
+        "id": 1044651,
+        "repository": 344011,
+        "creator": 63239,
+        "last_updater": 459404,
+        "last_updated": "2016-10-14T20:02:59.281134Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "abstract-open-solutions/docker-baseimage-django"
+  },
+  "name": "abstracttechnology/django Docker container",
+  "description": "A base image for Django-based webapps",
+  "readme": "# docker-baseimage-django\nBase image for Django projects.\n\n## Usage\n\nYou can inherit from this base image for your Django project.\n\nIt supposes that the project is laid down with the following structure:\n\n    ├── docker-compose.yml\n    ├── .gitignore\n    └── webapp                  # The django app\n        ├── conf                # Settings go here\n        │   ├── __init__.py     # Make it a module\n        │   ├── base.py         # Base settings\n        │   ├── development.py  # Development overrides\n        │   ├── production.py   # Production specific stuff\n        │   ├── urls.py         # Root urlconf\n        │   └── wsgi.py         # WSGI app (for gunicorn)\n        ├── Dockerfile\n        ├── .dockerignore\n        ├── entrypoint-pre.sh   # See entrypoint\n        ├── requirements.txt    # App requirements\n        └── src\n            └── myproject       # The app(s) egg(s)\n\n\nAn example `Dockerfile` for a custom project might look like this:\n\n    FROM abstracttechnology/django:latest\n    MAINTAINER Foo Bar <foo.bar@example.com>\n\n    COPY entrypoint-pre.sh entrypoint-pre.sh\n\n    COPY requirements.txt requirements.txt\n    COPY src/ src/\n\n    USER root\n\n    RUN chown -R webapp:webapp .\n\n    USER webapp\n\n    RUN virtualenv . && \\\n        ./bin/pip install --upgrade pip && \\\n        ./bin/pip install -r requirements.txt && \\\n        cd src/myproject && \\\n        ../../bin/python setup.py develop\n\n    COPY conf/ conf/\n    USER root\n    RUN chown -R webapp:webapp .\n    USER webapp\n\nThis will end up configuring a container with your app django app in it,\nwith an entrypoint that offers the following base commands:\n\n* `run` to run the app with Gunicorn (4 sync workers)\n* `manage` to launch `manage.py` commands\n  (arguments are passed to the manage script)\n\nThese two commands are launched using `conf/production.py`\nas settings module (which might extend from a common `conf/base.py` module).\n\nThere are other two commands that will instead run using `conf/development.py`,\n`develop-run` and `develop-manage`.\n\nIf a command is not recognized,\nit executed as-is (this allows you to launch other programs,\nor a shell for debug).\n\nIf you need any extra steps to be executed any time the container starts,\nbefore any command, add a `entrypoint-pre.sh` to the root\n(as done in the example).\n\nFor example, if your postgres container is slow to boot up,\nyou can put in that file:\n\n    source check_up.bash\n    check_up \"postgresql\" ${POSTGRES_PORT_5432_TCP_ADDR} 5432\n\nSupposing your container is called `postgres`,\nif it's called `database` change `POSTGRES_PORT_5432_TCP_ADDR`\nto `DATABASE_PORT_5432_TCP_ADDR`.\n\nSimilarly, if you want to handle extra \"commands\" in the entrypoint,\nyou can add a `entrypoint-extras.sh` file, with a construct like this:\n\n    case $1 in\n        foo)\n            echo \"Foo\"\n            ;;\n        bar)\n            echo \"Bar\"\n            ;;\n    esac\n\nRemember to always make `.sh` files executable.\n\nAnd that's all, happy Django-ing.\n",
+  "dockerfile": "FROM abstracttechnology/webapp:latest\nMAINTAINER Simone Deponti <simone.deponti@abstract.it>\n\nRUN \\\n    apt-get update && \\\n    apt-get install -y postgresql-client postgresql-contrib && \\\n    apt-get clean && \\\n    rm -rf /var/lib/apt/lists/*\n\nUSER webapp\n\nRUN mkdir -p /srv/webapp/var && \\\n    mkdir -p /srv/webapp/static && \\\n    mkdir -p /srv/webapp/media\n\nCOPY manage.py manage.py\nCOPY check_up.bash check_up.bash\nCOPY docker-entrypoint.sh docker-entrypoint.sh\n\nVOLUME [\"/srv/webapp/var\",\"/srv/webapp/static\",\"/srv/webapp/media\"]\n\nENTRYPOINT [\"/srv/webapp/docker-entrypoint.sh\"]\nCMD [\"run\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "[\"/srv/webapp/var\",\"/srv/webapp/static\",\"/srv/webapp/media\"]"
+    ],
+    "run": [
+      "    apt-get update &&     apt-get install -y postgresql-client postgresql-contrib &&     apt-get clean &&     rm -rf /var/lib/apt/lists/*",
+      "mkdir -p /srv/webapp/var &&     mkdir -p /srv/webapp/static &&     mkdir -p /srv/webapp/media"
+    ],
+    "workdir": [],
+    "from": "abstracttechnology/webapp:latest",
+    "maintainer": "Simone Deponti <simone.deponti@abstract.it>",
+    "user": "webapp",
+    "copy": "docker-entrypoint.sh docker-entrypoint.sh",
+    "entrypoint": "[\"/srv/webapp/docker-entrypoint.sh\"]",
+    "cmd": "[\"run\"]"
+  },
+  "source_repository_url": "https://github.com/abstract-open-solutions/docker-baseimage-django.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/abstract-open-solutions/docker-baseimage-django",
+  "docker_repository": "abstracttechnology/django",
+  "docker_image": "abstracttechnology/django",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "abstracttechnology/django",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/abstracttechnology/django",
+    "https://hub.docker.com/v2/repositories/abstracttechnology/django",
+    "https://github.com/abstract-open-solutions/docker-baseimage-django.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Logging"
+  ],
+  "info_url": "https://hub.docker.com/r/abstracttechnology/django",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

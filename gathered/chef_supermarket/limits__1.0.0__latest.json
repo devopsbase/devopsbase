@@ -1,0 +1,76 @@
+{
+  "name": "limits Chef cookbook",
+  "chef_cookbook_name": "limits",
+  "revision": "1.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/limits",
+    "https://supermarket.chef.io/cookbooks/limits/download",
+    "https://supermarket.chef.io/cookbooks/limits/versions/1.0.0",
+    "https://supermarket.chef.io/cookbooks/limits/versions/1.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/limits/versions/1.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/limits",
+    "https://supermarket.chef.io/api/v1/cookbooks/limits/versions/1.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/limits",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/limits/versions/1.0.0/download",
+  "deprecated": false,
+  "created": "2014-04-10T02:08:29.000Z",
+  "updated": "2014-12-07T23:15:30.403Z",
+  "description": "Configures limits",
+  "maintainer": {
+    "name": "jrwesolo",
+    "email": "jrwesolo@gmail.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 8,
+  "downloads_count": 3535840,
+  "downloads_count_revision": 2161850,
+  "repository_url": "https://github.com/jrwesolo/limits",
+  "issues_url": "https://github.com/jrwesolo/limits/issues",
+  "chef_source_url": "https://github.com/jrwesolo/limits",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Limits Cookbook\n===============\n\nThis cookbook is used to configure system limits.conf as well as limits.d configuration files. It is available at the [Supermarket](https://supermarket.chef.io/cookbooks/limits) or [GitHub](https://github.com/jrwesolo/limits).\n\n## Platforms\n\n* Debian\n* Ubuntu\n* Fedora\n* CentOS\n* Red Hat\n\n*This should work on most linux platforms, but it has not been explicitly testing unless in the list above.*\n\nAttributes\n==========\n\n**Under most circumstances, these can be left at the defaults.**\n\n| Key | Type | Description | Default |\n| --- | ---- | ----------- | ------- |\n| `['limits']['system_conf']` | String | Location of system-wide limits.conf | `/etc/security/limits.conf` |\n| `['limits']['conf_dir']` | String | Location of limits.d directory | `/etc/security/limits.d` |\n\nUsage\n=====\n\n## Definition (recommended)\n\n### `set_limit`\n\n### Attribute Parameters\n\n| Key | Type | Description | Default |\n| --- | ---- | ----------- | ------- |\n| `use_system` | Boolean | Set a system-wide limit? | `false` |\n| `filename` | String | Filename that will contain limit | *`{resource name}`*, unused if `use_system == true` |\n| `domain` | String or Integer | domain of limit | *`{resource name}`* |\n| `type` | String or Integer | type of limit | `nil` |\n| `item` | String or Integer | item of limit | `nil` |\n| `value` | String or Integer | value of limit | `nil` |\n\n### Examples\n\n```ruby\n# Limits for Alice\n\nset_limit 'alice' do\n  type 'hard'\n  item 'nofile'\n  value 2048\nend\n\nset_limit 'alice' do\n  type 'soft'\n  item 'nofile'\n  value 1024\nend\n\n# System-wide limits\n\nset_limit '*' do\n  type 'hard'\n  item 'nofile'\n  value 4096\n  use_system true\nend\n\nset_limit '*' do\n  type 'soft'\n  item 'nofile'\n  value 1024\n  use_system true\nend\n```\n\nWould render:\n\n```\n# /etc/security/limits.d/alice.conf\n\nalice hard nofile 2048\nalice soft nofile 1024\n```\n\n```\n# /etc/security/limits.conf\n\n* hard nofile 4096\n* soft nofile 1024\n```\n\n## LWRP\n\n### `limits_config`\n\n### Actions\n\n| Name | Description |\n| ---- | ----------- |\n| `:create` | creates limits config file (default) |\n| `:delete` | deletes limits config file |\n\n\n### Attribute Parameters\n\n| Key | Type | Description | Default |\n| --- | ---- | ----------- | ------- |\n| `use_system` | Boolean | Set system-wide limits? | `false` |\n| `filename` | String | Filename that will contain limits | *`{resource name}`*, unused if `use_system == true` |\n| `limits` | Array | Array of limits (see examples) | `[]` |\n\n### Examples\n\n```ruby\n# Limits for Alice\n\nlimits_config 'alice' do\n  limits [\n    { domain: 'alice', type: 'hard', item: 'nofile', value: 2048 },\n    { domain: 'alice', type: 'soft', item: 'nofile', value: 1024 }\n  ]\nend\n\n# System-wide limits\n\nlimits_config 'system-wide limits' do\n  limits [\n    { domain: '*', type: 'hard', item: 'nofile', value: 4096 },\n    { domain: '*', type: 'soft', item: 'nofile', value: 1024 }\n  ]\n  use_system true\nend\n```\n\nWould render:\n\n```\n# /etc/security/limits.d/alice.conf\n\nalice hard nofile 2048\nalice soft nofile 1024\n```\n\n```\n# /etc/security/limits.conf\n\n* hard nofile 4096\n* soft nofile 1024\n```\n\nTesting\n=======\n\nTesting was performed using [Chef Development Kit](https://downloads.chef.io/chef-dk/) 0.3.5.\n\n#### ChefSpec\n\n```bash\nchef exec rspec\n```\n\n#### Serverspec (through Test Kitchen)\n\n```bash\nkitchen test\n```\n\nLicense and Author\n==================\n\n* Author: Jordan Wesolowski (<jrwesolo@gmail.com>)\n\n```text\nThe MIT License (MIT)\n\nCopyright (c) 2014 Jordan Wesolowski\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ]
+}

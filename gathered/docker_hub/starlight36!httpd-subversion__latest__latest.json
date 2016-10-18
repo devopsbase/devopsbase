@@ -1,0 +1,120 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/starlight36/httpd-subversion",
+    "repository_url": "https://hub.docker.com/v2/repositories/starlight36/httpd-subversion",
+    "tags_url": "https://hub.docker.com/v2/repositories/starlight36/httpd-subversion/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/starlight36/httpd-subversion/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/starlight36/httpd-subversion/autobuild",
+    "user": "starlight36",
+    "name": "httpd-subversion",
+    "namespace": "starlight36",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 63,
+    "last_updated": "2015-10-08T01:27:47.024967Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 120979160,
+        "id": 1071992,
+        "repository": 350568,
+        "creator": 280812,
+        "last_updater": 280812,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "starlight36/docker-httpd-subversion"
+  },
+  "name": "starlight36/httpd-subversion Docker container",
+  "description": "HTTPD Subversion container",
+  "readme": "# docker-httpd-subversion\nA Subversion server with Apache HTTPD container.\n\n\n",
+  "dockerfile": "FROM httpd\n\nENV SVN_PREFIX /usr/local/subversion\nRUN mkdir -p \"$SVN_PREFIX\" \nWORKDIR $SVN_PREFIX\n\n\nRUN apt-get update \\\n\t&& apt-get install -y libsqlite3-0 libaprutil1-ldap \\\n\t&& rm -r /var/lib/apt/lists/*\n\n\nENV SVN_VERSION 1.9.2\nENV SVN_BZ2_URL http://mirrors.cnnic.cn/apache/subversion/subversion-$SVN_VERSION.tar.bz2\n\nRUN buildDeps=' \\\n\t\tca-certificates \\\n\t\tcurl \\\n\t\tbzip2 \\\n\t\tgcc \\\n\t\tlibapr1-dev \\\n\t\tlibaprutil1-dev \\\n\t\tlibc6-dev \\\n\t\tlibsqlite3-dev \\\n\t\tzlib1g-dev \\\n\t\tmake \\\n\t' \\\n\tset -x \\\n\t&& apt-get update \\\n\t&& apt-get install -y $buildDeps \\\n\t&& rm -r /var/lib/apt/lists/* \n\nRUN curl -SL \"$SVN_BZ2_URL\" -o subversion.tar.bz2 \\\n\t&& mkdir -p src/subversion \\\n\t&& tar -xvf subversion.tar.bz2 -C src/subversion --strip-components=1 \\\n\t&& rm subversion.tar.bz2 \\\n\t&& cd src/subversion \\\n\t&& ./configure --prefix=$SVN_PREFIX --with-apxs=$HTTPD_PREFIX/bin/apxs \\\n\t&& make \\\n\t&& make install \\\n\t&& cd ../../ \\\n\t&& rm -r src/subversion \\\n\t&& sed -i 's|#LoadModule dav_module|LoadModule dav_module|g' /usr/local/apache2/conf/httpd.conf \\\n\t&& sed -i 's|#Include conf/extra/httpd-default.conf$|&\\n\\nInclude conf/extra/httpd-svn.conf|' /usr/local/apache2/conf/httpd.conf \\\n\t&& echo \"LoadModule dav_svn_module $SVN_PREFIX/libexec/mod_dav_svn.so\" >> /usr/local/apache2/conf/extra/httpd-svn.conf \\\n\t&& echo \"LoadModule authz_svn_module $SVN_PREFIX/libexec/mod_authz_svn.so\" >> /usr/local/apache2/conf/extra/httpd-svn.conf \\\n\t&& apt-get purge -y --auto-remove $buildDeps\n\nWORKDIR $HTTPD_PREFIX\n\nRUN cp -r /usr/local/apache2/conf /tmp/httpd-conf\n\nCOPY entrypoint.sh /usr/local/sbin/entrypoint.sh\nRUN chmod +x /usr/local/sbin/entrypoint.sh\n\nENTRYPOINT [\"/usr/local/sbin/entrypoint.sh\"]\nEXPOSE 80\nCMD [\"httpd-foreground\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "mkdir -p \"$SVN_PREFIX\" ",
+      "apt-get update \t&& apt-get install -y libsqlite3-0 libaprutil1-ldap \t&& rm -r /var/lib/apt/lists/*",
+      "buildDeps=' \t\tca-certificates \t\tcurl \t\tbzip2 \t\tgcc \t\tlibapr1-dev \t\tlibaprutil1-dev \t\tlibc6-dev \t\tlibsqlite3-dev \t\tzlib1g-dev \t\tmake \t' \tset -x \t&& apt-get update \t&& apt-get install -y $buildDeps \t&& rm -r /var/lib/apt/lists/* ",
+      "curl -SL \"$SVN_BZ2_URL\" -o subversion.tar.bz2 \t&& mkdir -p src/subversion \t&& tar -xvf subversion.tar.bz2 -C src/subversion --strip-components=1 \t&& rm subversion.tar.bz2 \t&& cd src/subversion \t&& ./configure --prefix=$SVN_PREFIX --with-apxs=$HTTPD_PREFIX/bin/apxs \t&& make \t&& make install \t&& cd ../../ \t&& rm -r src/subversion \t&& sed -i 's|#LoadModule dav_module|LoadModule dav_module|g' /usr/local/apache2/conf/httpd.conf \t&& sed -i 's|#Include conf/extra/httpd-default.conf$|&\\n\\nInclude conf/extra/httpd-svn.conf|' /usr/local/apache2/conf/httpd.conf \t&& echo \"LoadModule dav_svn_module $SVN_PREFIX/libexec/mod_dav_svn.so\" >> /usr/local/apache2/conf/extra/httpd-svn.conf \t&& echo \"LoadModule authz_svn_module $SVN_PREFIX/libexec/mod_authz_svn.so\" >> /usr/local/apache2/conf/extra/httpd-svn.conf \t&& apt-get purge -y --auto-remove $buildDeps",
+      "cp -r /usr/local/apache2/conf /tmp/httpd-conf",
+      "chmod +x /usr/local/sbin/entrypoint.sh"
+    ],
+    "workdir": [
+      "$SVN_PREFIX",
+      "$HTTPD_PREFIX"
+    ],
+    "from": "httpd",
+    "env": {
+      "SVN_PREFIX": "/usr/local/subversion",
+      "SVN_VERSION": "1.9.2",
+      "SVN_BZ2_URL": "http://mirrors.cnnic.cn/apache/subversion/subversion-$SVN_VERSION.tar.bz2"
+    },
+    "copy": "entrypoint.sh /usr/local/sbin/entrypoint.sh",
+    "entrypoint": "[\"/usr/local/sbin/entrypoint.sh\"]",
+    "cmd": "[\"httpd-foreground\"]"
+  },
+  "source_repository_url": "https://github.com/starlight36/docker-httpd-subversion.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/starlight36/docker-httpd-subversion",
+  "docker_repository": "starlight36/httpd-subversion",
+  "docker_image": "starlight36/httpd-subversion",
+  "parameters_schema": {
+    "SVN_PREFIX": {
+      "default": "/usr/local/subversion",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SVN_VERSION": {
+      "default": "1.9.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SVN_BZ2_URL": {
+      "default": "http://mirrors.cnnic.cn/apache/subversion/subversion-$SVN_VERSION.tar.bz2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "starlight36/httpd-subversion",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/starlight36/httpd-subversion",
+    "https://hub.docker.com/v2/repositories/starlight36/httpd-subversion",
+    "https://github.com/starlight36/docker-httpd-subversion.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Version Control/Subversion"
+  ],
+  "info_url": "https://hub.docker.com/r/starlight36/httpd-subversion",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,153 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/bashell/alpine-elasticsearch",
+    "repository_url": "https://hub.docker.com/v2/repositories/bashell/alpine-elasticsearch",
+    "tags_url": "https://hub.docker.com/v2/repositories/bashell/alpine-elasticsearch/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/bashell/alpine-elasticsearch/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/bashell/alpine-elasticsearch/autobuild",
+    "user": "bashell",
+    "name": "alpine-elasticsearch",
+    "namespace": "bashell",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 251,
+    "last_updated": "2016-10-13T08:00:57.828074Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 74085074,
+        "id": 3022783,
+        "repository": 688313,
+        "creator": 617126,
+        "last_updater": 617126,
+        "last_updated": "2016-10-13T08:00:57.352931Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "armhf",
+        "full_size": 83741698,
+        "id": 4480399,
+        "repository": 688313,
+        "creator": 68283,
+        "last_updater": 68283,
+        "last_updated": "2016-09-06T03:23:32.735389Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          16
+        ]
+      }
+    ],
+    "build_name": "bashell-com/alpine-elasticsearch"
+  },
+  "name": "bashell/alpine-elasticsearch Docker container",
+  "description": "Elasticsearch on Alpine Linux",
+  "readme": "Elasticsearch on Alpine Linux Docker Image\n==========================================\n\nThis image provides Elasticsearch based on Alpine Linux latest stable version. All files are adapted from the official Elasticsearch docker repository.\n\nSupported tags and respective Dockerfile links\n----------------------------------------------\n\n-   `latest` ([Dockerfile](https://bitbucket.org/bashell-com/alpine-elasticsearch/src/tip/Dockerfile?fileviewer=file-view-default))\n\nHow to use this image\n---------------------\n\nYou can run the default elasticsearch command simply:\n\n    $ docker run -d bashell/alpine-elasticsearch\n\nYou can also pass in additional flags to elasticsearch:\n\n    $ docker run -d bashell/alpine-elasticsearch elasticsearch -Des.node.name=\"TestNode\"\n\nThis image comes with a default set of configuration files for elasticsearch, but if you want to provide your own set of configuration files, you can do so via a volume mounted at `/opt/elasticsearch/config`:\n\n    $ docker run -d -v \"$PWD/config\":/opt/elasticsearch/config bashell/alpine-elasticsearch\n\nThis image is configured with a volume at `/opt/elasticsearch/data` to hold the persisted index data. Use that path if you would like to keep the data in a mounted volume:\n\n    $ docker run -d -v \"$PWD/esdata\":/opt/elasticsearch/data bashell/alpine-elasticsearch\n\nThis image includes `EXPOSE 9200 9300` ([default http port](https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-http.html)), so standard container linking will make it automatically available to the linked containers.\n\nIssues\n------\n\nIf you have any problems with or questions about this image, please contact us through a [Bitbucket issue](https://bitbucket.org/bashell-com/alpine-elasticsearch/issues).\n",
+  "dockerfile": "FROM bashell/alpine-bash\n\n# update/upgrade everything\nRUN apk update && apk upgrade\n\n# install jre & openssl\nRUN apk add openjdk8-jre openssl\n\n# grab gosu for easy step-down from root\nENV GOSU_BASE https://github.com/tianon/gosu/releases/download\nENV GOSU_VERSION 1.10\nRUN set -x \\\n    && apk add gnupg \\\n    && wget -O /usr/local/bin/gosu \"$GOSU_BASE/$GOSU_VERSION/gosu-$(apk --print-arch |sed -e 's/x86_64/amd64/')\" \\\n    && wget -O /usr/local/bin/gosu.asc \"$GOSU_BASE/$GOSU_VERSION/gosu-$(apk --print-arch |sed -e 's/x86_64/amd64/').asc\" \\\n    && export GNUPGHOME=\"$(mktemp -d)\" \\\n    && gpg2 --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n    && gpg2 --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\n    && rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\n    && chmod +x /usr/local/bin/gosu \\\n    && gosu nobody true \\\n    && apk del gnupg\n\nENV ELASTICSEARCH_VERSION 2.4.1\nENV ELASTICSEARCH_DOWNLOAD https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch\nRUN mkdir -p /opt && adduser -h /opt/elasticsearch -g elasticsearch -s /bin/bash -D elasticsearch\n\nWORKDIR /opt\nRUN ln -s elasticsearch elasticsearch-$ELASTICSEARCH_VERSION\nUSER elasticsearch\nRUN set -x \\\n    && wget -O - \"$ELASTICSEARCH_DOWNLOAD/$ELASTICSEARCH_VERSION/elasticsearch-$ELASTICSEARCH_VERSION.tar.gz\" | tar zxvf -\n\nENV PATH /opt/elasticsearch/bin:$PATH\n\nWORKDIR /opt/elasticsearch\nRUN set -ex \\\n    && for path in \\\n        ./data \\\n        ./logs \\\n        ./config \\\n        ./config/scripts \\\n    ; do \\\n        mkdir -p \"$path\"; \\\n        chown -R elasticsearch:elasticsearch \"$path\"; \\\n    done\n\nCOPY config ./config\n\nVOLUME /opt/elasticsearch/data\n\nCOPY docker-entrypoint.sh /\n\nEXPOSE 9200 9300\nENTRYPOINT [\"/docker-entrypoint.sh\"]\nCMD [\"elasticsearch\"]\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      9200
+    ],
+    "volume": [
+      "/opt/elasticsearch/data"
+    ],
+    "run": [
+      "apk update && apk upgrade",
+      "apk add openjdk8-jre openssl",
+      "set -x     && apk add gnupg     && wget -O /usr/local/bin/gosu \"$GOSU_BASE/$GOSU_VERSION/gosu-$(apk --print-arch |sed -e 's/x86_64/amd64/')\"     && wget -O /usr/local/bin/gosu.asc \"$GOSU_BASE/$GOSU_VERSION/gosu-$(apk --print-arch |sed -e 's/x86_64/amd64/').asc\"     && export GNUPGHOME=\"$(mktemp -d)\"     && gpg2 --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4     && gpg2 --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu     && rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc     && chmod +x /usr/local/bin/gosu     && gosu nobody true     && apk del gnupg",
+      "mkdir -p /opt && adduser -h /opt/elasticsearch -g elasticsearch -s /bin/bash -D elasticsearch",
+      "ln -s elasticsearch elasticsearch-$ELASTICSEARCH_VERSION",
+      "set -x     && wget -O - \"$ELASTICSEARCH_DOWNLOAD/$ELASTICSEARCH_VERSION/elasticsearch-$ELASTICSEARCH_VERSION.tar.gz\" | tar zxvf -",
+      "set -ex     && for path in         ./data         ./logs         ./config         ./config/scripts     ; do         mkdir -p \"$path\";         chown -R elasticsearch:elasticsearch \"$path\";     done"
+    ],
+    "workdir": [
+      "/opt",
+      "/opt/elasticsearch"
+    ],
+    "from": "bashell/alpine-bash",
+    "env": {
+      "GOSU_BASE": "https://github.com/tianon/gosu/releases/download",
+      "GOSU_VERSION": "1.10",
+      "ELASTICSEARCH_VERSION": "2.4.1",
+      "ELASTICSEARCH_DOWNLOAD": "https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch",
+      "PATH": "/opt/elasticsearch/bin:$PATH"
+    },
+    "user": "elasticsearch",
+    "copy": "docker-entrypoint.sh /",
+    "entrypoint": "[\"/docker-entrypoint.sh\"]",
+    "cmd": "[\"elasticsearch\"]"
+  },
+  "source_repository_url": "https://bitbucket.org/bashell-com/alpine-elasticsearch",
+  "source_repository_type": "hg",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/bashell-com/alpine-elasticsearch",
+  "docker_repository": "bashell/alpine-elasticsearch",
+  "docker_image": "bashell/alpine-elasticsearch",
+  "parameters_schema": {
+    "GOSU_BASE": {
+      "default": "https://github.com/tianon/gosu/releases/download",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOSU_VERSION": {
+      "default": "1.10",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ELASTICSEARCH_VERSION": {
+      "default": "2.4.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ELASTICSEARCH_DOWNLOAD": {
+      "default": "https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/opt/elasticsearch/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        9200
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "bashell/alpine-elasticsearch",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/bashell/alpine-elasticsearch",
+    "https://hub.docker.com/v2/repositories/bashell/alpine-elasticsearch",
+    "https://bitbucket.org/bashell-com/alpine-elasticsearch"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/bashell/alpine-elasticsearch",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

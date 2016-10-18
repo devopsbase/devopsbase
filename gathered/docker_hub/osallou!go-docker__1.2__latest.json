@@ -1,0 +1,207 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/osallou/go-docker",
+    "repository_url": "https://hub.docker.com/v2/repositories/osallou/go-docker",
+    "tags_url": "https://hub.docker.com/v2/repositories/osallou/go-docker/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/osallou/go-docker/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/osallou/go-docker/autobuild",
+    "user": "osallou",
+    "name": "go-docker",
+    "namespace": "osallou",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 471,
+    "last_updated": "2016-09-29T07:58:08.831167Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1.2",
+        "full_size": 399248501,
+        "id": 5137324,
+        "repository": 376884,
+        "creator": 8025,
+        "last_updater": 8025,
+        "last_updated": "2016-09-29T07:58:08.099827Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "dev",
+        "full_size": 398343371,
+        "id": 1223074,
+        "repository": 376884,
+        "creator": 8025,
+        "last_updater": 8025,
+        "last_updated": "2016-09-28T12:57:04.046387Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 399235625,
+        "id": 1223423,
+        "repository": 376884,
+        "creator": 8025,
+        "last_updater": 8025,
+        "last_updated": "2016-09-28T12:44:54.178330Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.2-RC1",
+        "full_size": 398444629,
+        "id": 4866195,
+        "repository": 376884,
+        "creator": 8025,
+        "last_updater": 8025,
+        "last_updated": "2016-09-15T12:08:40.023684Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.1",
+        "full_size": 375852698,
+        "id": 3666080,
+        "repository": 376884,
+        "creator": 8025,
+        "last_updater": 8025,
+        "last_updated": "2016-07-01T09:22:26.845397Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "osallou/go-docker"
+  },
+  "name": "osallou/go-docker Docker container",
+  "description": "Batch scheduling system with Docker containers. It integrates with Docker Swarm and Apache Mesos .",
+  "readme": "# Running Go-Docker in containers\n\n## About\n\nAll components of GO-Docker can run as separate containers.\n\nExample configuration files are available in https://bitbucket.org/osallou/go-docker/src under docker_files/prod directory.\nThey should be adapted to your local configuration.\n\nIn examples, fake authentication is used (any user with no password control). If\nuser does not exists on system, it will create a fake user in the container.\nFake *godocker* user is declared as administrator in the web interface.\n\nIf using swarm (as per example go-d.ini), you should have swarm running\nsomewhere reachable by the host running scheduler and watchers. Swarm can run\nitself as a container. Example expects a god-swarm hostname (via --link\nparameter), it can be set to a known ip address in:\n\n    docker_url: 'tcp://god-swarm:2375'\n\nFor Mesos, latest mesos package is installed from repositories. Some issue may occur if using a different version, depending on API compatibilities. If this occurs, you must uninstall mesos package and install your mesos version package in the container (needed for the Python API).\n\n## Requirements\n\nMongodb and Redis are required. Either install them on a server, or get them in containers:\n\n    # Development purpose, for production you should set data persistency\n    docker -H swarm_ip:2375  run --name god-mongo -d mongo\n    docker -H swarm_ip:2375  run --name god-redis -d redis\n\n## Running components\n\n\nRun the web server, interface is reachable at http://host_ip_godweb:6543\n\n*Warning*: data shared directory (here /opt/godshared) *must* match\non host AND container as final job will end in a host container needing the same volume directory.\n*shared_dir* parameter in go-d.ini configuration file must be changed accordingly.\n\n    docker -H swarm_ip:2375  run \\\n      --rm \\\n      --name god-web\n      --link god-mongo:god-mongo  \\\n      --link god-redis:god-redis  \\\n      -v /opt/godshared:/opt/godshared \\\n      -v path_to/go-d.ini:/opt/go-docker/go-d.ini \\\n      -v path_to/production.ini:/opt/go-docker-web/production.ini \\\n      -p 6543:6543 \\\n      -e \"PYRAMID_ENV=prod\" \\\n      osallou/go-docker \\\n      gunicorn -p godweb.pid --log-config=/opt/go-docker-web/production.ini --paste /opt/go-docker-web/production.ini\n\n\nThe first time only, initialize db etc...\n\n    docker -H swarm_ip:2375 run \\\n    --link god-mongo:god-mongo \\\n    --link god-redis:god-redis \\\n    -v /opt/godshared:/opt/godshared \\\n    -v path_to/go-d.ini:/opt/go-docker/go-d.ini \\\n     --rm \\\n     osallou/go-docker \\\n     /usr/bin/python go-d-scheduler.py init\n\n\nRun *one* scheduler\n\n    docker -H swarm_ip:2375 run \\\n      --rm \\\n      --link god-mongo:god-mongo  \\\n      --link god-redis:god-redis  \\\n      --link god-web:god-web \\\n      -v /opt/godshared:/opt/godshared \\\n      -v path_to/go-d.ini:/opt/go-docker/go-d.ini \\\n      osallou/go-docker \\\n      /usr/bin/python go-d-scheduler.py run\n\nRun *one or many* watchers (1 is enough test or medium size production)\n\n    docker -H swarm_ip:2375  run \\\n      --rm \\\n      --link god-mongo:god-mongo  \\\n      --link god-redis:god-redis  \\\n      --link god-web:god-web \\\n      -v /opt/godshared:/opt/godshared \\\n      -v path_to/go-d.ini:/opt/go-docker/go-d.ini \\\n      osallou/go-docker \\\n      /usr/bin/python go-d-watcher.py run\n\n## Customization\n\nFrom GoDocker v1.2, it is possible to override some configuration with environment variables (see README.md for the list). Example:\n\n    docker run --rm -e \"GODOCKER_EXECUTOR=mesos\" -e \"GODOCKER_MESOS_MASTER=master_ip:5050\" -e \"GODOCKER_REDIS_HOST=test-redis\" -e \"GODOCKER_MONGO_URL=mongodb://test-mongo:27017\" -w /opt/go-docker --link test-mongo:test-mongo --link test-redis:test-redis -v /opt/godshared:/opt/godshared --name godocker-scheduler test-godocker python go-d-scheduler.py run\n\nIn this example we override the default executor to use mesos instead of default swarm executor and we specify the master url. Redis and Mongo hosts are also specified in the command line.\n\nTo add a prefix to the web server:\n\nAdd  -e \"GODOCKER_WEB_PREFIX=/testapp\" to web container to add a prefix to web UI (http://xxx:6543/testapp/app).\nUpdate scheduler/watcher containers command with -e \"GODOCKER_PROMETHEUS_EXPORTER=godocker-web:6543/testapp\" to match the declared prefix.\n",
+  "dockerfile": "FROM debian:stable\nMAINTAINER Olivier Sallou <olivier.sallou@irisa.fr>\n\nLABEL status=\"Dockerfile in development\"\nLABEL description=\"Batch scheduling system in containers. This image contains \\\n all godocker components: web, scheduler and watchers. \\\n Config should be overriden in /opt/godocker/go-d.ini \\\n file. Default configuration does not provide mail and only fake \\\n authentication.\"\n\nEXPOSE 6543\n\nWORKDIR /opt/go-docker\n\nENV admin=\"root\"\nENV swarm_url=\"tcp://god-swarm:2375\"\nENV PYTHONPATH=\"/usr/lib/python2.7/site-packages:${PYTHONPATH}\"\nENV PYRAMID_ENV=\"prod\"\n\nRUN apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF\nRUN echo \"deb http://repos.mesosphere.io/debian jessie main\" > /etc/apt/sources.list.d/mesosphere.list\nRUN apt-get update\nRUN apt-get install -y git python-dev libldap2-dev gcc libsasl2-dev\nRUN apt-get install -y python-setuptools apt-transport-https wget\nRUN apt-get install -y openssl libpython-dev libffi-dev libssl-dev protobuf-compiler\nRUN apt-get install -y mesos\n\nRUN cd /opt && git clone https://bitbucket.org/osallou/go-docker.git\nRUN cd /opt && git clone https://bitbucket.org/osallou/go-docker-web.git\nRUN easy_install pip\nRUN apt-get install -y openjdk-7-jre-headless libcurl3 libsvn1\nRUN pip install -U setuptools\n#RUN pip uninstall six\nRUN cd /opt/go-docker && pip install -r requirements.txt\nRUN cd /opt/go-docker && python setup.py develop\nRUN cd /opt/go-docker-web && pip install -r requirements.txt\nRUN cd /opt/go-docker-web && python setup.py develop\nRUN pip install godocker_cli\nRUN cd /opt/go-docker-web && cp production.ini.example production.ini\nRUN cd /opt/go-docker-web && sed -i 's;global_properties =.*;global_properties = /opt/go-docker/go-d.ini;g' production.ini\nRUN cd /opt/go-docker-web && sed -i 's;admin =.*;admin = '${admin}';g' production.ini\nRUN cd /opt/go-docker && cp go-d.ini.sample go-d.ini\nRUN cd /opt/go-docker && sed -i \"s;plugins_dir:.*;plugins_dir: '/opt/go-docker/plugins';g\" go-d.ini\nRUN cd /opt/go-docker && sed -i \"s;shared_dir:.*;shared_dir: '/opt/godshared';g\" go-d.ini\nRUN cd /opt/go-docker && sed -i \"s;mongo_url:.*;mongo_url: 'mongodb://god-mongo:27017';g\" go-d.ini\nRUN cd /opt/go-docker && sed -i \"s;redis_host:.*;redis_host: 'god-redis';g\" go-d.ini\nRUN cd /opt/go-docker && sed -i \"s;influxdb_host:.*;influxdb_host: None;g\" go-d.ini\nRUN cd /opt/go-docker && sed -i \"s;prometheus_exporter:.*;prometheus_exporter: 'god-web:6543';g\" go-d.ini\nRUN cd /opt/go-docker && sed -i \"s;docker_url:.*;docker_url: '\"${swarm_url}\"';g\" go-d.ini\nRUN mkdir -p /var/log/go-docker\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      6543
+    ],
+    "volume": [],
+    "run": [
+      "apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF",
+      "echo \"deb http://repos.mesosphere.io/debian jessie main\" > /etc/apt/sources.list.d/mesosphere.list",
+      "apt-get update",
+      "apt-get install -y git python-dev libldap2-dev gcc libsasl2-dev",
+      "apt-get install -y python-setuptools apt-transport-https wget",
+      "apt-get install -y openssl libpython-dev libffi-dev libssl-dev protobuf-compiler",
+      "apt-get install -y mesos",
+      "cd /opt && git clone https://bitbucket.org/osallou/go-docker.git",
+      "cd /opt && git clone https://bitbucket.org/osallou/go-docker-web.git",
+      "easy_install pip",
+      "apt-get install -y openjdk-7-jre-headless libcurl3 libsvn1",
+      "pip install -U setuptools",
+      "cd /opt/go-docker && pip install -r requirements.txt",
+      "cd /opt/go-docker && python setup.py develop",
+      "cd /opt/go-docker-web && pip install -r requirements.txt",
+      "cd /opt/go-docker-web && python setup.py develop",
+      "pip install godocker_cli",
+      "cd /opt/go-docker-web && cp production.ini.example production.ini",
+      "cd /opt/go-docker-web && sed -i 's;global_properties =.*;global_properties = /opt/go-docker/go-d.ini;g' production.ini",
+      "cd /opt/go-docker-web && sed -i 's;admin =.*;admin = '${admin}';g' production.ini",
+      "cd /opt/go-docker && cp go-d.ini.sample go-d.ini",
+      "cd /opt/go-docker && sed -i \"s;plugins_dir:.*;plugins_dir: '/opt/go-docker/plugins';g\" go-d.ini",
+      "cd /opt/go-docker && sed -i \"s;shared_dir:.*;shared_dir: '/opt/godshared';g\" go-d.ini",
+      "cd /opt/go-docker && sed -i \"s;mongo_url:.*;mongo_url: 'mongodb://god-mongo:27017';g\" go-d.ini",
+      "cd /opt/go-docker && sed -i \"s;redis_host:.*;redis_host: 'god-redis';g\" go-d.ini",
+      "cd /opt/go-docker && sed -i \"s;influxdb_host:.*;influxdb_host: None;g\" go-d.ini",
+      "cd /opt/go-docker && sed -i \"s;prometheus_exporter:.*;prometheus_exporter: 'god-web:6543';g\" go-d.ini",
+      "cd /opt/go-docker && sed -i \"s;docker_url:.*;docker_url: '\"${swarm_url}\"';g\" go-d.ini",
+      "mkdir -p /var/log/go-docker"
+    ],
+    "workdir": [
+      "/opt/go-docker"
+    ],
+    "from": "debian:stable",
+    "maintainer": "Olivier Sallou <olivier.sallou@irisa.fr>",
+    "label": "description=\"Batch scheduling system in containers. This image contains  all godocker components: web, scheduler and watchers.  Config should be overriden in /opt/godocker/go-d.ini  file. Default configuration does not provide mail and only fake  authentication.\"",
+    "env": {
+      "admin": "\"root\"",
+      "swarm_url": "\"tcp://god-swarm:2375\"",
+      "PYTHONPATH": "\"/usr/lib/python2.7/site-packages:${PYTHONPATH}\"",
+      "PYRAMID_ENV": "\"prod\""
+    }
+  },
+  "source_repository_url": "https://bitbucket.org/osallou/go-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/osallou/go-docker",
+  "docker_repository": "osallou/go-docker",
+  "docker_image": "osallou/go-docker",
+  "parameters_schema": {
+    "admin": {
+      "default": "\"root\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "swarm_url": {
+      "default": "\"tcp://god-swarm:2375\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PYTHONPATH": {
+      "default": "\"/usr/lib/python2.7/site-packages:${PYTHONPATH}\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PYRAMID_ENV": {
+      "default": "\"prod\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        6543
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "osallou/go-docker",
+  "revision": "1.2",
+  "uris": [
+    "https://hub.docker.com/r/osallou/go-docker",
+    "https://hub.docker.com/v2/repositories/osallou/go-docker",
+    "https://bitbucket.org/osallou/go-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Orchestration/Cluster-based/Mesos",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/osallou/go-docker",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

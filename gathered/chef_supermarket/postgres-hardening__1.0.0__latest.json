@@ -1,0 +1,91 @@
+{
+  "name": "postgres-hardening Chef cookbook",
+  "chef_cookbook_name": "postgres-hardening",
+  "revision": "1.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/postgres-hardening",
+    "https://supermarket.chef.io/cookbooks/postgres-hardening/download",
+    "https://supermarket.chef.io/cookbooks/postgres-hardening/versions/1.0.0",
+    "https://supermarket.chef.io/cookbooks/postgres-hardening/versions/1.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/postgres-hardening/versions/1.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/postgres-hardening",
+    "https://supermarket.chef.io/api/v1/cookbooks/postgres-hardening/versions/1.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/postgres-hardening",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/postgres-hardening/versions/1.0.0/download",
+  "deprecated": false,
+  "created": "2014-09-02T14:11:31.459Z",
+  "updated": "2014-12-23T13:06:34.436Z",
+  "description": "Installs and configures a secure posgres server",
+  "maintainer": {
+    "name": "arlimus",
+    "email": "chris@lollyrock.com"
+  },
+  "license": "Apache v2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 8,
+  "downloads_count": 983618,
+  "downloads_count_revision": 983618,
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# postgres-hardening (Postgres cookbook)\n\n## Description\n\nProvides security configurations for postgres.\n\nNote: This is currently work in progress and not tested on all supported platforms\n\n## Requirements\n\n* chef\n\n## Usage\n\nThis cookbook is optimized to work with [os-hardening](https://github.com/TelekomLabs/postgres-os-hardening) and [ssh-hardening](https://github.com/TelekomLabs/chef-ssh-hardening). It will play well without, but you need to ensure all preconditions like `apt-get update` or `yum update` are met.\n\nadd the following to your runlist and customize security option attributes\n\n```bash\n  \"recipe[postgresql::server]\",\n  \"recipe[postgres-hardening]\"\n```\n\n### Enable SSL\n\nPlease read http://www.postgresql.org/docs/9.1/static/ssl-tcp.html first. \n\nThis cookbook will delete the links from `/var/lib/postgresql/#{node['postgresql']['version']}/main/server.crt` to `/etc/ssl/certs/ssl-cert-snakeoil.pem` and `/var/lib/postgresql/#{node['postgresql']['version']}/main/server.key` to `/etc/ssl/private/ssl-cert-snakeoil.key` on Debian systems. This certificates are self-signed (see http://en.wikipedia.org/wiki/Snake_oil_%28cryptography%29) and therefore not trusted. You have to provide your own trusted certificates for SSL.\n\n## Security Options\n\n* `node['postgresql']['config']['logging_collector'] = true`\n   This parameter enables the logging collector, which is a background process \n   that captures log messages sent to stderr and redirects them into log files. \n   See http://www.postgresql.org/docs/9.1/static/runtime-config-logging.html for details\n   Defaults to: `true`\n\n* `node['postgresql']['config']['log_directory'] = 'pg_log'`\n   When logging_collector is enabled, this parameter determines the \n   directory in which log files will be created. \n   See http://www.postgresql.org/docs/9.1/static/runtime-config-logging.html for details\n   Defaults to: `pg_log`\n\n* `node['postgresql']['config']['log_connections'] = true`\n   Causes each attempted connection to the server to be logged, as well as successful \n   completion of client authentication. \n   See http://www.postgresql.org/docs/9.1/static/runtime-config-logging.html for details\n   Defaults to: `true`\n\n* `node['postgresql']['config']['log_disconnections'] = true`\n   This outputs a line in the server log similar to log_connections but at session \n   termination, and includes the duration of the session. \n   See http://www.postgresql.org/docs/9.1/static/runtime-config-logging.html for details\n   Defaults to: `true`\n\n* `node['postgresql']['config']['log_duration'] = true`\n   Causes the duration of every completed statement to be logged \n   See http://www.postgresql.org/docs/9.1/static/runtime-config-logging.html for details\n   Defaults to: `true`\n\n* `node['postgresql']['config']['log_hostname'] = true`\n   By default, connection log messages only show the IP address of the connecting host. \n   See http://www.postgresql.org/docs/9.1/static/runtime-config-logging.html for details\n   Defaults to: `true`\n\n* `node['postgresql']['config']['log_line_prefix'] = '%t %u %d %h'`\n   This is a printf-style string that is output at the beginning of each log line. \n   See http://www.postgresql.org/docs/9.1/static/runtime-config-logging.html for details\n   Defaults to: `%t %u %d %h`\n\n* `node['postgresql']['config']['password_encryption'] = true`\n   When a password is specified in CREATE USER or ALTER ROLE without writing either \n   ENCRYPTED or UNENCRYPTED, this parameter determines whether the password is to be encrypted. \n   See http://www.postgresql.org/docs/9.1/static/runtime-config-connection.html for details\n   Defaults to: `true`\n\n* `node['postgresql']['config']['ssl'] = false`\n   Enables SSL connections. Please read http://www.postgresql.org/docs/9.1/static/ssl-tcp.html \n   SSL certificates are out of scope of this module. This is why this setting defaults to `off`.\n   You have to provide ssl certificates *before* the startup of postgres, otherwise it will fail to start.  \n   See http://www.postgresql.org/docs/9.1/static/runtime-config-connection.html for details\n   Defaults to: `false`\n\n## Tests\n\n```bash\n# Install dependencies\ngem install bundler\nbundle install\n\n# Do lint checks\nbundle exec rake lint\n\n# Fetch tests\nbundle exec thor kitchen:fetch-remote-tests\n\n# fast test on one machine\nbundle exec kitchen test default-ubuntu-1204\n\n# test on all machines\nbundle exec kitchen test\n\n# for development\nbundle exec kitchen create default-ubuntu-1204\nbundle exec kitchen converge default-ubuntu-1204\n```\n\n## Contributors + Kudos\n\n* Edmund Haselwanter\n* Dominik Richter\n* Christoph Hartmann\n* Patrick Meier\n\n\n## License and Author\n\n* Author:: Deutsche Telekom AG\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/postgresql",
+      "revision": ">= 3.4.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "postgresql-hardening::default": "calls hardening recipe",
+    "postgresql-hardening::hardening": "add hardening configuration postgresql server"
+  }
+}

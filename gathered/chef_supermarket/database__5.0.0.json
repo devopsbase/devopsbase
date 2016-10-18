@@ -1,0 +1,112 @@
+{
+  "name": "database Chef cookbook",
+  "chef_cookbook_name": "database",
+  "revision": "5.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/database",
+    "https://supermarket.chef.io/cookbooks/database/download",
+    "https://supermarket.chef.io/cookbooks/database/versions/5.0.0",
+    "https://supermarket.chef.io/cookbooks/database/versions/5.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/database/versions/5.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/database",
+    "https://supermarket.chef.io/api/v1/cookbooks/database/versions/5.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Data Store"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/database",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/database/versions/5.0.0/download",
+  "deprecated": false,
+  "created": "2010-05-06T02:52:42.000Z",
+  "updated": "2016-09-23T04:04:49.968Z",
+  "description": "provides LWRPs for common database tasks",
+  "maintainer": {
+    "name": "chef",
+    "email": "cookbooks@chef.io"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 164,
+  "downloads_count": 44083132,
+  "downloads_count_revision": 4700,
+  "repository_url": "https://github.com/opscode-cookbooks/database",
+  "issues_url": "https://github.com/opscode-cookbooks/database/issues",
+  "chef_source_url": "https://github.com/opscode-cookbooks/database",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Database Cookbook\n=================\n\n[![Build Status](https://travis-ci.org/chef-cookbooks/database.svg?branch=master)](http://travis-ci.org/chef-cookbooks/database)\n[![Cookbook Version](http://img.shields.io/cookbook/v/database.svg)](https://supermarket.chef.io/cookbooks/database)\n\nThe main highlight of this cookbook is the `database` and\n`database_user` resources for managing databases and database users in\na RDBMS. Providers for MySQL, PostgreSQL and SQL Server are also\nprovided, see usage documentation below.\n\nRequirements\n------------\n### Platforms\n- Debian / Ubuntu derivatives\n- RHEL derivatives\n- Fedora\n\n### Chef\n- Chef 11+\n\n### Cookbooks\n* postgresql\n\nResources/Providers\n-------------------\nThese resources aim to expose an abstraction layer for interacting\nwith different RDBMS in a general way. Currently the cookbook ships\nwith providers for MySQL, PostgreSQL and SQL Server. Please see\nspecific usage in the __Example__ sections below. The providers use\nspecific Ruby gems installed under Chef's Ruby environment to execute\ncommands and carry out actions. These gems will need to be installed\nbefore the providers can operate correctly. Specific notes for each\nRDBS flavor:\n\n- MySQL: leverages the `mysql2` gem, which can be installed with the\n  `mysql2_chef_gem` resource prior to use (available on the\n  Supermarket). You must depend on the `mysql2_chef_gem` cookbook,\n  then use a `mysql2_chef_gem` resource to install it. The resource\n  allows the user to select MySQL client library versions, as well as\n  optionally select MariaDB libraries.\n\n- PostgreSQL: leverages the `pg` gem which is installed as part of the\n  `postgresql::ruby` recipe. You must declare `include_recipe\n  \"database::postgresql\"` to include this.\n\n- SQL Server: leverages the `tiny_tds` gem which is installed as part\n  of the `sql_server::client` recipe.\n\n### database\nManage databases in a RDBMS. Use the proper shortcut resource\ndepending on your RDBMS: `mysql_database`, `postgresql_database` or\n`sql_server_database`.\n\n#### Actions\n- `:create`: create a named database\n- `:drop`: drop a named database\n- `:query`: execute an arbitrary query against a named database\n\n#### Attribute Parameters\n- database_name: name attribute. Name of the database to interact with\n- connection: hash of connection info. valid keys include `:host`,\n  `:port`, `:username`, and `:password`\n    - only for MySQL DB*: `:flags` (see `Mysql2::Client@@default_query_options[:connect_flags]`)\n    - only for PostgreSQL: `:database` (overwrites parameter `database_name`)\n\n- sql: string of sql or a block that executes to a string of sql,\n  which will be executed against the database. used by `:query` action\n  only\n\n\\* The database cookbook uses the `mysql2` gem.\n\n> \"The value of host may be either a host name or an IP address. If\n  host is NULL or the string \"127.0.0.1\", a connection to the local\n  host is assumed. For Windows, the client connects using a\n  shared-memory connection, if the server has shared-memory\n  connections enabled. Otherwise, TCP/IP is used. For a host value of\n  \".\" on Windows, the client connects using a named pipe, if the\n  server has named-pipe connections enabled. If named-pipe connections\n  are not enabled, an error occurs.\"\n\nIf you specify a `:socket` key and are using the mysql_service\nresource to set up the MySQL service, you'll need to specify the path\nin the form `/var/run/mysql-<instance name>/mysqld.sock`.\n\n#### Providers\n- `Chef::Provider::Database::Mysql`: shortcut resource `mysql_database`\n- `Chef::Provider::Database::Postgresql`: shortcut resource `postgresql_database`\n- `Chef::Provider::Database::SqlServer`: shortcut resource `sql_server_database`\n\n#### Examples\n```ruby\n# Create a mysql database\nmysql_database 'wordpress-cust01' do\n  connection(\n    :host     => '127.0.0.1',\n    :username => 'root',\n    :password => node['wordpress-cust01']['mysql']['initial_root_password']\n  )\n  action :create\nend\n```\n```ruby\n# Create a mysql database on a named mysql instance\nmysql_database 'oracle_rools' do\n  connection(\n    :host     => '127.0.0.1',\n    :username => 'root',\n    :socket   => \"/var/run/mysql-#{instance-name}/mysqld.sock\"\n    :password => node['mysql']['server_root_password']\n  )\n  action :create\nend\n```\n```ruby\n# Create a sql server database\nsql_server_database 'mr_softie' do\n  connection(\n    :host     => '127.0.0.1',\n    :port     => node['sql_server']['port'],\n    :username => 'sa',\n    :password => node['sql_server']['server_sa_password']\n  )\n  action :create\nend\n```\n\n```ruby\n# create a postgresql database\npostgresql_database 'mr_softie' do\n  connection(\n    :host      => '127.0.0.1',\n    :port      => 5432,\n    :username  => 'postgres',\n    :password  => node['postgresql']['password']['postgres']\n  )\n  action :create\nend\n```\n\n```ruby\n# create a postgresql database with additional parameters\npostgresql_database 'mr_softie' do\n  connection(\n    :host     => '127.0.0.1',\n    :port     => 5432,\n    :username => 'postgres',\n    :password => node['postgresql']['password']['postgres']\n  )\n  template 'DEFAULT'\n  encoding 'DEFAULT'\n  tablespace 'DEFAULT'\n  connection_limit '-1'\n  owner 'postgres'\n  action :create\nend\n```\n\n```ruby\n# Externalize conection info in a ruby hash\nmysql_connection_info = {\n  :host     => '127.0.0.1',\n  :username => 'root',\n  :password => node['mysql']['server_root_password']\n}\n\nsql_server_connection_info = {\n  :host     => '127.0.0.1',\n  :port     => node['sql_server']['port'],\n  :username => 'sa',\n  :password => node['sql_server']['server_sa_password']\n}\n\npostgresql_connection_info = {\n  :host     => '127.0.0.1',\n  :port     => node['postgresql']['config']['port'],\n  :username => 'postgres',\n  :password => node['postgresql']['password']['postgres']\n}\n\n# Same create commands, connection info as an external hash\nmysql_database 'foo' do\n  connection mysql_connection_info\n  action :create\nend\n\nsql_server_database 'foo' do\n  connection sql_server_connection_info\n  action     :create\nend\n\npostgresql_database 'foo' do\n  connection postgresql_connection_info\n  action     :create\nend\n\n# Create database, set provider in resource parameter\ndatabase 'bar' do\n  connection mysql_connection_info\n  provider   Chef::Provider::Database::Mysql\n  action     :create\nend\n\ndatabase 'bar' do\n  connection sql_server_connection_info\n  provider   Chef::Provider::Database::SqlServer\n  action     :create\nend\n\ndatabase 'bar' do\n  connection postgresql_connection_info\n  provider   Chef::Provider::Database::Postgresql\n  action     :create\nend\n\n\n\n# Drop a database\nmysql_database 'baz' do\n  connection mysql_connection_info\n  action    :drop\nend\n\n\n\n# Query a database\nmysql_database 'flush the privileges' do\n  connection mysql_connection_info\n  sql        'flush privileges'\n  action     :query\nend\n\n\n# Query a database from a sql script on disk\nmysql_database 'run script' do\n  connection mysql_connection_info\n  sql { ::File.open('/path/to/sql_script.sql').read }\n  action :query\nend\n\n\n\n# Vacuum a postgres database\npostgresql_database 'vacuum databases' do\n  connection      postgresql_connection_info\n  database_name 'template1'\n  sql 'VACUUM FULL VERBOSE ANALYZE'\n  action :query\nend\n```\n\n### database_user\nManage users and user privileges in a RDBMS. Use the proper shortcut resource depending on your RDBMS: `mysql_database_user`, `postgresql_database_user`, or `sql_server_database_user`.\n\n#### Actions\n- `:create`: create a user\n- `:drop`: drop a user\n- `:grant`: manipulate user privileges on database objects\n\n#### Attribute Parameters\n- username: name attribute. Name of the database user\n- password: password for the user account\n- database_name: Name of the database to interact with\n- connection: hash of connection info. valid keys include :host,\n  :port, :username, :password\n- privileges: array of database privileges to grant user. used by the\n  :grant action. default is :all\n- host: host where user connections are allowed from. used by MySQL\n  provider only. default is '127.0.0.1'\n- table: table to grant privileges on. used by :grant action and MySQL\n  provider only. default is '*' (all tables)\n- require_ssl: true or false to force SSL connections to be used for user\n\n#### Providers\n- `Chef::Provider::Database::MysqlUser`: shortcut resource `mysql_database_user`\n- `Chef::Provider::Database::PostgresqlUser`: shortcut resource `postgresql_database_user`\n- `Chef::Provider::Database::SqlServerUser`: shortcut resource`sql_server_database_user`\n\n#### Examples\n\n```ruby\n# create connection info as an external ruby hash\nmysql_connection_info = {\n  :host     => '127.0.0.1',\n  :username => 'root',\n  :password => node['mysql']['server_root_password']\n}\n\npostgresql_connection_info = {\n  :host     => '127.0.0.1',\n  :port     => node['postgresql']['config']['port'],\n  :username => 'postgres',\n  :password => node['postgresql']['password']['postgres']\n}\n\nsql_server_connection_info = {\n  :host     => '127.0.0.1',\n  :port     => node['sql_server']['port'],\n  :username => 'sa',\n  :password => node['sql_server']['server_sa_password']\n}\n\n# Create a mysql user but grant no privileges\nmysql_database_user 'disenfranchised' do\n  connection mysql_connection_info\n  password   'super_secret'\n  action     :create\nend\n\n# Do the same but pass the provider to the database resource\ndatabase_user 'disenfranchised' do\n  connection mysql_connection_info\n  password   'super_secret'\n  provider   Chef::Provider::Database::MysqlUser\n  action     :create\nend\n\n# Create a postgresql user but grant no privileges\npostgresql_database_user 'disenfranchised' do\n  connection postgresql_connection_info\n  password   'super_secret'\n  action     :create\nend\n\n# Do the same but pass the provider to the database resource\ndatabase_user 'disenfranchised' do\n  connection postgresql_connection_info\n  password   'super_secret'\n  provider   Chef::Provider::Database::PostgresqlUser\n  action     :create\nend\n\n# Create a sql server user but grant no privileges\nsql_server_database_user 'disenfranchised' do\n  connection sql_server_connection_info\n  password   'super_secret'\n  action     :create\nend\n\n# Drop a mysql user\nmysql_database_user 'foo_user' do\n  connection mysql_connection_info\n  action     :drop\nend\n\n# Bulk drop sql server users\n%w(disenfranchised foo_user).each do |user|\n  sql_server_database_user user do\n    connection sql_server_connection_info\n    action     :drop\n  end\nend\n\n# Grant SELECT, UPDATE, and INSERT privileges to all tables in foo db from all hosts\nmysql_database_user 'foo_user' do\n  connection    mysql_connection_info\n  password      'super_secret'\n  database_name 'foo'\n  host          '%'\n  privileges    [:select,:update,:insert]\n  action        :grant\nend\n\n# Grant all privileges on all databases/tables from 127.0.0.1\nmysql_database_user 'super_user' do\n  connection mysql_connection_info\n  password   'super_secret'\n  action     :grant\nend\n\n# Grant all privileges on all tables in foo db\npostgresql_database_user 'foo_user' do\n  connection    postgresql_connection_info\n  database_name 'foo'\n  privileges    [:all]\n  action        :grant\nend\n\n# grant select,update,insert privileges to all tables in foo db\nsql_server_database_user 'foo_user' do\n  connection    sql_server_connection_info\n  password      'super_secret'\n  database_name 'foo'\n  privileges    [:select,:update,:insert]\n  action        :grant\nend\n```\n\n\nLicense & Authors\n-----------------\n\n**Author:** Cookbook Engineering Team (<cookbooks@chef.io>)\n\n**Copyright:** 2009-2015, Chef Software, Inc.\n\n```\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "arch",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "freebsd",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "oracle",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "suse",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/postgresql",
+      "revision": ">= 1.0.0",
+      "self_resolve": true
+    }
+  ]
+}

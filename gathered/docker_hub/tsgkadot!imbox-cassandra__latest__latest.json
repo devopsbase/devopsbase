@@ -1,0 +1,104 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/tsgkadot/imbox-cassandra",
+    "repository_url": "https://hub.docker.com/v2/repositories/tsgkadot/imbox-cassandra",
+    "tags_url": "https://hub.docker.com/v2/repositories/tsgkadot/imbox-cassandra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/tsgkadot/imbox-cassandra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/tsgkadot/imbox-cassandra/autobuild",
+    "user": "tsgkadot",
+    "name": "imbox-cassandra",
+    "namespace": "tsgkadot",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 46,
+    "last_updated": "2016-09-01T06:36:19.518741Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 66532002,
+        "id": 3585995,
+        "repository": 765938,
+        "creator": 856091,
+        "last_updater": 856091,
+        "last_updated": "2016-09-01T06:36:19.036009Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "tsgkdt/imbox-cassandra"
+  },
+  "name": "tsgkadot/imbox-cassandra Docker container",
+  "description": "Cassandra for intra-mart to use IMbox",
+  "readme": "[![](https://images.microbadger.com/badges/image/tsgkadot/imbox-cassandra.svg)](https://microbadger.com/images/tsgkadot/imbox-cassandra \"Get your own image badge on microbadger.com\")\n\n# Cassandra for IMBox\n\n- Base Image: java:8-jdk-alpine\n- Cassandra: 1.1.12\n- Authentication: intra-mart simple auth\n\n\n# 日本語の説明\n\n- intra-mart Accel-PlatformでIMBoxを利用する際に必要となるCassandraのDockerイメージ\n- Cassandra公式のDockerイメージでは要求されるバージョンが古すぎて、存在しないためやむなく自作\n- デモ用途にサンプルユーザ(aoyagi/aoyagi)を初期設定している\n\n> 2015年7月現在のApacheCassandraの最新版は、2.1.8ですが、\n> 1.2～2.1は、intra-mart Accel Platformで利用しているCassandraのライブラリがサポートしていないため、\n> 現状は、1.1台の最新の1.1.12をご利用ください。\n\n出展: [intra-mart Accel Platform Cassandra管理者ガイド 第14版](http://www.intra-mart.jp/document/library/iap/public/imbox/cassandra_administrator_guide/texts/install/get-cassandra.html)\n\n使い方等は、[Qiita](http://qiita.com/kirareyaku/items/b0e7887a10b21db7ded7)などを参照してください\n\n",
+  "dockerfile": "FROM java:8-jdk-alpine\n\nMAINTAINER tsgkdt <tsgkadot@gmail.com>\nENV CASSANDRA_VER 1.1.12\n\n# Install Cassandra\nRUN apk add --no-cache libc6-compat bash && \\\n    apk add --virtual=dependencies --no-cache wget unzip && \\\n    wget http://archive.apache.org/dist/cassandra/${CASSANDRA_VER}/apache-cassandra-${CASSANDRA_VER}-bin.tar.gz && \\\n    tar xvzf apache-cassandra-${CASSANDRA_VER}-bin.tar.gz -C /usr/local && \\\n    ln -s /usr/local/apache-cassandra-1.1.12 /usr/local/cassandra && \\\n    rm -f apache-cassandra-${CASSANDRA_VER}-bin.tar.gz\n\n# Copy files\nCOPY ./config/* /usr/local/cassandra/conf/\nCOPY entrypoint.sh /usr/local/cassandra/\n\n# Authentication Settings\nRUN wget http://www.intra-mart.jp/download/product/iap/imbox/cassandra_simple_auth.zip && \\\n    unzip cassandra_simple_auth.zip -d /tmp/cassandra && \\\n    rm -f cassandra_simple_auth.zip && \\\n    apk del dependencies && \\\n    cp /tmp/cassandra/lib/*.jar /usr/local/cassandra/lib/ && \\\n    cp /tmp/cassandra/conf/*.properties /usr/local/cassandra/conf/ && \\\n    rm -rf /tmp/cassandra && \\\n    echo \"aoyagi=aoyagi_pwd\" >> /usr/local/cassandra/conf/passwd.properties && \\\n    echo \"\\n #IMBox settings\" >> /usr/local/cassandra/conf/access.properties && \\\n    echo \"imbox_keyspace.<rw>=aoyagi\" >> /usr/local/cassandra/conf/access.properties && \\\n    echo \"imbox_keyspace.<ro>=user\" >> /usr/local/cassandra/conf/access.properties && \\\n    echo \"imbox_keyspace.*.<rw>=aoyagi\" >> /usr/local/cassandra/conf/access.properties && \\\n    echo \"imbox_keyspace.*.<ro>=user\" >> /usr/local/cassandra/conf/access.properties && \\\n    chmod +x /usr/local/cassandra/entrypoint.sh\n\nENTRYPOINT [\"/usr/local/cassandra/entrypoint.sh\"]\n\n\n# 7199: jmx port\n# 9160: cassandra port\nEXPOSE 7199 9160\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      7199
+    ],
+    "volume": [],
+    "run": [
+      "apk add --no-cache libc6-compat bash &&     apk add --virtual=dependencies --no-cache wget unzip &&     wget http://archive.apache.org/dist/cassandra/${CASSANDRA_VER}/apache-cassandra-${CASSANDRA_VER}-bin.tar.gz &&     tar xvzf apache-cassandra-${CASSANDRA_VER}-bin.tar.gz -C /usr/local &&     ln -s /usr/local/apache-cassandra-1.1.12 /usr/local/cassandra &&     rm -f apache-cassandra-${CASSANDRA_VER}-bin.tar.gz",
+      "wget http://www.intra-mart.jp/download/product/iap/imbox/cassandra_simple_auth.zip &&     unzip cassandra_simple_auth.zip -d /tmp/cassandra &&     rm -f cassandra_simple_auth.zip &&     apk del dependencies &&     cp /tmp/cassandra/lib/*.jar /usr/local/cassandra/lib/ &&     cp /tmp/cassandra/conf/*.properties /usr/local/cassandra/conf/ &&     rm -rf /tmp/cassandra &&     echo \"aoyagi=aoyagi_pwd\" >> /usr/local/cassandra/conf/passwd.properties &&     echo \"\\n #IMBox settings\" >> /usr/local/cassandra/conf/access.properties &&     echo \"imbox_keyspace.<rw>=aoyagi\" >> /usr/local/cassandra/conf/access.properties &&     echo \"imbox_keyspace.<ro>=user\" >> /usr/local/cassandra/conf/access.properties &&     echo \"imbox_keyspace.*.<rw>=aoyagi\" >> /usr/local/cassandra/conf/access.properties &&     echo \"imbox_keyspace.*.<ro>=user\" >> /usr/local/cassandra/conf/access.properties &&     chmod +x /usr/local/cassandra/entrypoint.sh"
+    ],
+    "workdir": [],
+    "from": "java:8-jdk-alpine",
+    "maintainer": "tsgkdt <tsgkadot@gmail.com>",
+    "env": {
+      "CASSANDRA_VER": "1.1.12"
+    },
+    "copy": "entrypoint.sh /usr/local/cassandra/",
+    "entrypoint": "[\"/usr/local/cassandra/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/tsgkdt/imbox-cassandra.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/tsgkdt/imbox-cassandra",
+  "docker_repository": "tsgkadot/imbox-cassandra",
+  "docker_image": "tsgkadot/imbox-cassandra",
+  "parameters_schema": {
+    "CASSANDRA_VER": {
+      "default": "1.1.12",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        7199
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "tsgkadot/imbox-cassandra",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/tsgkadot/imbox-cassandra",
+    "https://hub.docker.com/v2/repositories/tsgkadot/imbox-cassandra",
+    "https://github.com/tsgkdt/imbox-cassandra.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/tsgkadot/imbox-cassandra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

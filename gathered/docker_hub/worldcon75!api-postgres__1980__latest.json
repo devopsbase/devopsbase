@@ -1,0 +1,102 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/worldcon75/api-postgres",
+    "repository_url": "https://hub.docker.com/v2/repositories/worldcon75/api-postgres",
+    "tags_url": "https://hub.docker.com/v2/repositories/worldcon75/api-postgres/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/worldcon75/api-postgres/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/worldcon75/api-postgres/autobuild",
+    "user": "worldcon75",
+    "name": "api-postgres",
+    "namespace": "worldcon75",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 171,
+    "last_updated": "2016-10-17T08:28:32.079145Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "1980",
+        "full_size": 101303184,
+        "id": 5190578,
+        "repository": 953436,
+        "creator": 565247,
+        "last_updater": 565247,
+        "last_updated": "2016-10-17T08:28:31.807772Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 101303185,
+        "id": 5474162,
+        "repository": 953436,
+        "creator": 565247,
+        "last_updater": 565247,
+        "last_updated": "2016-10-17T08:27:27.716783Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "worldcon75/api"
+  },
+  "name": "worldcon75/api-postgres Docker container",
+  "description": "Postgres master service for Worldcon 75 API",
+  "readme": "[![DockerPulls](https://img.shields.io/docker/stars/worldcon75/api.svg)](https://hub.docker.com/r/worldcon75/api/)\n[![Build Status](https://travis-ci.org/worldcon75/api.svg?branch=master)](https://travis-ci.org/worldcon75/api)\n# Worldcon 75 Member Services \nThis project is under active development, so not everything is ready yet. The main components are:\n\n- **`client`** - The client front-end for our membership; a react + redux single-page app\n- **`docker-compose*.yml`** - Service configuration\n- **`hakkapeliitta`** - A deprecated Scala webshop implementation, due to be ported to node.js\n- **`hugo/server`** - An express.js app providing the `/api/hugo/` parts of [this API](API.md)\n- **`kansa/server`** - An express.js app providing the `/api/kansa/` parts of [this API](API.md)\n- **`kansa/importer`** - A tool for importing CSV & JSON data from our prior registry format\n- **`kansa/admin`** - An internal front-end for the registry data; a react + redux single-page app\n- **`kyyhky`** - Internal mailing service for hugo & kansa, using [Kue](http://automattic.github.io/kue/)\n- **`nginx`** - An SSL-terminating reverse proxy for Kansa\n- **`postgres`** - Configuration & schemas for our database\n\n[Kansa](https://en.wiktionary.org/wiki/kansa#Finnish) is Finnish for \"people\" or \"tribe\", and it's\nthe name for our member registry. The [Hugo Awards](http://www.thehugoawards.org/) are awards that\nare nominated and selected by the members of each year's Worldcon. Kyyhky is Finnish for \"pigeon\".\n\n\n### Getting Started\n\nTo get a dev environment up and running, first clone this repo with `git clone --recursive`, or run\n`git submodule update --init` after cloning. The database and server are set up to be run using\n[docker-compose](https://docs.docker.com/compose/); for other tools you'll need a recent-ish version\nof node if you want to build them locally.\n\nHere's a series of commands that should get the full working system installed and operational,\nprovided that `git`, `docker-compose` and `npm` are already installed:\n\n```\ngit clone --recursive https://github.com/worldcon75/api.git w75-api\ncd w75-api\ndocker-compose up --build -d  # leave out the -d to not detach\ncd client\nnpm install && npm start\n```\n\nOnce you have all the services up and running, first visit `https://localhost:4430/` in your\nbrowser to trigger its complaint about the server's self-singed certificate, and bypass it:\n  - **Chrome**: Click on _Advanced_, then _Proceed to example.com_\n  - **Firefox**: Click on _I Understand the Risks_, then _Add Exception...._, then _Get\n    Certificate_, and finally _Confirm Security Exception_\n  - **IE**: Click on _Continue to this website (not recommended)_\n  - **Safari**: Click on _Show Certificate_, _Always Trust \"example.com\" when connecting to\n    \"example.com\"_, then _Continue_\n\nOnce that's done, visiting `http://localhost:8080/` should redirect you to the login page, where\nthe bootstrapped admin account is available as email `admin@example.com`, and key `key`. Visiting\nthe address `http://localhost:8080/#/login/admin@example.com/key` should also automatically log\nyou in.\n\nCurrently, `kansa/admin` is set up to run completely separately from `client`, but using the same\nserver address `http://localhost:8080/`. To use it, it may be easier to login first using `client`,\nor by visiting the API endpoint `https://localhost:4430/api/kansa/login?email=admin@example.com&key=key`\nto set the proper auth cookie.\n\n\n### Configuration\n\nFor production use and otherwise, the services' configuration is controlled by the Docker Compose\nconfig files. By default, `docker-compose` will include both [docker-compose.yml](docker-compose.yml)\nand [docker-compose.override.yml](docker-compose.override.yml); the former acts as the base config,\nwhich the latter expands/overrides with development-specific configuration. For production use, the\nbase config will instead need to be overridden by [docker-compose.prod.yml](docker-compose.prod.yml)\n(see [`make prod`](Makefile)).\n\nFor the most part, services are configured using environment variables, some of which need to match\nacross services:\n  - `SESSION_SECRET` allows hugo/server and kansa/server to share authenticated sessions\n  - `DATABASE_URL` and `*_PG_PASSWORD` are required for the services' database connections\n\nThe [production config](docker-compose.prod.yml) includes the `client-build` service, which is used\nto build the client's JS assets, which are then served by `nginx`.\n\n\n### Common Issues\n\nThe particular places that may need manual adjustment are:\n\n- Connections to the server require TLS (HTTPS, WSS). For ease of development the repo includes a\n  [self-signed certificate](http://www.selfsignedcertificate.com/) for `localhost`. This will not\n  be automatically accepted by browsers or other clients. If you have a signed certificate you can\n  use (and therefore a publicly visible address), you'll want to add the certificate files to\n  `nginx/ssl/` and adjust the environment values set for the `nginx` service in\n  [docker-compose.override.yml](docker-compose.override.yml) and/or\n  [docker-compose.prod.yml](docker-compose.prod.yml).\n\n- The `CORS_ORIGIN` variables in [hugo/server/dev.env](hugo/server/dev.env) and\n  [kansa/server/dev.env](kansa/server/dev.env) need to be space- or comma-separated lists of\n  addresses at which client apps may be hosted, to allow for Cross-Origin Resource Sharing. By\n  default, the value should match the `http://localhost:8080` address of the `client` and\n  `kansa/admin` Webpack dev servers started by `npm start` in each directory.\n\n- If you're running the server on a separate machine or if you've changed the `nginx` port\n  configuration, you may need to tell clients where to find the server, using something like\n  `export API_HOST='remote.example.com'` before running `npm start`. The default is set\n  [here](client/webpack.config.js) to `localhost:4430'` or the address of your Docker VM.\n\n\n----\n\nIf you'd like to help with this project, please get in touch with us at\n[devops@worldcon.fi](mailto:devops@worldcon.fi).\n",
+  "dockerfile": "FROM danieldent/postgres-replication:9.5\n\nCOPY damm /damm\n\nCOPY init/* /docker-entrypoint-initdb.d/\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [],
+    "workdir": [],
+    "from": "danieldent/postgres-replication:9.5",
+    "copy": "init/* /docker-entrypoint-initdb.d/"
+  },
+  "source_repository_url": "https://github.com/worldcon75/api.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/worldcon75/api",
+  "docker_repository": "worldcon75/api-postgres",
+  "docker_image": "worldcon75/api-postgres",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "worldcon75/api-postgres",
+  "revision": "1980",
+  "uris": [
+    "https://hub.docker.com/r/worldcon75/api-postgres",
+    "https://hub.docker.com/v2/repositories/worldcon75/api-postgres",
+    "https://github.com/worldcon75/api.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/API",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/worldcon75/api-postgres",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

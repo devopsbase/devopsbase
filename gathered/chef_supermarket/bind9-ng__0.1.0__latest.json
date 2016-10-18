@@ -1,0 +1,67 @@
+{
+  "name": "bind9-ng Chef cookbook",
+  "chef_cookbook_name": "bind9-ng",
+  "revision": "0.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/bind9-ng",
+    "https://supermarket.chef.io/cookbooks/bind9-ng/download",
+    "https://supermarket.chef.io/cookbooks/bind9-ng/versions/0.1.0",
+    "https://supermarket.chef.io/cookbooks/bind9-ng/versions/0.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/bind9-ng/versions/0.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/bind9-ng",
+    "https://supermarket.chef.io/api/v1/cookbooks/bind9-ng/versions/0.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/bind9-ng",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/bind9-ng/versions/0.1.0/download",
+  "deprecated": false,
+  "created": "2014-07-24T20:41:21.220Z",
+  "updated": "2014-07-24T20:41:21.361Z",
+  "description": "Installs/Configures bind9-ng",
+  "maintainer": {
+    "name": "ramakuka",
+    "email": "ram@akuka.com"
+  },
+  "license": "All rights reserved",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 1207641,
+  "downloads_count_revision": 1207641,
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "bind9-ng Cookbook\n==============\nA cookbook to manage bind DNS servers, and zones\nSupport views,acl,master/slave using keys and many other options.\n\nHere is a repo with my lab, it will give you some good idea of how to use this cookbooks check it out: https://github.com/ramakuka/bind9-Lab\nRequirements\n------------\nThis is a 'library' cookbook, so in order to get the most out of it you will need to have a wrapper cookbook\n\n\nAttributes\n----------\nThis cookbook relays on attributes defined in the wrapper cookbook.\n\nChannel\n-------\n```node['bind9']['channel']``` Will be used to configure the channels like rndc or statistics-channels.\nthe name of the channel should be specify as a hash and it will contain array of config parameters for example:\n```\ndefault['bind9']['channel']['controls'][1]['inet'] = \"127.0.0.1\"\ndefault['bind9']['channel']['controls'][1]['port'] = \"953\"\ndefault['bind9']['channel']['controls'][1]['allow'] = \"any\"\ndefault['bind9']['channel']['controls'][1]['keys'] = \"rndc-key\"\n```\n\nKeys\n----\n``` node['bind9']['keys']``` Will be used to configure the bind keys expample :\n```\ndefault['bind9']['keys']['rndc']['algorithm'] = \"hmac-md5\"\ndefault['bind9']['keys']['rndc']['secret'] = \"T8/uYW+mMHzpZLtMC4Vpdw==\"\n```\nATTENTION! since rndc is critical for bind operation (init script is using it to stop and reload the server) we generated a  key and used it as default. PLEASE CHANEG THE KEY BEFORE USING IT!!! here is a link that explains how it can be done http://www.cyberciti.biz/faq/unix-linux-bind-named-configuring-tsig/\n\nLogs\n----\n```node['bind9']['log']``` Will be used to configure the logs and has tow main parts.\nthe Default log parameter for all categories, it should be defined with attribute ```['bind9']['log']['logdflt'][PARAMTER]```\nThe defaults are:\n```\ndefault['bind9']['logdflt']['version'] = \"versions 4 size 100m\"\ndefault['bind9']['logdflt']['severity'] = \"dynamic\"\ndefault['bind9']['logdflt']['print-category'] = \"yes\"\ndefault['bind9']['logdflt']['print-severity'] = \"yes\"\ndefault['bind9']['logdflt']['print-time'] = \"yes\"\n```\nChanges in the logdflt section will affect all other channels unless the log channel will specify it.\nThe second part of the log attributes is the log channel. channel must have the following attribute\n```\ndefault['bind9']['log'][CHANNLE NAME]['channel']=\ndefault['bind9']['log'][CHANNLE NAME]['logfile']=\n```\nhere is an example\n```\ndefault['bind9']['log']['queries']['channel']= \"queries_file\"\ndefault['bind9']['log']['queries']['logfile'] = \"queries.log\"\ndefault['bind9']['log']['queries']['categorychannle'] = \"null\"\n```\nMore information about bind logs can be found in here: http://www.zytrax.com/books/dns/ch7/logging.html\n\nOptions\n-------\n```node['bind9']['options']``` Will be used for a configuration in the option section in bind. Attribute can be a key value pair when the key will be the option name and the value will be used as the value or an Array when the key will be used as the option name and the value will be set bind section for this option example\n```default['bind9']['options']['dnssec-validation'] = \"auto\"``` will be translate to ```dnssec-validation auto;``` in bind\n```default['bind9']['options']['listen-on'] = ['1.1.1.1','2.2.2.2']``` will be translate to\n```\nlisten-on {\n1.1.1.1;\n2.2.2.2;\n};\n```\nkeep in maind that if the value sould be quoted in bind the value should be quoted in the attribute as well, for example\n``` default['bind9']['options']['directory'] = '\"/var/named\"'``` will translated to ``` directory \"/var/named\"```\n\nAcl\n-------\n```node['bind9']['acl']``` Is a hash of acls that contains an Array of ips\nAll ACLs will be inputted to named. conf.acl in the bind config directory.\nfor example :\n```\nnode['bind9']['acl']= {\n\t\"interal\" : ['10/8','192.168/16'],\n\t\"external\" : ['any']\n}\n```\n\nViews :\n------------\nviews can be used per domain , and should be defined on the provider\nBy default we asuume you have an ACL for every view - so the default match-clients acl will be the view name . if you want to define a differnat acl to a view use the attribute\n```node['bind9']['viewacl'][NAME OF THE VIEW] = ACLNAME```\nfor example - by default view internal look like this\n```\nview \"internal-view\" {\n\tmatch-clients { internal; };\n\t\t.\n\t\t.\n\t  DOMAINS\n\t\t.\n\t\t.\n\t};\n```\nif you want to use office ACL for the view then you should set up ```node['bind9']['viewacl']['internal'] = 'office'```\n```\nview \"internal-view\" {\n\tmatch-clients { office; };\n\t\t.\n\t\t.\n\t  DOMAINS\n\t\t.\n\t\t.\n\t};\n```\nHow to use the cookbook\n------------------\nJust include the cookbook in your metadata set up the attribute and use the bind9_zone provider to create a new zone for example:\n\n```\nbind9_ng_zone \"Domain name\" do\n  email\n  nameserver\n  type\n  ip\n  view\nend\n```\nThe options are :\ndomain - Doman Name\nttl - The ttl value for the domain :default => 86400\nemail - Hosmaster Email to use for the SOA record\nview -  The view the domain should be included , leave empty if you don't want to use views\ntype - Type of domain right now we onlt support master and forward  :default => \"master\"\nip - if type= forward the ip address of the forward dnss should be specify here\n\nrefresh - define SOA refresh default => 3600\nretry - define SOA retry  default => 900\nexpire -  define SOA expire default => 604800\nneg_ttl - define the neg_ttl default => 3600\nnameserver NS record for the domain\nmailserver - define the  mailserver that will be used by the zone\nhosts - A hash of hosts and ip address that will configure for the domain\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ]
+}

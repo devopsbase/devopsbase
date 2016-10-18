@@ -1,0 +1,89 @@
+{
+  "name": "iscsi Chef cookbook",
+  "chef_cookbook_name": "iscsi",
+  "revision": "1.0.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/iscsi",
+    "https://supermarket.chef.io/cookbooks/iscsi/download",
+    "https://supermarket.chef.io/cookbooks/iscsi/versions/1.0.0",
+    "https://supermarket.chef.io/cookbooks/iscsi/versions/1.0.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/iscsi/versions/1.0.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/iscsi",
+    "https://supermarket.chef.io/api/v1/cookbooks/iscsi/versions/1.0.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Networking",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Data Store"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/iscsi",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/iscsi/versions/1.0.0/download",
+  "deprecated": false,
+  "created": "2011-09-30T19:49:26.000Z",
+  "updated": "2015-07-02T20:26:17.135Z",
+  "description": "Installs configures open-iscsi for storage arrays",
+  "maintainer": {
+    "name": "ovaistariq",
+    "email": "wolfe21@marshall.edu"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": false,
+  "rating": null,
+  "followers_count": 2,
+  "downloads_count": 5036810,
+  "downloads_count_revision": 1262317,
+  "repository_url": "http://github.com/atomic-penguin/cookbook-iscsi",
+  "issues_url": "http://github.com/atomic-penguin/cookbook-iscsi",
+  "chef_source_url": "http://github.com/atomic-penguin/cookbook-iscsi",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "iSCSI Cookbook\n--------------\n\n[![Build Status](https://secure.travis-ci.org/atomic-penguin/cookbook-iscsi.png?branch=master)](http://travis-ci.org/atomic-penguin/cookbook-iscsi)\n\nDescription\n===========\n\n  This cookbook provides the ability to configure Open-iSCSI for\nEnterprise Linux based systems.  The default attributes reflect original\nresearch and recommendations gathered from Dell, Equallogic, and RedHat.\n\n  Here is a [link](http://atomic-penguin.github.io/blog/2010/11/29/Red-Hat-Enterprise-Linux-5.x-iSCSI-and-device-mapper-multipath-HOWTO)\nto my own whitepaper in blog form, discussing the configuration and tuning of Open-iSCSI\nwith this cookbook, as supplementary documentation.  Here is a list of recommended\nsource documentation in addition to the linked blog post.\n\n  * [Red Hat KB 2877](https://access.redhat.com/kb/docs/DOC-2877)\n  * ~~Dell PowerEdge Systems Red Hat Enterprise Linux 5.4 Install Notes~~ (dead link)\n  * ~~Red Hat Linux v5.x Software iSCSI Initiator Configuration and tuning Guide~~ (dead link)\n  * [Open-iSCSI documentation](http://www.open-iscsi.org/index.html#docs)\n\n\nRequirements\n============\n\n### Required Cookbooks\n\n  * multipath \n  * sysctl\n\n### Recommended Cookbooks\n\n  * dbench\n\nAttributes\n==========\n\n### iscsid.conf\n\n  * iscsi (namespace)\n    - `['session']['timeo']['replacement_timeout']` Time to wait before failing SCSI commands back to the application, default 15\n    - `['conn0']['timeo']['noop_out_interval']` Interval to wait before sending a ping, default 5\n    - `['conn0']['timeo']['noop_out_timeout']` Time to wait for a NOP-out before failing the connection, default 5\n    - `['session']['initial_login_retry_max']` Initial number of login tries, default 12\n    - `['session']['cmds_max']` How many commands the session will queue, default 1024\n    - `['session']['queue_depth']` Device queue depth, default 128\n    - `['session']['iscsi']['fastabort']` IET targets need Yes, Equallogic needs set to No. Default is Yes\n\n### udev\n\n  * iscsi.udev (namespace)\n    - `['interfaces']` Array of ethernet devices to apply ethtool options via udev. Default empty.\n    - `['ethtool_opts']` Turn on, or off, certain features on iSCSI ethernet devices.\n        Default flow control on, autonegotiate off, Generic Recieve offload off.\n    - `[reload_command']` platform version specific command to reload udev rules.\n\n### sysctl.params\n\n  * sysctl.params.net.ipv4 (namespace)\n    - `['conf']['all']['arp_ignore']` Modes of ARP replies. Default 1, reply only if local IP address.\n    - `['conf']['all']['arp_announce']` Modes of ARP announcement. Default 2, use the best lcoal address.\n    - `['ipv4']['netfilter']['ip_conntrack_tcp_be_liberal']` 1 Disables TCP window tracking, default 1 on RHEL5.\n\n## Usage\n\n### Default recipe\n\n  Set role specific overrides, and add recipe['iscsi'] to runlist\n\nExample iSCSI role for an Equallogic storage array\n\n```\nname 'iscsi'\ndescription 'Installs and configures Open-iSCSI for EQL. Installs dm-multipath.  Configures sysctl.'\noverride_attributes 'iscsi' => {\n  'session' => {\n    'iscsi' => {\n      'fastabort' => 'No'\n  }\n},\nrun_list 'recipe[iscsi]', 'recipe[multipath]', 'recipe[dbench]'\n```\n\nExample iSCSI role for an IET storage array\n\n```\nname 'iscsi'\ndescription 'Installs and configures Open-iSCSI for IET. Installs dm-multipath.  Configures sysctl.'\noverride_attributes 'iscsi' => {\n  'session' => {\n    'iscsi' => {\n      'fastabort' => 'Yes'\n  }\n},\nrun_list 'recipe[iscsi]', 'recipe[multipath]', 'recipe[dbench]'\n```\n\n### rescan-scsi-bus recipe\n\nSimply `include_recipe 'iscsi::rescan-scsi-bus'` to drop off Kurt Garloff's\nhandy rescan-scsi-bus script.  This has nothing to do with iSCSI, other than\nit may come in handy to rescan the SCSI bus when you target a new LUN.\n\nThis recipe only drops off the script in /usr/local/bin, the recipe does not\nexecute anything.\n\n## License and Author \n\nCopyright 2010-2012, Eric G. Wolfe\n\nLicensed under the Apache License, Version 2.0 (the 'License');\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an 'AS IS' BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 5.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 5.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 5.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 5.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "oracle",
+      "revision": ">= 5.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/multipath",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/sysctl",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

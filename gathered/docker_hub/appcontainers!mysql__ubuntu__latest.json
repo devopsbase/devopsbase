@@ -1,0 +1,211 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/appcontainers/mysql",
+    "repository_url": "https://hub.docker.com/v2/repositories/appcontainers/mysql",
+    "tags_url": "https://hub.docker.com/v2/repositories/appcontainers/mysql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/appcontainers/mysql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/appcontainers/mysql/autobuild",
+    "user": "appcontainers",
+    "name": "mysql",
+    "namespace": "appcontainers",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 8,
+    "pull_count": 49276,
+    "last_updated": "2016-06-16T20:53:43.554100Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "ubuntu",
+        "full_size": 112749668,
+        "id": 821237,
+        "repository": 81148,
+        "creator": 79833,
+        "last_updater": 79833,
+        "last_updated": "2016-06-16T20:53:43.132695Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 108403645,
+        "id": 57534,
+        "repository": 81148,
+        "creator": 79833,
+        "last_updater": 79833,
+        "last_updated": "2016-06-16T18:51:22.315428Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "debian",
+        "full_size": 66463168,
+        "id": 821233,
+        "repository": 81148,
+        "creator": 79833,
+        "last_updater": 79833,
+        "last_updated": "2016-06-16T18:47:19.917333Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "centos",
+        "full_size": 108403933,
+        "id": 821223,
+        "repository": 81148,
+        "creator": 79833,
+        "last_updater": 79833,
+        "last_updated": "2016-06-16T18:45:03.239930Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      }
+    ],
+    "build_name": "appcontainers/mysql"
+  },
+  "name": "appcontainers/mysql Docker container",
+  "description": "Centos/Debian Based Customizable MySQL Container - Updated 06/16/2016",
+  "readme": "**Centos/Debian Based Customizable MySQL Container - 295 MB - Updated 06/16/2016**\n\n\n**CentOS 6.8 Based Customizable MySQL Container - 295 MB - Updated 06/16/2016**\n>**Built from appcontainers/centos:6**\n\n> appcontainers/mysql:latest\n> appcontainers/mysql:centos\n\n>##### In Depth Container Details, and Change log can be found here:\nhttp://www.appcontainers.com/mysql\n\n&nbsp;\n\n**Debian 8 Jessie Based Customizable MySQL Container - 245 MB - Updated 06/16/2016**\n>**Built from appcontainers/debian:jessie**\n\n> appcontainers/mysql:debian\n\n>##### In Depth Container Details, and Change log can be found here:\nhttp://www.appcontainers.com/mysql\n\n&nbsp;",
+  "dockerfile": "############################################################\n# Dockerfile to build MySQL Base Container\n# Based on: appcontainers/ubuntu\n# DATE: 08/31/2015\n# COPYRIGHT: Appcontainers.com\n############################################################\n\n# Set the base image to Debian Base\nFROM appcontainers/ubuntu\n\n# File Author / Maintainer\nMAINTAINER Rich Nason rnason@appcontainers.com\n\n###################################################################\n#*************************  APP VERSIONS  *************************\n###################################################################\n\n\n###################################################################\n#***************  OVERRIDE ENABLED ENV VARIABLES  *****************\n###################################################################\n\nENV ENV dev\nENV TERMTAG MYSQL\nENV MYSQL_USER root\nENV MYSQL_PASS PAssw0rd\nENV MYSQL_CLIENT 172.17.%.%\nENV CREATEDB false\nENV MYSQL_DB testapp\nENV APP_USER testuser\nENV APP_PASS testpass\n\n###################################################################\n#******************  ADD REQUIRED APP FILES  **********************\n###################################################################\n\nADD runconfig.sh /tmp/.runconfig.sh\nADD mysql_setup.sql /tmp/.mysql_setup.sql\nADD mysql_remote.sql /tmp/.mysql_remote.sql\n\n###################################################################\n#*******************  UPDATES & PRE-REQS  *************************\n###################################################################\n\nRUN apt-get clean all && \\\napt-get -y update && \\\nDEBIAN_FRONTEND=noninteractive apt-get -y upgrade && \\\nDEBIAN_FRONTEND=noninteractive apt-get -y install sudo mysql-client-5.7 mysql-common mysql-server-5.7 && \\\napt-get clean && \\\nrm -fr /var/lib/apt/lists/* && \\\nsed -i 's/127.0.0.1/0.0.0.0/g' /etc/mysql/mysql.conf.d/mysqld.cnf\n\n# Remove locales other than english\nRUN for x in `ls /usr/share/locale | grep -v en_GB`; do rm -fr /usr/share/locale/$x; done && \\\nfor x in `ls /usr/share/i18n/locales/ | grep -v en_`; do rm -fr /usr/share/i18n/locales/$x; done\n\n###################################################################\n#*******************  APPLICATION INSTALL  ************************\n###################################################################\n\n\n###################################################################\n#******************  POST DEPLOY CLEAN UP  ************************\n###################################################################\n\n# Debian based distros start mysql automatically.. this breaks /var/lib/ on a persistent container, so..\nRUN rm -fr /var/lib/mysql\n\n# Debian based distros set my.cnf to listen on localhost 127.0.0.1.. change that to all interfaces\nRUN sed -i 's/127.0.0.1/*/g' /etc/mysql/my.cnf\n\n###################################################################\n#*****************  CONFIGURE START ITEMS  ************************\n###################################################################\n\nRUN chmod +x /tmp/.runconfig.sh && \\\necho \"/tmp/./.runconfig.sh\" >> ~/.bashrc && \\\necho \"[ -f /tmp/.runconfig.sh ] && rm -fr /tmp/.runconfig.sh\" >> /root/.bashrc\n\nCMD /bin/bash -c \"/tmp/.runconfig.sh && service mysql stop && /usr/bin/mysqld_safe\"\n\n###################################################################\n#****************  EXPOSE APPLICATION PORTS  **********************\n###################################################################\n# Expose ports to other containers only\n\nEXPOSE 3306\n\n###################################################################\n#*******************  OPTIONAL / LEGACY  **************************\n###################################################################\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "runconfig.sh",
+        "dest": "/tmp/.runconfig.sh"
+      },
+      {
+        "source": "mysql_setup.sql",
+        "dest": "/tmp/.mysql_setup.sql"
+      },
+      {
+        "source": "mysql_remote.sql",
+        "dest": "/tmp/.mysql_remote.sql"
+      }
+    ],
+    "expose": [
+      3306
+    ],
+    "volume": [],
+    "run": [
+      "apt-get clean all && apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-get -y install sudo mysql-client-5.7 mysql-common mysql-server-5.7 && apt-get clean && rm -fr /var/lib/apt/lists/* && sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mysql/mysql.conf.d/mysqld.cnf",
+      "for x in `ls /usr/share/locale | grep -v en_GB`; do rm -fr /usr/share/locale/$x; done && for x in `ls /usr/share/i18n/locales/ | grep -v en_`; do rm -fr /usr/share/i18n/locales/$x; done",
+      "rm -fr /var/lib/mysql",
+      "sed -i 's/127.0.0.1/*/g' /etc/mysql/my.cnf",
+      "chmod +x /tmp/.runconfig.sh && echo \"/tmp/./.runconfig.sh\" >> ~/.bashrc && echo \"[ -f /tmp/.runconfig.sh ] && rm -fr /tmp/.runconfig.sh\" >> /root/.bashrc"
+    ],
+    "workdir": [],
+    "from": "appcontainers/ubuntu",
+    "maintainer": "Rich Nason rnason@appcontainers.com",
+    "env": {
+      "ENV": "dev",
+      "TERMTAG": "MYSQL",
+      "MYSQL_USER": "root",
+      "MYSQL_PASS": "PAssw0rd",
+      "MYSQL_CLIENT": "172.17.%.%",
+      "CREATEDB": "false",
+      "MYSQL_DB": "testapp",
+      "APP_USER": "testuser",
+      "APP_PASS": "testpass"
+    },
+    "cmd": "/bin/bash -c \"/tmp/.runconfig.sh && service mysql stop && /usr/bin/mysqld_safe\""
+  },
+  "source_repository_url": "git@bitbucket.org:appcontainers/mysql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/appcontainers/mysql",
+  "docker_repository": "appcontainers/mysql",
+  "docker_image": "appcontainers/mysql",
+  "parameters_schema": {
+    "ENV": {
+      "default": "dev",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TERMTAG": {
+      "default": "MYSQL",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_USER": {
+      "default": "root",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_PASS": {
+      "default": "PAssw0rd",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_CLIENT": {
+      "default": "172.17.%.%",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CREATEDB": {
+      "default": "false",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_DB": {
+      "default": "testapp",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APP_USER": {
+      "default": "testuser",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APP_PASS": {
+      "default": "testpass",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "appcontainers/mysql",
+  "revision": "ubuntu",
+  "uris": [
+    "https://hub.docker.com/r/appcontainers/mysql",
+    "https://hub.docker.com/v2/repositories/appcontainers/mysql",
+    "git@bitbucket.org:appcontainers/mysql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System/Linux/CentOS",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/appcontainers/mysql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

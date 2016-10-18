@@ -1,0 +1,103 @@
+{
+  "name": "cerner_splunk Chef cookbook",
+  "chef_cookbook_name": "cerner_splunk",
+  "revision": "1.10.3",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/cerner_splunk",
+    "https://supermarket.chef.io/cookbooks/cerner_splunk/download",
+    "https://supermarket.chef.io/cookbooks/cerner_splunk/versions/1.10.3",
+    "https://supermarket.chef.io/cookbooks/cerner_splunk/versions/1.10.3/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/cerner_splunk/versions/1.10.3",
+    "https://supermarket.chef.io/api/v1/cookbooks/cerner_splunk",
+    "https://supermarket.chef.io/api/v1/cookbooks/cerner_splunk/versions/1.10.3/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Monitoring & Trending",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/cerner_splunk",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/cerner_splunk/versions/1.10.3/download",
+  "deprecated": false,
+  "created": "2014-10-23T21:06:29.919Z",
+  "updated": "2016-09-22T04:18:32.637Z",
+  "description": "Installs/Configures Splunk Servers and Forwarders",
+  "maintainer": {
+    "name": "acharlieh",
+    "email": "splunk@cerner.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 7,
+  "downloads_count": 2906130,
+  "downloads_count_revision": 77693,
+  "repository_url": "https://github.com/cerner/cerner_splunk",
+  "issues_url": "https://github.com/cerner/cerner_splunk/issues",
+  "chef_source_url": "https://github.com/cerner/cerner_splunk",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "`cerner_splunk` Cookbook\n===================\nInstalls and Configures Splunk forwarders and servers, and other components related to the same.\n\nBased on the work done by [BBY Solutions](https://github.com/bestbuycom/splunk_cookbook) and a previous Cerner team.\n\n[![Github Version](https://badge.fury.io/gh/cerner%2Fcerner_splunk.svg)](http://badge.fury.io/gh/cerner%2Fcerner_splunk)\n[![Code Climate](https://codeclimate.com/github/cerner/cerner_splunk/badges/gpa.svg)](https://codeclimate.com/github/cerner/cerner_splunk)\n\nRequirements\n------------\n* Red Hat Enterprise / CentOS 5.5+ / Windows Server 2008+ (forwarder only) or Ubuntu LTS 12.04+\n* Chef 10.24+ or 11+\n\n**_Important Note:_** The Cerner forked 0.10.8.x versions of Chef are NOT supported and will likely be [problematic](http://www.fireflyfans.net/bluesunimages/227243C5F193ACEE32D874D8BD22AFD1.jpg). We highly suggest moving to Omnibus packaged Chef 10.24+ as quickly as possible.\n\nGetting your logs into Splunk\n-----------------------------\n1. Configure which Splunk environment(s) should be collecting your logs\n    * The Splunk Administrator of each environment will be able provide a Data Bag name and (plaintext) Data Bag item for the cluster configuration of Splunk\n        * More than likely, the Data bag name will be 'cerner_splunk', and the Data bag item id will vary.\n        * If you are on Enterprise Chef, this should already exist on the Chef server.\n        * If you are on Open Source Chef, ask for the Chef repository(ies) and upload the data bags to your server on a regular basis.\n    * For each name pair, build an id as a string in the form: `\"#{data_bag}/#{data_bag_item}\"`\n    * Set the `node.default[:splunk][:config][:clusters]` attribute as an array of the ids collected above.\n        * It is recommended that you set this in your nodes' [Environment](http://docs.opscode.com/essentials_environments.html), that way your roles for configuring monitors (Step 4) are then portable.\n        * Splunk administrators will also have Chef Roles that can be included in a similar manner as was with Splunk 4, but this is a known anti-pattern, and we recommend getting away from it when you can.\n        * You could also maintain the portable role, and have both the cluster role and the portable role on each of your nodes' run lists (which would be required if you cannot modify the environment, or need to override the environment).\n2. Identify the name of the Splunk index(es) to which you will send your logs\n    * If you do not know which index, work with your team, and the Splunk Administrators to identify an existing index or setup a new one.\n3. Identify the log files you want Splunk to collect.\n    * The Splunk process runs as the `splunk` user and group id, you will need to ensure that the logs are readable by this user.\n        * If it helps, you can add the `splunk` user to a group, by adding the group name to an array attribute `node.default[:splunk][:groups]`\n            * At a minimum, the group must be created in a resource in a recipe on the run_list prior to the cerner_splunk cookbook in order to have any effect. However If a requested group does not exist on the node by this point, this will NOT fail the chef run, but instead no action will occur.\n    * It is highly recommended that you identify individual files instead of directories, and use some form of log rotation to manage space use.\n    * Identify the format of the file, and identify a corresponding sourcetype for each.\n        * Splunk has a number of [pretrained sourcetypes](http://docs.splunk.com/Documentation/Splunk/6.0.1/Data/Listofpretrainedsourcetypes) which should be preferred over custom sourcetypes if applicable.\n        * The [Splunk Community](docs/contributing.md) may have additional sourcetypes that can be leveraged prior to building a custom sourcetype as well.\n4. Create / add a role to configure Splunk for your system.\n    * The role needs to have `'recipe[cerner_splunk]'` on the run_list\n    * In your role, set `node.default[:splunk][:main_project_index]` to the index you are sending your logs (from step 2)\n    * Set `node.default[:splunk][:monitors]` to the files with sourcetypes you want to monitor.\n5. Upload and run!\n    * You'll need to upload your role(s) & environments to the Chef server\n    * You'll need to ensure that your nodes are in the correct envrionment\n    * You'll need to ensure that the role(s) are on the nodes runlists\n    * As root on each node, run chef-client & profit.\n\n### Example Time!!!!\nLet's say I'm on the Awesome Team, and I am setting up an Apache server, and want to feed the access and error logs into Splunk.\n\n1. I talk to my trusty Splunk administrator, who points me to the `cluster-corporate` item in the `cerner_splunk` databag.\n2. I've talked to my team and Splunk Administrator to also learn that Awesome Team's events should be forwarded to the `awesome_team` index.\n3. My Apache access log will be located on my nodes at /var/log/httpd/access_log, and the error log is at /var/log/httpd/error_log.\n    * My application recipe creates and grants access to these logs to the 'apachelogs' group, and the directories leading to them are traversable by members of the same group.\n    * I'm using standard logging, so my Access log is in NCSA Combined format (access_combined sourcetype), and my Error log is sourcetype apache_error.\n4. I make changes to my chef artifacts:\n    * I alter the environment for my nodes:\n     ```ruby\n     # coding: UTF-8\n\n     name 'awesomeness_corporate'\n     description 'Node Environment for the Awesome Team Servers in Corporate'\n     default_attributes(splunk: { config: { clusters: ['cerner_splunk/cluster-corporate']}})\n     ```\n    * I create a role:\n     ```ruby\n      # coding: UTF-8\n\n      name 'awesomeness_ops'\n      description 'Awesome Operations Role'\n      run_list 'recipe[cerner_splunk]'\n      default_attributes(\n        splunk: {\n          groups: ['apachelogs']\n          main_project_index: 'awesome_team',\n          monitors: [{\n            path: '/var/log/httpd/access_log',\n            sourcetype: 'access_combined'\n          },{\n            path: '/var/log/httpd/error_log',\n            sourcetype: 'apache_error'\n          }]\n        })\n     ```\n5. I upload my environment, my role, set my nodes in my runlist, and profit!\n\nPossibly Asked Questions\n------------------------\n* Can I send different monitors to different indexes?\n    * Yes! Instead of specifying a `node['main_project_index']` on each of the monitors you would specify `index: indexname`\n* Can I forward to multiple splunk clusters from the same forwarder?\n    * Yes, specify a list of multiple cluster data bags instead of just a single cluster data bag.\n    * Some upgrades and other security reasons may necessitate this, but usually it shouldn't be done since it counts double against the license volume.\n    * Currently it is only supported to forward to indexes of the same name on both instances.\n* Can I configure forwarders within my recipes?\n    * Yes, use the `cerner_splunk_forwarder_monitors` resource in a recipe on your run list after the cerner_splunk recipe.\n* Do I have to specify an index?\n    * At Cerner: Yes. We use indexes to define ownership and access to data. Data sent to the default index will be rejected.\n    * In general: No. Without specifying an index, you wind up in the 'main' index.\n* What if I have a question that's not anwsered here?\n    * Cerner Associates may be able to reference the [Splunk User Guide](https://wiki.ucern.com/display/OPSINFRA/Splunk+User+Guide)\n    * Could also ask in IRC or the other Splunk communities [as listed here](docs/contributing.md)\n\nDocumentation\n-------------\nMore in depth documentation including server configuration and data bag formats is located [in this repository](docs/README.md)\n\nLicense & Authors\n-----------------\n- Author:: David Crowder (david.crowder@cerner.com)\n- Author:: Charlie Huggard (charlie.huggard@cerner.com)\n\n### Original Cerner Cookbook\n- Author:: Preston Koprivica (preston.koprivica@cerner.com)\n- Author:: Garry Polley (garry.polley@cerner.com)\n\n### Best Buy Cookbook\n- Author:: Andrew Painter (andrew.painter@bestbuy.com)\n- Author:: Bryan Brandau (bryan.brandau@bestbuy.com)\n- Author:: Aaron Peterson (aaron@opscode.com)\n\n```text\nCopyright:: 2012-2014, Cerner Innovation, Inc.\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 5.5",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 12.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "windows",
+      "revision": ">= 6.1",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef-vault",
+      "revision": "~> 1.2",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ulimit",
+      "revision": "~> 0.3.2",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/xml",
+      "revision": "~> 1.2",
+      "self_resolve": true
+    }
+  ],
+  "conflicts": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef-splunk",
+      "revision": ">= 0.0.0"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/splunk",
+      "revision": ">= 0.0.0"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/splunk_server",
+      "revision": ">= 0.0.0"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/splunk_forwarder",
+      "revision": ">= 0.0.0"
+    }
+  ]
+}

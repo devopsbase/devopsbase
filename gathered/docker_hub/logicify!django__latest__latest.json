@@ -1,0 +1,125 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/logicify/django",
+    "repository_url": "https://hub.docker.com/v2/repositories/logicify/django",
+    "tags_url": "https://hub.docker.com/v2/repositories/logicify/django/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/logicify/django/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/logicify/django/autobuild",
+    "user": "logicify",
+    "name": "django",
+    "namespace": "logicify",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 46,
+    "last_updated": "2016-09-26T10:40:18.368470Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 393006454,
+        "id": 3115976,
+        "repository": 701799,
+        "creator": 338875,
+        "last_updater": 338875,
+        "last_updated": "2016-09-26T10:40:17.862239Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Logicify/docker-django"
+  },
+  "name": "logicify/django Docker container",
+  "description": "Base image for production ready django setup",
+  "readme": "# Base image for django deployments\n\n[![](https://images.microbadger.com/badges/image/logicify/django.svg)](https://microbadger.com/images/logicify/django \"Get your own image badge on microbadger.com\")\n\nThis image is useful if you want to create **production setup** for your django application.\nEssentially it runs 2 processes:\n\n* [gunicorn](http://gunicorn.org/) which actually hosts your django aplication\n* [Nginx](https://nginx.org/en/) which serves static files and proxies the rest of requests to gunicorn\n  \n## Requirements\n\n1. You should put you django application code into the following folder of the image: `/srv/application`\n1. Static files should be located under `/srv/static`\n1. You need to point your application to put media into `/srv/media`. \n1. It is required to pass env variable `APP_MODULE` which contains the name of the module to be used as wsgi entry point.\nE.g. `your_app.wsgi`\n\nEnsure you updated your django settings accordingly (especially `MEDIA_ROOT` and `STATIC_ROOT`).\n \n## Examples\n\nHere is an example of the Dockerfile which creates an image from the source code (it might be run on CI server \nas a part of build process):\n\n```\nFROM logicify/django:1.1\n\nCOPY build/code /srv/application\nCOPY build/static /srv/static\n\nRUN source /srv/virtenv/bin/activate && \\\n    LANG=en_US.utf8 pip install -r requirements.txt\n\nENV APP_MODULE \"our_app.wsgi\"\nENV APP_PROCESS_NAME \"our-app-name\"\n\n```\n\nSo basically what it does is copying files from the build folder into valid locations, setting up all dependencies an \nrequired variables. As result you have ready to deploy image.\n\n## Supported Variables\n\n* **PROXY_TIMEOUT** - timeout in seconds for nginx proxy (default `90`)\n* **STATIC_URL** - url path for static files hosting (default `/static`)\n* **STATIC_PATH** - location on the file system where nginx should find static files (`/srv/static`)\n* **MEDIA_PATH** - location on the file system where nginx should find media files (`/srv/media`)\n",
+  "dockerfile": "FROM logicify/python-wsgi:latest\nMAINTAINER \"Dmitry Berezovsky <dmitry.berezovsky@logicify.com>\"\n\nENV PROXY_TIMEOUT \"90\"\nENV STATIC_URL \"/static\"\nENV STATIC_PATH \"/srv/static\"\nENV MEDIA_PATH \"/srv/media\"\n\nUSER root\nRUN yum -y update \\    \n    && yum -y install nginx gettext \\\n    && easy_install-2.7 pip && pip2 install supervisor supervisor-stdout \\\n    && mkdir /etc/nginx/proxy.d\n\n# Create a directory for config \nCOPY nginx/nginx.conf /etc/nginx/nginx.conf\nCOPY nginx/start-nginx.sh /usr/bin/start-nginx.sh\nCOPY nginx/mime.types /etc/nginx/mime.types\nCOPY supervisor.ini /etc/supervisor.ini\nCOPY supervisor-shutdown.sh /usr/bin/supervisor-shutdown\n\n# forward request and error logs to docker log collector\nRUN ln -sf /dev/stdout /var/log/nginx/access.log \\\n    && ln -sf /dev/stderr /var/log/nginx/error.log \\\n    && chmod +x /usr/bin/start-nginx.sh \\\n    && chmod +x /usr/bin/supervisor-shutdown\n\nEXPOSE 8080\n\nCMD [\"supervisord\", \"-n\", \"-c\", \"/etc/supervisor.ini\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8080
+    ],
+    "volume": [],
+    "run": [
+      "yum -y update \\    ",
+      "ln -sf /dev/stdout /var/log/nginx/access.log     && ln -sf /dev/stderr /var/log/nginx/error.log     && chmod +x /usr/bin/start-nginx.sh     && chmod +x /usr/bin/supervisor-shutdown"
+    ],
+    "workdir": [],
+    "from": "logicify/python-wsgi:latest",
+    "maintainer": "\"Dmitry Berezovsky <dmitry.berezovsky@logicify.com>\"",
+    "env": {
+      "PROXY_TIMEOUT": "\"90\"",
+      "STATIC_URL": "\"/static\"",
+      "STATIC_PATH": "\"/srv/static\"",
+      "MEDIA_PATH": "\"/srv/media\""
+    },
+    "user": "root",
+    "copy": "supervisor-shutdown.sh /usr/bin/supervisor-shutdown",
+    "cmd": "[\"supervisord\", \"-n\", \"-c\", \"/etc/supervisor.ini\"]"
+  },
+  "source_repository_url": "https://github.com/Logicify/docker-django.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Logicify/docker-django",
+  "docker_repository": "logicify/django",
+  "docker_image": "logicify/django",
+  "parameters_schema": {
+    "PROXY_TIMEOUT": {
+      "default": "\"90\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "STATIC_URL": {
+      "default": "\"/static\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "STATIC_PATH": {
+      "default": "\"/srv/static\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MEDIA_PATH": {
+      "default": "\"/srv/media\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "logicify/django",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/logicify/django",
+    "https://hub.docker.com/v2/repositories/logicify/django",
+    "https://github.com/Logicify/docker-django.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Logging",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/logicify/django",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

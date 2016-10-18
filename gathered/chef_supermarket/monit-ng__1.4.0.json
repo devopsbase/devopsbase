@@ -1,0 +1,99 @@
+{
+  "name": "monit-ng Chef cookbook",
+  "chef_cookbook_name": "monit-ng",
+  "revision": "1.4.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/monit-ng",
+    "https://supermarket.chef.io/cookbooks/monit-ng/download",
+    "https://supermarket.chef.io/cookbooks/monit-ng/versions/1.4.0",
+    "https://supermarket.chef.io/cookbooks/monit-ng/versions/1.4.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/monit-ng/versions/1.4.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/monit-ng",
+    "https://supermarket.chef.io/api/v1/cookbooks/monit-ng/versions/1.4.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Monitoring & Trending",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/monit-ng",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/monit-ng/versions/1.4.0/download",
+  "deprecated": false,
+  "created": "2014-09-06T17:18:10.716Z",
+  "updated": "2016-03-10T03:14:42.971Z",
+  "description": "Installs and configures monit",
+  "maintainer": {
+    "name": "nathwill",
+    "email": "nath.e.will@gmail.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 10,
+  "downloads_count": 9969078,
+  "downloads_count_revision": 732291,
+  "repository_url": "https://github.com/bbg-cookbooks/monit-ng",
+  "issues_url": "https://github.com/bbg-cookbooks/monit-ng/issues",
+  "chef_source_url": "https://github.com/bbg-cookbooks/monit-ng",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Chef monit cookbook  [![Build Status](https://travis-ci.org/bbg-cookbooks/monit-ng.svg?branch=master)](https://travis-ci.org/bbg-cookbooks/monit-ng)\n===================\nInstalls and configures monit, with a resource\nprovider for managing additional monit checks.\n\nRecipes\n-------\n- `monit::default`: installs and optionally configures monit\n- `monit::repo`: installs monit from a package repository\n- `monit::source`: installs monit from source\n- `monit::config`: configures monit\n- `monit::{crond,ntpd,postfix,rsyslog,sshd}`: install common service checks\n\nAttributes\n----------\n\n\nmonit_check resource examples\n-----------------------------\n\n##### External Service Check\n\n```ruby\nmonit_check 'facebook_api' do\n  check_type  'host'\n  check_id    'api.facebook.com'\n  group       'external'\n  tests [\n    {\n      'condition' => 'failed port 80 proto http',\n      'action'    => 'alert'\n    },\n    {\n      'condition' => 'failed port 443 type tcpSSL proto http',\n      'action'    => 'alert'\n    },\n  ]\nend\n```\n\n##### SSHD\n\n```ruby\nmonit_check 'sshd' do\n  check_id  '/var/run/sshd.pid'\n  group     'system'\n  start     '/etc/init.d/ssh start'\n  stop      '/etc/init.d/ssh stop'\n  tests [\n    {\n      'condition' => \"failed port #{node.openssh.server.port} proto ssh for 3 cycles\",\n      'action'    => 'restart'\n    },\n    {\n      'condition' => '3 restarts within 5 cycles',\n      'action'    => 'alert'\n    },\n  ]\nend\n```\n\n##### Postfix\n\n```ruby\nmonit_check 'postfix' do\n  check_id  '/var/spool/postfix/pid/master.pid'\n  group     'system'\n  start     '/etc/init.d/postfix start'\n  stop      '/etc/init.d/postfix stop'\n  tests [\n    {\n      'condition' => 'failed port 25 proto smtp',\n      'action'    => 'restart'\n    },\n    {\n      'condition' => '3 restarts within 5 cycles',\n      'action'    => 'alert'\n    },\n  ]\nend\n```\n\n##### Nginx\n\n```ruby\nmonit_check 'nginx' do\n  check_id  '/var/run/nginx.pid'\n  group     'app'\n  start     '/etc/init.d/nginx start'\n  stop      '/etc/init.d/nginx stop'\n  tests [\n    {\n      'condition' => 'failed port 80',\n      'action'    => 'restart'\n    },\n    {\n      'condition' => '3 restarts within 5 cycles',\n      'action'    => 'alert'\n    }\n  ]\nend\n```\n\n##### Memcache\n\n```ruby\nmonit_check 'memcache' do\n  check_id  '/var/run/memcached.pid'\n  group     'app'\n  start     '/etc/init.d/memcached start'\n  stop      '/etc/init.d/memcached stop'\n  tests [\n    {\n      'condition' => 'failed port 11211 proto memcache',\n      'action'    => 'restart'\n    },\n    {\n      'condition' => '3 restarts within 15 cycles',\n      'action'    => 'alert'\n    },\n  ]\nend\n```\n\n##### Redis\n\n```ruby\nmonit_check 'redis' do\n  check_id  '/var/run/redis/redis-server.pid'\n  group     'database'\n  start     '/etc/init.d/redis-server start'\n  stop      '/etc/init.d/redis-server stop'\n  tests [\n    {\n      'condition' => 'failed host 127.0.0.1 port 6379 \n                     send \"SET MONIT-TEST value\\r\\n\" expect \"OK\" \n                     send \"EXISTS MONIT-TEST\\r\\n\" expect \":1\"',\n      'action'    => 'restart'\n    },\n    {\n      'condition' => '3 restarts within 5 cycles',\n      'action'    => 'alert'\n    },\n  ]\nend\n```\n##### Solr\n\n```ruby\nmonit_check 'solr' do\n  check_id  '/var/run/tomcat6.pid'\n  group     'app'\n  start     '/etc/init.d/tomcat6 start'\n  stop      '/etc/init.d/tomcat6 stop'\n  tests [\n    {\n      'condition' => 'failed port 8080 proto http and request \"/solr/admin/ping\" for 2 cycles',\n      'action'    => 'restart'\n    },\n    {\n      'condition' => '3 restarts within 5 cycles',\n      'action'    => 'timeout'\n    },\n  ]\nend\n```\n\n##### MongoDB\n\n```ruby\nmonit_check 'mongo' do\n  check_id  \"#{node.mongodb.dbpath}/mongod.lock\"\n  group     'database'\n  start     '/etc/init.d/mongodb start'\n  stop      '/etc/init.d/mongodb stop'\n  tests [\n    {\n      'condition' => \"failed port #{node.mongodb.port} proto http for 2 cycles\",\n      'action'    => 'restart with timeout 60 seconds'\n    },\n    {\n      'condition' => 'if 3 restarts within 10 cycles',\n      'action'    => 'timeout'\n    },\n  ]\nend\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum-epel",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ubuntu",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

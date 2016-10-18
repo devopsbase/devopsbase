@@ -1,0 +1,71 @@
+{
+  "name": "ntp_cluster Chef cookbook",
+  "chef_cookbook_name": "ntp_cluster",
+  "revision": "1.0.8",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/ntp_cluster",
+    "https://supermarket.chef.io/cookbooks/ntp_cluster/download",
+    "https://supermarket.chef.io/cookbooks/ntp_cluster/versions/1.0.8",
+    "https://supermarket.chef.io/cookbooks/ntp_cluster/versions/1.0.8/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/ntp_cluster/versions/1.0.8",
+    "https://supermarket.chef.io/api/v1/cookbooks/ntp_cluster",
+    "https://supermarket.chef.io/api/v1/cookbooks/ntp_cluster/versions/1.0.8/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Orchestration/Cluster-based"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/ntp_cluster",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/ntp_cluster/versions/1.0.8/download",
+  "deprecated": false,
+  "created": "2015-04-27T17:39:04.517Z",
+  "updated": "2016-09-15T20:39:04.381Z",
+  "description": "Configures an HA and highly consistent NTP Cluster synced to wall clock time",
+  "maintainer": {
+    "name": "evertrue",
+    "email": "devops@evertrue.com"
+  },
+  "license": "apache2",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 391638,
+  "downloads_count_revision": 238,
+  "repository_url": "https://github.com/evertrue/ntp_cluster-cookbook",
+  "issues_url": "https://github.com/evertrue/ntp_cluster-cookbook/issues",
+  "chef_source_url": "https://github.com/evertrue/ntp_cluster-cookbook",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# ntp_cluster-cookbook\n\n[![Build Status](https://travis-ci.org/evertrue/ntp_cluster-cookbook.svg)](https://travis-ci.org/evertrue/ntp_cluster-cookbook)\n\nProvides automated discovery and configuration of a private ntp pool via chef.\n\n## Usage\n\nThis cookbook will automagically assign master and standby nodes in the cluster.\nThe only thing you have to have is a role named `ntp_server` and assign that role\nto the node that you want to be part of the ntp cluster\n\nThis role should be the same role used in the `['ntp_cluster']['discovery']` search string.\n\nYou should NOT use any of the extra recipes in this cookbook, just use the default\nrecipe and the `ntp_server` role as it will take care of all the chef magic.\n\n## Concepts\n\nThe concept behind this type of NTP Cluster is to have a cluster that is consistent enough to\nrun time sensitive distributed applications like Cassandra where nodes in the application cluster\nneeds to be completely in sync with each other (read microseconds) and reasonably close to wall clock time.\nTo accomplish this a single *true* time server (master) is synced with the outside world. All application servers\nsync with this server (or its standbys in the event of failure). This ensures that all the\napplication servers are obtaining their time from the exact same external source and are connected to a very\nlow-latency low-demand internal server.\n\nStandby servers are used for when a failure in the master occurs.  If the master fails, clients will\nsync with the standby servers which will maintain their understanding of time with each other using\npeered timekeeping.\n\nIf the master node is completely removed from the cluster (delete node from chef-server) then a standby server is\npromoted to master and given the external server list to sync with, all remaining standby servers will pull their\ntimes directly from the newly promoted standby.\n\nIt is highly recommended that you set the `['ntp_cluster']['public_servers']` to a pool better than the\n[ntp](https://github.com/gmiranda23/ntp) cookbook's default pool.\n\n## Commissioning a new cluster\n\nTo commission a new cluster you **must be patient**. This is time, it moves slowly. Understand that first.  Second, NTP is a very redundant\nand methodical protocol. The worst thing you can do is rush this process because there are a lot of slow moving parts (NTP, DNS, Chef).\n\n1. Provision a box with the `ntp_cluster` recipe.  This box will immediately become a master and start syncing its time\n2. Wait an hour and then verify that the master's clock is correct.  Waiting allows both NTP to sync its time, DNS to propagate,\nand chef to runs some extra convergences\n3. Provision all your standby servers. This can happen in bulk.\n4. Wait another hour for the standby layer to sync up.\n5. Verify that the cluster is configured properly by checking the `server` and `peer` directives in `/etc/ntp.conf`\n5. Enable `ntp_server` for all of your application servers. They will immediately start looking to the new cluster for time. If\nthe time it vastly off by 100ms or more then they WILL jump.  Be aware of the dangers of time jumps.\n\n\n### Debugging\n\nIf there are problems commissioning a server check `/etc/ntp.conf` and use the `ntpq -p` command to show the connected servers and there statuses\n\n### Ports\n\nLastly, NTP communicates on UDP port 123. Make sure that all of your server nodes are accepting UDP packets on port 123\n\n## Commissioning Servers\n\n## Master Server\n\nMaster servers should not be commissioned directly.  They should be promoted from existing slaves as the clock is already in sync\n\n## Standby Server\n\n1. Create the server and apply the `ntp_cluster` cookbook to it.\n2. Converge the server.\n3. Verify that `/etc/ntp.conf` is configured to peer with the standbys and have the master as its only server\n\n## Decommissioning Servers\n\n### Master Server\n\n1. Delete the node and client from the chef-server.\n2. Converge 1 of your standby servers so that it will promote itself to master\n3. Verify that the new master has been selected by performing `knife search 'tags:ntp_master'`\n4. Converge the rest of your standbys\n5. Converge all of your servers so that they stop looking to the old master\n6. Burn down the old master\n\n### Standby Server\n\n1. Delete the node and client from the chef-server.\n2. Converge all of your other standbys so that they stop looking to that standby server\n2. Converge all of your application servers so that they stop looking to that standby server\n3. Burn down the box\n\n### Client\n\n1. Just burn it down\n\n## Replacing Servers\n\n### Master Server\n\nYou should follow the decommissioning of a master server process above and then provision a new **standby**\n\n### Standby Server\n\nFollow the decommissioning of a standby server then commission a new standby\n\n## Supported Platforms\n\n* Ubuntu 12.04\n* Ubuntu 14.04\n\n## Attributes\n\n<table>\n  <tr>\n    <th>Key</th>\n    <th>Type</th>\n    <th>Description</th>\n    <th>Default</th>\n  </tr>\n  <tr>\n    <td><tt>['ntp_cluster']['discovery']</tt></td>\n    <td>String</td>\n    <td>The Chef Search query to find ntp servers</td>\n    <td><tt>role:ntp_server</tt></td>\n  </tr>\n  <tr>\n    <td><tt>['ntp_cluster']['public_servers']</tt></td>\n    <td>Array</td>\n    <td>The List of external servers to sync with</td>\n    <td><tt>#.pool.ntp.org servers</tt></td>\n  </tr>\n</table>\n\n## Usage\n\n### ntp_cluster::default\n\nInclude this recipe in a wrapper cookbook:\n\n```ruby\ndepends 'ntp_cluster', '~> 1.0'\n```\n\nAnd then in your wrapper cookbook\n\n```ruby\ninclude_recipe 'ntp_cluster::default'\n```\n\n## License and Authors\n\nAuthor:: EverTrue, Inc. (<devops@evertrue.com>)\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 12.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/ntp",
+      "revision": "~> 1.7",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/cron",
+      "revision": "~> 1.6",
+      "self_resolve": true
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/appcelerator/haproxy",
+    "repository_url": "https://hub.docker.com/v2/repositories/appcelerator/haproxy",
+    "tags_url": "https://hub.docker.com/v2/repositories/appcelerator/haproxy/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/appcelerator/haproxy/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/appcelerator/haproxy/autobuild",
+    "user": "appcelerator",
+    "name": "haproxy",
+    "namespace": "appcelerator",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 74674,
+    "last_updated": "2016-10-17T07:28:10.855044Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 50146783,
+        "id": 4558162,
+        "repository": 884169,
+        "creator": 279747,
+        "last_updater": 12425,
+        "last_updated": "2016-10-17T07:28:10.514325Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "1.0.1",
+        "full_size": 50116586,
+        "id": 5171232,
+        "repository": 884169,
+        "creator": 279747,
+        "last_updater": 12425,
+        "last_updated": "2016-10-15T07:29:44.121797Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "stats",
+        "full_size": 50140353,
+        "id": 5452042,
+        "repository": 884169,
+        "creator": 12425,
+        "last_updater": 12425,
+        "last_updated": "2016-10-14T08:15:37.385575Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "appcelerator/docker-haproxy"
+  },
+  "name": "appcelerator/haproxy Docker container",
+  "description": "haproxy",
+  "readme": "###amp-haproxy-controller Prototype\n\n\nIt's a HAProxy image containing a controller which is able to update HAProxy configuration when amp stacks is created or deleted.\n\n# tags\n\n- latest\n- 1.0.1 version used with amp 0.1.1\n\n# Setting\n\nenvironment variable: \n\n- ETCD_ENDPOINTS: should be equal to the ETCD endpoints list, format: \"host1:port1, host2:port2, ...\"\n- NO_DEFAULT_BACKEND: remove all amp default infrastructure backends (for test)\n\n\nConcidenring HAProx does'nt start or update its conf if one the declared backend has a DNS name not resolved, the amp-haproxy-controller  disabled them in the HAProxy controller allowing HAProxy to start correcly. The disabled backend are checked on regular basis to be enabled when their dns names are back to resolved.\n\n\n\n",
+  "dockerfile": "FROM haproxy:1.6-alpine\n\nENV GOPATH /go\nENV PATH $PATH:/go/bin\n\nCOPY ./ /go/src/github.com/appcelerator/docker-haproxy\nRUN echo \"@edge http://nl.alpinelinux.org/alpine/edge/main\" >> /etc/apk/repositories && \\\n    echo \"@testing http://nl.alpinelinux.org/alpine/edge/testing\" >> /etc/apk/repositories && \\\n    echo \"@community http://nl.alpinelinux.org/alpine/edge/community\" >> /etc/apk/repositories\nRUN apk update && \\\n    apk -v --virtual build-deps add git make bash go@community musl-dev && \\\n    apk -v add curl go@community && \\\n    go version && \\\n    cd $GOPATH/src/github.com/appcelerator/docker-haproxy && \\\n    go get -u github.com/Masterminds/glide/... && \\\n    glide install && \\\n    rm -rf vendor/github.com/appcelerator/amp/vendor && \\\n    make install && \\\n    echo amp-haproxy built && \\\n    rm /go/bin/glide && \\\n    apk del binutils-libs binutils gmp isl libgomp libatomic libgcc pkgconf pkgconfig mpfr3 mpc1 libstdc++ gcc go && \\\n    apk del build-deps && \\\n    cd / && rm -rf /go/src /go/pkg /var/cache/apk/* /root/.cache /root/.glide && \\\n    chmod +x $GOPATH/bin/*\n\nCOPY haproxy.cfg.tpt /usr/local/etc/haproxy/haproxy.cfg.tpt\n\nHEALTHCHECK --interval=5s --timeout=10s --retries=12 CMD curl http://localhost/healthcheck\n\nCMD [\"/go/bin/docker-haproxy\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "echo \"@edge http://nl.alpinelinux.org/alpine/edge/main\" >> /etc/apk/repositories &&     echo \"@testing http://nl.alpinelinux.org/alpine/edge/testing\" >> /etc/apk/repositories &&     echo \"@community http://nl.alpinelinux.org/alpine/edge/community\" >> /etc/apk/repositories",
+      "apk update &&     apk -v --virtual build-deps add git make bash go@community musl-dev &&     apk -v add curl go@community &&     go version &&     cd $GOPATH/src/github.com/appcelerator/docker-haproxy &&     go get -u github.com/Masterminds/glide/... &&     glide install &&     rm -rf vendor/github.com/appcelerator/amp/vendor &&     make install &&     echo amp-haproxy built &&     rm /go/bin/glide &&     apk del binutils-libs binutils gmp isl libgomp libatomic libgcc pkgconf pkgconfig mpfr3 mpc1 libstdc++ gcc go &&     apk del build-deps &&     cd / && rm -rf /go/src /go/pkg /var/cache/apk/* /root/.cache /root/.glide &&     chmod +x $GOPATH/bin/*"
+    ],
+    "workdir": [],
+    "from": "haproxy:1.6-alpine",
+    "env": {
+      "GOPATH": "/go",
+      "PATH": "$PATH:/go/bin"
+    },
+    "copy": "haproxy.cfg.tpt /usr/local/etc/haproxy/haproxy.cfg.tpt",
+    "healthcheck": "--interval=5s --timeout=10s --retries=12 CMD curl http://localhost/healthcheck",
+    "cmd": "[\"/go/bin/docker-haproxy\"]"
+  },
+  "source_repository_url": "git@github.com:appcelerator/docker-haproxy.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/appcelerator/docker-haproxy",
+  "docker_repository": "appcelerator/haproxy",
+  "docker_image": "appcelerator/haproxy",
+  "parameters_schema": {
+    "GOPATH": {
+      "default": "/go",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:/go/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "appcelerator/haproxy",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/appcelerator/haproxy",
+    "https://hub.docker.com/v2/repositories/appcelerator/haproxy",
+    "git@github.com:appcelerator/docker-haproxy.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/appcelerator/haproxy",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

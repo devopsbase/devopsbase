@@ -1,0 +1,95 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dperson/kibana",
+    "repository_url": "https://hub.docker.com/v2/repositories/dperson/kibana",
+    "tags_url": "https://hub.docker.com/v2/repositories/dperson/kibana/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dperson/kibana/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dperson/kibana/autobuild",
+    "user": "dperson",
+    "name": "kibana",
+    "namespace": "dperson",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 1145,
+    "last_updated": "2016-08-31T00:29:37.993889Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 86778088,
+        "id": 53336,
+        "repository": 172611,
+        "creator": 102881,
+        "last_updater": 102881,
+        "last_updated": "2016-08-31T00:29:37.604335Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "dperson/kibana"
+  },
+  "name": "dperson/kibana Docker container",
+  "description": "",
+  "readme": "[![logo](https://raw.githubusercontent.com/dperson/kibana/master/logo.png)](https://www.elastic.co/products/kibana)\n\n# Kibana\n\nKibana docker container\n\n# What is Kibana?\n\nKibana allows you to see the value in your data\n\n * Flexible analytics and visualization platform\n * Real-time summary and charting of streaming data\n * Intuitive interface for a variety of users\n * Instant sharing and embedding of dashboards\n\n# How to use this image\n\nWhen started Kibana container will listen on port 5601\n\n## Hosting a Kibana instance\n\n    sudo docker run -it -d dperson/kibana\n\n## Configuration\n\n    sudo docker run -it --rm dperson/kibana -h\n\n    Usage: kibana.sh [-opt] [command]\n    Options (fields in '[]' are optional, '<>' are required):\n        -h          This help\n        -t \"\"       Configure timezone\n                    possible arg: \"[timezone]\" - zoneinfo timezone for container\n\n    The 'command' (if provided and valid) will be run instead of kibana\n\nENVIRONMENT VARIABLES (only available with `docker run`)\n\n * `TZ` - As above, configure the zoneinfo timezone, IE `EST5EDT`\n * `USERID` - Set the UID for the app user\n * `GROUPID` - Set the GID for the app user\n * `ELASTICSEARCH` - URL for elasticsearch backend\n * `KIBANA_INDEX` - Index name\n * `DEFAULT_APP_ID` - Default App ID\n * `TIMEOUT` - Timeout for elasticsearch connection\n * `SHARD_TIME` - Shard timeout\n * `VERIFY_SSL` - Verify SSL\n\n## Examples\n\nAny of the commands can be run at creation with `docker run` or later with\n`docker exec -it kibana.sh` (as of version 1.3 of docker).\n\n### Setting the Timezone\n\n    sudo docker run -it -p 5601:5601 -d dperson/kibana -t EST5EDT\n\nOR using `environment variables`\n\n    sudo docker run -it -p 5601:5601 -e TZ=EST5EDT -d dperson/kibana\n\nWill get you the same settings as\n\n    sudo docker run -it --name es -p 5601:5601 -d dperson/kibana\n    sudo docker exec -it es kibana.sh -t EST5EDT ls -AlF /etc/localtime\n    sudo docker restart es\n\n## Complex configuration\n\n[Example configs](http://www.elastic.co/guide/)\n\nIf you wish to adapt the default configuration, use something like the following\nto copy it from a running container:\n\n    sudo docker cp es:/opt/kibana/config /some/path\n\nYou can use the modified configuration with:\n\n    sudo docker run -it --name es -p 5601:5601 \\\n                -v /some/path:/opt/kibana/config:ro -d dperson/kibana\n\n# User Feedback\n\n## Issues\n\nIf you have any problems with or questions about this image, please contact me\nthrough a [GitHub issue](https://github.com/dperson/kibana/issues).",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER David Personette <dperson@gmail.com>\n\n# Install kibana\nRUN export DEBIAN_FRONTEND='noninteractive' && \\\n    export url='https://download.elasticsearch.org/kibana/kibana' && \\\n    export version='4.6.1' && \\\n    export sha1sum='9bde7e0faea5b2fa8291898a57a28edfba3b9877' && \\\n    groupadd -r kibana && \\\n    useradd -c 'Kibana' -d /opt/kibana -g kibana -r kibana && \\\n    apt-get update -qq && \\\n    apt-get install -qqy --no-install-recommends ca-certificates curl \\\n                $(apt-get -s dist-upgrade|awk '/^Inst.*ecurity/ {print $2}') &&\\\n    echo \"downloading kibana-${version}-linux-x64.tar.gz ...\" && \\\n    curl -LOC- -s ${url}/kibana-${version}-linux-x64.tar.gz && \\\n    sha1sum kibana-${version}-linux-x64.tar.gz | grep -q \"$sha1sum\" && \\\n    tar -xf kibana-${version}-linux-x64.tar.gz -C /tmp && \\\n    mv /tmp/kibana-* /opt/kibana && \\\n    chown -Rh kibana. /opt/kibana && \\\n    apt-get purge -qqy ca-certificates curl && \\\n    apt-get autoremove -qqy && apt-get clean -qqy && \\\n    rm -rf /tmp/* /var/lib/apt/lists/* kibana-${version}-linux-x64.tar.gz\nCOPY kibana.sh /usr/bin/\n\nEXPOSE 5601\n\nVOLUME [\"/opt/kibana\"]\n\nENTRYPOINT [\"kibana.sh\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5601
+    ],
+    "volume": [
+      "[\"/opt/kibana\"]"
+    ],
+    "run": [
+      "export DEBIAN_FRONTEND='noninteractive' &&     export url='https://download.elasticsearch.org/kibana/kibana' &&     export version='4.6.1' &&     export sha1sum='9bde7e0faea5b2fa8291898a57a28edfba3b9877' &&     groupadd -r kibana &&     useradd -c 'Kibana' -d /opt/kibana -g kibana -r kibana &&     apt-get update -qq &&     apt-get install -qqy --no-install-recommends ca-certificates curl                 $(apt-get -s dist-upgrade|awk '/^Inst.*ecurity/ {print $2}') &&    echo \"downloading kibana-${version}-linux-x64.tar.gz ...\" &&     curl -LOC- -s ${url}/kibana-${version}-linux-x64.tar.gz &&     sha1sum kibana-${version}-linux-x64.tar.gz | grep -q \"$sha1sum\" &&     tar -xf kibana-${version}-linux-x64.tar.gz -C /tmp &&     mv /tmp/kibana-* /opt/kibana &&     chown -Rh kibana. /opt/kibana &&     apt-get purge -qqy ca-certificates curl &&     apt-get autoremove -qqy && apt-get clean -qqy &&     rm -rf /tmp/* /var/lib/apt/lists/* kibana-${version}-linux-x64.tar.gz"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "David Personette <dperson@gmail.com>",
+    "copy": "kibana.sh /usr/bin/",
+    "entrypoint": "[\"kibana.sh\"]"
+  },
+  "source_repository_url": "https://github.com/dperson/kibana.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/dperson/kibana",
+  "docker_repository": "dperson/kibana",
+  "docker_image": "dperson/kibana",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5601
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dperson/kibana",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/dperson/kibana",
+    "https://hub.docker.com/v2/repositories/dperson/kibana",
+    "https://github.com/dperson/kibana.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/dperson/kibana",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

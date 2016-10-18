@@ -1,0 +1,115 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/giodegas/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/giodegas/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/giodegas/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/giodegas/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/giodegas/owncloud/autobuild",
+    "user": "giodegas",
+    "name": "owncloud",
+    "namespace": "giodegas",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 63,
+    "last_updated": "2015-11-13T23:09:12.873883Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 218931004,
+        "id": 120454,
+        "repository": 69422,
+        "creator": 45201,
+        "last_updater": 45201,
+        "last_updated": "2015-11-13T23:09:18.047240Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "giodegas/owncloud"
+  },
+  "name": "giodegas/owncloud Docker container",
+  "description": "",
+  "readme": "owncloud\n========\n( inspired from [ReadMe](http://registry.hub.docker.com/u/jchaney/owncloud) from [jchaney](http://hub.docker.com/u/jchaney) )\n\n## Details\n\nThis ownCloud 7 configuration was built to run on top of Nginx & you can choose PostgreSQL, MySQL, or SQLite for the Database\n\n## Database\n\nFor a super easy setup, I would recommend using SQLite.. but if you need more performance, I would recommend linking to the “trusted” postgresql image.\n\nBefore starting ownCloud, fire up: \n\n    docker run --name postgresql -d postgres\n\nThen link it to that database when you run ownCloud:\n\n    docker run --link postgresql:db ...\n\n## Options\n\nNginx Configuration\n\nNginx runs on 80 OR 443 depending on whether or not you pass env variables for SSL. Make sure you expose one of these ports.\n\n    docker run -p 80:80 ...\n\n## Persistent storage for datastore\n\nAttach host volume to /var/www/owncloud/data\n\n    docker run -v /home/jchaney/myfiles:/var/www/owncloud/data ...\n\n## SSL support\n\nGenerate your own certificates:\n\n    openssl genrsa -des3 -out /home/giodegas/ssl/myssl.key 1024\n    openssl req -new -key /home/giodegas/ssl/myssl.key -out /home/giodegas/ssl/myssl.crt\n\nYou will need to attach a host volume containing your SSL key and cert, and pass the path to those in env variables SSL_KEY and SSL_CERT\n\n    docker run -v /home/jchaney/ssl:/root/ssl -e \"SSL_KEY=/root/ssl/myssl.key\" -e \"SSL_CERT=/root/ssl/myssl.crt\" ...\n\n## How to run\nThis is a NO SSL example:\n\n    docker run -h linode.giodegas.it -p 80:80 --name nginx80 --link postgresql:db -v /home/giodegas/files:/var/www/owncloud/data -d giodegas/owncloud\n    \nThis is a full example, utilizing all options. But feel free to remove what you don't want.\n\n    docker run -h my.domain.com -p 443:443 --name nginx443 --link postgresql:db -v /home/giodegas/files:/var/www/owncloud/data -v /home/giodegas/ssl:/root/ssl -e \"SSL_KEY=/root/ssl/myssl.key\" -e \"SSL_CERT=/root/ssl/myssl.crt\" giodegas/owncloud\n\n## Note\n\nMake sure to pass the -h option to Docker run with your FQDN if you want webdav to work. See full example above, under “how to run”.\n\n## Post-Run Instructions\n\nNOTE: Make sure you use the final hostname/FQDN you plan on accessing your ownCloud server with when connecting and doing initial configuration below. ownCloud will take the URL used to access the Installation Wizard and insert that into the config.php file for the ‘trusted_domains’ setting. Users will only be able to log into ownCloud when they point their browsers to a domain name listed in the ‘trusted_domains’ setting. An IPv4 address can be specified instead of a domain name.\n\nHead to \n\n    http://hostname/owncloud or https://hostname/owncloud\nChoose your own username and password\n* db username is postgres (if you used the postgres image mentioned previously)\n* db password can be left blank (unless you changed this before hand)\n* db name can be whatever you want\nuse the database alias as the hostname, from my example you would use: db\n\n## Resources\n\nhttp://owncloud.org/\n",
+  "dockerfile": "FROM        debian:wheezy\n\nMAINTAINER  Giovanni De Gasperis <giovanni@giodegas.it>\n\nRUN         apt-get update && apt-get -y install curl bzip2 g++ libgettextpo0 gettext file\n\nADD         https://download.owncloud.org/community/owncloud-7.0.2.tar.bz2 /var/www/\nADD         bootstrap.sh /usr/bin/\nADD         nginx_ssl.conf /root/\nADD         nginx.conf /root/\n\nRUN         DEBIAN_FRONTEND=noninteractive apt-get install -y php5-cli php5-gd php5-pgsql php5-sqlite php5-mysqlnd php5-curl php5-intl php5-mcrypt php5-ldap php5-gmp php5-imagick php5-fpm smbclient nginx\nRUN         mkdir /var/www/owncloud && mkdir /var/www/owncloud/data && \\\n            chown -R www-data:www-data /var/www/owncloud\n            chmod +x /usr/bin/bootstrap.sh\n\nADD         php.ini /etc/php5/fpm/\n\nEXPOSE      80\nEXPOSE      443\n\nENTRYPOINT  [\"bootstrap.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "",
+        "dest": ""
+      },
+      {
+        "source": "",
+        "dest": ""
+      },
+      {
+        "source": "",
+        "dest": ""
+      },
+      {
+        "source": "",
+        "dest": ""
+      },
+      {
+        "source": "",
+        "dest": ""
+      }
+    ],
+    "expose": [
+      80,
+      443
+    ],
+    "volume": [],
+    "run": [
+      "        apt-get update && apt-get -y install curl bzip2 g++ libgettextpo0 gettext file",
+      "        DEBIAN_FRONTEND=noninteractive apt-get install -y php5-cli php5-gd php5-pgsql php5-sqlite php5-mysqlnd php5-curl php5-intl php5-mcrypt php5-ldap php5-gmp php5-imagick php5-fpm smbclient nginx",
+      "        mkdir /var/www/owncloud && mkdir /var/www/owncloud/data &&             chown -R www-data:www-data /var/www/owncloud"
+    ],
+    "workdir": [],
+    "from": "       debian:wheezy",
+    "maintainer": " Giovanni De Gasperis <giovanni@giodegas.it>",
+    "entrypoint": " [\"bootstrap.sh\"]"
+  },
+  "source_repository_url": "https://github.com/giodegas/owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/giodegas/owncloud",
+  "docker_repository": "giodegas/owncloud",
+  "docker_image": "giodegas/owncloud",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80,
+        443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "giodegas/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/giodegas/owncloud",
+    "https://hub.docker.com/v2/repositories/giodegas/owncloud",
+    "https://github.com/giodegas/owncloud.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/giodegas/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

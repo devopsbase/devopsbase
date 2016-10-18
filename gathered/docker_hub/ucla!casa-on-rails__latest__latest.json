@@ -1,0 +1,123 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/ucla/casa-on-rails",
+    "repository_url": "https://hub.docker.com/v2/repositories/ucla/casa-on-rails",
+    "tags_url": "https://hub.docker.com/v2/repositories/ucla/casa-on-rails/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/ucla/casa-on-rails/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/ucla/casa-on-rails/autobuild",
+    "user": "ucla",
+    "name": "casa-on-rails",
+    "namespace": "ucla",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 135,
+    "last_updated": "2016-08-28T19:05:02.105874Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 315390201,
+        "id": 1125736,
+        "repository": 360837,
+        "creator": 105335,
+        "last_updater": 274460,
+        "last_updated": "2016-08-28T19:05:01.370009Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "ucla/casa-on-rails-docker"
+  },
+  "name": "ucla/casa-on-rails Docker container",
+  "description": "This is a docker image that eases setup of the casa-on-rails server.",
+  "readme": "# casa-on-rails docker.\n\nThis is a [docker](https://www.docker.io) image that eases setup of the [casa-on-rails](https://github.com/ucla/casa-on-rails) server.\n\n## Usage\n\nThe docker containers built from this repository can be found at the [docker hub](https://registry.hub.docker.com/u/ucla/casa-on-rails/).\n\nIf you'd just like to start to get a feel for casa, and don't care about database persistence, feel free to start with this command:\n\n```bash\ndocker run -d -p 3000:3000 ucla/casa-on-rails\n```\n\nYou can now find casa running at port 3000 on your docker host!\n\nIt should be noted that casa will complain about elasticsearch not being available (which disables app searching) and when you destroy the container, all the data will go with it!\n\nIf you'd like to link to a mysql and elasticsearch container and keep data beyond the life of this container (let's assume the container's name is `mysql`), you can start like this:\n\n```bash\ndocker run -d \n  -p 3000:3000 \\\n  --link mysql:mysql \\\n  --link elasticsearch:elasicsearch\n  -e DB_NAME=casa \\\n  -e DB_USER=casa \\ \n  -e DB_PASS=casa \\\n  ucla/casa-on-rails\n```\n\nNote that in both cases port `8080` will be used on the docker host to support this container. Additionally, you'll likely want to pass a few environment variables for your case.\n\n## Environment Variables\n\n  * `RAILS_ENV`: defaults to `ephemeral`. set to `production` if you plan to use a linked mysql container.\n  * `DB_HOST`: defaults to `$MYSQL_PORT_3306_TCP_ADDR`\n  * `DB_PORT`: defaults to `$MYSQL_PORT_3306_TCP_PORT`\n  * `DB_NAME`: defaults to `casa`\n  * `DB_USER`: defaults to `casa`\n  * `DB_PASS`: defaults to `casa`\n  * `CASA_UUID`: defaults to a uuid. set this or your instance wont be unique!\n  * `CASA_CONTACT_NAME`: defaults to \"Joe Schmoe\".\n  * `CASA_CONTACT_EMAIL`: defaults to \"joe@schmoecity.com\"\n  * `SECRET_KEY_BASE`: defaults to a non-unique cookie string. be careful with this!\n\n## Bugs/Notes\n\nThis container (in addition to the casa-on-rails project is quite new, and is not yet considered production quality. Keep that in mind.\n\n  * DB seeding is very weird, and simply assumes that if your admin user exists, the db has been seeded.\n  * the production db info is overwritten at each startup\n  * etc..\n\n## Copyright\nCopyright (c) 2015 UC Regents\n\nThis container is **open-source** and licensed under the AFFERO GENERAL PUBLIC LICENSE in accordance with the source app's license. The full text of the license may be found in the `LICENSE` file.",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER Steve Nolen <technolengy@gmail.com>\n# Report issues here: https://github.com/stevenolen/casa-on-rails-docker\n\nRUN set -x \\\n  && export DEBIAN_FRONTEND=noninteractive \\\n  && apt-get update \\\n  && apt-get install -y curl openjdk-7-jre-headless git ruby ruby-dev \\\n                        build-essential libmysqlclient-dev libsqlite3-dev mysql-client sqlite3\\\n  && curl --silent --location https://deb.nodesource.com/setup_0.12 | bash - \\\n  && apt-get install -y nodejs \\\n  && gem install bundler \\\n  && apt-get clean \\\n  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nENV DEPLOY_PATH /var/casa\nRUN git clone https://github.com/ucla/casa-on-rails.git \"$DEPLOY_PATH\"\n\nWORKDIR $DEPLOY_PATH\nRUN echo '' >> Gemfile && echo \"gem 'sqlite3'\" >> Gemfile\nRUN bundle install\nRUN npm install\nRUN bundle exec blocks build\n\nADD run.sh /run.sh\nRUN chmod +x /run.sh\n\nADD secrets.yml config/secrets.yml\nADD ephemeral.rb config/environments/ephemeral.rb\n\nEXPOSE 3000\n\nCMD [\"/run.sh\"]",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "run.sh",
+        "dest": "/run.sh"
+      },
+      {
+        "source": "secrets.yml",
+        "dest": "config/secrets.yml"
+      },
+      {
+        "source": "ephemeral.rb",
+        "dest": "config/environments/ephemeral.rb"
+      }
+    ],
+    "expose": [
+      3000
+    ],
+    "volume": [],
+    "run": [
+      "set -x   && export DEBIAN_FRONTEND=noninteractive   && apt-get update   && apt-get install -y curl openjdk-7-jre-headless git ruby ruby-dev                         build-essential libmysqlclient-dev libsqlite3-dev mysql-client sqlite3  && curl --silent --location https://deb.nodesource.com/setup_0.12 | bash -   && apt-get install -y nodejs   && gem install bundler   && apt-get clean   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "git clone https://github.com/ucla/casa-on-rails.git \"$DEPLOY_PATH\"",
+      "echo '' >> Gemfile && echo \"gem 'sqlite3'\" >> Gemfile",
+      "bundle install",
+      "npm install",
+      "bundle exec blocks build",
+      "chmod +x /run.sh"
+    ],
+    "workdir": [
+      "$DEPLOY_PATH"
+    ],
+    "from": "debian:jessie",
+    "maintainer": "Steve Nolen <technolengy@gmail.com>",
+    "env": {
+      "DEPLOY_PATH": "/var/casa"
+    },
+    "cmd": "[\"/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/ucla/casa-on-rails-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/ucla/casa-on-rails-docker",
+  "docker_repository": "ucla/casa-on-rails",
+  "docker_image": "ucla/casa-on-rails",
+  "parameters_schema": {
+    "DEPLOY_PATH": {
+      "default": "/var/casa",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "ucla/casa-on-rails",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/ucla/casa-on-rails",
+    "https://hub.docker.com/v2/repositories/ucla/casa-on-rails",
+    "https://github.com/ucla/casa-on-rails-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Mode/Executable/Image/Container Image/Docker Image"
+  ],
+  "info_url": "https://hub.docker.com/r/ucla/casa-on-rails",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

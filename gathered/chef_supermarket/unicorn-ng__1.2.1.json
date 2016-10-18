@@ -1,0 +1,61 @@
+{
+  "name": "unicorn-ng Chef cookbook",
+  "chef_cookbook_name": "unicorn-ng",
+  "revision": "1.2.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/unicorn-ng",
+    "https://supermarket.chef.io/cookbooks/unicorn-ng/download",
+    "https://supermarket.chef.io/cookbooks/unicorn-ng/versions/1.2.1",
+    "https://supermarket.chef.io/cookbooks/unicorn-ng/versions/1.2.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/unicorn-ng/versions/1.2.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/unicorn-ng",
+    "https://supermarket.chef.io/api/v1/cookbooks/unicorn-ng/versions/1.2.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Web Servers",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/unicorn-ng",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/unicorn-ng/versions/1.2.1/download",
+  "deprecated": false,
+  "created": "2013-06-26T17:18:30.000Z",
+  "updated": "2016-08-10T15:44:12.863Z",
+  "description": "Installs/Configures unicorn",
+  "maintainer": {
+    "name": "chr4",
+    "email": "me@chr4.org"
+  },
+  "license": "GNU Public License 3.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 4489218,
+  "downloads_count_revision": 305,
+  "repository_url": "https://github.com/chr4-cookbooks/unicorn-ng",
+  "issues_url": "https://github.com/chr4-cookbooks/unicorn-ng/issues",
+  "chef_source_url": "https://github.com/chr4-cookbooks/unicorn-ng",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# unicorn-ng Cookbook\n\n[![Build Status](https://travis-ci.org/chr4-cookbooks/unicorn-ng.svg?branch=master)](https://travis-ci.org/chr4-cookbooks/unicorn-ng)\n\nManage your [unicorn](http://unicorn.bogomips.org/) application server with this cookbook.\n\nThis cookbook provides a decent initscript for Debian/Ubuntu, as well as takes care of the unicorn configuration.\n\nFeatures\n\n* Provides a decent initscript for Debian/Ubuntu\n* Automatically takes care of ActiveRecord connections (if ActiveRecord is used)\n* Hightly configurable for your needs\n* Use either a system-wide installed unicorn, or one that gets deployed with your application\n\n\n## Requirements\n\nAn installed unicorn. Alterantively you can use the install recipe to install it using rubygems.\n\nFurthermore you need to add the following line to your metadata.rb\n\n```ruby\ndepends 'unicorn-ng'\n```\n\n\n## Attributes\n\n### Packages\n\nTo install unicorn, rubygems is required. The cookbook tries to figure out automatically which packages are required depending on your current OS.\nIt is possible to override the automatic settings and specify them manually, though\n\n```ruby\nnode['unicorn-ng']['packages'] = %w(rubygems)\n```\n\n### Configuration\n\nEverything in your unicorn.rb can be maintained using attributes.\nConsider using the provides LWRPs (see below)\n\nMost importantly, you need to specify the path to your unicorn.rb.\nIf this is not specified, the default recipe will do nothing.\nYou can also specify a working directory, if needed\n\n```ruby\nnode['unicorn-ng']['config']['config_file'] = '/var/www/examples.com/config/unicorn.rb'\nnode['unicorn-ng']['config']['working_directory'] = '/var/www/examples.com'\n```\n\nThis section describes the supported attributes, as well as their default settings.\n\n```ruby\nnode['unicorn-ng']['config']['worker_processes'] = 1\nnode['unicorn-ng']['config']['listen'] = 8080\nnode['unicorn-ng']['config']['backlog'] = nil\nnode['unicorn-ng']['config']['pid'] = 'tmp/pids/unicorn.pid'\nnode['unicorn-ng']['config']['timeout'] = 60\nnode['unicorn-ng']['config']['stderr_path'] = 'log/unicorn.stderr.log'\nnode['unicorn-ng']['config']['stdout_path'] = 'log/unicorn.stdout.log'\nnode['unicorn-ng']['config']['preload_app'] = true\n\n# When sent a USR2, Unicorn will suffix its pidfile with .oldbin and\n# immediately start loading up a new version of itself (loaded with a new\n# version of our app). When this new Unicorn is completely loaded\n# it will begin spawning workers. The first worker spawned will check to\n# see if an .oldbin pidfile exists. If so, this means we've just booted up\n# a new Unicorn and need to tell the old one that it can now die. To do so\n# we send it a QUIT.\n#\n# Using this method we get 0 downtime deploys.\n#\n# Stolen from: https://github.com/blog/517-unicorn\nnode['unicorn-ng']['config']['before_fork'] =  <<-EOS\n  old_pid = '#{node['unicorn-ng']['config']['pid']}.oldbin'\n  if File.exists?(old_pid) and server.pid != old_pid\n    begin\n      Process.kill('QUIT', File.read(old_pid).to_i)\n    rescue Errno::ENOENT, Errno::ESRCH\n      # someone else did our job for us\n    end\n  end\n\n  if defined?(ActiveRecord::Base)\n    ActiveRecord::Base.connection_handler.clear_all_connections!\n  end\nEOS\n\nnode['unicorn-ng']['config']['after_fork'] =  <<-EOS\n  if defined?(ActiveRecord::Base)\n    ActiveRecord::Base.connection_handler.verify_active_connections!\n  end\nEOS\n```\n\nIt's also possible to add arbitrary commands to the top of `unicorn.rb` in case you need something\nlike a special `require` statement.\n\n```ruby\nnode['unicorn-ng']['config']['prescript'] = <<-EOS\n  # Load the GELF logging extension\n  require 'gelf'\n  logger ::GELF::Logger.new('graylog', 1234, 'LAN', {facility: 'unicorn'})\nEOS\n\n```\n\nFurthermore, you can define more advanced settings, if needed\n\n```ruby\nnode['unicorn-ng']['config']['owner'] = 'root'\nnode['unicorn-ng']['config']['group'] = 'root'\nnode['unicorn-ng']['config']['mode'] = 00644\nnode['unicorn-ng']['config']['cookbook'] = 'unicorn-ng'\nnode['unicorn-ng']['config']['source'] = 'unicorn.rb.erb'\nnode['unicorn-ng']['config']['variables'] = {}\n```\n\n### Service\n\nThis cookbook can set up unicorn so it gets properly started at boot time.\n\nAnalogue to the configuration, you need to specify the path to your rails application.\nIf this is not specified, the default recipe will do nothing.\n\n```ruby\nnode['unicorn-ng']['service']['rails_root'] = '/var/www/example.com'\n```\n\nThe following attributes will be set automatically relative to the rails_root, if not specified.\n\n```ruby\nnode['unicorn-ng']['service']['config'] = nil\nnode['unicorn-ng']['service']['bundle_gemfile'] = nil\nnode['unicorn-ng']['service']['pidfile'] = nil\n```\n\nIf you need a different bundler (e.g. a wrapper from rvm), you can specify it here\n\n```ruby\nnode['unicorn-ng']['service']['bundle'] = '/usr/local/bin/bundle'\n```\n\nIt's also possible (since 0.2.0) to specify a wrapper (like chruby-exec) (disabled by default)\n\n```ruby\nnode['unicorn-ng']['service']['wrapper'] = '/usr/local/bin/chruby-exec'\nnode['unicorn-ng']['service']['wrapper_opts'] = \"#{my_ruby_string} --\"\nnode['unicorn-ng']['service']['bundle'] = 'bundle'\n```\n\nIn the same way, you can set your custom `GEM_HOME` path:\n\n```ruby\nnode['unicorn-ng']['service']['gem_home'] = '/usr/local/ruby/gems'\n```\n\nSince version `1.2.1`, you can specify the `--chdir` flag for `start-stop-daemon`, which results in\na chdir before the app starts\n\n```ruby\nnode['unicorn-ng']['service']['chdir'] = '/home/myapp'\n```\n\nThe RAILS_ENV. Set this to 'production' in your production environment\n\n```ruby\nnode['unicorn-ng']['service']['environment'] = 'development'\n```\n\nThe user unicorn runs at. **NOTE: THIS SHOULD BE CHANGED TO AN UNPRIVILEDGED USER**\n\n```ruby\nnode['unicorn-ng']['service']['user'] = 'root' # CHANGE ME! (e.g. 'www-data')\n```\n\nThe locale (set by the initscript)\n\n```ruby\nnode['unicorn-ng']['service']['locale'] = 'en_US.UTF-8'\n```\n\nSince 0.3.0, you can specify the service name. The initscript will be deployed to `/etc/init.d/SERVICENAME`.\nDefaults to `'unicorn'`\n\n```ruby\nnode['unicorn-ng']['service']['name'] = 'unicorn'\n```\n\nAdditional options for the initscript (if required)\n\n```ruby\nnode['unicorn-ng']['service']['owner'] = 'root'\nnode['unicorn-ng']['service']['group'] = 'root'\nnode['unicorn-ng']['service']['mode'] = 00755\nnode['unicorn-ng']['service']['cookbook'] = 'unicorn-ng'\nnode['unicorn-ng']['service']['source'] = 'unicorn.init.erb'\nnode['unicorn-ng']['service']['variables'] = {}\n```\n\n\n## Recipes\n\n### default\n\nConfigures unicorn.rb configuration, as well as the unicorn initscript according to the attributes above.\nUnless you specify at least one of the following attributes, this recipe will do nothing.\n\n```ruby\nnode['unicorn-ng']['config']['config_file'] # path to your unicorn.rb (will configure unicorn.rb)\nnode['unicorn-ng']['service']['rails_root'] # path to your rails_root (will configure the unicorn service)\n```\n\n### install\n\nInstalls bundler and unicorn using the systems \"rubygems\".\nConsider installing a more recent environment using tools like rvm.\n\n\n## Provider\n\n### unicorn_ng_config\n\nConfigures unicorn.rb.\nThis LWRP uses the given attributes (see above) as defaults, if not specified otherwise.\n\nExample:\n\n```ruby\nunicorn_ng_config '/var/www/example.com/shared/config/unicorn.rb'\n```\n\nOr, a more complex setup:\n\n```ruby\nunicorn_ng_config '/var/www/example.com/shared/config/unicorn.rb' do\n  worker_processes 16 if node.chef_environment == 'production'\n  worker_processes  6 if node.chef_environment == 'staging'\n  worker_processes  2 if node.chef_environment == 'development'\n\n  case node.chef_environment\n  when 'production', 'staging'\n    # We may be started by root, thus dropping privileges\n    user 'deploy'\n    working_directory '/var/www/example.com/current'\n\n    # Listen on UNIX domain socket only\n    # Shorter backlog for quicker failover when busy\n    listen  'unix:tmp/sockets/unicorn.sock'\n    backlog 1024\n\n  when 'development'\n    listen 8080\n  end\n\n  # Kill workers after 30 seconds on production\n  timeout (node.chef_environment == 'production' ? 30 : 60)\nend\n```\n\n### unicorn_ng_service\n\nDeploys and configures unicorn initscript.\nThis LWRP uses the given attributes (see above) as defaults, if not specified otherwise.\n\nExample:\n\n```ruby\nunicorn_ng_service '/var/www/example.com/current'\n```\n\nIn case you e.g. want to use the unicorn bundled with your configuration, you may set up a rvm wrapper for bundler\n\nUsing [fnichol-rvm](https://github.com/fnichol/chef-rvm):\n\n```ruby\nrvm_wrapper 'init' do\n  binary 'bundle'\n  ruby_string 'ruby-2.0.0@myapp'\nend\n```\n\nOr do it manually\n\n```bash\nrvm wrapper ruby-2.0.0@myapp init bundler\n```\n\nThe initscript then uses this bundler to call unicorn with\n\n```bash\nbundle exec unicorn [ARGS]\n```\n\nThen tell the service to use your custom bundler:\n\n```ruby\nunicorn_ng_service '/var/www/example.com/current' do\n  environment   node.chef_environment\n  user          'deploy'\n\n  # use a custom bundle-environment\n  bundle        '/usr/local/rvm/bin/init_bundle'\nend\n```\n\nAn example with chruby-exec\n\n```ruby\nunicorn_ng_service '/var/www/example.com/current' do\n  wrapper       '/usr/local/bin/chruby-exec'\n  wrapper_opts  '1.9.3-p448 --''\n  bundle        'bundle'\n  environment   node.chef_environment\n  user          'deploy'\nend\n```\n\n# Contributing\n\nContributions are very welcome!\n\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write you change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n\n\n# License and Authors\n\nAuthor: Chris Aumann <me@chr4.org>\n\nContributor: Moshe Bergman <bergmanm@gmail.com>\n\nLicense: GPLv3\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 12.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 6.0",
+      "one_of_group": "os"
+    }
+  ],
+  "chef_recipes": {
+    "unicorn-ng": "Configures unicorn.rb and sets up a service according to attributes",
+    "unicorn-ng::install": "Installs bundler and unicorn using rubygems"
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/vicamo/jenkins-deps-bare",
+    "repository_url": "https://hub.docker.com/v2/repositories/vicamo/jenkins-deps-bare",
+    "tags_url": "https://hub.docker.com/v2/repositories/vicamo/jenkins-deps-bare/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/vicamo/jenkins-deps-bare/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/vicamo/jenkins-deps-bare/autobuild",
+    "user": "vicamo",
+    "name": "jenkins-deps-bare",
+    "namespace": "vicamo",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 1409,
+    "last_updated": "2016-10-14T05:13:20.712471Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 313684324,
+        "id": 49213,
+        "repository": 223336,
+        "creator": 113488,
+        "last_updater": 113488,
+        "last_updated": "2016-10-14T05:13:20.348628Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "vicamo/docker-jenkins"
+  },
+  "name": "vicamo/jenkins-deps-bare Docker container",
+  "description": "Automated repository for internal dependencies. Use vicamo/jenkins instead.",
+  "readme": "# Official Jenkins Docker image\n\nThe Jenkins Continuous Integration and Delivery server.\n\nThis is a fully functional Jenkins server, based on the Long Term Support release\nhttp://jenkins-ci.org/\n\n\n<img src=\"http://jenkins-ci.org/sites/default/files/jenkins_logo.png\"/>\n\n\n# Usage\n\n```\ndocker run -p 8080:8080 jenkins\n```\n\nThis will store the workspace in /var/jenkins_home. All Jenkins data lives in there - including plugins and configuration.\nYou will probably want to make that a persistent volume (recommended):\n\n```\ndocker run -p 8080:8080 -v /your/home:/var/jenkins_home jenkins\n```\n\nThis will store the jenkins data in /your/home on the host.\nEnsure that /your/home is accessible by the jenkins user in container (jenkins user - uid 1000).\n\n\nYou can also use a volume container:\n\n```\ndocker run --name myjenkins -p 8080:8080 -v /var/jenkins_home jenkins\n```\n\nThen myjenkins container has the volume (please do read about docker volume handling to find out more).\n\n## Backing up data\n\nIf you bind mount in a volume - you can simply back up that directory\n(which is jenkins_home) at any time.\n\nThis is highly recommended. Treat the jenkins_home directory as you would a database - in Docker you would generally put a database on a volume.\n\nIf your volume is inside a container - you can use ```docker cp $ID:/var/jenkins_home``` command to extract the data.\nNote that some symlinks on some OSes may be converted to copies (this can confuse jenkins with lastStableBuild links etc)\n\n# Attaching build executors\n\nYou can run builds on the master (out of the box) buf if you want to attach build slave servers: make sure you map the port: ```-p 50000:50000``` - which will be used when you connect a slave agent.\n\n<a href=\"https://registry.hub.docker.com/u/maestrodev/build-agent/\">Here</a> is an example docker container you can use as a build server with lots of good tools installed - which is well worth trying.\n\n# Passing JVM parameters\n\nYou might need to customize the JVM running Jenkins, typically to pass system properties or tweak heap memory settings. Use JAVA_OPTS environment \nvariable for this purpose :\n\n```\ndocker run --name myjenkins -p 8080:8080 --env JAVA_OPTS=-Dhudson.footerURL=http://mycompany.com jenkins\n```\n\n# Passing Jenkins launcher parameters\n\nArgument you pass to docker running the jenkins image are passed to jenkins launcher, so you can run for sample :\n```\ndocker run jenkins --version\n```\nThis will dump Jenkins version, just like when you run jenkins as an executable war.\n\nYou also can define jenkins arguments as `JENKINS_OPTS`. This is usefull to define a set of arguments to pass to jenkins launcher as you\ndefine a derived jenkins image based on the official one with some customized settings. The following sample Dockerfile uses this option\nto force use of HTTPS with a certificate included in the image\n\n```\nFROM jenkins:1.565.3\n\nCOPY https.pem /var/lib/jenkins/cert\nCOPY https.key /var/lib/jenkins/pk\nENV JENKINS_OPTS --httpPort=-1 --httpsPort=8083 --httpsCertificate=/var/lib/jenkins/cert --httpsPrivateKey=/var/lib/jenkins/pk\nEXPOSE 8083\n```\n\n# Installing more tools\n\nYou can run your container as root - and install via apt-get, install as part of build steps via jenkins tool installers, or you can create your own Dockerfile to customise, for example: \n\n```\nFROM jenkins\n# if we want to install via apt\nUSER root\nRUN apt-get install -y ruby make more-thing-here\nUSER jenkins # drop back to the regular jenkins user - good practice\n```\n\nIn such a derived image, you can customize your jenkins instance with hook scripts or additional plugins. \nFor this purpose, use `/usr/share/jenkins/ref` as a place to define the default JENKINS_HOME content you\nwish the target installation to look like :\n\n```\nFROM jenkins\nCOPY plugins /usr/share/jenkins/ref/plugins\nCOPY custom.groovy /usr/share/jenkins/ref/init.groovy.d/custom.groovy\n```\n\nWhen jenkins container starts, it will check JENKINS_HOME has this reference content, and copy them there if required. It will not override such files, so if you upgraded some plugins from UI they won't be reverted on next start.\n\nAlso see [JENKINS-24986](https://issues.jenkins-ci.org/browse/JENKINS-24986)\n\nFor your convenience, you also can use a plain text file to define plugins to be installed (using core-support plugin format)\n```\npluginID:version\nanotherPluginID:version\n```\nAnd in derived Dockerfile just invoke the utility plugin.sh script\n```\nFROM jenkins\nCOPY plugins.txt /usr/share/jenkins/plugins.txt\nRUN /usr/local/bin/plugins.sh /usr/share/jenkins/plugins.txt\n```\n\n\n# Upgrading\n\nAll the data needed is in the /var/jenkins_home directory - so depending on how you manage that - depends on how you upgrade. Generally - you can copy it out - and then \"docker pull\" the image again - and you will have the latest LTS - you can then start up with -v pointing to that data (/var/jenkins_home) and everything will be as you left it.\n\nAs always - please ensure that you know how to drive docker - especially volume handling!\n\n# Questions?\n\nJump on irc.freenode.net and the #jenkins room. Ask!\n",
+  "dockerfile": "FROM java:8-jdk\n\nMAINTAINER You-Sheng Yang <vicamo@gmail.com>\n\nENV DEBIAN_FRONTEND=noninteractive \\\n    JENKINS_ROOT=/usr/share/jenkins \\\n    JENKINS_HOME=/var/lib/jenkins \\\n    JENKINS_UC=https://updates.jenkins-ci.org \\\n    JENKINS_PORT_8080_TCP_PORT=8080 \\\n    JENKINS_PORT_50000_TCP_PORT=50000\n\nRUN (wget -q -O - https://jenkins-ci.org/debian/jenkins-ci.org.key | apt-key add -) \\\n\t&& (echo \"deb http://pkg.jenkins-ci.org/debian binary/\" > /etc/apt/sources.list.d/jenkins.list) \\\n\t&& apt-get update \\\n\t&& apt-get install -y --no-install-recommends \\\n\t\tjenkins \\\n\t&& apt-get clean \\\n\t&& rm -rf /var/lib/apt/lists/*_dists_* \\\n\t&& mkdir -p $JENKINS_ROOT/plugins \\\n\t&& mkdir -p $JENKINS_HOME/plugins \\\n\t&& chown jenkins.jenkins $JENKINS_HOME/plugins\n\nADD entrypoint.sh /\nADD init.groovy ${JENKINS_HOME}/init.groovy.d/tcp-slave-angent-port.groovy\nADD plugins.sh /usr/local/bin/plugins.sh\n\n# Respect Docker ENV\nRUN sed -e \"s!^JENKINS_ROOT=.*!JENKINS_ROOT=$JENKINS_ROOT!\" \\\n\t\t-e \"s!^JENKINS_HOME=.*!JENKINS_HOME=$JENKINS_HOME!\" \\\n\t\t-e \"s!^HTTP_PORT=.*!HTTP_PORT=$JENKINS_PORT_8080_TCP_PORT!\" \\\n\t\t-i /etc/default/jenkins \\\n\t&& sed -e \"s!50000!$JENKINS_PORT_50000_TCP_PORT!\" \\\n\t\t-i ${JENKINS_HOME}/init.groovy.d/tcp-slave-angent-port.groovy\n\n# https://github.com/docker/docker/issues/2174\n# Docker seems to map IPv6 ports only. So when connected with IPv6\n# host address, jenkins will rejest the connection because in Debian\n# it listens to 127.0.0.1 by default.\nRUN sed -e 's!^HTTP_HOST=.*!HTTP_HOST=0.0.0.0!' \\\n\t\t-e 's!^AJP_HOST=.*!AJP_HOST=0.0.0.0!' \\\n\t\t-i /etc/default/jenkins\n\n# Jenkins home directoy is a volume, so configuration and build history\n# can be persisted and survive image upgrades\nVOLUME ${JENKINS_HOME}\n\nEXPOSE ${JENKINS_PORT_8080_TCP_PORT} ${JENKINS_PORT_50000_TCP_PORT}\n\nENTRYPOINT [\"/entrypoint.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "entrypoint.sh",
+        "dest": "/"
+      },
+      {
+        "source": "init.groovy",
+        "dest": "${JENKINS_HOME}/init.groovy.d/tcp-slave-angent-port.groovy"
+      },
+      {
+        "source": "plugins.sh",
+        "dest": "/usr/local/bin/plugins.sh"
+      }
+    ],
+    "expose": [
+      "${JENKINS_PORT_8080_TCP_PORT} ${JENKINS_PORT_50000_TCP_PORT}"
+    ],
+    "volume": [
+      "${JENKINS_HOME}"
+    ],
+    "run": [
+      "(wget -q -O - https://jenkins-ci.org/debian/jenkins-ci.org.key | apt-key add -) \t&& (echo \"deb http://pkg.jenkins-ci.org/debian binary/\" > /etc/apt/sources.list.d/jenkins.list) \t&& apt-get update \t&& apt-get install -y --no-install-recommends \t\tjenkins \t&& apt-get clean \t&& rm -rf /var/lib/apt/lists/*_dists_* \t&& mkdir -p $JENKINS_ROOT/plugins \t&& mkdir -p $JENKINS_HOME/plugins \t&& chown jenkins.jenkins $JENKINS_HOME/plugins",
+      "sed -e \"s!^JENKINS_ROOT=.*!JENKINS_ROOT=$JENKINS_ROOT!\" \t\t-e \"s!^JENKINS_HOME=.*!JENKINS_HOME=$JENKINS_HOME!\" \t\t-e \"s!^HTTP_PORT=.*!HTTP_PORT=$JENKINS_PORT_8080_TCP_PORT!\" \t\t-i /etc/default/jenkins \t&& sed -e \"s!50000!$JENKINS_PORT_50000_TCP_PORT!\" \t\t-i ${JENKINS_HOME}/init.groovy.d/tcp-slave-angent-port.groovy",
+      "sed -e 's!^HTTP_HOST=.*!HTTP_HOST=0.0.0.0!' \t\t-e 's!^AJP_HOST=.*!AJP_HOST=0.0.0.0!' \t\t-i /etc/default/jenkins"
+    ],
+    "workdir": [],
+    "from": "java:8-jdk",
+    "maintainer": "You-Sheng Yang <vicamo@gmail.com>",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "": "",
+      "JENKINS_ROOT": "/usr/share/jenkins",
+      "JENKINS_HOME": "/var/lib/jenkins",
+      "JENKINS_UC": "https://updates.jenkins-ci.org",
+      "JENKINS_PORT_8080_TCP_PORT": "8080",
+      "JENKINS_PORT_50000_TCP_PORT": "50000"
+    },
+    "entrypoint": "[\"/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/vicamo/docker-jenkins.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/vicamo/docker-jenkins",
+  "docker_repository": "vicamo/jenkins-deps-bare",
+  "docker_image": "vicamo/jenkins-deps-bare",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_ROOT": {
+      "default": "/usr/share/jenkins",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_HOME": {
+      "default": "/var/lib/jenkins",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_UC": {
+      "default": "https://updates.jenkins-ci.org",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_PORT_8080_TCP_PORT": {
+      "default": "8080",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JENKINS_PORT_50000_TCP_PORT": {
+      "default": "50000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        "${JENKINS_PORT_8080_TCP_PORT} ${JENKINS_PORT_50000_TCP_PORT}"
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "vicamo/jenkins-deps-bare",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/vicamo/jenkins-deps-bare",
+    "https://hub.docker.com/v2/repositories/vicamo/jenkins-deps-bare",
+    "https://github.com/vicamo/docker-jenkins.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Integration/Jenkins",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/vicamo/jenkins-deps-bare",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

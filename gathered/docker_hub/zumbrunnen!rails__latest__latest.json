@@ -1,0 +1,113 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/zumbrunnen/rails",
+    "repository_url": "https://hub.docker.com/v2/repositories/zumbrunnen/rails",
+    "tags_url": "https://hub.docker.com/v2/repositories/zumbrunnen/rails/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/zumbrunnen/rails/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/zumbrunnen/rails/autobuild",
+    "user": "zumbrunnen",
+    "name": "rails",
+    "namespace": "zumbrunnen",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 390,
+    "last_updated": "2015-12-28T16:26:42.425367Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 330705637,
+        "id": 9054,
+        "repository": 5796,
+        "creator": 7301,
+        "last_updater": 7301,
+        "last_updated": "2015-12-28T16:26:41.939465Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "zumbrunnen/docker-rails"
+  },
+  "name": "zumbrunnen/rails Docker container",
+  "description": "Ruby on Rails image, using Passenger Standalone",
+  "readme": "docker-rails\n============\n\nA simple Docker Image for running Ruby on Rails applications with Passenger. It checks for `.ruby-version` and `.ruby-gemset` files in the app's root directory and installs the desired Ruby version.\n\n## Starting The Container\n\n### Example\n\n```\ndocker run --name foo_app \\\n    -e APP_NAME=foo \\\n    -e APP_REPO_URL=\"https://githubsecrettoken@github.com/organization/foo.git\" \\\n    -e APP_REPO_REF=branchxy \\\n    -e RAILS_ENV=production \\\n    -e DATABASE_URL=\"postgres://docker:docker@dbserver.internal/foo_production\" \\\n    -e SECRET_KEY_BASE=\"yoursecretkeybaseforproduction\"\n    zumbrunnen/rails\n```\n\nThe environment variables needed are:\n\n * `APP_NAME` - Your app's name\n * `APP_REPO_URL` - A Git repo to clone the source from\n * `APP_REPO_REF` - A Git branch or tag to checkout (optional, defaults to master branch)\n * `RAILS_ENV` - The Ruby on Rails environment (optional, defaults to 'production')\n * `DATABASE_URL` - Database connection information\n * `SECRET_KEY_BASE` - Session storage key for this environment\n\nWhen the container starts, the source will be cloned into /srv/$APP_NAME, the necessary gems will be installed, then the DB will be prepared (created and schema.rb loaded), and eventually, Passenger will be started in standalone mode. See [the start script](../master/start_app).\n\n## Deploy Hooks\n\nDeploy hooks are Ruby or Bash scripts which are executed at designated points in the deployment process. This allows you to customize the deployment of your application to meet its particular needs. Just place your scripts (.rb or .sh) in a `/deploy` directory in your Rails app's repository.\n\n * `before_bundle.(sh|rb)` - Before Bundler runs. E.g. to adjust your code after checkout or to install additional packages.\n * `after_bundle.(sh|rb)` - After the Bundler run. Maybe you want some additional gems installed?\n * `before_start.(sh|rb)` - Final hook before the web server starts.\n",
+  "dockerfile": "FROM ubuntu:wily\nMAINTAINER David Zumbrunnen <zumbrunnen@gmail.com>\n\nENV DEBIAN_FRONTEND noninteractive\n\nRUN apt-get update\nRUN apt-get -y install curl libpq-dev git gnupg gawk g++ gcc make   \\\n      libreadline6-dev libyaml-dev libsqlite3-dev sqlite3 autoconf  \\\n      libgdbm-dev libncurses5-dev automake libtool bison pkg-config \\\n      libffi-dev lsb-release\n\nRUN gpg --keyserver hkp://keys.gnupg.net --recv-keys D39DC0E3\nRUN \\curl -sSL https://get.rvm.io | bash -s stable --ruby\n\nRUN echo \"gem: --no-rdoc --no-ri\" > ~/.gemrc\n\nRUN apt-get clean\nRUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nADD start_app /opt/start_app\n\nEXPOSE 80\n\nCMD [\"/opt/start_app\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "start_app",
+        "dest": "/opt/start_app"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update",
+      "apt-get -y install curl libpq-dev git gnupg gawk g++ gcc make         libreadline6-dev libyaml-dev libsqlite3-dev sqlite3 autoconf        libgdbm-dev libncurses5-dev automake libtool bison pkg-config       libffi-dev lsb-release",
+      "gpg --keyserver hkp://keys.gnupg.net --recv-keys D39DC0E3",
+      "\\curl -sSL https://get.rvm.io | bash -s stable --ruby",
+      "echo \"gem: --no-rdoc --no-ri\" > ~/.gemrc",
+      "apt-get clean",
+      "rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+    ],
+    "workdir": [],
+    "from": "ubuntu:wily",
+    "maintainer": "David Zumbrunnen <zumbrunnen@gmail.com>",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "cmd": "[\"/opt/start_app\"]"
+  },
+  "source_repository_url": "git://github.com/zumbrunnen/docker-rails.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/zumbrunnen/docker-rails",
+  "docker_repository": "zumbrunnen/rails",
+  "docker_image": "zumbrunnen/rails",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "zumbrunnen/rails",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/zumbrunnen/rails",
+    "https://hub.docker.com/v2/repositories/zumbrunnen/rails",
+    "git://github.com/zumbrunnen/docker-rails.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image"
+  ],
+  "info_url": "https://hub.docker.com/r/zumbrunnen/rails",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

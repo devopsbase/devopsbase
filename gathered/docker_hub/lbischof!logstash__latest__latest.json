@@ -1,0 +1,113 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/lbischof/logstash",
+    "repository_url": "https://hub.docker.com/v2/repositories/lbischof/logstash",
+    "tags_url": "https://hub.docker.com/v2/repositories/lbischof/logstash/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/lbischof/logstash/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/lbischof/logstash/autobuild",
+    "user": "lbischof",
+    "name": "logstash",
+    "namespace": "lbischof",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 614,
+    "last_updated": "2016-10-11T00:07:23.783598Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 343768143,
+        "id": 2829414,
+        "repository": 660942,
+        "creator": 502557,
+        "last_updater": 502557,
+        "last_updated": "2016-10-11T00:07:23.055697Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "lbischof/openshift3-elk"
+  },
+  "name": "lbischof/logstash Docker container",
+  "description": "ELK-Stack for Openshift v3",
+  "readme": "# ELK-Stack on Openshift v3\n\n**Under construction**\n\nThese are modified dockerfiles from the official docker images. I removed the gosu stuff and made sure relevant files are world readable.\n\n## Usage\nThere is a docker-compose and a openshift template file in the `example` directory.\n### Local\n```\ndocker run -it --rm --name elasticsearch lbischof/elasticsearch\ndocker run -it --rm --link elasticsearch:elasticsearch -p 5601:5601 lbischof/kibana\ns2i build https://github.com/lbischof/openshift3-elk.git lbischof/logstash logstash --context-dir=example\ndocker run -it --rm --link elasticsearch:elasticsearch logstash\n```\n### Openshift\n```\noc new-project elk\noc new-app lbischof/kibana\noc new-app lbischof/elasticsearch\noc new-app lbischof/logstash~https://github.com/lbischof/openshift3-elk.git --context-dir example --name logstash-git\noc expose service kibana\n```\n\n",
+  "dockerfile": "FROM openshift/base-centos7\n\nMAINTAINER Lorenz Bischof <bischof@puzzle.ch>\n\nENV LOGSTASH_VERSION=2.3.0 \\\n    ELASTICSEARCH_SERVICE_HOST=elasticsearch\n\nLABEL io.k8s.description=\"Logstash\" \\\n      io.k8s.display-name=\"logstash ${LOGSTASH_VERSION}\" \\\n      io.openshift.expose-services=\"8080:http\" \\\n      io.openshift.tags=\"logstash,${LOGSTASH_VERSION},elk\"\n\nRUN \\\n  rpm --rebuilddb && yum clean all && \\\n  yum install -y tar java-1.8.0-openjdk openssl && \\\n  cd /opt/app-root && \\\n  curl -O https://download.elasticsearch.org/logstash/logstash/logstash-${LOGSTASH_VERSION}.tar.gz && \\\n  tar zxvf logstash-${LOGSTASH_VERSION}.tar.gz -C /opt/app-root --strip-components=1 && \\\n  rm -f logstash-${LOGSTASH_VERSION}.tar.gz && \\\n  yum clean all -y\n\n# Copy the S2I scripts to /usr/libexec/s2i, since openshift/base-centos7 image sets io.openshift.s2i.scripts-url label that way, or update that label\nCOPY ./.s2i/bin/ /usr/libexec/s2i\n\n# Drop the root user and make the content of /opt/app-root owned by user 1001\nRUN chown -R 1001:1001 /opt/app-root\n\n# This default user is created in the openshift/base-centos7 image\nUSER 1001\n\nCMD [\"/usr/libexec/s2i/usage\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "  rpm --rebuilddb && yum clean all &&   yum install -y tar java-1.8.0-openjdk openssl &&   cd /opt/app-root &&   curl -O https://download.elasticsearch.org/logstash/logstash/logstash-${LOGSTASH_VERSION}.tar.gz &&   tar zxvf logstash-${LOGSTASH_VERSION}.tar.gz -C /opt/app-root --strip-components=1 &&   rm -f logstash-${LOGSTASH_VERSION}.tar.gz &&   yum clean all -y",
+      "chown -R 1001:1001 /opt/app-root"
+    ],
+    "workdir": [],
+    "from": "openshift/base-centos7",
+    "maintainer": "Lorenz Bischof <bischof@puzzle.ch>",
+    "env": {
+      "LOGSTASH_VERSION": "2.3.0",
+      "": "",
+      "ELASTICSEARCH_SERVICE_HOST": "elasticsearch"
+    },
+    "label": "io.k8s.description=\"Logstash\"       io.k8s.display-name=\"logstash ${LOGSTASH_VERSION}\"       io.openshift.expose-services=\"8080:http\"       io.openshift.tags=\"logstash,${LOGSTASH_VERSION},elk\"",
+    "copy": "./.s2i/bin/ /usr/libexec/s2i",
+    "user": "1001",
+    "cmd": "[\"/usr/libexec/s2i/usage\"]"
+  },
+  "source_repository_url": "https://github.com/lbischof/openshift3-elk.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/lbischof/openshift3-elk",
+  "docker_repository": "lbischof/logstash",
+  "docker_image": "lbischof/logstash",
+  "parameters_schema": {
+    "LOGSTASH_VERSION": {
+      "default": "2.3.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ELASTICSEARCH_SERVICE_HOST": {
+      "default": "elasticsearch",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "lbischof/logstash",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/lbischof/logstash",
+    "https://hub.docker.com/v2/repositories/lbischof/logstash",
+    "https://github.com/lbischof/openshift3-elk.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Logging/Logstash"
+  ],
+  "info_url": "https://hub.docker.com/r/lbischof/logstash",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

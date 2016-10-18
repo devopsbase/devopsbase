@@ -1,0 +1,63 @@
+{
+  "name": "confluent-platform Chef cookbook",
+  "chef_cookbook_name": "confluent-platform",
+  "revision": "1.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/confluent-platform",
+    "https://supermarket.chef.io/cookbooks/confluent-platform/download",
+    "https://supermarket.chef.io/cookbooks/confluent-platform/versions/1.1.0",
+    "https://supermarket.chef.io/cookbooks/confluent-platform/versions/1.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/confluent-platform/versions/1.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/confluent-platform",
+    "https://supermarket.chef.io/api/v1/cookbooks/confluent-platform/versions/1.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Applications",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/confluent-platform",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/confluent-platform/versions/1.1.0/download",
+  "deprecated": false,
+  "created": "2015-10-08T00:46:59.236Z",
+  "updated": "2016-08-31T22:40:04.166Z",
+  "description": "Install/Configure confluent-platform",
+  "maintainer": {
+    "name": "samuel_bernard",
+    "email": "dps.team@s4m.io"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 1287,
+  "downloads_count_revision": 235,
+  "repository_url": "https://gitlab.com/s4m-chef-repositories/confluent-platform",
+  "issues_url": "https://gitlab.com/s4m-chef-repositories/confluent-platform/issues",
+  "chef_source_url": "https://gitlab.com/s4m-chef-repositories/confluent-platform",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Confluent Platform\n==================\n\nDescription\n-----------\n\nApache Kafka, an open source technology created and maintained by the founders\nof Confluent, acts as a real-time, fault tolerant, highly scalable messaging\nsystem. It is widely adopted for use cases ranging from collecting user\nactivity data, logs, application metrics, stock ticker data, and device\ninstrumentation. Its key strength is its ability to make high volume data\navailable as a real-time stream for consumption in systems with very different\nrequirements—from batch systems like Hadoop, to real-time systems that require\nlow-latency access, to stream processing engines that transform the data\nstreams as they arrive.\n\nThis infrastructure lets you build around a single central nervous system\ntransmitting messages to all the different systems and applications within your\ncompany. Learn more on <http://confluent.io>.\n\nThis cookbook focuses on deploying Confluent Platform elements on your clusters\nvia Chef on *systemd* managed distributions. At the moment, this includes\n**Kafka**, **Schema Registry** and **Kafka Rest**.\n\nUsage\n-----\n\n### Easy Setup\n\nDefault recipe does nothing. Each service **Kafka**, **Schema Registry** or\n**Kafka Rest** will be installed by calling respectively recipe\n[install-kafka](recipes/install-kafka.rb),\n[install-registry](recipes/install-registry.rb) and\n[install-rest](recipes/install-rest.rb).\n\nBy default, this cookbook installs *openjdk* from the official repositories\n*(openjdk 8 on centos 7)* in **services** recipe, just before\nlaunching the service. You can deactivate this behavior by setting\n`node['confluent-platform']['java']` to `\"\"`, or choose your package by setting\nthe package name in `node['confluent-platform']['java'][node[:platform]]`.\n\n### Search\n\nThe recommended way to use this cookbook is through the creation of a different\nrole per cluster, that is a role for **Kafka**, **Schema Registry** and\n**Kafka Rest**. This enables the search by role feature, allowing a simple\nservice discovery.\n\nSee [roles](test/integration/roles) for some examples and *Cluster Search*\ndocumentation for more information.\n\n### Test\n\nThis cookbook is fully tested through the installation of the full platform\nin docker hosts. This uses kitchen, docker and some monkey-patching.\n\nIf you run `kitchen list`, you will see 7 suites:\n- dnsdock-centos-7\n- zookeeper-centos-7\n- kafka-01-centos-7\n- kafka-02-centos-7\n- kafka-03-centos-7\n- registry-01-centos-7\n- rest-01-centos-7\n\nEach corresponds to a different node in the cluster.\n\nFor more information, see [.kitchen.yml](.kitchen.yml) and [test](test)\ndirectory.\n\n### Local cluster\n\nOf course, the cluster you install by running `kitchen converge` is fully\nworking so you can use it as a local cluster to test your development (like a\nnew Kafka client). Moreover, compared to a single node cluster usually\ninstalled on workstations, you can detected partition/timing/fault-tolerance\nissues you could not because of the simplicity of a single-node system.\n\nYou can access it by adding the dnsdock used in the cluster as your main DNS\nresolver: add\n`docker inspect --format '{{.NetworkSettings.IPAddress}}' dnsdock-kafka`\nin `/etc/resolv.conf`.\n\nThen to produce some messages:\n\n    kafka-console-producer.sh \\\n      --broker-list kafka-kitchen-01.kitchen:9092 \\\n      --topic my_topic\n\nAnd to read them:\n\n    kafka-console-consumer.sh \\\n      --zookeeper zookeeper-kafka.kitchen/kafka-kitchen \\\n      --topic my_topic \\\n      --from-beginning\n\nOr you can use Rest API with http://rest-kitchen-01.kitchen:8082 and full\nSchema Registry support, located at http://registry-kitchen-01.kitchen:8081.\n\nRequirements\n------------\n\n### Cookbooks\n\nDeclared in [metadata.rb](metadata.rb).\n\n### Gems\n\nDeclared in [Gemfile](Gemfile).\n\n### Platforms\n\nA *systemd* managed distribution:\n- RHEL Family 7, tested on Centos\n\nNote: it should work fine on Debian 8 but the official docker image does not\nallow systemd to work easily, so it could not be tested.\n\nAttributes\n----------\n\nConfiguration is done by overriding default attributes. All configuration keys\nhave a default defined in [attributes/default.rb](attributes/default.rb).\nPlease read it to have a comprehensive view of what and how you can configure\nthis cookbook behavior.\n\nRecipes\n-------\n\n### default\n\nDoes nothing.\n\n### repository\n\nConfigure confluent repository.\n\n### install-*service*\n\nInstall and fully configure a given *service* by running *repository* and its\n4 dedicated recipes: *package*, *user*, *config* and *service*, in that order.\n\n### *service*-package\n\nInstall given *service* from confluent repository.\n\n### *service*-user\n\nCreate given *service* system user and group.\n\n### *service*-config\n\nGenerate *service* configuration. May search for dependencies (like Zookeeper\nor other nodes of the same cluster) with the help of cluster-search cookbook.\n\n### *service*-service\n\nInstall systemd unit for the given *service*, then enable and start it.\n\nNote: install *java* package (OpenJDK 8 on centos 7) by default, can be\ndisabled by setting `node['confluent-platform']['java']` to \"\". A platform\nspecific configuration for the package to install is also possible.\n\nResources/Providers\n-------------------\n\nNone.\n\nChanges\n-------\n\n### 1.1.0:\n\n- Cleaning, use only dependencies from supermarket\n\n### 1.0.1:\n\n- Set java-1.8.0-openjdk-headless as default java package\n\n### 1.0.0:\n\n- Initial version with Centos 7 support\n\nContributing\n------------\n\nYou are more than welcome to submit issues and merge requests to this project.\nNote however that this cookbook will probably not support another supervisor\nthan *systemd*.\n\n### Commits\n\nYour commits must pass `git log --check` and messages should be formated\nlike this (based on this excellent\n[post](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html)):\n\n```\nSummarize change in 50 characters or less\n\nProvide more detail after the first line. Leave one blank line below the\nsummary and wrap all lines at 72 characters or less.\n\nIf the change fixes an issue, leave another blank line after the final\nparagraph and indicate which issue is fixed in the specific format\nbelow.\n\nFix #42\n```\n\nAlso do your best to factor commits appropriately, ie not too large with\nunrelated things in the same commit, and not too small with the same small\nchange applied N times in N different commits. If there was some accidental\nreformatting or whitespace changes during the course of your commits, please\nrebase them away before submitting the PR.\n\n### Files\n\nAll files must be 80 columns width formatted (actually 79), exception when it\nis not possible.\n\nLicense and Author\n------------------\n\n- Author:: Samuel Bernard (<samuel.bernard@s4m.io>)\n\n```text\nCopyright:: 2015, Sam4Mobile\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 7.1",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/cluster-search",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

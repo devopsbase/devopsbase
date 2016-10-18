@@ -1,0 +1,187 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/golang/mobile",
+    "repository_url": "https://hub.docker.com/v2/repositories/golang/mobile",
+    "tags_url": "https://hub.docker.com/v2/repositories/golang/mobile/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/golang/mobile/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/golang/mobile/autobuild",
+    "user": "golang",
+    "name": "mobile",
+    "namespace": "golang",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 8,
+    "pull_count": 1408,
+    "last_updated": "2015-07-14T10:56:39.107760Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 1307949338,
+        "id": 99968,
+        "repository": 109183,
+        "creator": 33672,
+        "last_updater": 24018,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "golang/mobile"
+  },
+  "name": "golang/mobile Docker container",
+  "description": "",
+  "readme": "# Go support for Mobile devices\n\nThe Go mobile repository holds packages and build tools for using Go on mobile platforms.\n\nPackage documentation as a starting point:\n\n- [Building all-Go apps](https://golang.org/x/mobile/app)\n- [Building libraries for SDK apps](https://golang.org/x/mobile/cmd/gobind)\n\n![Caution image](doc/caution.png)\n\nThe Go Mobile project is experimental. Use this at your own risk.\nWhile we are working hard to improve it, neither Google nor the Go\nteam can provide end-user support.\n\nThis is early work and installing the build system requires Go 1.5.\nFollow the instructions on\n[golang.org/wiki/Mobile](https://golang.org/wiki/Mobile)\nto install the gomobile command, build the\n[basic](https://golang.org/x/mobile/example/basic)\nand the [bind](https://golang.org/x/mobile/example/bind) example apps.\n\n--\n\nContributions to Go are appreciated. See https://golang.org/doc/contribute.html.\n\n* Bugs can be filed at the [Go issue tracker](https://golang.org/issue/new?title=x/mobile:+).\n* Feature requests should preliminary be discussed on\n[golang-nuts](https://groups.google.com/forum/#!forum/golang-nuts)\nmailing list.\n",
+  "dockerfile": "# Dockerfile to build an image with the local version of golang.org/x/mobile.\n#\n#  > docker build -t mobile $GOPATH/src/golang.org/x/mobile\n#  > docker run -it --rm -v $GOPATH/src:/src mobile\n\nFROM ubuntu:12.04\n\n# Install system-level dependencies.\nENV DEBIAN_FRONTEND noninteractive\nRUN echo \"debconf shared/accepted-oracle-license-v1-1 select true\" | debconf-set-selections && \\\n\techo \"debconf shared/accepted-oracle-license-v1-1 seen true\" | debconf-set-selections\nRUN apt-get update && \\\n\tapt-get -y install build-essential python-software-properties bzip2 unzip curl \\\n\t\tgit subversion mercurial bzr \\\n\t\tlibncurses5:i386 libstdc++6:i386 zlib1g:i386 && \\\n\tadd-apt-repository ppa:webupd8team/java && \\\n\tapt-get update && \\\n\tapt-get -y install oracle-java6-installer\n\n# Install Ant.\nRUN curl -L http://archive.apache.org/dist/ant/binaries/apache-ant-1.9.2-bin.tar.gz | tar xz -C /usr/local\nENV ANT_HOME /usr/local/apache-ant-1.9.2\n\n# Install Android SDK.\nRUN curl -L http://dl.google.com/android/android-sdk_r23.0.2-linux.tgz | tar xz -C /usr/local\nENV ANDROID_HOME /usr/local/android-sdk-linux\nRUN echo y | $ANDROID_HOME/tools/android update sdk --no-ui --all --filter build-tools-19.1.0 && \\\n\techo y | $ANDROID_HOME/tools/android update sdk --no-ui --all --filter platform-tools && \\\n\techo y | $ANDROID_HOME/tools/android update sdk --no-ui --all --filter android-19\n\n# Install Android NDK.\nRUN curl -L http://dl.google.com/android/ndk/android-ndk-r9d-linux-x86_64.tar.bz2 | tar xj -C /usr/local\nENV NDK_ROOT /usr/local/android-ndk-r9d\nRUN $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-9 --install-dir=$NDK_ROOT --system=linux-x86_64\n\n# Install Gradle 2.1\n# : android-gradle compatibility\n#   http://tools.android.com/tech-docs/new-build-system/version-compatibility\nRUN curl -L http://services.gradle.org/distributions/gradle-2.1-all.zip -o /tmp/gradle-2.1-all.zip && unzip /tmp/gradle-2.1-all.zip -d /usr/local && rm /tmp/gradle-2.1-all.zip\nENV GRADLE_HOME /usr/local/gradle-2.1\n\n# Update PATH for the above.\nENV PATH $PATH:$ANDROID_HOME/tools\nENV PATH $PATH:$ANDROID_HOME/platform-tools\nENV PATH $PATH:$NDK_ROOT\nENV PATH $PATH:$ANT_HOME/bin\nENV PATH $PATH:$GRADLE_HOME/bin\n\n# Install Go.\n#   1) 1.4 for bootstrap.\nENV GOROOT_BOOTSTRAP /go1.4\nRUN (curl -sSL https://golang.org/dl/go1.4.linux-amd64.tar.gz | tar -vxz -C /tmp) && \\\n\tmv /tmp/go $GOROOT_BOOTSTRAP\n\n\n#   2) Download and cross compile the Go on revision GOREV.\n#\n# GOVERSION string is the output of 'git log -n 1 --format=\"format: devel +%h %cd\" HEAD'\n# like in go tool dist.\n# Revision picked on Jan 21, 2015.\nENV GO_REV 3f4de49d0a6469b38a6e07194a6b59d7a35b1d51\nENV GO_VERSION devel +3f4de49 Mon Apr 20 15:56:56 2015 +0000\n\nENV GOROOT /go\nENV GOPATH /\nENV PATH $PATH:$GOROOT/bin\n\nRUN mkdir -p $GOROOT && \\\n\tcurl -sSL \"https://go.googlesource.com/go/+archive/$GO_REV.tar.gz\" | tar -vxz -C $GOROOT\nRUN echo $GO_VERSION > $GOROOT/VERSION\n\n# TODO(hyangah): cannot run all.bash due to failures reported in golang.org/issues/9729\nRUN cd $GOROOT/src && \\\n\t./make.bash && \\\n\tCC_FOR_TARGET=$NDK_ROOT/bin/arm-linux-androideabi-gcc GOOS=android GOARCH=arm GOARM=7 ./make.bash\n\n# Expect the GOPATH/src volume to be mounted.  (-v $GOPATH/src:/src)\nVOLUME [\"/src\"]\n\n# Generate a debug keystore to avoid it being generated on each `docker run`\n# and fail `adb install -r <apk>` with a conflicting certificate error.\nRUN keytool -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname \"CN=Android Debug,O=Android,C=US\" -validity 365\n\nWORKDIR $GOPATH/src/golang.org/x/mobile\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "[\"/src\"]"
+    ],
+    "run": [
+      "echo \"debconf shared/accepted-oracle-license-v1-1 select true\" | debconf-set-selections && \techo \"debconf shared/accepted-oracle-license-v1-1 seen true\" | debconf-set-selections",
+      "apt-get update && \tapt-get -y install build-essential python-software-properties bzip2 unzip curl \t\tgit subversion mercurial bzr \t\tlibncurses5:i386 libstdc++6:i386 zlib1g:i386 && \tadd-apt-repository ppa:webupd8team/java && \tapt-get update && \tapt-get -y install oracle-java6-installer",
+      "curl -L http://archive.apache.org/dist/ant/binaries/apache-ant-1.9.2-bin.tar.gz | tar xz -C /usr/local",
+      "curl -L http://dl.google.com/android/android-sdk_r23.0.2-linux.tgz | tar xz -C /usr/local",
+      "echo y | $ANDROID_HOME/tools/android update sdk --no-ui --all --filter build-tools-19.1.0 && \techo y | $ANDROID_HOME/tools/android update sdk --no-ui --all --filter platform-tools && \techo y | $ANDROID_HOME/tools/android update sdk --no-ui --all --filter android-19",
+      "curl -L http://dl.google.com/android/ndk/android-ndk-r9d-linux-x86_64.tar.bz2 | tar xj -C /usr/local",
+      "$NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-9 --install-dir=$NDK_ROOT --system=linux-x86_64",
+      "curl -L http://services.gradle.org/distributions/gradle-2.1-all.zip -o /tmp/gradle-2.1-all.zip && unzip /tmp/gradle-2.1-all.zip -d /usr/local && rm /tmp/gradle-2.1-all.zip",
+      "(curl -sSL https://golang.org/dl/go1.4.linux-amd64.tar.gz | tar -vxz -C /tmp) && \tmv /tmp/go $GOROOT_BOOTSTRAP",
+      "mkdir -p $GOROOT && \tcurl -sSL \"https://go.googlesource.com/go/+archive/$GO_REV.tar.gz\" | tar -vxz -C $GOROOT",
+      "echo $GO_VERSION > $GOROOT/VERSION",
+      "cd $GOROOT/src && \t./make.bash && \tCC_FOR_TARGET=$NDK_ROOT/bin/arm-linux-androideabi-gcc GOOS=android GOARCH=arm GOARM=7 ./make.bash",
+      "keytool -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname \"CN=Android Debug,O=Android,C=US\" -validity 365"
+    ],
+    "workdir": [
+      "$GOPATH/src/golang.org/x/mobile"
+    ],
+    "from": "ubuntu:12.04",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "ANT_HOME": "/usr/local/apache-ant-1.9.2",
+      "ANDROID_HOME": "/usr/local/android-sdk-linux",
+      "NDK_ROOT": "/usr/local/android-ndk-r9d",
+      "GRADLE_HOME": "/usr/local/gradle-2.1",
+      "PATH": "$PATH:$GOROOT/bin",
+      "GOROOT_BOOTSTRAP": "/go1.4",
+      "GO_REV": "3f4de49d0a6469b38a6e07194a6b59d7a35b1d51",
+      "GO_VERSION": "devel",
+      "+3f4de49": "Mon",
+      "Apr": "20",
+      "15:56:56": "2015",
+      "GOROOT": "/go",
+      "GOPATH": "/"
+    }
+  },
+  "source_repository_url": "https://github.com/golang/mobile.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/golang/mobile",
+  "docker_repository": "golang/mobile",
+  "docker_image": "golang/mobile",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ANT_HOME": {
+      "default": "/usr/local/apache-ant-1.9.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ANDROID_HOME": {
+      "default": "/usr/local/android-sdk-linux",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NDK_ROOT": {
+      "default": "/usr/local/android-ndk-r9d",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GRADLE_HOME": {
+      "default": "/usr/local/gradle-2.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:$GOROOT/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOROOT_BOOTSTRAP": {
+      "default": "/go1.4",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GO_REV": {
+      "default": "3f4de49d0a6469b38a6e07194a6b59d7a35b1d51",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GO_VERSION": {
+      "default": "devel",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "+3f4de49": {
+      "default": "Mon",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "Apr": {
+      "default": "20",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "15:56:56": {
+      "default": "2015",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOROOT": {
+      "default": "/go",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOPATH": {
+      "default": "/",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "golang/mobile",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/golang/mobile",
+    "https://hub.docker.com/v2/repositories/golang/mobile",
+    "https://github.com/golang/mobile.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Golang"
+  ],
+  "info_url": "https://hub.docker.com/r/golang/mobile",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

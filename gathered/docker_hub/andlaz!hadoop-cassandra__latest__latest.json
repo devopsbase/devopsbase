@@ -1,0 +1,144 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/andlaz/hadoop-cassandra",
+    "repository_url": "https://hub.docker.com/v2/repositories/andlaz/hadoop-cassandra",
+    "tags_url": "https://hub.docker.com/v2/repositories/andlaz/hadoop-cassandra/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/andlaz/hadoop-cassandra/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/andlaz/hadoop-cassandra/autobuild",
+    "user": "andlaz",
+    "name": "hadoop-cassandra",
+    "namespace": "andlaz",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 49,
+    "last_updated": "2015-10-07T12:05:53.481304Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 888999557,
+        "id": 784150,
+        "repository": 297167,
+        "creator": 320858,
+        "last_updater": 320858,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "andlaz/hadoop-cassandra"
+  },
+  "name": "andlaz/hadoop-cassandra Docker container",
+  "description": "Cassandra + DataNode + NodeManager",
+  "readme": "## Cassandra + DataNode + NodeManager\n\n### Overview\n\nThis is a Docker image that extends `andlaz/hadoop-base` for Hadoop binaries and installs Cassandra 2.1.7 and it's dependencies. Furthermore it configures ( via an entry point script ) and starts ( supervisord ) `Cassandra`, `DataNode` and `NodeManager` ( 1 process of each ) \n\n#### Goals\n\nThe ability to run map/reduce jobs against data ( partially or fully ) in Cassandra with _data locality_. The reason for having these separate ( daemon ) processes run from the same container is to ensure they are co-located physically. \n\n#### Notes\n\n### Usage\n\n#### Linked containers\n\n - An HDFS NameNode ( `namenode` : `andlaz/hadoop-hdfs-namenode` )\n - A YARN ResourceManager ( `resourcemanager` : `andlaz/hadoop-yarn-rm` )\n\n#### Paths of interest\n\nThe following directories should be mounted from the Docker host, so data ( other than logs ) doesn't end up in the container\n\n - /var/lib/cassandra/data\n - /var/lib/cassandra/commitlog\n - /var/lib/hdfs/data\n - /var/lib/hdfs/tmp\n\nIf you are looking to have a performant setup, these should each be dedicated disks per container\n\nSome configuration files of these daemons/processes are altered by the entry point `configure.rb` Below you may find it's detailed usage\n\n    docker run andlaz/hadoop-cassandra (all|cassandra|datanode|nodemanager) \\\n    \t--{paramter_name}={parameter_value}\n\n#### Cassandra configuration\n\n```\n docker run -ti --rm andlaz/hadoop-cassandra help cassandra\nThe image's entry point script will populate the following -parameters from linked\ncontainers and Docker environment variables:\n\ncassandra\t: --seeds 172.17.0.43 --listen-address 0e018cb4bc3c --rpc-address 0e018cb4bc3c \ndatanode\t: \nnodemanager\t: --web-ui-host 0e018cb4bc3c\n\n( Cassandra seed, HDFS NameNode and YARN ResourceManager countainers need to be linked under the aliases seed, namenode and resourcemanager for this to happen. )\n\nUsage:\n  configure.rb cassandra --dc=DC --listen-address=LISTEN_ADDRESS --rpc-address=RPC_ADDRESS --seeds=SEEDS\n\nOptions:\n  [--cluster-name=CLUSTER_NAME]            # Name of the Cassandra cluster to join\n                                           # Default: prose.andlaz.io\n  [--initial-token=INITIAL_TOKEN]          # Inital token of the node being started. Required if calculate tokens is not set!\n  [--calculate-tokens=CALCULATE_TOKENS]    # If the initial token is not specified, we can calulate murmur3 tokens. Provide node \"sequence\" id in the form of \"node_seq:total_nr_of_nodes\" e.g. 1:2, 2:2 etc\n  [--data-dirs=DATA_DIRS]                  # Comma separated list of Cassandra data directories\n                                           # Default: /var/lib/cassandra/data\n  [--saved-caches-dir=SAVED_CACHES_DIR]    # Directory to store caches on disk\n                                           # Default: /var/lib/cassandra/saved_caches\n  [--commit-log-dir=COMMIT_LOG_DIR]        # Directory in to which commit logs will be written\n                                           # Default: /var/lib/cassandra/commitlog\n  --listen-address=LISTEN_ADDRESS          # Address or interface to bind to and tell other Cassandra nodes to connect to\n  --rpc-address=RPC_ADDRESS                # The address or interface to bind the Thrift RPC service and native transport server to\n  [--broadcast-address=BROADCAST_ADDRESS]  # Address to broadcast to other Cassandra nodes. Leaving this blank will set it to the same value as listen_address\n  --seeds=SEEDS                            # Seed node/s\n  --dc=DC                                  # Name of the Cassandra DC the node will join\n  [--rack=RACK]                            # Name of the Rack in the Cassandra DC the node sits on\n                                           # Default: rack1\n\nConfigure Cassandra\n```\n\n#### HDFS Data Node configuration\n\n```\ndocker run -ti --rm andlaz/hadoop-cassandra help datanode\nThe image's entry point script will populate the following -parameters from linked\ncontainers and Docker environment variables:\n\ncassandra\t: --seeds 172.17.0.44 --listen-address 7068259025ce --rpc-address 7068259025ce \ndatanode\t: \nnodemanager\t: --web-ui-host 7068259025ce\n\n( Cassandra seed, HDFS NameNode and YARN ResourceManager countainers need to be linked under the aliases seed, namenode and resourcemanager for this to happen. )\n\nUsage:\n  configure.rb datanode --name-node=NAME_NODE\n\nOptions:\n  [--tmp-dir=TMP_DIR]                # HDFS temp dir\n                                     # Default: /var/lib/hdfs/tmp\n  [--data-dir=DATA_DIR]              # HDFS Data dir\n                                     # Default: /var/lib/hdfs/data\n  --name-node=NAME_NODE              # Host of the HDFS NameNode\n  [--name-node-port=NAME_NODE_PORT]  # HDFS NameNode RPC port\n                                     # Default: 8020\n\nConfigure the HDFS Data Node\n```\n\n#### Yarn Node Manager configuration\n\n```\ndocker run -ti --rm andlaz/hadoop-cassandra help nodemanager\nThe image's entry point script will populate the following -parameters from linked\ncontainers and Docker environment variables:\n\ncassandra\t: --seeds 172.17.0.45 --listen-address 84cd3a39a5e2 --rpc-address 84cd3a39a5e2 \ndatanode\t: \nnodemanager\t: --web-ui-host 84cd3a39a5e2\n\n( Cassandra seed, HDFS NameNode and YARN ResourceManager countainers need to be linked under the aliases seed, namenode and resourcemanager for this to happen. )\n\nUsage:\n  configure.rb nodemanager --node-containers-heap-total=NODE_CONTAINERS_HEAP_TOTAL --resource-manager=RESOURCE_MANAGER --web-ui-host=WEB_UI_HOST\n\nOptions:\n  --resource-manager=RESOURCE_MANAGER                      # Host of the YARN ResourceManager\n  --node-containers-heap-total=NODE_CONTAINERS_HEAP_TOTAL  # Total memory available on the node to launch containers\n  --web-ui-host=WEB_UI_HOST                                # Node Manager web ui host\n  [--web-ui-port=WEB_UI_PORT]                              # Node Manager web ui port\n                                                           # Default: 8042\n\nConfigure the YARN Node Manager\n```\n\n#### Examples\n\nNote that we are not mounting any paths on the docker host to these containers as we start them. This means once the container goes,\nyour data goes. That makes the set-ups below suitable for playing around only.\n\n##### Start a Cassandra cluster\n\nThis one is the simplest - it has no links to outside containers\n\n##### Start an HDFS cluster\n\n##### Start a YARN cluster\n\n##### Start a YARN + HDFS + Cassandra cluster\n\nFormat the HDFS data directory\n\n    docker run \\\n      -ti \\\n      --rm \\\n      andlaz/hadoop-hdfs-namenode namenode --format\n\nStart a name node [README for andlaz/hadoop-hdfs-namenode](), expose HDFS web ui on the docker host\n\n    docker run \\\n      --publish 0.0.0.0:50070:50070 \\\n      --name nn1 \\\n      -tid \\\n      andlaz/hadoop-hdfs-namenode namenode\n\nStart a secondary name node [README for andlaz/hadoop-hdfs-namenode]() and link your primary name node under the alias `namenode`\n\n    docker run \\\n      --name nn2 \\\n      --link nn1:namenode \\\n      -tid \\\n      andlaz/hadoop-hdfs-namenode namenodesecondary\n\nStart a resource manager [README for andlaz/hadoop-yarn-resourcemanager]()\n\n    docker run \\\n    --name rm \\\n    -tid \\\n    andlaz/hadoop-yarn-resourcemanager resourcemanager\n\nStart ( Cassandra + NodeManager + DataNode ) x 2; make sure to link your primary name node and the resource manager under the aliases `namenode` and `resourcemanager`\n\n    docker run --name worker-1 \\\n    --link nn1:namenode \\\n    --link rm:resourcemanager \\\n    -d \\\n    andlaz/hadoop-cassandra all \\\n      --cassandra-calculate-tokens 1:2\n      --dc cass-1\n    \n    docker run --name worker-2 \\\n    --link nn1:namenode \\\n    --link rm:resourcemanager \\\n    --link worker-2:seed \\\n    -d \\\n    andlaz/hadoop-cassandra all \\\n      --cassandra-calculate-tokens 2:2\n      --dc cass-1\n\n#### To run hdfs/yarn client commands..\n\nsee [README of andlaz/hadoop-base](http://github.com/andlaz/hadoop-base)\n\n### See also\n\n",
+  "dockerfile": "FROM andlaz/hadoop-base\nMAINTAINER andras.szerdahelyi@gmail.com\n\nENV CASSANDRA_CONFIG /etc/cassandra/conf\n\nADD etc/yum.repos.d/* /etc/yum.repos.d/\n\nRUN yum -y install cassandra21-2.1.7 \\\n\t\tcassandra21-tools-2.1.7 \\\n\t\truby-2.0.0.598 \\\n\t\trubygems-2.0.14\n\nRUN gem install thor\n\nADD etc/cassandra/conf/* /etc/cassandra/conf/\nADD etc/hadoop/* /etc/hadoop/\nADD etc/supervisor/conf.d/* /etc/supervisor/conf.d/\nADD etc/datastax-agent/* /etc/datastax-agent/\n\nADD http://downloads.datastax.com/community/datastax-agent-5.2.1.tar.gz /opt/\nRUN cd /opt && tar xf datastax-agent-5.2.1.tar.gz && rm datastax-agent-5.2.1.tar.gz\nRUN rm -fR /opt/datastax-agent-5.2.1/conf && ln -s /etc/datastax-agent /opt/datastax-agent-5.2.1/conf\n\nRUN rm -f /etc/security/limits.d/cassandra.conf\n\n# System ports ( ssh )\nEXPOSE 22\n\n# Cassandra ports ( gossip; ; ; thrift; ; ; ; )\nEXPOSE 7199 7000 7001 9160 9042 8012 61621\n\n# DataNode ports ( data transfer; http; https; ipc; datastax agent )\nEXPOSE 50010 50075 50475 50020 61621\n\n# YARN NodeManager ports\nEXPOSE 8040 8042\n\nADD configure.rb /root/\nADD entrypoint.sh /root/\nENTRYPOINT [\"/root/entrypoint.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "etc/yum.repos.d/*",
+        "dest": "/etc/yum.repos.d/"
+      },
+      {
+        "source": "etc/cassandra/conf/*",
+        "dest": "/etc/cassandra/conf/"
+      },
+      {
+        "source": "etc/hadoop/*",
+        "dest": "/etc/hadoop/"
+      },
+      {
+        "source": "etc/supervisor/conf.d/*",
+        "dest": "/etc/supervisor/conf.d/"
+      },
+      {
+        "source": "etc/datastax-agent/*",
+        "dest": "/etc/datastax-agent/"
+      },
+      {
+        "source": "http://downloads.datastax.com/community/datastax-agent-5.2.1.tar.gz",
+        "dest": "/opt/"
+      },
+      {
+        "source": "configure.rb",
+        "dest": "/root/"
+      },
+      {
+        "source": "entrypoint.sh",
+        "dest": "/root/"
+      }
+    ],
+    "expose": [
+      22,
+      7199,
+      50010,
+      8040
+    ],
+    "volume": [],
+    "run": [
+      "yum -y install cassandra21-2.1.7 \t\tcassandra21-tools-2.1.7 \t\truby-2.0.0.598 \t\trubygems-2.0.14",
+      "gem install thor",
+      "cd /opt && tar xf datastax-agent-5.2.1.tar.gz && rm datastax-agent-5.2.1.tar.gz",
+      "rm -fR /opt/datastax-agent-5.2.1/conf && ln -s /etc/datastax-agent /opt/datastax-agent-5.2.1/conf",
+      "rm -f /etc/security/limits.d/cassandra.conf"
+    ],
+    "workdir": [],
+    "from": "andlaz/hadoop-base",
+    "maintainer": "andras.szerdahelyi@gmail.com",
+    "env": {
+      "CASSANDRA_CONFIG": "/etc/cassandra/conf"
+    },
+    "entrypoint": "[\"/root/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/andlaz/hadoop-cassandra.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/andlaz/hadoop-cassandra",
+  "docker_repository": "andlaz/hadoop-cassandra",
+  "docker_image": "andlaz/hadoop-cassandra",
+  "parameters_schema": {
+    "CASSANDRA_CONFIG": {
+      "default": "/etc/cassandra/conf",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        22,
+        7199,
+        50010,
+        8040
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "andlaz/hadoop-cassandra",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/andlaz/hadoop-cassandra",
+    "https://hub.docker.com/v2/repositories/andlaz/hadoop-cassandra",
+    "https://github.com/andlaz/hadoop-cassandra.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/JavaScript/Node.js",
+    "Type/Middleware/Data Store/Key-Value/Cassandra",
+    "Type/Middleware/Data Processing/Hadoop"
+  ],
+  "info_url": "https://hub.docker.com/r/andlaz/hadoop-cassandra",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

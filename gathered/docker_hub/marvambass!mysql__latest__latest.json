@@ -1,0 +1,117 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/marvambass/mysql",
+    "repository_url": "https://hub.docker.com/v2/repositories/marvambass/mysql",
+    "tags_url": "https://hub.docker.com/v2/repositories/marvambass/mysql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/marvambass/mysql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/marvambass/mysql/autobuild",
+    "user": "marvambass",
+    "name": "mysql",
+    "namespace": "marvambass",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 6,
+    "pull_count": 2180,
+    "last_updated": "2016-10-15T02:42:41.372072Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 117142379,
+        "id": 92224,
+        "repository": 85617,
+        "creator": 136116,
+        "last_updater": 136116,
+        "last_updated": "2016-10-15T02:42:40.870058Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "MarvAmBass/docker-mysql"
+  },
+  "name": "marvambass/mysql Docker container",
+  "description": "MySQL Server based on Ubuntu 14.04",
+  "readme": "# Docker MySQL-Server Container (marvambass/mysql)\n_maintained by MarvAmBass_\n\n[FAQ - All you need to know about the marvambass Containers](https://marvin.im/docker-faq-all-you-need-to-know-about-the-marvambass-containers/)\n\n## What is it\n\nThis Dockerfile (available as ___marvambass/mysql___) gives you a completly running SQL-Server. It is also possible to configure a auto mysqldump mechanism.\n\nFor Configuration of the Server you use environment Variables.\n\nIt's based on the [ubuntu:14.04](https://registry.hub.docker.com/_/ubuntu/) Image\n\nView in Docker Registry [marvambass/mysql](https://registry.hub.docker.com/u/marvambass/mysql/)\n\nView in GitHub [MarvAmBass/docker-mysql](https://github.com/MarvAmBass/docker-mysql)\n\n## Environment variables and defaults\n\n### MySQL Daemon\n\nThe daemon stores the database data beneath: __/var/lib/mysql__\n\n* __ADMIN\\_USER__\n * no default - needed only when _backup enabled_ or for _mysql initialisation_\n* __ADMIN\\_PASSWORD__\n * no default - needed only when _backup enabled_ or for _mysql initialisation_\n* __BIND\\_ADDRESS__\n * default: _0.0.0.0_\n\n### Backup\n\nThis is totaly optional - backup is disabled by default!  \nIn default it stores it's dumps beneath: __/var/mysql-backup__\n\n* __BACKUP_ENABLED__\n * default null, needs 'yes' to be enabled\n* __BACKUP\\_CRON\\_TIME__\n * default: _0 \\* \\* \\* \\*_ (hourly mysqldumps) - uses normal cron syntax\n* __BACKUP_PATH__\n * default: _/var/mysql-backup_ - the place to store the mysqldumps\n\n### Optional DB & User auto-creation\n\n* __DB\\_NAME__\n * no default - required if you want the auto create a database with user\n* __DB\\_USER__\n * no default - required if you want the auto create a database with user\n* __DB\\_PASSWORD__\n * no default - required if you want the auto create a database with user\n\n\n## Using the marvambass/mysql Container\n\n### Running MySQL\n\n#### Quickstart\n\nThe following command starts a non persistent mysql database which will be lost after the container is deleted.\n\n    docker run -d --name mysql -e 'ADMIN_USER=dbadmin' -e 'ADMIN_PASSWORD=adminpw' -e 'DB_NAME=testdb' -e 'DB_USER=testdbuser' -e 'DB_PASSWORD=usersecret' marvambass/mysql\n\n#### Normal\n\nFor the first start you'll need to provide the __ADMIN\\_USER__ and __ADMIN\\_PASSWORD__ variables\n\n    docker run -d --name mysql \\\n    -e 'ADMIN_USER=dbadmin' -e 'ADMIN_PASSWORD=pa55worD!' \\\n    -e 'BIND_ADDRESS=192.0.3.33' \\\n    -e 'BACKUP_ENABLED=yes' -e 'BACKUP_CRON_TIME=0 * * * *' \\\n    -p 3306:3306 \\\n    -v /tmp/mysqldata:/var/lib/mysql \\\n    -v /tmp/mysqlbackup:/var/mysql-backup \\\n    -v /tmp/mysqlbackup:/var/log/mysql \\\n    marvambass/mysql\n_you need to provide the credentials only if you start the container for the first time (so it can initialize a new Database) or if you use the internal mysqldump backup mechanism_\n\n### Connection\n\nNow you can connect to the MySQL Server via the normal mysql-client cli:\n\n    mysql -u $ADMIN_USER -p -h $(docker inspect --format='{{.NetworkSettings.IPAddress}}' $CONTAINER_ID)\n\nYou could also use my __marvambass/phpmyadmin__ container and link them together.  \n_You only link __phpmyadmin__ to __mysql__ container if you want to use phpmyadmin!_\n",
+  "dockerfile": "FROM ubuntu:14.04\nMAINTAINER MarvAmBass\n\nRUN apt-get update; apt-get install -y \\\n    mysql-server \\\n    mysql-client\n\nRUN rm -rf /var/lib/mysql/*\n\nADD mysql-backuper.sh /usr/local/bin/mysql-backuper.sh\nRUN chmod a+x /usr/local/bin/mysql-backuper.sh\n\nENV MYSQL_DEFAULTS_FILE /mysql-defaults.cnf\n\nEXPOSE 3306\nVOLUME [\"/var/lib/mysql/\"]\nVOLUME [\"/var/mysql-backup\"]\n\nADD ./startup.sh /opt/startup.sh\nRUN chmod a+x /opt/startup.sh\nCMD [\"/bin/bash\", \"/opt/startup.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "mysql-backuper.sh",
+        "dest": "/usr/local/bin/mysql-backuper.sh"
+      },
+      {
+        "source": "./startup.sh",
+        "dest": "/opt/startup.sh"
+      }
+    ],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      "[\"/var/lib/mysql/\"]",
+      "[\"/var/mysql-backup\"]"
+    ],
+    "run": [
+      "apt-get update; apt-get install -y     mysql-server     mysql-client",
+      "rm -rf /var/lib/mysql/*",
+      "chmod a+x /usr/local/bin/mysql-backuper.sh",
+      "chmod a+x /opt/startup.sh"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "MarvAmBass",
+    "env": {
+      "MYSQL_DEFAULTS_FILE": "/mysql-defaults.cnf"
+    },
+    "cmd": "[\"/bin/bash\", \"/opt/startup.sh\"]"
+  },
+  "source_repository_url": "https://github.com/MarvAmBass/docker-mysql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/MarvAmBass/docker-mysql",
+  "docker_repository": "marvambass/mysql",
+  "docker_image": "marvambass/mysql",
+  "parameters_schema": {
+    "MYSQL_DEFAULTS_FILE": {
+      "default": "/mysql-defaults.cnf",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "marvambass/mysql",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/marvambass/mysql",
+    "https://hub.docker.com/v2/repositories/marvambass/mysql",
+    "https://github.com/MarvAmBass/docker-mysql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/marvambass/mysql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

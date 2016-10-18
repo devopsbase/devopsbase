@@ -1,0 +1,107 @@
+{
+  "name": "apache-hadoop-resourcemanager Juju charm",
+  "juju_charm_name": "apache-hadoop-resourcemanager",
+  "revision": "cs:trusty/apache-hadoop-resourcemanager-0",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/apache-hadoop-resourcemanager",
+    "https://jujucharms.com/apache-hadoop-resourcemanager/trusty",
+    "https://jujucharms.com/apache-hadoop-resourcemanager/trusty/0",
+    "https://api.jujucharms.com/v5/apache-hadoop-resourcemanager",
+    "https://api.jujucharms.com/v5/trusty/apache-hadoop-resourcemanager",
+    "https://api.jujucharms.com/v5/trusty/apache-hadoop-resourcemanager-0"
+  ],
+  "labels": [
+    "Juju charm",
+    "applications",
+    "bigdata",
+    "hadoop",
+    "apache",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Style/Virtualization Level/Application",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Middleware/Runtime/JavaScript/Node.js",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Processing/Hadoop"
+  ],
+  "info_url": "https://jujucharms.com/apache-hadoop-resourcemanager",
+  "package_url": "https://api.jujucharms.com/v5/trusty/apache-hadoop-resourcemanager-0/archive",
+  "created": "2016-03-31T22:04:28.366Z",
+  "updated": "2016-03-31T22:04:28.366Z",
+  "description": "YARN master (ResourceManager) for Apache Hadoop platform\n\nHadoop is a software platform that lets one easily write and run applications that process vast amounts of data.\nThis charm manages the YARN master node (ResourceManager).\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/dfs",
+      "self_resolve": true,
+      "juju_interface": "dfs",
+      "juju_name": "namenode",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/mapred-slave",
+      "self_resolve": true,
+      "juju_interface": "mapred-slave",
+      "juju_name": "nodemanager",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "ganglia_metrics": {
+      "type": "boolean",
+      "description": "Enable metrics using Ganglia.  Note that enabling this option will\nhave no effect if the service is not related to a ganglia service\nvia the ganglia:master relation.  Enabling this option with the\nrelation will issue a restart to the ResourceManager and all\nNodeManager components on all related compute-slaves.\nSee the README for more information.\n",
+      "default": false,
+      "mapping": "charm_option"
+    },
+    "resources_mirror": {
+      "type": "string",
+      "description": "URL from which to fetch resources (e.g., Hadoop binaries) instead of Launchpad.\n",
+      "default": "",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/benchmark",
+      "juju_interface": "benchmark",
+      "juju_name": "benchmark",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/monitor",
+      "juju_interface": "monitor",
+      "juju_name": "ganglia",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/mapred",
+      "juju_interface": "mapred",
+      "juju_name": "resourcemanager",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "license": "## Overview\n\nThe Apache Hadoop software library is a framework that allows for the\ndistributed processing of large data sets across clusters of computers\nusing a simple programming model.\n\nThis charm deploys a node running the ResourceManager component of\n[Apache Hadoop 2.4.1](http://hadoop.apache.org/docs/r2.4.1/),\nwhich manages the computation resources and job execution for the platform.\n\n\n## Usage\n\nThis charm is intended to be deployed via one of the\n[apache bundles](https://jujucharms.com/u/bigdata-charmers/#bundles).\nFor example:\n\n    juju quickstart apache-analytics-sql\n\nThis will deploy the Apache Hadoop platform with Apache Hive available to\nperform SQL-like queries against your data.\n\nYou can also manually load and run map-reduce jobs:\n\n    juju scp my-job.jar resourcemanager/0:\n    juju ssh resourcemanager/0\n    hadoop jar my-job.jar\n\n\n## Status and Smoke Test\n\nThe services provide extended status reporting to indicate when they are ready:\n\n    juju status --format=tabular\n\nThis is particularly useful when combined with `watch` to track the on-going\nprogress of the deployment:\n\n    watch -n 0.5 juju status --format=tabular\n\nThe message for each unit will provide information about that unit's state.\nOnce they all indicate that they are ready, you can perform a \"smoke test\"\nto verify that Yarn is working as expected using the built-in `smoke-test`\naction:\n\n    juju action do resourcemanager/0 smoke-test\n\nAfter a few seconds or so, you can check the results of the smoke test:\n\n    juju action status\n\nYou will see `status: completed` if the smoke test was successful, or\n`status: failed` if it was not.  You can get more information on why it failed\nvia:\n\n    juju action fetch <action-id>\n\n\n## Benchmarking\n\nThis charm provides several benchmarks to gauge the performance of your\nenvironment.\n\nThe easiest way to run the benchmarks on this service is to relate it to the\n[Benchmark GUI][].  You will likely also want to relate it to the\n[Benchmark Collector][] to have machine-level information collected during the\nbenchmark, for a more complete picture of how the machine performed.\n\n[Benchmark GUI]: https://jujucharms.com/benchmark-gui/\n[Benchmark Collector]: https://jujucharms.com/benchmark-collector/\n\nHowever, each benchmark is also an action that can be called manually:\n\n        $ juju action do resourcemanager/0 terasort\n        Action queued with id: cbd981e8-3400-4c8f-8df1-c39c55a7eae6\n        $ juju action fetch --wait 0 cbd981e8-3400-4c8f-8df1-c39c55a7eae6\n        results:\n          meta:\n            composite:\n              direction: asc\n              units: ms\n              value: \"206676\"\n          results:\n            raw: '{\"Total vcore-seconds taken by all map tasks\": \"439783\", \"Spilled Records\":\n              \"30000000\", \"WRONG_LENGTH\": \"0\", \"Reduce output records\": \"10000000\", \"HDFS:\n              Number of bytes read\": \"1000001024\", \"Total vcore-seconds taken by all reduce\n              tasks\": \"50275\", \"Reduce input groups\": \"10000000\", \"Shuffled Maps \": \"8\", \"FILE:\n              Number of bytes written\": \"3128977482\", \"Input split bytes\": \"1024\", \"Total\n              time spent by all reduce tasks (ms)\": \"50275\", \"FILE: Number of large read operations\":\n              \"0\", \"Bytes Read\": \"1000000000\", \"Virtual memory (bytes) snapshot\": \"7688794112\",\n              \"Launched map tasks\": \"8\", \"GC time elapsed (ms)\": \"11656\", \"Bytes Written\":\n              \"1000000000\", \"FILE: Number of read operations\": \"0\", \"HDFS: Number of write\n              operations\": \"2\", \"Total megabyte-seconds taken by all reduce tasks\": \"51481600\",\n              \"Combine output records\": \"0\", \"HDFS: Number of bytes written\": \"1000000000\",\n              \"Total time spent by all map tasks (ms)\": \"439783\", \"Map output records\": \"10000000\",\n              \"Physical memory (bytes) snapshot\": \"2329722880\", \"FILE: Number of write operations\":\n              \"0\", \"Launched reduce tasks\": \"1\", \"Reduce input records\": \"10000000\", \"Total\n              megabyte-seconds taken by all map tasks\": \"450337792\", \"WRONG_REDUCE\": \"0\",\n              \"HDFS: Number of read operations\": \"27\", \"Reduce shuffle bytes\": \"1040000048\",\n              \"Map input records\": \"10000000\", \"Map output materialized bytes\": \"1040000048\",\n              \"CPU time spent (ms)\": \"195020\", \"Merged Map outputs\": \"8\", \"FILE: Number of\n              bytes read\": \"2080000144\", \"Failed Shuffles\": \"0\", \"Total time spent by all\n              maps in occupied slots (ms)\": \"439783\", \"WRONG_MAP\": \"0\", \"BAD_ID\": \"0\", \"Rack-local\n              map tasks\": \"2\", \"IO_ERROR\": \"0\", \"Combine input records\": \"0\", \"Map output\n              bytes\": \"1020000000\", \"CONNECTION\": \"0\", \"HDFS: Number of large read operations\":\n              \"0\", \"Total committed heap usage (bytes)\": \"1755840512\", \"Data-local map tasks\":\n              \"6\", \"Total time spent by all reduces in occupied slots (ms)\": \"50275\"}'\n        status: completed\n        timing:\n          completed: 2015-05-28 20:55:50 +0000 UTC\n          enqueued: 2015-05-28 20:53:41 +0000 UTC\n          started: 2015-05-28 20:53:44 +0000 UTC\n\n\n\n## Monitoring\n\nThis charm supports monitoring via Ganglia.  To enable monitoring, you must\ndo **both** of the following (the order does not matter):\n\n * Add a relation to the [Ganglia charm][] via the `:master` relation\n * Enable the `ganglia_metrics` config option\n\nFor example:\n\n    juju add-relation yarn-master ganglia:master\n    juju set yarn-master ganglia_metrics=true\n\nEnabling monitoring will issue restart the ResourceManager and all NodeManager\ncomponents on all of the related compute-slaves.  Take care to ensure that there\nare no running jobs when enabling monitoring.\n\n\n## Deploying in Network-Restricted Environments\n\nThe Apache Hadoop charms can be deployed in environments with limited network\naccess. To deploy in this environment, you will need a local mirror to serve\nthe packages and resources required by these charms.\n\n\n### Mirroring Packages\n\nYou can setup a local mirror for apt packages using squid-deb-proxy.\nFor instructions on configuring juju to use this, see the\n[Juju Proxy Documentation](https://juju.ubuntu.com/docs/howto-proxies.html).\n\n\n### Mirroring Resources\n\nIn addition to apt packages, the Apache Hadoop charms require a few binary\nresources, which are normally hosted on Launchpad. If access to Launchpad\nis not available, the `jujuresources` library makes it easy to create a mirror\nof these resources:\n\n    sudo pip install jujuresources\n    juju-resources fetch --all /path/to/resources.yaml -d /tmp/resources\n    juju-resources serve -d /tmp/resources\n\nThis will fetch all of the resources needed by this charm and serve them via a\nsimple HTTP server. The output from `juju-resources serve` will give you a\nURL that you can set as the `resources_mirror` config option for this charm.\nSetting this option will cause all resources required by this charm to be\ndownloaded from the configured URL.\n\nYou can fetch the resources for all of the Apache Hadoop charms\n(`apache-hadoop-hdfs-master`, `apache-hadoop-yarn-master`,\n`apache-hadoop-hdfs-secondary`, `apache-hadoop-plugin`, etc) into a single\ndirectory and serve them all with a single `juju-resources serve` instance.\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Hadoop\n\n- [Apache Hadoop](http://hadoop.apache.org/) home page\n- [Apache Hadoop bug trackers](http://hadoop.apache.org/issue_tracking.html)\n- [Apache Hadoop mailing lists](http://hadoop.apache.org/mailing_lists.html)\n- [Apache Hadoop Juju Charm](http://jujucharms.com/?text=hadoop)\n\n\n[Ganglia charm]: http://jujucharms.com/ganglia/\n",
+  "readme": "## Overview\n\nThe Apache Hadoop software library is a framework that allows for the\ndistributed processing of large data sets across clusters of computers\nusing a simple programming model.\n\nThis charm deploys a node running the ResourceManager component of\n[Apache Hadoop 2.4.1](http://hadoop.apache.org/docs/r2.4.1/),\nwhich manages the computation resources and job execution for the platform.\n\n\n## Usage\n\nThis charm is intended to be deployed via one of the\n[apache bundles](https://jujucharms.com/u/bigdata-charmers/#bundles).\nFor example:\n\n    juju quickstart apache-analytics-sql\n\nThis will deploy the Apache Hadoop platform with Apache Hive available to\nperform SQL-like queries against your data.\n\nYou can also manually load and run map-reduce jobs:\n\n    juju scp my-job.jar resourcemanager/0:\n    juju ssh resourcemanager/0\n    hadoop jar my-job.jar\n\n\n## Status and Smoke Test\n\nThe services provide extended status reporting to indicate when they are ready:\n\n    juju status --format=tabular\n\nThis is particularly useful when combined with `watch` to track the on-going\nprogress of the deployment:\n\n    watch -n 0.5 juju status --format=tabular\n\nThe message for each unit will provide information about that unit's state.\nOnce they all indicate that they are ready, you can perform a \"smoke test\"\nto verify that Yarn is working as expected using the built-in `smoke-test`\naction:\n\n    juju action do resourcemanager/0 smoke-test\n\nAfter a few seconds or so, you can check the results of the smoke test:\n\n    juju action status\n\nYou will see `status: completed` if the smoke test was successful, or\n`status: failed` if it was not.  You can get more information on why it failed\nvia:\n\n    juju action fetch <action-id>\n\n\n## Benchmarking\n\nThis charm provides several benchmarks to gauge the performance of your\nenvironment.\n\nThe easiest way to run the benchmarks on this service is to relate it to the\n[Benchmark GUI][].  You will likely also want to relate it to the\n[Benchmark Collector][] to have machine-level information collected during the\nbenchmark, for a more complete picture of how the machine performed.\n\n[Benchmark GUI]: https://jujucharms.com/benchmark-gui/\n[Benchmark Collector]: https://jujucharms.com/benchmark-collector/\n\nHowever, each benchmark is also an action that can be called manually:\n\n        $ juju action do resourcemanager/0 terasort\n        Action queued with id: cbd981e8-3400-4c8f-8df1-c39c55a7eae6\n        $ juju action fetch --wait 0 cbd981e8-3400-4c8f-8df1-c39c55a7eae6\n        results:\n          meta:\n            composite:\n              direction: asc\n              units: ms\n              value: \"206676\"\n          results:\n            raw: '{\"Total vcore-seconds taken by all map tasks\": \"439783\", \"Spilled Records\":\n              \"30000000\", \"WRONG_LENGTH\": \"0\", \"Reduce output records\": \"10000000\", \"HDFS:\n              Number of bytes read\": \"1000001024\", \"Total vcore-seconds taken by all reduce\n              tasks\": \"50275\", \"Reduce input groups\": \"10000000\", \"Shuffled Maps \": \"8\", \"FILE:\n              Number of bytes written\": \"3128977482\", \"Input split bytes\": \"1024\", \"Total\n              time spent by all reduce tasks (ms)\": \"50275\", \"FILE: Number of large read operations\":\n              \"0\", \"Bytes Read\": \"1000000000\", \"Virtual memory (bytes) snapshot\": \"7688794112\",\n              \"Launched map tasks\": \"8\", \"GC time elapsed (ms)\": \"11656\", \"Bytes Written\":\n              \"1000000000\", \"FILE: Number of read operations\": \"0\", \"HDFS: Number of write\n              operations\": \"2\", \"Total megabyte-seconds taken by all reduce tasks\": \"51481600\",\n              \"Combine output records\": \"0\", \"HDFS: Number of bytes written\": \"1000000000\",\n              \"Total time spent by all map tasks (ms)\": \"439783\", \"Map output records\": \"10000000\",\n              \"Physical memory (bytes) snapshot\": \"2329722880\", \"FILE: Number of write operations\":\n              \"0\", \"Launched reduce tasks\": \"1\", \"Reduce input records\": \"10000000\", \"Total\n              megabyte-seconds taken by all map tasks\": \"450337792\", \"WRONG_REDUCE\": \"0\",\n              \"HDFS: Number of read operations\": \"27\", \"Reduce shuffle bytes\": \"1040000048\",\n              \"Map input records\": \"10000000\", \"Map output materialized bytes\": \"1040000048\",\n              \"CPU time spent (ms)\": \"195020\", \"Merged Map outputs\": \"8\", \"FILE: Number of\n              bytes read\": \"2080000144\", \"Failed Shuffles\": \"0\", \"Total time spent by all\n              maps in occupied slots (ms)\": \"439783\", \"WRONG_MAP\": \"0\", \"BAD_ID\": \"0\", \"Rack-local\n              map tasks\": \"2\", \"IO_ERROR\": \"0\", \"Combine input records\": \"0\", \"Map output\n              bytes\": \"1020000000\", \"CONNECTION\": \"0\", \"HDFS: Number of large read operations\":\n              \"0\", \"Total committed heap usage (bytes)\": \"1755840512\", \"Data-local map tasks\":\n              \"6\", \"Total time spent by all reduces in occupied slots (ms)\": \"50275\"}'\n        status: completed\n        timing:\n          completed: 2015-05-28 20:55:50 +0000 UTC\n          enqueued: 2015-05-28 20:53:41 +0000 UTC\n          started: 2015-05-28 20:53:44 +0000 UTC\n\n\n\n## Monitoring\n\nThis charm supports monitoring via Ganglia.  To enable monitoring, you must\ndo **both** of the following (the order does not matter):\n\n * Add a relation to the [Ganglia charm][] via the `:master` relation\n * Enable the `ganglia_metrics` config option\n\nFor example:\n\n    juju add-relation yarn-master ganglia:master\n    juju set yarn-master ganglia_metrics=true\n\nEnabling monitoring will issue restart the ResourceManager and all NodeManager\ncomponents on all of the related compute-slaves.  Take care to ensure that there\nare no running jobs when enabling monitoring.\n\n\n## Deploying in Network-Restricted Environments\n\nThe Apache Hadoop charms can be deployed in environments with limited network\naccess. To deploy in this environment, you will need a local mirror to serve\nthe packages and resources required by these charms.\n\n\n### Mirroring Packages\n\nYou can setup a local mirror for apt packages using squid-deb-proxy.\nFor instructions on configuring juju to use this, see the\n[Juju Proxy Documentation](https://juju.ubuntu.com/docs/howto-proxies.html).\n\n\n### Mirroring Resources\n\nIn addition to apt packages, the Apache Hadoop charms require a few binary\nresources, which are normally hosted on Launchpad. If access to Launchpad\nis not available, the `jujuresources` library makes it easy to create a mirror\nof these resources:\n\n    sudo pip install jujuresources\n    juju-resources fetch --all /path/to/resources.yaml -d /tmp/resources\n    juju-resources serve -d /tmp/resources\n\nThis will fetch all of the resources needed by this charm and serve them via a\nsimple HTTP server. The output from `juju-resources serve` will give you a\nURL that you can set as the `resources_mirror` config option for this charm.\nSetting this option will cause all resources required by this charm to be\ndownloaded from the configured URL.\n\nYou can fetch the resources for all of the Apache Hadoop charms\n(`apache-hadoop-hdfs-master`, `apache-hadoop-yarn-master`,\n`apache-hadoop-hdfs-secondary`, `apache-hadoop-plugin`, etc) into a single\ndirectory and serve them all with a single `juju-resources serve` instance.\n\n\n## Contact Information\n\n- <bigdata@lists.ubuntu.com>\n\n\n## Hadoop\n\n- [Apache Hadoop](http://hadoop.apache.org/) home page\n- [Apache Hadoop bug trackers](http://hadoop.apache.org/issue_tracking.html)\n- [Apache Hadoop mailing lists](http://hadoop.apache.org/mailing_lists.html)\n- [Apache Hadoop Juju Charm](http://jujucharms.com/?text=hadoop)\n\n\n[Ganglia charm]: http://jujucharms.com/ganglia/\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

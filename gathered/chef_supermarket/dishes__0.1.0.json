@@ -1,0 +1,43 @@
+{
+  "name": "dishes Chef cookbook",
+  "chef_cookbook_name": "dishes",
+  "revision": "0.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/dishes",
+    "https://supermarket.chef.io/cookbooks/dishes/download",
+    "https://supermarket.chef.io/cookbooks/dishes/versions/0.1.0",
+    "https://supermarket.chef.io/cookbooks/dishes/versions/0.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/dishes/versions/0.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/dishes",
+    "https://supermarket.chef.io/api/v1/cookbooks/dishes/versions/0.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Utilities",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/dishes",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/dishes/versions/0.1.0/download",
+  "deprecated": false,
+  "created": "2015-11-17T19:05:49.098Z",
+  "updated": "2015-11-17T20:37:05.359Z",
+  "description": "Cleans up recipes after removal",
+  "maintainer": {
+    "name": "phs",
+    "email": "phil.h.smith@gmail.com"
+  },
+  "license": "MIT",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 2706,
+  "downloads_count_revision": 225,
+  "repository_url": "https://github.com/phs/dishes",
+  "issues_url": "https://github.com/phs/dishes/issues",
+  "chef_source_url": "https://github.com/phs/dishes",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# dishes #\n\nChef cookbook to clean up recipes after removal\n\n## Motivation ##\n\nChef does not generally support an \"undo\" feature for recipes.  Once one executes, there isn't an easy way to return a node to it's pre-recipe state.  To solve the problem systematically looks rather hard, so Chef is perhaps wise not to try.  There is however at least one scenario where a feasible, limited \"undo\" would be very helpful.\n\nA recurring problem that can afflict distributed services is the [_split brain_ scenario][split-brain-wikipedia].  Though it can emerge in many different contexts, a common cause is that some daemon is running unexpectedly when we would really prefer it to be off.\n\nThe \"right\" way to avoid split brains caused this way is of course to ensure that the offending daemon is turned off to start with.  However if the daemon is managed with Chef then this can be difficult.  Particularly in a bare-metal cluster with long-lived nodes, a node's run list may evolve over time and the recipe controlling the daemon might be removed.  (A cluster running in a cloud environment would be better served by destroying and recreating the nodes, avoiding the evolving run lists completely.)  An unwary administrator might see later that the node does not have the service in its run list and assume the daemon is not installed (let alone running.)\n\nChef itself does not offer a way to cleanup removed entries from a run list as a first class feature, perhaps because we can emulate this ourselves.  For example, one can imagine our administrator adding a `disable_service_daemon` \"cleanup\" recipe to the node at the same time that the original daemon recipe is removed.\n\nThat works, but it requires that the clean up recipe exists and that the administrator is aware of the issue and so can take action.  This however scales poorly: consider that the offending daemons might be brought as transitive cookbook dependencies.  It would better if Chef could do this for us.\n\nIt turns out that it can, with some help.  This cookbook supplies two LWRPs named `dishes_dish` and `dishes_sink`, which work together to enable Chef (and recipe authors) to react to recipes removed from a run list by including corresponding \"cleanup\" recipes.\n\n[split-brain-wikipedia]: https://en.wikipedia.org/wiki/Split-brain_(computing)\n\n## Usage ##\n\n```ruby\n# Tell dishes_sink to include `disable_daemon` if `daemon` is not in the run list\ndishes_dish 'cookbook::daemon' do\n  action :use\n  wash_recipe 'cookbook::disable_daemon'\n  sink 'default'\nend\n\n# Include the wash recipes of all dishes whose recipe is not in the run list\ndishes_sink 'default'\n```\n\nIn this example, the `cookbook::daemon` recipe uses a dish.  The dish declares that when `cookbook::daemon` vanishes from the run list, the `dishes_sink` should respond by including the `cookbook::disable_daemon` recipe.\n\nOne attaches a cleanup (or \"wash\") recipe to a monitored recipe with `dishes_dish`.  The association is kept in a hidden normal attribute and thus lives in the state of the Chef server.  Nothing is saved on the node itself.  Each recipe that needs cleanup actions should use a dish.\n\nA recipe is allowed to use its _own_ dish, allowing cookbooks to clean up after themselves (but see below about sinks) however it is not required.  Dishes and corrosponding wash recipes can also live in a wrapper cookbook.  In our example above, the `dishes_dish` and `dishes_sink` resources might live in `wrapper_cookbook::install_daemon`.\n\nDishes themselves do not take action, they just keep the books.  To actually wash the dirty dishes, one needs a `dishes_sink`.  A sink is a labeled bag of dishes.  Like dishes, sinks do not represent any aspect of the node, and are in fact stateless.  Dishes choose what sink they are placed in.\n\nWhen the `dishes_sink` runs, it examines the Chef server's attribute state to see what dishes have been placed into it, now or in the past.  It then examines each and if a dish is deemed \"dirty\" (its naming recipe is absent from the run list) the sink will `include_recipe` the corrosponding `wash_recipe`, thereby \"washing\" it.  Dishes whose wash recipe is already present in the run list are considered clean.\n\nWhile dishes leave traces of themselves behind in the Chef server, sinks do not.  Therefore if the recipe containing `dishes_sink` is removed, nothing gets clean.  Though one might imagine a dedicated service to wash the dirty dishes even if the sink recipe is absent, this is currently out of scope.\n\n## Requirements ##\n\nChef 11+\n\n## Resources/Providers ##\n\n### `dishes_dish` ###\n\nAn LWRP that associates a `wash_recipe` with a given `recipe` via attributes in the Chef server.\n\n#### Actions ####\n* `:use`: Associate the `wash_recipe` with the `recipe` (default).\n* `:toss`: Discard any existing association.\n\n#### Parameters ####\n* `recipe`: The recipe to monitor in the run list (name attribute).\n* `wash_recipe`: The recipe to include if `recipe` vanishes from the run list (required).\n* `sink`: The sink to place this dish in (default: `default`).\n\n### `dishes_sink` ###\n\nAn LWRP to wash dirty `dishes_dish`s.\n\n#### Actions ####\n* `:wash`: Include the `wash_recipes` of any `dishes_dish` placed in the named sink, now or in the past (default).\n\n#### Parameters ####\n* `sink`: The sink to wash (name attribute, typically `default`).\n\n## Development ##\n\nFork, use feature branches.  Add new `chefspec` and `test-kitchen` tests as warranted. Open PRs.\n\n## License ##\n\nMIT.  See LICENSE\n"
+}

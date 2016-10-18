@@ -1,0 +1,233 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/geiseri/owncloud",
+    "repository_url": "https://hub.docker.com/v2/repositories/geiseri/owncloud",
+    "tags_url": "https://hub.docker.com/v2/repositories/geiseri/owncloud/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/geiseri/owncloud/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/geiseri/owncloud/autobuild",
+    "user": "geiseri",
+    "name": "owncloud",
+    "namespace": "geiseri",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 49,
+    "last_updated": "2016-05-23T11:19:59.215753Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 276877173,
+        "id": 1073538,
+        "repository": 350819,
+        "creator": 312681,
+        "last_updater": 312681,
+        "last_updated": "2016-05-23T11:20:00.552670Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      }
+    ],
+    "build_name": "geiseri/dockers-owncloud"
+  },
+  "name": "geiseri/owncloud Docker container",
+  "description": "ownCloud 9 container with goodies",
+  "readme": "## ownCloud 9 container with goodies\n\nThis is my spin on a flexible owncloud container that is configured by cloud-init and is made to run behind a reverse proxy.\n\n## Features:\n\n* ownCloud 9.0.2\n* apache2\n* mod_php\n* System cron\n* Samaba Support\n* LDAP/AD auth support\n* MySQL and SQLite support\n* ocDownloader w/ aria2c and youtubedl enabled\n* /var/www/owncloud/data exposed as mount point\n\n## Preinstalled Apps:\n\n* ocDownloader with YouTube and Aria2 support\n* passwords\n* notes\n* tasks\n* calender\n* contacts\n* mail\n* bookmarks\n* audios\n* files_mv\n* files_markdown\n\n## Examples:\n\n### Simple Example:\n\n```\n$ docker run -tdi --name=owncloud \\\n           -p 80:80 -p 443:443 \\\n           --cap-add SYS_ADMIN \\\n           -v /sys/fs/cgroup:/sys/fs/cgroup:ro \\\n           -v /path/to/data:/var/www/owncloud/data \\\n           geiseri/owncloud\n$ docker exec -ti owncloud su www-data -s /bin/bash -c \\\n           'php /var/www/owncloud/occ maintenance:install -n \\\n               --database sqlite \\\n               --admin-user admin \\\n               --admin-pass admin \\\n           '\n```\n\n*NOTE:* The shared data directory must be writable by user \"33\" (www-data) and group \"33\" (www-data).\n\n### Custom Configuration Example\n\n```\n$ docker run -tdi --name=owncloud \\\n           -p 80:80 -p 443:443 \\\n           --cap-add SYS_ADMIN \\\n           -v /sys/fs/cgroup:/sys/fs/cgroup:ro \\\n           -v /path/to/data:/var/www/owncloud/data \\\n           -v /path/to/config.php:/var/www/owncloud/config/config.php \\\n           geiseri/owncloud\n```\n\nFor more information on the configuration file format see:\n\n* http://doc.owncloud.com/server/9.0/admin_manual/configuration_server/reverse_proxy_configuration.html\n* http://doc.owncloud.com/server/9.0/admin_manual/configuration_server/logging_configuration.html\n* http://github.com/owncloud/core/blob/v9.0.2/config/config.sample.php\n\n### Mysql Example:\n\n```\n$ docker run -tdi --name=oc-mysql \\\n           -v /path/to/data/mysql:/var/lib/mysql \\\n           -e MYSQL_ROOT_PASSWORD=\"mysecret\" \\\n           -e MYSQL_DATABASE=\"owncloud\" \\\n           -e MYSQL_USER=\"oc_user\" \\\n           -e MYSQL_PASSWORD=\"oc_secret\" \\\n           mysql:5.5\n$ docker run -tdi --name=owncloud \\\n           -p 80:80 -p 443:443 \\\n           --cap-add SYS_ADMIN \\\n           -v /sys/fs/cgroup:/sys/fs/cgroup:ro \\\n           -v /path/to/data:/var/www/owncloud/data \\\n           --link oc-mysql:mysql_server \\\n           geiseri/owncloud\n$ docker exec -ti owncloud su www-data -s /bin/bash -c \\\n          'php /var/www/owncloud/occ maintenance:install -n \\\n              --database mysql \\\n              --database-name $MYSQL_SERVER_ENV_MYSQL_DATABASE \\\n              --database-host $MYSQL_SERVER_PORT_3306_TCP_ADDR \\\n              --database-user $MYSQL_SERVER_ENV_MYSQL_USER \\\n              --database-pass $MYSQL_SERVER_ENV_MYSQL_PASSWORD \\\n              --admin-user admin --admin-pass admin'\n```\n",
+  "dockerfile": "FROM debian:8.0\n\nMAINTAINER Ian Reinhart Geiser <geiseri@yahoo.com>\n\nEXPOSE 80 443\n\nENV DEBIAN_FRONTEND noninteractive\nENV container docker\nENV OC_VERSION 9.0.2\n\n# early packages\nRUN apt-get update && \\\n    apt-get install -y curl perl\n\n# get owncloud\nRUN curl -L http://download.owncloud.org/download/repositories/9.0/Debian_8.0/Release.key | apt-key add - && \\\n    echo 'deb http://download.owncloud.org/download/repositories/9.0/Debian_8.0/ /' >> /etc/apt/sources.list.d/owncloud.list     \n\n# setup debian\nRUN \\\n    apt-get  update && \\\n    apt-get install -y \\\n        cron locales bzip2 php5-cli php5-gd php5-curl php5-intl \\\n        php5-mcrypt php5-ldap php5-gmp php5-apcu php5-imagick \\\n        php5 smbclient unzip \\\n        apache2 owncloud aria2 cloud-init \\\n        libapache2-mod-php5 \n        \nADD owncloud/cron.conf /etc/cron.d/owncloud\nADD owncloud/php.ini /etc/php5/apache2/conf.d/20-owncloud.ini\nADD owncloud/owncloud.conf /etc/apache2/sites-available/owncloud.conf\nADD owncloud/site.conf /etc/apache2/sites-available/000-default.conf\nADD owncloud/occ.sh /usr/bin/occ\nRUN chmod +x /usr/bin/occ\n\n# Install ocDownloader\nADD http://github.com/DjazzLab/ocdownloader/archive/master.zip /master.zip\nADD https://yt-dl.org/downloads/2015.07.07/youtube-dl /usr/local/bin/youtube-dl\nRUN cd /var/www/owncloud/apps && unzip /master.zip && mv ocdownloader-master ocdownloader && rm -f /master.zip\n\n# Install Passwords\nADD https://github.com/fcturner/passwords/archive/master.zip /master.zip\nRUN cd /var/www/owncloud/apps && unzip /master.zip && mv passwords-master/ passwords && rm -f /master.zip\n\n# Install Notes\nADD https://github.com/owncloud/notes/archive/master.zip /master.zip\nRUN cd /var/www/owncloud/apps && unzip /master.zip && mv notes-master/ notes && rm -f /master.zip\n\n# Install MP3 Player\nADD https://github.com/libasys/audios/archive/master.zip /master.zip\nRUN cd /var/www/owncloud/apps && unzip /master.zip && mv audios-master/ audios && rm -f /master.zip\n\n# Install bookmarks\nADD https://github.com/owncloud/bookmarks/archive/master.zip /master.zip\nRUN cd /var/www/owncloud/apps && unzip /master.zip && mv bookmarks-master/ bookmarks && rm -f /master.zip\n\n# Install files_move\nADD https://github.com/eotryx/oc_files_mv/archive/master.zip /master.zip\nRUN cd /var/www/owncloud/apps && unzip /master.zip && mv oc_files_mv-master/ files_mv && rm -f /master.zip\n\n# Install files_markdown\nADD https://github.com/icewind1991/owncloud-markdown/archive/master.zip /master.zip\nRUN cd /var/www/owncloud/apps && unzip /master.zip && mv files_markdown-master/ files_markdown && rm -f /master.zip\n\n# Install calender\nADD https://github.com/owncloud/calendar/archive/master.zip /master.zip\nRUN cd /var/www/owncloud/apps && unzip /master.zip && mv calendar-master/ calendar && rm -f /master.zip\n\n# Install tasks\nADD https://github.com/owncloud/tasks/archive/master.zip /master.zip\nRUN cd /var/www/owncloud/apps && unzip /master.zip && mv tasks-master/ tasks && rm -f /master.zip\n\n# Install contacts\nADD https://github.com/owncloud/contacts/archive/master.zip /master.zip\nRUN cd /var/www/owncloud/apps && unzip /master.zip && mv contacts-master/ contacts && rm -f /master.zip\n\n# Install mail\nADD https://github.com/owncloud/mail/archive/master.zip /master.zip\nRUN cd /var/www/owncloud/apps && unzip /master.zip && mv mail-master/ mail && rm -f /master.zip\n\n\n# fix perms\nRUN chown www-data:www-data /var/www/owncloud/apps\n\n# systemd\nADD systemd/aria2.service /lib/systemd/system/aria2.service\nADD systemd/systemd-tmpfiles-setup.service /etc/systemd/system/systemd-tmpfiles-setup.service.d/ignoresysfs.conf\nADD systemd/limits.conf /etc/security/limits.conf\n\n\n# cloud init\nADD cloud-init/cloud.cfg /etc/cloud/cloud.cfg\nADD cloud-init/user-data /var/lib/cloud/seed/nocloud/user-data\nADD cloud-init/meta-data /var/lib/cloud/seed/nocloud/meta-data\nADD cloud-init/first-run.sh /usr/bin/first-run.sh\nRUN chmod +x /usr/bin/first-run.sh\n\nRUN a2enmod headers rewrite env dir mime setenvif ssl php5\nRUN a2ensite default-ssl\n\n# clean up apt\nRUN apt-get -y clean && \\\n    apt-get autoremove -y --purge && \\\n    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n\nVOLUME [ \"/var/www/owncloud/data\", \"/sys/fs/cgroup\" ]\n\n# clean up systemd\nRUN \\\n    (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ \"$i\" != \"systemd-tmpfiles-setup.service\" ] && rm -fv $i; done); \\\n    rm -fv /lib/systemd/system/multi-user.target.wants/*; \\\n    rm -fv /etc/systemd/system/*.wants/*; \\\n    rm -fv /lib/systemd/system/local-fs.target.wants/*; \\\n    rm -fv /lib/systemd/system/sockets.target.wants/*udev*; \\\n    rm -fv /lib/systemd/system/sockets.target.wants/*initctl*; \\\n    rm -fv /lib/systemd/system/basic.target.wants/*; \\\n    systemctl enable cloud-init.service && \\\n    systemctl enable cloud-config.service && \\\n    systemctl enable cloud-final.service && \\\n    systemctl disable mysql.service && \\\n    systemctl enable aria2.service && \\\n    systemctl enable cron.service && \\\n    systemctl set-default multi-user.target && \\\n    useradd --system -U syslog\n\nWORKDIR /var/www/owncloud\n\nCMD [\"/lib/systemd/systemd\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "owncloud/cron.conf",
+        "dest": "/etc/cron.d/owncloud"
+      },
+      {
+        "source": "owncloud/php.ini",
+        "dest": "/etc/php5/apache2/conf.d/20-owncloud.ini"
+      },
+      {
+        "source": "owncloud/owncloud.conf",
+        "dest": "/etc/apache2/sites-available/owncloud.conf"
+      },
+      {
+        "source": "owncloud/site.conf",
+        "dest": "/etc/apache2/sites-available/000-default.conf"
+      },
+      {
+        "source": "owncloud/occ.sh",
+        "dest": "/usr/bin/occ"
+      },
+      {
+        "source": "http://github.com/DjazzLab/ocdownloader/archive/master.zip",
+        "dest": "/master.zip"
+      },
+      {
+        "source": "https://yt-dl.org/downloads/2015.07.07/youtube-dl",
+        "dest": "/usr/local/bin/youtube-dl"
+      },
+      {
+        "source": "https://github.com/fcturner/passwords/archive/master.zip",
+        "dest": "/master.zip"
+      },
+      {
+        "source": "https://github.com/owncloud/notes/archive/master.zip",
+        "dest": "/master.zip"
+      },
+      {
+        "source": "https://github.com/libasys/audios/archive/master.zip",
+        "dest": "/master.zip"
+      },
+      {
+        "source": "https://github.com/owncloud/bookmarks/archive/master.zip",
+        "dest": "/master.zip"
+      },
+      {
+        "source": "https://github.com/eotryx/oc_files_mv/archive/master.zip",
+        "dest": "/master.zip"
+      },
+      {
+        "source": "https://github.com/icewind1991/owncloud-markdown/archive/master.zip",
+        "dest": "/master.zip"
+      },
+      {
+        "source": "https://github.com/owncloud/calendar/archive/master.zip",
+        "dest": "/master.zip"
+      },
+      {
+        "source": "https://github.com/owncloud/tasks/archive/master.zip",
+        "dest": "/master.zip"
+      },
+      {
+        "source": "https://github.com/owncloud/contacts/archive/master.zip",
+        "dest": "/master.zip"
+      },
+      {
+        "source": "https://github.com/owncloud/mail/archive/master.zip",
+        "dest": "/master.zip"
+      },
+      {
+        "source": "systemd/aria2.service",
+        "dest": "/lib/systemd/system/aria2.service"
+      },
+      {
+        "source": "systemd/systemd-tmpfiles-setup.service",
+        "dest": "/etc/systemd/system/systemd-tmpfiles-setup.service.d/ignoresysfs.conf"
+      },
+      {
+        "source": "systemd/limits.conf",
+        "dest": "/etc/security/limits.conf"
+      },
+      {
+        "source": "cloud-init/cloud.cfg",
+        "dest": "/etc/cloud/cloud.cfg"
+      },
+      {
+        "source": "cloud-init/user-data",
+        "dest": "/var/lib/cloud/seed/nocloud/user-data"
+      },
+      {
+        "source": "cloud-init/meta-data",
+        "dest": "/var/lib/cloud/seed/nocloud/meta-data"
+      },
+      {
+        "source": "cloud-init/first-run.sh",
+        "dest": "/usr/bin/first-run.sh"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [
+      "[ \"/var/www/owncloud/data\", \"/sys/fs/cgroup\" ]"
+    ],
+    "run": [
+      "apt-get update &&     apt-get install -y curl perl",
+      "curl -L http://download.owncloud.org/download/repositories/9.0/Debian_8.0/Release.key | apt-key add - &&     echo 'deb http://download.owncloud.org/download/repositories/9.0/Debian_8.0/ /' >> /etc/apt/sources.list.d/owncloud.list     ",
+      "    apt-get  update &&     apt-get install -y         cron locales bzip2 php5-cli php5-gd php5-curl php5-intl         php5-mcrypt php5-ldap php5-gmp php5-apcu php5-imagick         php5 smbclient unzip         apache2 owncloud aria2 cloud-init         libapache2-mod-php5 ",
+      "chmod +x /usr/bin/occ",
+      "cd /var/www/owncloud/apps && unzip /master.zip && mv ocdownloader-master ocdownloader && rm -f /master.zip",
+      "cd /var/www/owncloud/apps && unzip /master.zip && mv passwords-master/ passwords && rm -f /master.zip",
+      "cd /var/www/owncloud/apps && unzip /master.zip && mv notes-master/ notes && rm -f /master.zip",
+      "cd /var/www/owncloud/apps && unzip /master.zip && mv audios-master/ audios && rm -f /master.zip",
+      "cd /var/www/owncloud/apps && unzip /master.zip && mv bookmarks-master/ bookmarks && rm -f /master.zip",
+      "cd /var/www/owncloud/apps && unzip /master.zip && mv oc_files_mv-master/ files_mv && rm -f /master.zip",
+      "cd /var/www/owncloud/apps && unzip /master.zip && mv files_markdown-master/ files_markdown && rm -f /master.zip",
+      "cd /var/www/owncloud/apps && unzip /master.zip && mv calendar-master/ calendar && rm -f /master.zip",
+      "cd /var/www/owncloud/apps && unzip /master.zip && mv tasks-master/ tasks && rm -f /master.zip",
+      "cd /var/www/owncloud/apps && unzip /master.zip && mv contacts-master/ contacts && rm -f /master.zip",
+      "cd /var/www/owncloud/apps && unzip /master.zip && mv mail-master/ mail && rm -f /master.zip",
+      "chown www-data:www-data /var/www/owncloud/apps",
+      "chmod +x /usr/bin/first-run.sh",
+      "a2enmod headers rewrite env dir mime setenvif ssl php5",
+      "a2ensite default-ssl",
+      "apt-get -y clean &&     apt-get autoremove -y --purge &&     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+      "    (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ \"$i\" != \"systemd-tmpfiles-setup.service\" ] && rm -fv $i; done);     rm -fv /lib/systemd/system/multi-user.target.wants/*;     rm -fv /etc/systemd/system/*.wants/*;     rm -fv /lib/systemd/system/local-fs.target.wants/*;     rm -fv /lib/systemd/system/sockets.target.wants/*udev*;     rm -fv /lib/systemd/system/sockets.target.wants/*initctl*;     rm -fv /lib/systemd/system/basic.target.wants/*;     systemctl enable cloud-init.service &&     systemctl enable cloud-config.service &&     systemctl enable cloud-final.service &&     systemctl disable mysql.service &&     systemctl enable aria2.service &&     systemctl enable cron.service &&     systemctl set-default multi-user.target &&     useradd --system -U syslog"
+    ],
+    "workdir": [
+      "/var/www/owncloud"
+    ],
+    "from": "debian:8.0",
+    "maintainer": "Ian Reinhart Geiser <geiseri@yahoo.com>",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive",
+      "container": "docker",
+      "OC_VERSION": "9.0.2"
+    },
+    "cmd": "[\"/lib/systemd/systemd\"]"
+  },
+  "source_repository_url": "https://bitbucket.org/geiseri/dockers-owncloud.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/geiseri/dockers-owncloud",
+  "docker_repository": "geiseri/owncloud",
+  "docker_image": "geiseri/owncloud",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "container": {
+      "default": "docker",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "OC_VERSION": {
+      "default": "9.0.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "geiseri/owncloud",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/geiseri/owncloud",
+    "https://hub.docker.com/v2/repositories/geiseri/owncloud",
+    "https://bitbucket.org/geiseri/dockers-owncloud.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/geiseri/owncloud",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,176 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/area51/rabbitmq",
+    "repository_url": "https://hub.docker.com/v2/repositories/area51/rabbitmq",
+    "tags_url": "https://hub.docker.com/v2/repositories/area51/rabbitmq/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/area51/rabbitmq/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/area51/rabbitmq/autobuild",
+    "user": "area51",
+    "name": "rabbitmq",
+    "namespace": "area51",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 46,
+    "last_updated": "2016-09-23T19:49:05.289983Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 25846324,
+        "id": 3724397,
+        "repository": 785166,
+        "creator": 665124,
+        "last_updater": 665124,
+        "last_updated": "2016-09-23T19:42:46.613190Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.6.3",
+        "full_size": 25846332,
+        "id": 3724351,
+        "repository": 785166,
+        "creator": 665124,
+        "last_updater": 665124,
+        "last_updated": "2016-09-23T19:42:03.600041Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "3.7.0m5",
+        "full_size": 26268412,
+        "id": 3724281,
+        "repository": 785166,
+        "creator": 665124,
+        "last_updater": 665124,
+        "last_updated": "2016-08-03T18:25:38.354225Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "peter-mount/rabbitmq"
+  },
+  "name": "area51/rabbitmq Docker container",
+  "description": "RabbitMQ running on Alpine",
+  "readme": "This is based on the official rabbitmq image with the following plugins enabled:\n* rabbitmq_management\n* rabbitmq_mqtt\n* rabbitmq_shovel\n* rabbitmq_shovel_management\n* rabbitmq_web_stomp\n\nNote: This is the current 3.7 branch which has not yet been released yet.\n\nCurrent version: 3.7.0 milestone 4\n\nIf this build fails then we have to find the new version for the milestone as they remove it.\n\nSo in the Docker file we have two values, the version and milestone. For a stable release both should match but for a pre-release versions then they match the two parts of the download url\n            \nFrom https://github.com/rabbitmq/rabbitmq-server/releases find rabbitmq-server-generic-unix-*.tar.xz file, eg:\n\nhttps://github.com/rabbitmq/rabbitmq-server/releases/download/rabbitmq_v3_7_0_milestone2/rabbitmq-server-generic-unix-3.7.500.2.tar.xz\n\nHere version will be 3.7.500.2 and milestone 3.7.0_milestone2\n\n",
+  "dockerfile": "FROM area51/alpine\nMAINTAINER Peter Mount <peter@retep.org>\n\n# See README.md for what these mean\nENV         RABBITMQ_VERSION=3.6.3 \\\n            RABBITMQ_MILESTONE=3.6.3\n\nENV         RABBITMQ_HOME=/opt/rabbitmq_server-${RABBITMQ_VERSION} \\\n            PLUGINS_DIR=${RABBITMQ_HOME}/plugins \\\n            ENABLED_PLUGINS_FILE=${RABBITMQ_HOME}/etc/rabbitmq/enabled_plugins \\\n            RABBITMQ_MNESIA_BASE=/var/lib/rabbitmq\n\nENV         PATH=$PATH:$RABBITMQ_HOME/sbin\n\nCOPY        ssl.config ${RABBITMQ_HOME}/etc/rabbitmq/\nCOPY        standard.config ${RABBITMQ_HOME}/etc/rabbitmq/\nCOPY        docker-entrypoint.sh /\n\nEXPOSE      5671/tcp 5672/tcp 15672/tcp 15671/tcp\nVOLUME      /var/lib/rabbitmq\nENTRYPOINT  [\"/docker-entrypoint.sh\"]\n#CMD         [\"/docker-entrypoint.sh\"]\n\nRUN chmod a+x /docker-entrypoint.sh &&\\\n    apk add --update \\\n\ttar \\\n\txz \\\n\tbash && \\\n    echo \"http://dl-cdn.alpinelinux.org/alpine/edge/main\" >> /etc/apk/repositories && \\\n    echo \"http://dl-cdn.alpinelinux.org/alpine/edge/testing\" >> /etc/apk/repositories && \\\n    echo \"http://dl-cdn.alpinelinux.org/alpine/edge/community\" >> /etc/apk/repositories && \\\n    apk add --update-cache --allow-untrusted \\\n\terlang \\\n\terlang \\\n\terlang-mnesia \\\n\terlang-public-key \\\n\terlang-crypto \\\n\terlang-ssl \\\n\terlang-sasl \\\n\terlang-asn1 \\\n\terlang-inets \\\n\terlang-os-mon \\\n\terlang-xmerl \\\n\terlang-eldap \\\n\terlang-syntax-tools &&\\\n    cd /opt && \\\n    milestone=$(echo $RABBITMQ_MILESTONE | tr '.' '_') &&\\\n    curl -L \\\n\t-o /opt/rmq.tar.xz\\\n\thttps://github.com/rabbitmq/rabbitmq-server/releases/download/rabbitmq_v${milestone}/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.xz &&\\\n    tar -xvf rmq.tar.xz &&\\\n    rm -f rmq.tar.xz &&\\\n    touch ${RABBITMQ_HOME}/etc/rabbitmq/enabled_plugins &&\\\n    rabbitmq-plugins enable --offline \\\n\trabbitmq_management \\\n\trabbitmq_mqtt \\\n\trabbitmq_shovel \\\n\trabbitmq_shovel_management \\\n\trabbitmq_web_stomp &&\\\n    apk del --purge tar xz &&\\\n    rm -Rf /var/cache/apk/*\n\nEXPOSE 15671 15672 \\\n        5672 \\\n        25672 \\\n        1883 \\\n        61613\n\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5671,
+      15671
+    ],
+    "volume": [
+      "     /var/lib/rabbitmq"
+    ],
+    "run": [
+      "chmod a+x /docker-entrypoint.sh &&    apk add --update \ttar \txz \tbash &&     echo \"http://dl-cdn.alpinelinux.org/alpine/edge/main\" >> /etc/apk/repositories &&     echo \"http://dl-cdn.alpinelinux.org/alpine/edge/testing\" >> /etc/apk/repositories &&     echo \"http://dl-cdn.alpinelinux.org/alpine/edge/community\" >> /etc/apk/repositories &&     apk add --update-cache --allow-untrusted \terlang \terlang \terlang-mnesia \terlang-public-key \terlang-crypto \terlang-ssl \terlang-sasl \terlang-asn1 \terlang-inets \terlang-os-mon \terlang-xmerl \terlang-eldap \terlang-syntax-tools &&    cd /opt &&     milestone=$(echo $RABBITMQ_MILESTONE | tr '.' '_') &&    curl -L \t-o /opt/rmq.tar.xz\thttps://github.com/rabbitmq/rabbitmq-server/releases/download/rabbitmq_v${milestone}/rabbitmq-server-generic-unix-${RABBITMQ_VERSION}.tar.xz &&    tar -xvf rmq.tar.xz &&    rm -f rmq.tar.xz &&    touch ${RABBITMQ_HOME}/etc/rabbitmq/enabled_plugins &&    rabbitmq-plugins enable --offline \trabbitmq_management \trabbitmq_mqtt \trabbitmq_shovel \trabbitmq_shovel_management \trabbitmq_web_stomp &&    apk del --purge tar xz &&    rm -Rf /var/cache/apk/*"
+    ],
+    "workdir": [],
+    "from": "area51/alpine",
+    "maintainer": "Peter Mount <peter@retep.org>",
+    "env": {
+      "": "",
+      "RABBITMQ_VERSION": "3.6.3",
+      "RABBITMQ_MILESTONE": "3.6.3",
+      "RABBITMQ_HOME": "/opt/rabbitmq_server-${RABBITMQ_VERSION}",
+      "PLUGINS_DIR": "${RABBITMQ_HOME}/plugins",
+      "ENABLED_PLUGINS_FILE": "${RABBITMQ_HOME}/etc/rabbitmq/enabled_plugins",
+      "RABBITMQ_MNESIA_BASE": "/var/lib/rabbitmq",
+      "PATH": "$PATH:$RABBITMQ_HOME/sbin"
+    },
+    "copy": "       docker-entrypoint.sh /",
+    "entrypoint": " [\"/docker-entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/peter-mount/rabbitmq.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/peter-mount/rabbitmq",
+  "docker_repository": "area51/rabbitmq",
+  "docker_image": "area51/rabbitmq",
+  "parameters_schema": {
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_VERSION": {
+      "default": "3.6.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_MILESTONE": {
+      "default": "3.6.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_HOME": {
+      "default": "/opt/rabbitmq_server-${RABBITMQ_VERSION}",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PLUGINS_DIR": {
+      "default": "${RABBITMQ_HOME}/plugins",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "ENABLED_PLUGINS_FILE": {
+      "default": "${RABBITMQ_HOME}/etc/rabbitmq/enabled_plugins",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RABBITMQ_MNESIA_BASE": {
+      "default": "/var/lib/rabbitmq",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:$RABBITMQ_HOME/sbin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5671,
+        15671
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "area51/rabbitmq",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/area51/rabbitmq",
+    "https://hub.docker.com/v2/repositories/area51/rabbitmq",
+    "https://github.com/peter-mount/rabbitmq.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Messaging/RabbitMQ"
+  ],
+  "info_url": "https://hub.docker.com/r/area51/rabbitmq",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

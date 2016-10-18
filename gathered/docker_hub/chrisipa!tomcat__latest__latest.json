@@ -1,0 +1,157 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/chrisipa/tomcat",
+    "repository_url": "https://hub.docker.com/v2/repositories/chrisipa/tomcat",
+    "tags_url": "https://hub.docker.com/v2/repositories/chrisipa/tomcat/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/chrisipa/tomcat/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/chrisipa/tomcat/autobuild",
+    "user": "chrisipa",
+    "name": "tomcat",
+    "namespace": "chrisipa",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 545,
+    "last_updated": "2016-04-05T00:27:11.793039Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 300036216,
+        "id": 2141108,
+        "repository": 549320,
+        "creator": 342045,
+        "last_updater": 342045,
+        "last_updated": "2016-04-05T00:27:12.372698Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "chrisipa/docker-tomcat"
+  },
+  "name": "chrisipa/tomcat Docker container",
+  "description": "Tomcat docker image based on Debian Jessie, Apache Maven and Oracle JDK 8.",
+  "readme": "docker-tomcat\n=============\n\nTomcat docker image based on Debian Jessie, Apache Maven and Oracle JDK 8.\n\n# Description\nThis Tomcat docker image contains the following software components:\n\n - [Oracle JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)\n - [Apache Maven 3](https://maven.apache.org/index.html)\n - [Apache Tomcat 7](https://tomcat.apache.org/index.html)\n\n## Ports\nThese tcp ports are exposed:\n\n - 8080 (http)\n - 8443 (https)\n\n# How to run the container\n\n## Environment variables\n\nWhen you start the Tomcat container, you can adjust the configuration by passing one or more environment variables on the `docker run` command line:\n\n### `CATALINA_OPTS`\n\n - Java runtime options used when the \"start\", \"run\" or \"debug\" command is executed \n - Default value:  \n\n## Using docker\n\n### Example 1: Run Tomcat container with java memory options for max heap size\n\nRun the Tomcat container with the following command:\n  ```\n  docker run --name tomcat -d -p 8080:8080 -p 8443:8443 -e \"CATALINA_OPTS=-Xmx768m\" chrisipa/tomcat\n  ```\n\n## Advanced topics\n\n### Use your own SSL certificates\n\n1. Generate your own Java keystore file named `keystore` with password `changeit` by answering all questions:\n  ```\n  keytool -genkey -alias tomcat -keyalg RSA -keysize 2048 -keystore keystore\n  ```\n\n2. Generate a CSR from your newly generated Java keystore:\n  ```\n  keytool -certreq -alias tomcat -file csr.txt -keystore keystore\n  ```\n\n3. Upload your `csr.txt` to your SSL provider and generate a P7B SSL certificate for tomcat\n\n4. Import the generated P7B SSL certificate into your Java keystore:\n  ```\n  keytool -import -trustcacerts -alias tomcat -file your_site_name.p7b -keystore keystore\n  ```\n\n5. Place your Java keystore in a folder of your choice and mount it to the `/opt/ssl/tomcat` folder of your docker container:\n  ```\n  -v /opt/ssl/tomcat:/opt/ssl/tomcat\n  ```\n",
+  "dockerfile": "FROM chrisipa/java\nMAINTAINER Christoph Papke <info@papke.it>\n\n# set environment variables\nENV CATALINA_HOME /opt/tomcat\nENV PATH $PATH:$CATALINA_HOME/bin\nENV TOMCAT_VERSION 7.0.68 \nENV TOMCAT_MAJOR 7\nENV TOMCAT_CHECKSUM 63585913ef1636bac4955f54a1c132b9\nENV TOMCAT_KEYSTORE_FOLDER /opt/ssl/tomcat\nENV TOMCAT_WEBAPPS_FOLDER $CATALINA_HOME/webapps\n\n# download and extract tomcat to opt folder\nRUN wget https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.zip && \\\n    echo \"$TOMCAT_CHECKSUM apache-tomcat-$TOMCAT_VERSION.zip\" | md5sum -c && \\\n    unzip apache-tomcat-$TOMCAT_VERSION.zip -d /opt/ && \\\n    ln -s /opt/apache-tomcat-$TOMCAT_VERSION $CATALINA_HOME && \\\n    rm -f apache-tomcat-$TOMCAT_VERSION.zip\n\n# remove default webapps\nRUN rm -rf $TOMCAT_WEBAPPS_FOLDER/ROOT/* \\\n    $TOMCAT_WEBAPPS_FOLDER/docs \\\n    $TOMCAT_WEBAPPS_FOLDER/examples \\\n    $TOMCAT_WEBAPPS_FOLDER/host-manager \\\n    $TOMCAT_WEBAPPS_FOLDER/manager\n\n# add index.jsp to ROOT webapp\nADD index.jsp $TOMCAT_WEBAPPS_FOLDER/ROOT/index.jsp\n\n# remove tomcat bat files\nRUN rm $CATALINA_HOME/bin/*.bat\n\n# make tomcat sh files executable\nRUN chmod +x $CATALINA_HOME/bin/*.sh\n\n# create tomcat keystore folder\nRUN mkdir -p $TOMCAT_KEYSTORE_FOLDER\n\n# copy default keystore to tomcat keystore folder\nCOPY keystore $TOMCAT_KEYSTORE_FOLDER/keystore\n\n# mark tomcat keystore folder as volume\nVOLUME $TOMCAT_KEYSTORE_FOLDER\n\n# copy server.xml with ssl connector to tomcat conf folder\nCOPY server.xml $CATALINA_HOME/conf/server.xml\n\n# set work dir to webapps folder\nWORKDIR $TOMCAT_WEBAPPS_FOLDER\n\n# expose ports\nEXPOSE 8080\nEXPOSE 8443\n\n# copy entry point to docker image root\nCOPY docker-entrypoint.sh /entrypoint.sh\n\n# specifiy entrypoint\nENTRYPOINT [\"/entrypoint.sh\"]\n\n# execute startupt script\nCMD [\"catalina.sh\", \"run\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "index.jsp",
+        "dest": "$TOMCAT_WEBAPPS_FOLDER/ROOT/index.jsp"
+      }
+    ],
+    "expose": [
+      8080,
+      8443
+    ],
+    "volume": [
+      "$TOMCAT_KEYSTORE_FOLDER"
+    ],
+    "run": [
+      "wget https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.zip &&     echo \"$TOMCAT_CHECKSUM apache-tomcat-$TOMCAT_VERSION.zip\" | md5sum -c &&     unzip apache-tomcat-$TOMCAT_VERSION.zip -d /opt/ &&     ln -s /opt/apache-tomcat-$TOMCAT_VERSION $CATALINA_HOME &&     rm -f apache-tomcat-$TOMCAT_VERSION.zip",
+      "rm -rf $TOMCAT_WEBAPPS_FOLDER/ROOT/*     $TOMCAT_WEBAPPS_FOLDER/docs     $TOMCAT_WEBAPPS_FOLDER/examples     $TOMCAT_WEBAPPS_FOLDER/host-manager     $TOMCAT_WEBAPPS_FOLDER/manager",
+      "rm $CATALINA_HOME/bin/*.bat",
+      "chmod +x $CATALINA_HOME/bin/*.sh",
+      "mkdir -p $TOMCAT_KEYSTORE_FOLDER"
+    ],
+    "workdir": [
+      "$TOMCAT_WEBAPPS_FOLDER"
+    ],
+    "from": "chrisipa/java",
+    "maintainer": "Christoph Papke <info@papke.it>",
+    "env": {
+      "CATALINA_HOME": "/opt/tomcat",
+      "PATH": "$PATH:$CATALINA_HOME/bin",
+      "TOMCAT_VERSION": "7.0.68",
+      "TOMCAT_MAJOR": "7",
+      "TOMCAT_CHECKSUM": "63585913ef1636bac4955f54a1c132b9",
+      "TOMCAT_KEYSTORE_FOLDER": "/opt/ssl/tomcat",
+      "TOMCAT_WEBAPPS_FOLDER": "$CATALINA_HOME/webapps"
+    },
+    "copy": "docker-entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"catalina.sh\", \"run\"]"
+  },
+  "source_repository_url": "https://github.com/chrisipa/docker-tomcat.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/chrisipa/docker-tomcat",
+  "docker_repository": "chrisipa/tomcat",
+  "docker_image": "chrisipa/tomcat",
+  "parameters_schema": {
+    "CATALINA_HOME": {
+      "default": "/opt/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:$CATALINA_HOME/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_VERSION": {
+      "default": "7.0.68",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_MAJOR": {
+      "default": "7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_CHECKSUM": {
+      "default": "63585913ef1636bac4955f54a1c132b9",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_KEYSTORE_FOLDER": {
+      "default": "/opt/ssl/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TOMCAT_WEBAPPS_FOLDER": {
+      "default": "$CATALINA_HOME/webapps",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        8080,
+        8443
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "chrisipa/tomcat",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/chrisipa/tomcat",
+    "https://hub.docker.com/v2/repositories/chrisipa/tomcat",
+    "https://github.com/chrisipa/docker-tomcat.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Devopsware/Build/Java/Maven",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/chrisipa/tomcat",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

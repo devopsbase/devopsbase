@@ -1,0 +1,133 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/prismatik/rethinkdb-backerupperer",
+    "repository_url": "https://hub.docker.com/v2/repositories/prismatik/rethinkdb-backerupperer",
+    "tags_url": "https://hub.docker.com/v2/repositories/prismatik/rethinkdb-backerupperer/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/prismatik/rethinkdb-backerupperer/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/prismatik/rethinkdb-backerupperer/autobuild",
+    "user": "prismatik",
+    "name": "rethinkdb-backerupperer",
+    "namespace": "prismatik",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 38,
+    "last_updated": "2016-03-08T10:13:24.585540Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 369468615,
+        "id": 2233153,
+        "repository": 567136,
+        "creator": 608884,
+        "last_updater": 608884,
+        "last_updated": "2016-03-08T10:13:24.196572Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "docker",
+        "full_size": 369468459,
+        "id": 2233061,
+        "repository": 567136,
+        "creator": 608884,
+        "last_updater": 608884,
+        "last_updated": "2016-03-08T10:02:28.590846Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "Prismatik/rethinkdb-backerupperer"
+  },
+  "name": "prismatik/rethinkdb-backerupperer Docker container",
+  "description": "Backs up rethinkdb databases to S3",
+  "readme": "## RethinkDB Backerupperer\n\nIt backs up RethinkDB. It puts those backups on S3.\n\nIt can just do it once, or, if you want, more than once.\n\n### Usage\n\nWhen run, it does a `rethinkdb dump` against the target database. It saves the output to a file called something like `2015-10-23T19:51:38+11:00.tar.gz`\n\nIt then uploads that file to the specified S3 bucket. Once the file is uploaded, it deletes the file.\n\nIf you like, you can specify an [encryption key for S3 to use](http://docs.aws.amazon.com/AmazonS3/latest/dev/ServerSideEncryptionCustomerKeys.html)\n\nIf you like, you can specify a [cron expression](https://godoc.org/github.com/robfig/cron) and it will run on that interval.\n\nThe required environment variables are:\n\n* AWS_ACCESS_KEY_ID\n* AWS_SECRET_ACCESS_KEY\n* S3_BUCKET\n* RETHINK_LOC (eg localhost:28015)\n\nOptional environment variables are:\n\n* SSE_KEY (In my testing, S3 barfs if this isn't 32 characters in length)\n* CRON_STRING (Normal cron times, with extras defined [here](https://godoc.org/github.com/robfig/cron))\n* AWS_REGION Defaults to us-east-1\n\nIf SSE_KEY is not defined, the file will just be stored in the clear.\nIf CRON_STRING is not defined, the process will just run once then exit.\n\nSo an example invocation would be:\n\n`$ AWS_ACCESS_KEY_ID={{KEY}} AWS_SECRET_ACCESS_KEY={{SECRET}} S3_BUCKET={{bucket}} RETHINK_LOC=localhost:28015 SSE_KEY=EnE50AzSFcm0k6iq0DGmBMUIjM2NozxS CRON_STRING=\"@every 1h\" go run rethinkdb-backerupperer.go`\n\nEvery time it succeeds, it will log something similar to:\n\n`2015/10/23 20:42:13 Successfully uploaded backup 2015-10-23T20:42:10+11:00.tar.gz`\n\nAny failure will exit the process with an exit code of 1\n\n### Download\n\nYou can download binaries for OSX, Linux and Windows [here](https://github.com/Prismatik/rethinkdb-backerupperer/releases/latest)\n\nNB: I have not tested the Windows build. Please let me know if it works (or doesn't)\n",
+  "dockerfile": "FROM nodesource/vivid:LTS\nMAINTAINER Prismatik Pty. Ltd. <david@prismatik.com.au>\n\nRUN apt-get update\nRUN apt-get install -y software-properties-common\nRUN add-apt-repository ppa:ubuntu-lxc/lxd-stable\nRUN apt-get update\nRUN apt-get install -y golang\nRUN apt-get install -y wget\nRUN echo \"deb http://download.rethinkdb.com/apt `lsb_release -cs` main\" > /etc/apt/sources.list.d/rethinkdb.list\nRUN wget -O- http://download.rethinkdb.com/apt/pubkey.gpg | apt-key add -\nRUN apt-get update\nRUN apt-get install -y rethinkdb python-pip\nRUN rm -rf /var/lib/apt/lists/*\nRUN pip install rethinkdb\n\nRUN mkdir -p /go\nADD . /go/src/github.com/Prismatik/rethinkdb-backerupperer\n\nENV GOPATH=/go\n\nWORKDIR /go/src/github.com/Prismatik/rethinkdb-backerupperer\n\nRUN go get\nRUN go install github.com/Prismatik/rethinkdb-backerupperer\n\nEXPOSE 3000\n\nCMD [\"/go/bin/rethinkdb-backerupperer\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": ".",
+        "dest": "/go/src/github.com/Prismatik/rethinkdb-backerupperer"
+      }
+    ],
+    "expose": [
+      3000
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update",
+      "apt-get install -y software-properties-common",
+      "add-apt-repository ppa:ubuntu-lxc/lxd-stable",
+      "apt-get update",
+      "apt-get install -y golang",
+      "apt-get install -y wget",
+      "echo \"deb http://download.rethinkdb.com/apt `lsb_release -cs` main\" > /etc/apt/sources.list.d/rethinkdb.list",
+      "wget -O- http://download.rethinkdb.com/apt/pubkey.gpg | apt-key add -",
+      "apt-get update",
+      "apt-get install -y rethinkdb python-pip",
+      "rm -rf /var/lib/apt/lists/*",
+      "pip install rethinkdb",
+      "mkdir -p /go",
+      "go get",
+      "go install github.com/Prismatik/rethinkdb-backerupperer"
+    ],
+    "workdir": [
+      "/go/src/github.com/Prismatik/rethinkdb-backerupperer"
+    ],
+    "from": "nodesource/vivid:LTS",
+    "maintainer": "Prismatik Pty. Ltd. <david@prismatik.com.au>",
+    "env": {
+      "GOPATH": "/go"
+    },
+    "cmd": "[\"/go/bin/rethinkdb-backerupperer\"]"
+  },
+  "source_repository_url": "https://github.com/Prismatik/rethinkdb-backerupperer.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Prismatik/rethinkdb-backerupperer",
+  "docker_repository": "prismatik/rethinkdb-backerupperer",
+  "docker_image": "prismatik/rethinkdb-backerupperer",
+  "parameters_schema": {
+    "GOPATH": {
+      "default": "/go",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "prismatik/rethinkdb-backerupperer",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/prismatik/rethinkdb-backerupperer",
+    "https://hub.docker.com/v2/repositories/prismatik/rethinkdb-backerupperer",
+    "https://github.com/Prismatik/rethinkdb-backerupperer.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Document-oriented/RethinkDB"
+  ],
+  "info_url": "https://hub.docker.com/r/prismatik/rethinkdb-backerupperer",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,182 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/cheewai/tomcat",
+    "repository_url": "https://hub.docker.com/v2/repositories/cheewai/tomcat",
+    "tags_url": "https://hub.docker.com/v2/repositories/cheewai/tomcat/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/cheewai/tomcat/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/cheewai/tomcat/autobuild",
+    "user": "cheewai",
+    "name": "tomcat",
+    "namespace": "cheewai",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 235,
+    "last_updated": "2016-10-05T11:13:05.994818Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "tomcat8",
+        "full_size": 76271212,
+        "id": 5027738,
+        "repository": 501413,
+        "creator": 268349,
+        "last_updater": 268349,
+        "last_updated": "2016-10-05T11:13:04.491399Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 75911063,
+        "id": 1848665,
+        "repository": 501413,
+        "creator": 268349,
+        "last_updater": 268349,
+        "last_updated": "2016-09-29T12:45:21.810857Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "cynici/tomcat"
+  },
+  "name": "cheewai/tomcat Docker container",
+  "description": "Tomcat and Oracle JRE in docker",
+  "readme": "# Tomcat and Oracle JRE in docker\n\nUse this repo to build a small footprint docker image containing the following based on [alpine linux](https://hub.docker.com/_/alpine/):\n\n- Tomcat 7\n- Oracle JDK 8\n- gosu\n\nThe Dockerfile is adapted from the following primarily because Oracle JDK 7 is [no longer available](http://www.oracle.com/technetwork/java/javase/overview/index.html)\n\n- https://hub.docker.com/r/sdd330/alpine-oraclejdk7/~/dockerfile/\n- https://hub.docker.com/r/sdd330/alpine-tomcat-oraclejdk/\n\n[gosu](https://github.com/tianon/gosu) has been included so that tomcat would run as non-root user for better security. The gosu stanza in the Dockerfile is based on [docker-alpine-gosu](https://github.com/mendsley/docker-alpine-gosu)\n\nMy personal use-case is for running [Boundless](http://boundlessgeo.com/products/opengeo-suite/) GeoServer and GeoFence.\n\nEven though GeoServer has only been officially tested with JRE7, it seems to [work fine with JRE8](http://osdir.com/ml/geoserver-development-geospatial-java/2015-01/msg00331.html).\n\n## Usage\n\nTomcat webapps directory in the container is */usr/tomcat/webapps/*\n\nTo enable strong cryptography in Oracle JRE, extract *local_policy.jar* and *US_export_policy.jar* from http://download.oracle.com/otn-pub/java/jce/7/UnlimitedJCEPolicyJDK7.zip\n\n```\nvolumes:\n- local_policy.jar:/usr/lib/jvm/default-jvm/jre/lib/security/local_policy.jar\n- US_export_policy.jar:/usr/lib/jvm/default-jvm/jre/lib/security/US_export_policy.jar\n```\n\nTo run tomcat as non-root user with specific numeric UID, write your own entrypoint script using *docker-entrypoint.sh* as example and set the environment variable *TOMCAT_UID*\n\n```\n#! /bin/sh\n\nTOMCAT_UID=\"${TOMCAT_UID:-1000}\"\nset -eux\nadduser -s /bin/false -D -h $CATALINA_HOME -H -u ${TOMCAT_UID} tomcat \\\n && chown -R tomcat $CATALINA_HOME/* \\\n && chmod +x $CATALINA_HOME/bin/setenv.sh\nexec gosu tomcat catalina.sh run\n```\n\nOverride any JRE JAVA [default values](https://github.com/cynici/tomcat/blob/master/Dockerfile) using *environment* in docker-compose.yml file. GeoServer requires MINMEM greater or equal to 64 MB.\n\n```\nenvironment:\n  MAXMEM: 1024m\n  MINMEM: 64m\n```\n\nSpecifically to persist GeoServer data, set its data directory to a separate directory in the container and mount it using *volumes* in docker-compose.yml\n\n```\nGEOSERVER_DATA_DIR=/var/geoserver\n```\n",
+  "dockerfile": "FROM frolvlad/alpine-oraclejdk8:latest\nMAINTAINER Cheewai Lai <clai@csir.co.za>\n\nARG GOSU_VERSION=1.9\nARG GOSU_DOWNLOAD_URL=\"https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-amd64\"\n#ARG TOMCAT_VERSION=7.0.70\nARG TOMCAT_VERSION=8.5.5\n\n# Download and install gosu\n#   https://github.com/tianon/gosu/releases\nRUN buildDeps='curl' HOME='/root' \\\n && set -x \\\n && apk add --update $buildDeps \\\n && curl -o gosu -fsSL \"$GOSU_DOWNLOAD_URL\" > gosu-amd64 \\\n && mv gosu /usr/bin/gosu \\\n && chmod +x /usr/bin/gosu \\\n && curl --silent --location --retry 3 --cacert /etc/ssl/certs/ca-certificates.crt \"https://archive.apache.org/dist/tomcat/tomcat-8/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz\" \\\n    | gunzip \\\n    | tar x -C /usr/ \\\n && mv /usr/apache-tomcat* /usr/tomcat \\\n && apk del --purge $buildDeps\nENV JAVA_HOME=/usr/lib/jvm/default-jvm\n# SET CATALINE_HOME and PATH\nENV CATALINA_HOME /usr/tomcat\nENV JMX false\nENV JMX_PORT 9004\nENV JMX_HOSTNAME localhost\nENV DEBUG_PORT 8000\nENV PERM 128m\nENV MAXPERM 256m\nENV MINMEM 128m\nENV MAXMEM 512m\nENV PATH $PATH:$CATALINA_HOME/bin\nADD setenv.sh $CATALINA_HOME/bin/\nADD docker-entrypoint.sh /docker-entrypoint.sh\nENTRYPOINT /docker-entrypoint.sh\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "setenv.sh",
+        "dest": "$CATALINA_HOME/bin/"
+      },
+      {
+        "source": "docker-entrypoint.sh",
+        "dest": "/docker-entrypoint.sh"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "buildDeps='curl' HOME='/root'  && set -x  && apk add --update $buildDeps  && curl -o gosu -fsSL \"$GOSU_DOWNLOAD_URL\" > gosu-amd64  && mv gosu /usr/bin/gosu  && chmod +x /usr/bin/gosu  && curl --silent --location --retry 3 --cacert /etc/ssl/certs/ca-certificates.crt \"https://archive.apache.org/dist/tomcat/tomcat-8/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz\"     | gunzip     | tar x -C /usr/  && mv /usr/apache-tomcat* /usr/tomcat  && apk del --purge $buildDeps"
+    ],
+    "workdir": [],
+    "from": "frolvlad/alpine-oraclejdk8:latest",
+    "maintainer": "Cheewai Lai <clai@csir.co.za>",
+    "arg": "TOMCAT_VERSION=8.5.5",
+    "env": {
+      "JAVA_HOME": "/usr/lib/jvm/default-jvm",
+      "CATALINA_HOME": "/usr/tomcat",
+      "JMX": "false",
+      "JMX_PORT": "9004",
+      "JMX_HOSTNAME": "localhost",
+      "DEBUG_PORT": "8000",
+      "PERM": "128m",
+      "MAXPERM": "256m",
+      "MINMEM": "128m",
+      "MAXMEM": "512m",
+      "PATH": "$PATH:$CATALINA_HOME/bin"
+    },
+    "entrypoint": "/docker-entrypoint.sh"
+  },
+  "source_repository_url": "https://github.com/cynici/tomcat.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/cynici/tomcat",
+  "docker_repository": "cheewai/tomcat",
+  "docker_image": "cheewai/tomcat",
+  "parameters_schema": {
+    "JAVA_HOME": {
+      "default": "/usr/lib/jvm/default-jvm",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CATALINA_HOME": {
+      "default": "/usr/tomcat",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JMX": {
+      "default": "false",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JMX_PORT": {
+      "default": "9004",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "JMX_HOSTNAME": {
+      "default": "localhost",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEBUG_PORT": {
+      "default": "8000",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PERM": {
+      "default": "128m",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAXPERM": {
+      "default": "256m",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MINMEM": {
+      "default": "128m",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MAXMEM": {
+      "default": "512m",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:$CATALINA_HOME/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "cheewai/tomcat",
+  "revision": "tomcat8",
+  "uris": [
+    "https://hub.docker.com/r/cheewai/tomcat",
+    "https://hub.docker.com/v2/repositories/cheewai/tomcat",
+    "https://github.com/cynici/tomcat.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Java",
+    "Type/Middleware/Application Server/Tomcat"
+  ],
+  "info_url": "https://hub.docker.com/r/cheewai/tomcat",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

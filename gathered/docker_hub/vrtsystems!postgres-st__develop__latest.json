@@ -1,0 +1,186 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/vrtsystems/postgres-st",
+    "repository_url": "https://hub.docker.com/v2/repositories/vrtsystems/postgres-st",
+    "tags_url": "https://hub.docker.com/v2/repositories/vrtsystems/postgres-st/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/vrtsystems/postgres-st/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/vrtsystems/postgres-st/autobuild",
+    "user": "vrtsystems",
+    "name": "postgres-st",
+    "namespace": "vrtsystems",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 503,
+    "last_updated": "2016-10-15T14:10:37.368539Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "develop",
+        "full_size": 287637878,
+        "id": 4522238,
+        "repository": 261530,
+        "creator": 327862,
+        "last_updater": 1052393,
+        "last_updated": "2016-10-15T14:10:37.004518Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.2.0",
+        "full_size": 268427971,
+        "id": 4572546,
+        "repository": 261530,
+        "creator": 327862,
+        "last_updater": 327862,
+        "last_updated": "2016-09-23T20:11:51.635827Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 268426911,
+        "id": 597568,
+        "repository": 261530,
+        "creator": 245531,
+        "last_updater": 327862,
+        "last_updated": "2016-09-19T20:37:41.364323Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.1.2",
+        "full_size": 269702917,
+        "id": 3955980,
+        "repository": 261530,
+        "creator": 585477,
+        "last_updater": 585477,
+        "last_updated": "2016-07-22T04:50:47.696399Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "0.1.1",
+        "full_size": 267954191,
+        "id": 3153454,
+        "repository": 261530,
+        "creator": 327862,
+        "last_updater": 327862,
+        "last_updated": "2016-05-31T20:08:22.021484Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          1
+        ]
+      },
+      {
+        "name": "0.1.0",
+        "full_size": 267316945,
+        "id": 2244059,
+        "repository": 261530,
+        "creator": 327862,
+        "last_updater": 327862,
+        "last_updated": "2016-03-30T01:37:54.457717Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "vrtsystems/docker-postgres-st"
+  },
+  "name": "vrtsystems/postgres-st Docker container",
+  "description": "PostgreSQL with PostGIS and temporal extensions, built on vrtsystems/baseimage.",
+  "readme": "# VRT Systems Docker PostgreSQL with spatiotemporal extensions\n\nPostgreSQL with spatial and temporal goodness ([PostGIS](http://postgis.net/) and [temporal\\_tables](http://pgxn.org/dist/temporal_tables/) extensions).\n\n# How to use this image\n\nThis image is based on the [vrtsystems/postgres image](https://registry.hub.docker.com/u/vrtsystems/postgres/) so can be called in the same way:\n\n        docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres\n\n...or\n\n        docker run --name some-app --link some-postgres:postgres -d application-that-uses-postgres\n\n..or with `psql`\n\n        docker run -it --link some-postgres:postgres --rm postgres sh -c 'exec psql -h \"$POSTGRES_PORT_5432_TCP_ADDR\" -p \"$POSTGRES_PORT_5432_TCP_PORT\" -U postgres'\n\n# Environment Variables\n\nThe same base PostgreSQL environment variables apply: `POSTGRES_USER`, `POSTGRES_PASSWORD` etc. (See [vrtsystems/postgres](https://registry.hub.docker.com/u/vrtsystems/postgres/) )\n\n# How to extend this image\n\nThis image can be extended in the same way the base [vrtsystems/postgres](https://registry.hub.docker.com/u/vrtsystems/postgres/) image can. In particular:\n\n## Shell scripts in poststart-init.d\n\nCreation of the PostGIS `EXTENSION` in postgres requires features not available in the postgres `--single` mode which is used in the `prestart-init.d` customisation feature of the postgres image. Consequently, the spatial and temporal extensions are activated in `poststart-init.d` with the file `10_create_extensions.sh`.\n\nIf you are adding your own initialisation scripts, **be aware** that if they rely on the extensions existing, they need to be named such that they will execute after `10_create_extensions.sh`. A good way to manage the sequencing of your init is to continue the numbered naming convention. \n\n## Loading initial data into versioned tables.\n\nThe temporal tables extension assumes (once activated on a table) that every edit is to be versioned and timestamped with the current *system time*. If you are deploying an application that requires a set of tables to be versioned against system time but the data relates to *application time* beginning before your data load, then you may wish to load this reference data with a system period starting at some earlier point.\n\nTo do this, use the `poststart-init.d` feature of the [vrtsystems/postgres](https://registry.hub.docker.com/u/vrtsystems/postgres/) image on [github](https://registry.hub.docker.com/u/vrtsystems/postgres/), and:\n\n1. Create your tables and history tables as per the temporal\\_tables extension.\n2. Load your data, setting the system time period column with the time range of your choice\n3. Activate the tgemporal table trigger as per the temporal extension documentation.\n\nYou can sequence these activities with psql inside a single script, or by numbering your init scripts so they load in order. If you wish to have the start date for all reference data loaded set to a common application epoch start, you can use an environment variable. The following example shows the use of an `INIT_EPOCH` variable that can be overriden at container runtime, but defaults to the Unix timestamp epoch start  as follows (and then set it when you run the container):\n\n\t#!/bin/sh\n\t: ${INIT_EPOCH:=\"'1970-01-01 00:00:00.000000-00'\"}\n\tpsql -d $POSTGRES_DB -U $POSTGRES_USER<<- EOSQL\n\tINSERT INTO tag_kind (name, sys_period, description, is_haystack) VALUES \n\t    ('Marker', tstzrange($INIT_EPOCH, NULL), 'Marker annotation', 't'),\n\t    ('Bool', tstzrange($INIT_EPOCH, NULL), 'Boolean (True/False)', 't'),\n\t    ('Number', tstzrange($INIT_EPOCH, NULL), 'Number (integer or floating point)', 't'),\n\t    ('Str', tstzrange($INIT_EPOCH, NULL), 'Unicode character string', 't'),\n\t    ('Uri', tstzrange($INIT_EPOCH, NULL), 'Unversial Resource Identifier', 't'),\n\t    ('Ref', tstzrange($INIT_EPOCH, NULL), 'Reference to another entity', 't'),\n\t    ('Bin', tstzrange($INIT_EPOCH, NULL), 'Binary blob', 't'),\n\t    ('Date', tstzrange($INIT_EPOCH, NULL), 'Date (no time of day)', 't'),\n\t    ('Time', tstzrange($INIT_EPOCH, NULL), 'Time of day (no date)', 't'),\n\t    ('DateTime', tstzrange($INIT_EPOCH, NULL), 'A timestamp with timezone', 't'),\n\t    ('Coord', tstzrange($INIT_EPOCH, NULL), 'Geographic coordinate (latitude/longitude)', 't'),\n\t    ('Obj', tstzrange($INIT_EPOCH, NULL), 'Object', 't');\n\tEOSQL",
+  "dockerfile": "# vim:set ft=dockerfile:\n\n# Base on VRT Postgres Image\nFROM vrtsystems/postgres:develop\nMAINTAINER VRT Engineering <engineering@vrt.com.au>\n\nENV PG_MAJOR 9.3\nENV PG_VERSION 9.3.14-1.pgdg80+1\nENV PG_POSTGIS 2.1\nENV PG_TEMPORAL 1.0.1\n\nRUN apt-get update && apt-get -y install unzip build-essential \\\n\t\tpostgresql-server-dev-$PG_MAJOR=$PG_VERSION \\\n\t\tpostgresql-$PG_MAJOR-postgis-$PG_POSTGIS \\\n\t&& mkdir /tmp/temporal \\\n\t&& curl http://api.pgxn.org/dist/temporal_tables/1.0.1/temporal_tables-$PG_TEMPORAL.zip > /tmp/temporal.zip \\\n\t&& cd /tmp && unzip temporal.zip \\\n\t&& cd /tmp/temporal_tables-$PG_TEMPORAL/ \\\n\t&& make && make install \\\n\t&& cd / && rm -fr /tmp/temporal* \\\n\t&& apt-get -y purge postgresql-server-dev-$PG_MAJOR unzip build-essential \\\n\t&& apt-get -y autoremove \\\n\t&& apt-get -y clean \\\n\t&& rm -rf /var/lib/apt/lists/*\n\nCOPY 10_create_extensions.sh /usr/local/etc/docker-postgres/poststart-init.d/\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get -y install unzip build-essential \t\tpostgresql-server-dev-$PG_MAJOR=$PG_VERSION \t\tpostgresql-$PG_MAJOR-postgis-$PG_POSTGIS \t&& mkdir /tmp/temporal \t&& curl http://api.pgxn.org/dist/temporal_tables/1.0.1/temporal_tables-$PG_TEMPORAL.zip > /tmp/temporal.zip \t&& cd /tmp && unzip temporal.zip \t&& cd /tmp/temporal_tables-$PG_TEMPORAL/ \t&& make && make install \t&& cd / && rm -fr /tmp/temporal* \t&& apt-get -y purge postgresql-server-dev-$PG_MAJOR unzip build-essential \t&& apt-get -y autoremove \t&& apt-get -y clean \t&& rm -rf /var/lib/apt/lists/*"
+    ],
+    "workdir": [],
+    "from": "vrtsystems/postgres:develop",
+    "maintainer": "VRT Engineering <engineering@vrt.com.au>",
+    "env": {
+      "PG_MAJOR": "9.3",
+      "PG_VERSION": "9.3.14-1.pgdg80+1",
+      "PG_POSTGIS": "2.1",
+      "PG_TEMPORAL": "1.0.1"
+    },
+    "copy": "10_create_extensions.sh /usr/local/etc/docker-postgres/poststart-init.d/"
+  },
+  "source_repository_url": "https://bitbucket.org/vrtsystems/docker-postgres-st.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/vrtsystems/docker-postgres-st",
+  "docker_repository": "vrtsystems/postgres-st",
+  "docker_image": "vrtsystems/postgres-st",
+  "parameters_schema": {
+    "PG_MAJOR": {
+      "default": "9.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PG_VERSION": {
+      "default": "9.3.14-1.pgdg80+1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PG_POSTGIS": {
+      "default": "2.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PG_TEMPORAL": {
+      "default": "1.0.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "vrtsystems/postgres-st",
+  "revision": "develop",
+  "uris": [
+    "https://hub.docker.com/r/vrtsystems/postgres-st",
+    "https://hub.docker.com/v2/repositories/vrtsystems/postgres-st",
+    "https://bitbucket.org/vrtsystems/docker-postgres-st.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/vrtsystems/postgres-st",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

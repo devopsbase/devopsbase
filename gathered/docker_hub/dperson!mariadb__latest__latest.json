@@ -1,0 +1,95 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/dperson/mariadb",
+    "repository_url": "https://hub.docker.com/v2/repositories/dperson/mariadb",
+    "tags_url": "https://hub.docker.com/v2/repositories/dperson/mariadb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/dperson/mariadb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/dperson/mariadb/autobuild",
+    "user": "dperson",
+    "name": "mariadb",
+    "namespace": "dperson",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 852,
+    "last_updated": "2016-10-15T02:59:34.747687Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 101334833,
+        "id": 52620,
+        "repository": 168852,
+        "creator": 102881,
+        "last_updater": 102881,
+        "last_updated": "2016-10-15T02:59:34.333932Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "dperson/mariadb"
+  },
+  "name": "dperson/mariadb Docker container",
+  "description": "",
+  "readme": "[![logo](https://raw.githubusercontent.com/dperson/mariadb/master/logo.png)](https://mariadb.org/)\n\n# MariaDB\n\nMariaDB docker container\n\n# What is MariaDB?\n\nMariaDB is a community-developed fork of the MySQL relational database\nmanagement system intended to remain free under the GNU GPL. Being a fork of\na leading open source software system, it is notable for being led by the\noriginal developers of MySQL, who forked it due to concerns over its acquisition\nby Oracle.[5] Contributors are required to share their copyright with the\nMariaDB Foundation.\n\n# How to use this image\n\nWhen started MariaDB container will listen on port 3306.\n\n## Hosting a MariaDB instance on port 3306\n\n    sudo docker run -it -p 3306:3306 -d dperson/mariadb\n\n## Configuration\n\n    sudo docker run -it --rm dperson/mariadb -h\n\n    Usage: mariadb.sh [-opt] [command]\n    Options (fields in '[]' are optional, '<>' are required):\n        -h          This help\n        -t \"\"       Configure timezone\n                    possible arg: \"[timezone]\" - zoneinfo timezone for container\n\n    The 'command' (if provided and valid) will be run instead of mariadb\n\nENVIRONMENT VARIABLES (only available with `docker run`)\n\n * `SQL_ROOT_PASSWORD` - Will set root password when initializing container\n * `SQL_ALLOW_EMPTY_PASSWORD` - Allow empty passwords (bad idea)\n * `DATABASE` - Will create DB when initializing container\n * `SQL_USER` - Will create user when initializing container\n * `SQL_PASSWORD` - Will be used in creating user above\n * `TZ` - As above, configure the zoneinfo timezone, IE `EST5EDT`\n * `USERID` - Set the UID for the DB user\n * `GROUPID` - Set the GID for the DB user\n\n## Examples\n\nAny of the commands can be run at creation with `docker run` or later with\n`docker exec -it mariadb.sh` (as of version 1.3 of docker).\n\n### Setting the Timezone\n\n    sudo docker run -it -p 3306:3306 -d dperson/mariadb -t EST5EDT\n\nOR using `environment variables`\n\n    sudo docker run -it -p 3306:3306 -e TZ=EST5EDT -d dperson/mariadb\n\nWill get you the same settings as\n\n    sudo docker run -it --name db -p 3306:3306 -d dperson/mariadb\n    sudo docker exec -it db mariadb.sh -t EST5EDT ls -AlF /etc/localtime\n    sudo docker restart db\n\n## Complex configuration\n\n[Example configs](https://mariadb.com/kb/en/mariadb/documentation/)\n\nIf you wish to adapt the default configuration, use something like the following\nto copy it from a running container:\n\n    sudo docker cp db:/etc/mysql /some/path\n\nYou can use the modified configuration with:\n\n    sudo docker run -it --name db -p 3306:3306 -v /some/path:/etc/mysql:ro \\\n                -d dperson/mariadb\n\n# User Feedback\n\n## Issues\n\nIf you have any problems with or questions about this image, please contact me\nthrough a [GitHub issue](https://github.com/dperson/mariadb/issues).",
+  "dockerfile": "FROM debian:jessie\nMAINTAINER David Personette <dperson@gmail.com>\n\n# Install mariadb\nRUN export DEBIAN_FRONTEND='noninteractive' && \\\n    export MAJOR='10.0' && \\\n    groupadd -r mysql && \\\n    useradd -c 'MariaDB' -d /var/lib/mysql -g mysql -r mysql && \\\n    apt-key adv --keyserver pgp.mit.edu --recv-keys \\\n                199369E5404BD5FC7D2FE43BCBCB082A1BB943DB && \\\n    /bin/echo -n \"deb http://ftp.osuosl.org/pub/mariadb/repo/$MAJOR/debian \" \\\n                >/etc/apt/sources.list.d/mariadb.list && \\\n    echo \"jessie main\" >>/etc/apt/sources.list.d/mariadb.list && \\\n    /bin/echo -e 'Package: *\\nPin: release o=MariaDB\\nPin-Priority: 999' \\\n                >/etc/apt/preferences.d/mariadb && \\\n    { echo mariadb-server-$MAJOR mysql-server/root_password password unused; \\\n    echo mariadb-server-$MAJOR mysql-server/root_password_again password unused\\\n                ; } | debconf-set-selections && \\\n    apt-get update -qq && \\\n    apt-get install -qqy --no-install-recommends mariadb-server \\\n                $(apt-get -s dist-upgrade|awk '/^Inst.*ecurity/ {print $2}') &&\\\n    sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/my.cnf && \\\n    sed -i '/skip-external-locking/a \\skip-host-cache\\nskip-name-resolve' \\\n                /etc/mysql/my.cnf && \\\n    sed -i '/= utf8/s/^#//' /etc/mysql/conf.d/mariadb.cnf && \\\n    apt-get clean && \\\n    rm -rf /var/lib/apt/lists/* /tmp/* /var/lib/mysql && \\\n    { mkdir -p /var/lib/mysql || :; } && \\\n    chown -Rh mysql. /var/lib/mysql\n#    sed -i '/max_binlog_size/a binlog_format           = MIXED' \\\n#                /etc/mysql/my.cnf && \\\nCOPY mariadb.sh /usr/bin/\n\nEXPOSE 3306\n\nVOLUME [\"/etc/mysql\", \"/var/lib/mysql\"]\n\nENTRYPOINT [\"mariadb.sh\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      "[\"/etc/mysql\", \"/var/lib/mysql\"]"
+    ],
+    "run": [
+      "export DEBIAN_FRONTEND='noninteractive' &&     export MAJOR='10.0' &&     groupadd -r mysql &&     useradd -c 'MariaDB' -d /var/lib/mysql -g mysql -r mysql &&     apt-key adv --keyserver pgp.mit.edu --recv-keys                 199369E5404BD5FC7D2FE43BCBCB082A1BB943DB &&     /bin/echo -n \"deb http://ftp.osuosl.org/pub/mariadb/repo/$MAJOR/debian \"                 >/etc/apt/sources.list.d/mariadb.list &&     echo \"jessie main\" >>/etc/apt/sources.list.d/mariadb.list &&     /bin/echo -e 'Package: *\\nPin: release o=MariaDB\\nPin-Priority: 999'                 >/etc/apt/preferences.d/mariadb &&     { echo mariadb-server-$MAJOR mysql-server/root_password password unused;     echo mariadb-server-$MAJOR mysql-server/root_password_again password unused                ; } | debconf-set-selections &&     apt-get update -qq &&     apt-get install -qqy --no-install-recommends mariadb-server                 $(apt-get -s dist-upgrade|awk '/^Inst.*ecurity/ {print $2}') &&    sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/my.cnf &&     sed -i '/skip-external-locking/a \\skip-host-cache\\nskip-name-resolve'                 /etc/mysql/my.cnf &&     sed -i '/= utf8/s/^#//' /etc/mysql/conf.d/mariadb.cnf &&     apt-get clean &&     rm -rf /var/lib/apt/lists/* /tmp/* /var/lib/mysql &&     { mkdir -p /var/lib/mysql || :; } &&     chown -Rh mysql. /var/lib/mysql"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "maintainer": "David Personette <dperson@gmail.com>",
+    "entrypoint": "[\"mariadb.sh\"]"
+  },
+  "source_repository_url": "https://github.com/dperson/mariadb.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/dperson/mariadb",
+  "docker_repository": "dperson/mariadb",
+  "docker_image": "dperson/mariadb",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "dperson/mariadb",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/dperson/mariadb",
+    "https://hub.docker.com/v2/repositories/dperson/mariadb",
+    "https://github.com/dperson/mariadb.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/dperson/mariadb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,105 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/davidj/django-production",
+    "repository_url": "https://hub.docker.com/v2/repositories/davidj/django-production",
+    "tags_url": "https://hub.docker.com/v2/repositories/davidj/django-production/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/davidj/django-production/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/davidj/django-production/autobuild",
+    "user": "davidj",
+    "name": "django-production",
+    "namespace": "davidj",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 133,
+    "last_updated": "2016-03-18T18:35:13.083837Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 312205145,
+        "id": 1261684,
+        "repository": 386336,
+        "creator": 273531,
+        "last_updater": 273531,
+        "last_updated": "2016-03-18T18:35:12.321832Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "davidj-docker/django-production"
+  },
+  "name": "davidj/django-production Docker container",
+  "description": "Creates a Django (Python 2.7.x) production environment on Ubuntu Trusty, running on uWSGI and nginx.",
+  "readme": "# django-production\nDockerfile that creates a Django (Python 2.7.x) production environment on Ubuntu Trusty, running on uWSGI and nginx, designed for deployment on an Apache Mesos/Marathon cluster.\n\n# Example Usage\n\nTo deploy your Django app, copy the project into a directory and ensure it has a structure similar to that shown below. In the root of the new directory, copy your pip requirements into \"requirements.txt\". In the same directory, you will then need to create a \"start.sh\" file with the parameters of your project defined (see example below directory structure).\n\n```\n.\n├── example-project\n│   ├── example_app\n│   │   ├── __init__.py\n│   │   ├── settings.py\n│   │   ├── urls.py\n│   │   └── wsgi.py\n│   ├── manage.py\n│   ├── ExampleApp\n│   │   ├── admin.py\n│   │   ├── __init__.py\n│   │   ├── models.py\n│   │   ├── tests.py\n│   │   └── views\n│   │       ├── __init__.py\n│   │       ├── ExampleView.py\n│   │       └── Health.py\n│   ├── static\n│   │   └── favicon.ico\n│   └── templates\n│       └── base.html\n├── requirements.txt\n└── start.sh\n```\n\n# start.sh\n\n```bash\n#!/bin/bash\n\ndjango-nginx-setup --working-directory example-project --static-directory static --static-alias /static --wsgi-module example_app.wsgi\n```\n\n# Running the container\n\n```bash\ndocker run -d -p 8125:80 -v /path/to/your/directory:/app davidj/django-production\n```\n\nYou can now go to http://localhost:8125 to see your site.\n\n# Troubleshooting\n\nYou may need to add the path to your project at run-time, by editing wsgi.py and adding in these lines:\n\n```python\nimport sys\n\npath = '/app/example-project/'\n\nif path not in sys.path:\n    sys.path.append(path)\n```\n\nIf you are not using a domain, in your settings.py file you can use this ALLOWED_HOSTS block:\n\n```python\nALLOWED_HOSTS = [\n    '.ec2.internal',  # If you're using AWS\n    '0.0.0.0',  # If you're using HAProxy health checks\n    '127.0.0.1',\n    'localhost'\n]\n```\n\nIn your urls.py file, if you're using a health check; Marathon will not follow the APPEND_SLASH redirect properly, so make sure your url pattern works with and without the slash:\n\n```python\nfrom ExampleApp.views import *\nfrom django.views.decorators.csrf import csrf_exempt\n\nurlpatterns = patterns(\n    url(r'^health/?$', csrf_exempt(Health.as_view())),\n)\n```\n",
+  "dockerfile": "FROM ubuntu:trusty\n\nMAINTAINER David J <davidj@softcom.com>\n\nRUN ln -snf /bin/bash /bin/sh\n\n# Copy setup script to system\nCOPY setup.sh /usr/local/bin/django-nginx-setup\nRUN chmod +x /usr/local/bin/django-nginx-setup\n\n# Replace apt sources.list to fetch packages from AWS EC2\nRUN sed -i 's/archive.ubuntu.com/us-east-1.ec2.archive.ubuntu.com/' /etc/apt/sources.list\n\n# Update and upgrade system\nRUN DEBIAN_FRONTEND=noninteractive apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y upgrade\n\n# Install dependencies for building python packages (add any additional here if necessary)\nRUN DEBIAN_FRONTEND=noninteractive apt-get -y install build-essential python python-dev libmysqlclient-dev libpq-dev libssl-dev libffi-dev python-setuptools python-pip qt5-default libqt5webkit5-dev python-lxml xvfb nginx supervisor\n\n# Install UWSGI and virtualenv globally\nRUN pip install uwsgi\nRUN pip install virtualenv\n\n# Create virtualenv\nWORKDIR /.virtualenv\nRUN virtualenv venv\n\nWORKDIR /app\n\nEXPOSE 80\n\n# Run user supplied script with information about Django project\nENTRYPOINT [\"sh\", \"/app/start.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "ln -snf /bin/bash /bin/sh",
+      "chmod +x /usr/local/bin/django-nginx-setup",
+      "sed -i 's/archive.ubuntu.com/us-east-1.ec2.archive.ubuntu.com/' /etc/apt/sources.list",
+      "DEBIAN_FRONTEND=noninteractive apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y upgrade",
+      "DEBIAN_FRONTEND=noninteractive apt-get -y install build-essential python python-dev libmysqlclient-dev libpq-dev libssl-dev libffi-dev python-setuptools python-pip qt5-default libqt5webkit5-dev python-lxml xvfb nginx supervisor",
+      "pip install uwsgi",
+      "pip install virtualenv",
+      "virtualenv venv"
+    ],
+    "workdir": [
+      "/.virtualenv",
+      "/app"
+    ],
+    "from": "ubuntu:trusty",
+    "maintainer": "David J <davidj@softcom.com>",
+    "copy": "setup.sh /usr/local/bin/django-nginx-setup",
+    "entrypoint": "[\"sh\", \"/app/start.sh\"]"
+  },
+  "source_repository_url": "https://github.com/davidj-docker/django-production.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/davidj-docker/django-production",
+  "docker_repository": "davidj/django-production",
+  "docker_image": "davidj/django-production",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "davidj/django-production",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/davidj/django-production",
+    "https://hub.docker.com/v2/repositories/davidj/django-production",
+    "https://github.com/davidj-docker/django-production.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://hub.docker.com/r/davidj/django-production",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

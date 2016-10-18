@@ -1,0 +1,107 @@
+{
+  "name": "logstash-agent Juju charm",
+  "juju_charm_name": "logstash-agent",
+  "revision": "cs:precise/logstash-agent-2",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/logstash-agent",
+    "https://jujucharms.com/logstash-agent/precise",
+    "https://jujucharms.com/logstash-agent/precise/2",
+    "https://api.jujucharms.com/v5/logstash-agent",
+    "https://api.jujucharms.com/v5/precise/logstash-agent",
+    "https://api.jujucharms.com/v5/precise/logstash-agent-2"
+  ],
+  "labels": [
+    "Juju charm",
+    "misc",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Devopsware/Logging/Logstash",
+    "Type/Middleware/Data Store/Key-Value/Redis"
+  ],
+  "info_url": "https://jujucharms.com/logstash-agent",
+  "package_url": "https://api.jujucharms.com/v5/precise/logstash-agent-2/archive",
+  "created": "2015-06-17T09:37:01.511Z",
+  "updated": "2015-06-17T09:37:01.511Z",
+  "description": "Logstash agent server\n\nInstalls the logstash agent.   useless without logstash indexer.\noutputs to logstash-indexer using redis.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": true,
+  "juju_charm_series": "precise",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= precise"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/redis",
+      "self_resolve": true,
+      "juju_interface": "redis",
+      "juju_name": "input",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/juju-info",
+      "self_resolve": true,
+      "juju_interface": "juju-info",
+      "juju_name": "juju-info",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "CustomLogFile": {
+      "type": "string",
+      "description": "location of log you want to parse ... will accept wildcards\ntreat it like an array,  even if only one file.\nUsage:  \"['/var/log/test/test*.log', '/opt/test/logs/*.log']\"\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "CustomLogType": {
+      "type": "string",
+      "description": "logstash Type setting for log file",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "InputTwitterEnabled": {
+      "type": "boolean",
+      "description": "enable twitter input.   before enabling need to also setting\nInputTwitterUsername, InputTwitterPassword, InputTwitterKeywords\n",
+      "default": false,
+      "mapping": "charm_option"
+    },
+    "InputTwitterKeywords": {
+      "type": "string",
+      "description": "twitter keywords\ntreat it like an array,  even if only one keyword.\nUsage:  \"['word1', 'word2']\"\n",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "InputTwitterPassword": {
+      "type": "string",
+      "description": "twitter password",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "InputTwitterUsername": {
+      "type": "string",
+      "description": "twitter username",
+      "default": "",
+      "mapping": "charm_option"
+    },
+    "Reload": {
+      "type": "string",
+      "description": "change this string to reload logstash-agent checks.\nwill rescan system for known log types and modify file inputs to match.\n",
+      "default": "0",
+      "mapping": "charm_option"
+    }
+  },
+  "license": "# logstash-indexer-juju-charm\n\nJuju Charm for logstash agent.\n\nwill download the logastash monolithic.jar every time unless you have a copy in files/charm/\n\ncommon.sh provides a bunch of config stuff bits ... useful to customize locations etc.\n\n\nInputs\n: File  -  /var/log/syslog and some others\nOutputs\n: Redis -  configured to use redis as a message bus to logstash server\n\n\nneeds to join relationship with logstash-indexer to do anything useful, although it will output to a text file without for testing/debug purposes.\n\nwill search for known local log files and add logstash inputs for them.   This means if you add it to an apache server it will find the /var/log/apache2 directory and start sucking down logs from that dir.\n\n# Configuration:\n\nmid-flight configurable variables found in config.yaml.     modify Reload to get it to rescan server for known log files.   Add custom log inputs,  Add twitter keyword input.\n\npre-flight configuration variables found in hooks/common.sh  ...  don't change these unless you know what you're doing.\n\n# Examples:\n\n*see logstash-indexer charm's README.md file for usage examples showing the full charm stack.*\n\n## secure Kibana with auth-proxy and log it's apache configs\n\n*strong example delivers basic logstash-indexer stack also*\n\n    # deploy Kibana Charm\n    juju deploy kibana\n    # deploy Auth-Proxy subordinate charm to kibana\n    juju deploy --repository=examples local:precise/auth-proxy\n    juju add-relation auth-proxy kibana\n    juju set auth-proxy ServerAdmin=\"kibana@example.com\" ServerName=\"kibana.example.com\" DestinationURL=\"http://127.0.0.1:5601/\"\n    # deploy logstash-indexer and connect Kibana to it.\n    juju deploy logstash-indexer\n    juju add-relation kibana logstash-indexer:rest\n    # deploy Logstash-Indexer subordinate charm to kibana and connect it to Logstash-Indexer\n    juju deploy --repository=logstash local:precise/logstash-agent\n    juju add-relation logstash-agent kibana\n    juju add-relation logstash-agent:input logstash-indexer:input\n\n\n## Log Twitter mentions of logstash, devops, ubuntu\n\n*weak example for demo purposes,  really need to connect to logstash-indexer and kibana etc to be useful.*\n\n    juju deploy ubuntu\n    juju deploy --repository=logstash local:precise/logstash-agent\n    juju add-relation logstash-agent ubuntu\n    juju set logstash-agent InputTwitterEnabled=true InputTwitterUsername=\"derpaderp\" InputTwitterPassword=\"wallybollysollynolly\" InputTwitterKeywords=\"['logstash','devops','ubuntu']\"\n\n## Read apt package manager log files\n\n*weak example for demo purposes,  really need to connect to logstash-indexer and kibana etc to be useful.*\n\n    juju deploy ubuntu\n    juju deploy --repository=logstash local:precise/logstash-agent\n    juju add-relation logstash-agent ubuntu\n    juju set logstash-agent CustomLogFile=\"['/var/log/apt/term.log','/var/log/apt/history.log']\" CustomLogType=\"apt\"\n\n\n",
+  "readme": "# logstash-indexer-juju-charm\n\nJuju Charm for logstash agent.\n\nwill download the logastash monolithic.jar every time unless you have a copy in files/charm/\n\ncommon.sh provides a bunch of config stuff bits ... useful to customize locations etc.\n\n\nInputs\n: File  -  /var/log/syslog and some others\nOutputs\n: Redis -  configured to use redis as a message bus to logstash server\n\n\nneeds to join relationship with logstash-indexer to do anything useful, although it will output to a text file without for testing/debug purposes.\n\nwill search for known local log files and add logstash inputs for them.   This means if you add it to an apache server it will find the /var/log/apache2 directory and start sucking down logs from that dir.\n\n# Configuration:\n\nmid-flight configurable variables found in config.yaml.     modify Reload to get it to rescan server for known log files.   Add custom log inputs,  Add twitter keyword input.\n\npre-flight configuration variables found in hooks/common.sh  ...  don't change these unless you know what you're doing.\n\n# Examples:\n\n*see logstash-indexer charm's README.md file for usage examples showing the full charm stack.*\n\n## secure Kibana with auth-proxy and log it's apache configs\n\n*strong example delivers basic logstash-indexer stack also*\n\n    # deploy Kibana Charm\n    juju deploy kibana\n    # deploy Auth-Proxy subordinate charm to kibana\n    juju deploy --repository=examples local:precise/auth-proxy\n    juju add-relation auth-proxy kibana\n    juju set auth-proxy ServerAdmin=\"kibana@example.com\" ServerName=\"kibana.example.com\" DestinationURL=\"http://127.0.0.1:5601/\"\n    # deploy logstash-indexer and connect Kibana to it.\n    juju deploy logstash-indexer\n    juju add-relation kibana logstash-indexer:rest\n    # deploy Logstash-Indexer subordinate charm to kibana and connect it to Logstash-Indexer\n    juju deploy --repository=logstash local:precise/logstash-agent\n    juju add-relation logstash-agent kibana\n    juju add-relation logstash-agent:input logstash-indexer:input\n\n\n## Log Twitter mentions of logstash, devops, ubuntu\n\n*weak example for demo purposes,  really need to connect to logstash-indexer and kibana etc to be useful.*\n\n    juju deploy ubuntu\n    juju deploy --repository=logstash local:precise/logstash-agent\n    juju add-relation logstash-agent ubuntu\n    juju set logstash-agent InputTwitterEnabled=true InputTwitterUsername=\"derpaderp\" InputTwitterPassword=\"wallybollysollynolly\" InputTwitterKeywords=\"['logstash','devops','ubuntu']\"\n\n## Read apt package manager log files\n\n*weak example for demo purposes,  really need to connect to logstash-indexer and kibana etc to be useful.*\n\n    juju deploy ubuntu\n    juju deploy --repository=logstash local:precise/logstash-agent\n    juju add-relation logstash-agent ubuntu\n    juju set logstash-agent CustomLogFile=\"['/var/log/apt/term.log','/var/log/apt/history.log']\" CustomLogType=\"apt\"\n\n\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

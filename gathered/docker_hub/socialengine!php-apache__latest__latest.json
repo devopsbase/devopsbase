@@ -1,0 +1,163 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/socialengine/php-apache",
+    "repository_url": "https://hub.docker.com/v2/repositories/socialengine/php-apache",
+    "tags_url": "https://hub.docker.com/v2/repositories/socialengine/php-apache/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/socialengine/php-apache/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/socialengine/php-apache/autobuild",
+    "user": "socialengine",
+    "name": "php-apache",
+    "namespace": "socialengine",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 8481,
+    "last_updated": "2016-10-15T03:21:48.093058Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 179468007,
+        "id": 579813,
+        "repository": 258196,
+        "creator": 73111,
+        "last_updater": 73112,
+        "last_updated": "2016-10-15T03:21:47.624955Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "7.0",
+        "full_size": 183344845,
+        "id": 1106941,
+        "repository": 258196,
+        "creator": 73111,
+        "last_updater": 73112,
+        "last_updated": "2016-10-15T03:21:32.408770Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5.6",
+        "full_size": 179468068,
+        "id": 579811,
+        "repository": 258196,
+        "creator": 73111,
+        "last_updater": 73112,
+        "last_updated": "2016-10-15T03:20:36.305662Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5.5",
+        "full_size": 178350824,
+        "id": 640306,
+        "repository": 258196,
+        "creator": 73111,
+        "last_updater": 73112,
+        "last_updated": "2016-10-15T03:17:59.657597Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "SocialEngine/docker-php-apache"
+  },
+  "name": "socialengine/php-apache Docker container",
+  "description": "This is an image with PHP, Composer, Apache serving from public/ folder. Ideal for Laravel",
+  "readme": "[![docker pull socialengine/apache-php][image shield]][docker hub]\n\nThis is a Docker image with PHP, Composer, and Apache (running in \nForeground) serving from public/ folder. Ideal for Laravel, Lumen and other \nmodern php apps.\n\n## Supported tags and `Dockerfile` links\n\n-\t[`7.0` (*7.0/Dockerfile*)][7.0]\n-\t[`5.6` (*5.6/Dockerfile*)][5.6]\n-\t[`5.5` (*5.5/Dockerfile*)][5.5]\n\n## Included on top of [base][base image] PHP image\n\n- mbstring \n- mcrypt \n- zip\n- composer (avaiable globally)\n- xdebug (enabled with `-e PHP_XDEBUG=1`)\n\n# App Setup\n\nThis docker image is built for `index.php` file being in the `public/` \ndirectory. `mod_rewrite` is enabled.\n\nAt a minimum, you will want this in your `Dockerfile`:\n\n```Dockerfile\nFROM socialengine/php-apache:5.6\n\nCOPY . /app\n\nRUN composer install\n```\n\nThen you can build & run your app in the docker container.\n\nIf you want to enable xdebug:\n\n```bash\n$ docker run -e PHP_XDEBUG=1 [your image]\n```\n\nSee [example](example/) for further info. \n\n## Check Links\n\nA lot of times, your depedant services aren't ready to go as fast as your app\n\nFor that, there's a `check_docker_link` command that will check TCP to make \nsure its up\n\n```\nUsage: check_docker_link <name> <addr> <port>\n\n# Example\nif check_docker_link \"mysql\" \"${DB_1_PORT_3306_TCP_ADDR}\" \"${DB_1_PORT_3306_TCP_PORT}\"; then\n    export MYSQL_HOST=${DB_1_PORT_3306_TCP_ADDR}\n    export MYSQL_PORT=${DB_1_PORT_3306_TCP_PORT}\nfi\n```\n\n[base image]: https://github.com/docker-library/php\n[5.5]: https://github.com/SocialEngine/docker-php-apache/blob/master/versions/5.5/Dockerfile\n[5.6]: https://github.com/SocialEngine/docker-php-apache/blob/master/versions/5.6/Dockerfile\n[7.0]: https://github.com/SocialEngine/docker-php-apache/blob/master/versions/7.0/Dockerfile\n[image shield]: https://img.shields.io/badge/dockerhub-socialengine%2Fphp--apache-blue.svg\n[docker hub]: https://registry.hub.docker.com/u/socialengine/php-apache/\n",
+  "dockerfile": "FROM php:5.5-apache\nMAINTAINER Stepan Mazurov <stepan@socialengine.com>\n\nRUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \\\n\tlibmcrypt-dev \\\n    zlib1g-dev \\\n    telnet \\\n    git \\\n  && rm -rf /var/lib/apt/lists/*\n\nCOPY bin/* /usr/local/bin/\n\n# Setup bare-minimum extra extensions for Laravel & others\nRUN docker-php-ext-install mbstring mcrypt zip \\\n\t&& docker-php-pecl-install xdebug \\\n\t&& rm ${PHP_INI_DIR}/conf.d/docker-php-pecl-xdebug.ini\n\n# Install composer\nRUN curl -sS https://getcomposer.org/installer | php -- \\\n\t--install-dir=/usr/local/bin \\\n\t--filename=composer\n\n# You can use this to enable xdebug. start-apache2 script will enable xdebug\n# if PHP_XDEBUG is set to 1\nENV PHP_XDEBUG 0\nENV PHP_TIMEZONE \"UTC\"\n\n# The path that will be used to make Apache run under that user\nENV VOLUME_PATH /app/public\n\n# Setup apache\nRUN a2enmod rewrite\n\n# Copy configs\nCOPY virtual-host.conf /etc/apache2/sites-available/000-default.conf\nCOPY xdebug.ini ${PHP_INI_DIR}/conf.d/docker-php-pecl-xdebug.ini.disabled\nCOPY php.ini ${PHP_INI_DIR}/php.ini\n\n# Setup App\nRUN mkdir -p /app/public && chown -R www-data:www-data /app\n\nWORKDIR /app\n\nENTRYPOINT [\"setup-container\"]\n\nCMD [\"apache2-foreground\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \tlibmcrypt-dev     zlib1g-dev     telnet     git   && rm -rf /var/lib/apt/lists/*",
+      "docker-php-ext-install mbstring mcrypt zip \t&& docker-php-pecl-install xdebug \t&& rm ${PHP_INI_DIR}/conf.d/docker-php-pecl-xdebug.ini",
+      "curl -sS https://getcomposer.org/installer | php -- \t--install-dir=/usr/local/bin \t--filename=composer",
+      "a2enmod rewrite",
+      "mkdir -p /app/public && chown -R www-data:www-data /app"
+    ],
+    "workdir": [
+      "/app"
+    ],
+    "from": "php:5.5-apache",
+    "maintainer": "Stepan Mazurov <stepan@socialengine.com>",
+    "copy": "php.ini ${PHP_INI_DIR}/php.ini",
+    "env": {
+      "PHP_XDEBUG": "0",
+      "PHP_TIMEZONE": "\"UTC\"",
+      "VOLUME_PATH": "/app/public"
+    },
+    "entrypoint": "[\"setup-container\"]",
+    "cmd": "[\"apache2-foreground\"]"
+  },
+  "source_repository_url": "https://github.com/SocialEngine/docker-php-apache.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/SocialEngine/docker-php-apache",
+  "docker_repository": "socialengine/php-apache",
+  "docker_image": "socialengine/php-apache",
+  "parameters_schema": {
+    "PHP_XDEBUG": {
+      "default": "0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PHP_TIMEZONE": {
+      "default": "\"UTC\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "VOLUME_PATH": {
+      "default": "/app/public",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "socialengine/php-apache",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/socialengine/php-apache",
+    "https://hub.docker.com/v2/repositories/socialengine/php-apache",
+    "https://github.com/SocialEngine/docker-php-apache.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/socialengine/php-apache",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

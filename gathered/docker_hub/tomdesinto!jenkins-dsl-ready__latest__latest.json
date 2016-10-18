@@ -1,0 +1,95 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/tomdesinto/jenkins-dsl-ready",
+    "repository_url": "https://hub.docker.com/v2/repositories/tomdesinto/jenkins-dsl-ready",
+    "tags_url": "https://hub.docker.com/v2/repositories/tomdesinto/jenkins-dsl-ready/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/tomdesinto/jenkins-dsl-ready/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/tomdesinto/jenkins-dsl-ready/autobuild",
+    "user": "tomdesinto",
+    "name": "jenkins-dsl-ready",
+    "namespace": "tomdesinto",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 1634,
+    "last_updated": "2016-09-16T23:03:11.173504Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 376499599,
+        "id": 776025,
+        "repository": 295535,
+        "creator": 2051,
+        "last_updater": 2051,
+        "last_updated": "2016-09-16T22:39:27.571690Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "thomasleveil/docker-jenkins-dsl-ready"
+  },
+  "name": "tomdesinto/jenkins-dsl-ready Docker container",
+  "description": "Jenkins with the DSL plugin ready to create your jobs",
+  "readme": "Jenkins DSL ready\n=================\n\n[![](https://badge.imagelayers.io/tomdesinto/jenkins-dsl-ready:latest.svg)](https://imagelayers.io/?images=tomdesinto/jenkins-dsl-ready:latest 'Get your own badge on imagelayers.io')\n[![Build Status](https://travis-ci.org/thomasleveil/docker-jenkins-dsl-ready.svg?branch=master)](https://travis-ci.org/thomasleveil/docker-jenkins-dsl-ready)\n[![Join the chat at https://gitter.im/thomasleveil/docker-jenkins-dsl-ready](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/thomasleveil/docker-jenkins-dsl-ready?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)\n\nGoal: **automate** your Jenkins installation. Get **Jenkins and its jobs** ready with one docker command!\n\nThis Jenkins image is based on top of the [official Jenkins image][official-jenkins] and as such provides all its features.\nAdditionally, it comes with the **[Job DSL plugin][job-dsl] ready to use**.\n\n\ntl;dr\n-----\n\n    docker run -d -p 8080:8080 tomdesinto/jenkins-dsl-ready\n\n    docker run -d -p 8080:8080 -v /your/dsl/files/:/usr/share/jenkins/ref/jobs/SeedJob/workspace/:ro tomdesinto/jenkins-dsl-ready\n\n    docker run -d -p 8080:8080 -e SEEDJOB_GIT=https://your.repo.git tomdesinto/jenkins-dsl-ready\n\n    docker run -d -p 8080:8080 -e SEEDJOB_SVN=svn://your.repo tomdesinto/jenkins-dsl-ready\n\nWhat does it do?\n----------------\n\nWhen you start the container the following happens:\n\n1. All elements (plugins, jobs, config, etc) from `/usr/share/jenkins/ref/` which are not yet in `$JENKINS_HOME` are copied over\n2. Jenkins starts\n3. all Groovy scripts found in [$JENKINS_HOME/init.groovy.d/][init.groovy.d] are run, which includes our [create-seed-job.groovy script][create-seed-job.groovy]\n4. The _SeedJob_ is eventually created and a run is scheduled if it was missing\n5. The _SeedJob_, if run, creates additional jobs found in its workspace:\n  - by default the groovy scripts are provided by the docker image (see the `dsl/` directory content)\n  - if a git repository url is provided with the `SEEDJOB_GIT` environment variable, the _SeedJob_ will fetch the groovy scripts from there\n  - else if a svn repository url is provided with the `SEEDJOB_SVN` environment variable, the _SeedJob_ will fetch the groovy scripts from there\n\n\nIncluded plugins\n----------------\n\n- [Job DSL][job-dsl]\n- [Pipeline][workflow-aggregator]\n- [CloudBees Docker Pipeline][docker-workflow]\n- [Git][git]\n- [GitHub][github]\n- [GitHub pull request builder][ghprb]\n- [Config File Provider][config-file-provider]\n- [Groovy PostBuild][groovy-postbuild]\n- [AnsiColor][ansicolor]\n- [Rebuild][rebuild]\n- [Sidebar-Link][sidebar-link]\n- [Build-timeout][build-timeout]\n- [Cobertura][cobertura]\n- [Copy Artifact][copyartifact]\n- [Description Setter][description-setter]\n- [Email-ext][email-ext]\n- [Gradle][gradle]\n- [Parameterized  Trigger][parameterized-trigger]\n- [Publish Over Ssh][publish-over-ssh]\n- [Warnings][warnings]\n- [Workspace Cleanup][ws-cleanup]\n\n\nUsage\n-----\n\n### Default DSL jobs\n\nBy running the image as follow:\n\n    docker run -d -p 8080:8080 tomdesinto/jenkins-dsl-ready\n\nYou will end up with an instance of Jenkins that demonstrates the usage of the DSL plugin. In this configuration you will have 2 default jobs created additionally to the _SeedJob_.\n\nFrom there you can edit the _SeedJob_ and make it fetch your DSL scripts from a SVN/git repository and make it create your other jobs.\n\n### Providing DSL jobs with Git/SVN\n\nIf you want to provide the DSL scripts from a remote repository, use either the `SEEDJOB_GIT` or `SEEDJOB_SVN` environment variables.\n\n    docker run -d -p 8080:8080 -e SEEDJOB_GIT=https://your.repo.git tomdesinto/jenkins-dsl-ready\n    docker run -d -p 8080:8080 -e SEEDJOB_SVN=svn://your.repo tomdesinto/jenkins-dsl-ready\n\n### Providing DSL jobs from a directory\n\nYou can provide you groovy DSL files from a directory on your docker host by mounting this directory with a docker volume on `/usr/share/jenkins/ref/jobs/SeedJob/workspace/`.\n\n    docker run -d -p 8080:8080 -v /somewhere/on/your/host/dsl/:/usr/share/jenkins/ref/jobs/SeedJob/workspace/:ro tomdesinto/jenkins-dsl-ready\n\n### Using Docker within jobs\n\n#### Method 1 - Sharing the jenkins-dsl-ready Docker Host engine (root)\n\nIf you want your jobs to be able to make use of the Docker engine running on the Jenkins container host, first note that this is **insecure** as any Jenkins jobs will be able to take control of the full Docker engine (meaning even deleting any image/container on the Docker host), then you need to start the _jenkins-dsl-ready_ container a bit differently:\n\n- Jenkins must be run by the user _root_\n- The `/var/run/docker.sock` socket file must be mounted as a volume\n\nIn the end, the command to run such a container is:\n\n    docker run -d \\\n        -u root \\\n        -v /var/run/docker.sock:/var/run/docker.sock \\\n        -v $(which docker):/usr/bin/docker:ro \\\n        -p 8080:8080 \\\n        --name jenkins \\\n        tomdesinto/jenkins-dsl-ready\n\nFrom now on, you can call directly the `docker` command.\n\n\n#### Method 2 - Sharing the jenkins-dsl-ready Docker Host engine (sudo)\n\nSame as method 2, but we don't run Jenkins as _root_. In this case the Jenkins jobs will have to use `sudo docker` instead of just `docker`:\n\n    docker run -d \\\n        -v /var/run/docker.sock:/var/run/docker.sock \\\n        -v $(which docker):/usr/bin/docker:ro \\\n        -p 8080:8080 \\\n        --name jenkins \\\n        tomdesinto/jenkins-dsl-ready\n\nIn this setup, you can use docker with sudo: `sudo docker`.\n\nCare should be given to files rights in Jenkins jobs. If a job makes use of `sudo` to run a command which will write files in the job workspace, those files\nwill be owned by _root_. Jenkins would then be unable to manage then (wipe workspace, clear, etc) unless your job also makes sure to call `chown jenkins` on them.\n\n\n#### Method 3 - Using dind (Docker in Docker)\n\nUsing the official [docker:dind][dind] image, you can start a container which runs another _child_ Docker engine which will be available to your jenkins-dsl-ready container through links. Be aware of constraints and pitfalls that comes with such a setup. Make sure to read [Using Docker-in-Docker for your CI or testing environment? Think twice](https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/) from Jérôme Petazzoni.\n\n    docker run -d --privileged --name dind docker:1.8-dind\n\n**note:** use the tag that matches your docker version. i.e.: `docker:1.8-dind` if you have docker `v1.8.1` or `v1.8.2`. `docker:1.7-dind` if you have docker `v1.7.x`, and so on. See available tags at https://hub.docker.com/r/library/docker/tags/\n\nYou would then start the jenkins-dsl-ready container with:\n\n    docker run -d \\\n        -v $(which docker):/usr/bin/docker:ro \\\n        -p 8080:8080 \\\n        --link dind:dind \\\n        -e DOCKER_HOST=tcp://dind:2375 \\\n        --name jenkins \\\n        tomdesinto/jenkins-dsl-ready\n\nFrom now on, you can call directly the `docker` command within Jenkins jobs.\n\n#### Troubleshooting\n\nIf docker fails with error `Error response from daemon: client is newer than server (client API version: 1.20, server API version: 1.19)`, or similar, then\nit means the version of the Docker client from the jenkins-dsl-ready image is newer than the Docker engine from the dind image. Refer to the _note_ above to start a dind container having the right version of docker.\n\nIf docker fails with error `docker: error while loading shared libraries: libapparmor.so.1: cannot open shared object file: No such file or directory`, then you need to mount another volume on your container to enable the docker process to use the appArmor shared libraries. Depending on your system, the exact location of the librairies might differ from the following example: `-v /usr/lib/x86_64-linux-gnu/libapparmor.so.1.1.0:/usr/lib/x86_64-linux-gnu/libapparmor.so.1`. More info at [https://github.com/SvenDowideit/dockerfiles/issues/17](https://github.com/SvenDowideit/dockerfiles/issues/17).\n\n\nDSL syntax\n----------\n\nRefer to the [DSL Job reference][dsl-job]. If you are just discovering the DSL\nPlugin, you should start with the [tutorial][dsl-tutorial].\n\n[Example of DSL script](https://github.com/thomasleveil/docker-jenkins-dsl-ready/blob/master/dsl/example_job_1.groovy)\n\n\nCustomizing the image\n---------------------\n\n### Other default DSL files\n\nYou can add default DSL scripts to the [`dsl/`][dsl-dir] directory. When you build the docker image, those scripts will be copied to the _SeedJob_ workspace when the container will be run.\n\n### Add software\n\nYour jobs might depend on software which is not available in this image. You can build your own image with additional software by adding the commands to install them after the _customize below_ section.\n\n    ###############################################################################\n    ##                          customize below                                  ##\n    ###############################################################################\n\n    # Eventually place here any `apt-get install` command to add tools to the image\n    #\n\n\n    # COPY your Seed Job DSL script\n    COPY dsl/*.groovy /usr/share/jenkins/ref/jobs/SeedJob/workspace/\n\n\n[ansicolor]: https://wiki.jenkins-ci.org/display/JENKINS/AnsiColor+Plugin\n[build-timeout]: https://wiki.jenkins-ci.org/display/JENKINS/Build-timeout+Plugin\n[cobertura]: https://wiki.jenkins-ci.org/display/JENKINS/Cobertura+Plugin\n[config-file-provider]: https://wiki.jenkins-ci.org/display/JENKINS/Config+File+Provider+Plugin\n[copyartifact]: https://wiki.jenkins-ci.org/display/JENKINS/Copy+Artifact+Plugin\n[create-seed-job.groovy]: https://github.com/thomasleveil/docker-jenkins-dsl-ready/blob/master/build/create-seed-job.groovy\n[description-setter]: https://wiki.jenkins-ci.org/display/JENKINS/Description+Setter+Plugin\n[dind]: https://hub.docker.com/r/dockerswarm/dind/\n[docker-rm]: https://docs.docker.com/reference/commandline/rm/\n[docker-workflow]: https://wiki.jenkins-ci.org/display/JENKINS/CloudBees+Docker+Pipeline+Plugin\n[dsl-dir]: https://github.com/thomasleveil/docker-jenkins-dsl-ready/tree/master/dsl\n[dsl-job]: https://jenkinsci.github.io/job-dsl-plugin/\n[dsl-tutorial]: https://github.com/jenkinsci/job-dsl-plugin/wiki/Tutorial---Using-the-Jenkins-Job-DSL\n[email-ext]: https://wiki.jenkins-ci.org/display/JENKINS/Email-ext+plugin\n[ghprb]: https://wiki.jenkins-ci.org/display/JENKINS/GitHub+pull+request+builder+plugin\n[git]: https://wiki.jenkins-ci.org/display/JENKINS/Git+Plugin\n[github]: https://wiki.jenkins-ci.org/display/JENKINS/GitHub+Plugin\n[gradle]: https://wiki.jenkins-ci.org/display/JENKINS/Gradle+Plugin\n[groovy-postbuild]: https://wiki.jenkins-ci.org/display/JENKINS/Groovy+Postbuild+Plugin#GroovyPostbuildPlugin-Exampleusages\n[init.groovy.d]: https://wiki.jenkins-ci.org/display/JENKINS/Configuring+Jenkins+upon+start+up\n[job-dsl]: https://wiki.jenkins-ci.org/display/JENKINS/Job+DSL+Plugin\n[official-jenkins]: https://github.com/jenkinsci/docker/blob/master/README.md\n[parameterized-trigger]: https://wiki.jenkins-ci.org/display/JENKINS/Parameterized+Trigger+Plugin\n[publish-over-ssh]: https://wiki.jenkins-ci.org/display/JENKINS/Publish+Over+SSH+Plugin\n[rebuild]: https://wiki.jenkins-ci.org/display/JENKINS/Rebuild+Plugin\n[sidebar-link]: https://wiki.jenkins-ci.org/display/JENKINS/Sidebar-Link+Plugin\n[warnings]:  https://wiki.jenkins-ci.org/display/JENKINS/Warnings+Plugin\n[workflow-aggregator]: https://wiki.jenkins-ci.org/display/JENKINS/Pipeline+Plugin\n[ws-cleanup]: https://wiki.jenkins-ci.org/display/JENKINS/Workspace+Cleanup+Plugin\n",
+  "dockerfile": "FROM jenkins:1.651.2\n\nUSER root\n\n# Install sudo to enpower jenkins (will be usefull for running docker in some cases)\nRUN apt-get update \\\n    && apt-get install -y sudo \\\n    && rm -rf /var/lib/apt/lists/* \\\n    && echo \"jenkins ALL=NOPASSWD: ALL\" >> /etc/sudoers\n\n# a few helper scripts\nRUN mkdir /opt/bin\nCOPY build/*.py build/*.sh /opt/bin/\nRUN chmod +x /opt/bin/*\n\n# Groovy script to create the \"SeedJob\" (the standard way, not with DSL)\nCOPY build/create-seed-job.groovy /usr/share/jenkins/ref/init.groovy.d/\n\n# The place where to put the DSL files for the Seed Job to run\nRUN mkdir -p /usr/share/jenkins/ref/jobs/SeedJob/workspace/\n\n# The list of plugins to install\nCOPY plugins.txt /tmp/\n\n# Download plugins and their dependencies\nRUN mkdir /usr/share/jenkins/ref/plugins \\\n\t&& ( \\\n\t    cat /tmp/plugins.txt; \\\n\t    unzip -l /usr/share/jenkins/jenkins.war | sed -nr 's|^.*WEB-INF/plugins/(.+?)\\.hpi$|\\1|p' \\\n\t) \\\n\t| /opt/bin/resolve_jenkins_plugins_dependencies.py \\\n\t| /opt/bin/download_jenkins_plugins.py\n\n###############################################################################\n##                          customize below                                  ##\n###############################################################################\n\n# Eventually place here any `apt-get install` command to add tools to the image\n#\n\n\n# COPY your Seed Job DSL script\nCOPY dsl/*.groovy /usr/share/jenkins/ref/jobs/SeedJob/workspace/\n\n\n###############################################################################\nRUN chown jenkins: $(find /usr/share/jenkins/ref -type f -name '*.groovy')\nUSER jenkins\nENTRYPOINT [\"/opt/bin/entrypoint.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update     && apt-get install -y sudo     && rm -rf /var/lib/apt/lists/*     && echo \"jenkins ALL=NOPASSWD: ALL\" >> /etc/sudoers",
+      "mkdir /opt/bin",
+      "chmod +x /opt/bin/*",
+      "mkdir -p /usr/share/jenkins/ref/jobs/SeedJob/workspace/",
+      "mkdir /usr/share/jenkins/ref/plugins \t&& ( \t    cat /tmp/plugins.txt; \t    unzip -l /usr/share/jenkins/jenkins.war | sed -nr 's|^.*WEB-INF/plugins/(.+?)\\.hpi$|\\1|p' \t) \t| /opt/bin/resolve_jenkins_plugins_dependencies.py \t| /opt/bin/download_jenkins_plugins.py",
+      "chown jenkins: $(find /usr/share/jenkins/ref -type f -name '*.groovy')"
+    ],
+    "workdir": [],
+    "from": "jenkins:1.651.2",
+    "user": "jenkins",
+    "copy": "dsl/*.groovy /usr/share/jenkins/ref/jobs/SeedJob/workspace/",
+    "entrypoint": "[\"/opt/bin/entrypoint.sh\"]"
+  },
+  "source_repository_url": "https://github.com/thomasleveil/docker-jenkins-dsl-ready.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/thomasleveil/docker-jenkins-dsl-ready",
+  "docker_repository": "tomdesinto/jenkins-dsl-ready",
+  "docker_image": "tomdesinto/jenkins-dsl-ready",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "tomdesinto/jenkins-dsl-ready",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/tomdesinto/jenkins-dsl-ready",
+    "https://hub.docker.com/v2/repositories/tomdesinto/jenkins-dsl-ready",
+    "https://github.com/thomasleveil/docker-jenkins-dsl-ready.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Devopsware/Integration/Jenkins"
+  ],
+  "info_url": "https://hub.docker.com/r/tomdesinto/jenkins-dsl-ready",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

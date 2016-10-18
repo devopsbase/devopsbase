@@ -1,0 +1,113 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/toxix/elasticsearch",
+    "repository_url": "https://hub.docker.com/v2/repositories/toxix/elasticsearch",
+    "tags_url": "https://hub.docker.com/v2/repositories/toxix/elasticsearch/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/toxix/elasticsearch/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/toxix/elasticsearch/autobuild",
+    "user": "toxix",
+    "name": "elasticsearch",
+    "namespace": "toxix",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 118,
+    "last_updated": "2016-09-23T21:54:17.052138Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 154991961,
+        "id": 90251,
+        "repository": 121736,
+        "creator": 188285,
+        "last_updater": 188285,
+        "last_updated": "2016-09-23T21:54:16.621140Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "toxix/docker-elasticsearch"
+  },
+  "name": "toxix/elasticsearch Docker container",
+  "description": "ElasticSearch on debian base",
+  "readme": "## ElasticSearch Dockerfile\n\n\nThis repository contains **Dockerfile** of [ElasticSearch](http://www.elasticsearch.org/) for [Docker](https://www.docker.com/)'s [automated build](https://registry.hub.docker.com/u/toxix/elasticsearch/) published to the public [Docker Hub Registry](https://registry.hub.docker.com/).\n\n\n### Base Docker Image\n\n* [toxix/openjdk-jre](https://registry.hub.docker.com/u/toxix/openjdk-jre) an **Debian stable** based jre\n\n***The Debian stable base image is the difference to the [cloned reposetory](https://github.com/dockerfile/elasticsearch).***\n\n\n### Installation\n\n1. Install [Docker](https://www.docker.com/).\n\n2. Download [automated build](https://registry.hub.docker.com/u/dockerfile/elasticsearch/) from public [Docker Hub Registry](https://registry.hub.docker.com/): `docker pull toxix/elasticsearch`\n\n   (alternatively, you can build an image from Dockerfile: `docker build -t=\"toxix/elasticsearch\" github.com/toxix/docker-elasticsearch`)\n\n\n### Usage\n\n    docker run -d -p 9200:9200 -p 9300:9300 toxix/elasticsearch\n\n#### Attach persistent/shared directories\n\n  1. Create a mountable data directory `<data-dir>` on the host.\n\n  2. Create ElasticSearch config file at `<data-dir>/elasticsearch.yml`.\n\n    ```yml\n    path:\n      logs: /data/log\n      data: /data/data\n    ```\n\n  3. Start a container by mounting data directory and specifying the custom configuration file:\n\n    ```sh\n    docker run -d -p 9200:9200 -p 9300:9300 -v <data-dir>:/data toxix/elasticsearch /elasticsearch/bin/elasticsearch -Des.config=/data/elasticsearch.yml\n    ```\n\nAfter few seconds, open `http://<host>:9200` to see the result.\n",
+  "dockerfile": "#\n# ElasticSearch Dockerfile\n#\n# https://github.com/toxix/docker-elasticsearch\n#\n\n# Pull base image.\nFROM toxix/openjdk-jre\n\nENV ES_PKG_NAME elasticsearch-1.4.1\n\n# Install curl to dowload the current elasticsearch\nRUN \\\n  apt-get update && \\\n  DEBIAN_FRONTEND=noninteractive apt-get install -qq --no-install-recommends curl && \\\n  apt-get clean -qq && \\\n  rm -rf /var/lib/{apt,dpkg,cache,log}/\n\n# Download and install elasticsearch\nRUN \\\n  mkdir /elasticsearch && \\\n  curl -L \"https://download.elasticsearch.org/elasticsearch/elasticsearch/$ES_PKG_NAME.tar.gz\" | \\\n  tar -xzC /elasticsearch --strip-components=1 && \\\n  rm /elasticsearch/lib/sigar/*freebsd* && \\\n  rm /elasticsearch/lib/sigar/*macosx* && \\\n  rm /elasticsearch/lib/sigar/*solaris* && \\\n  rm /elasticsearch/lib/sigar/*winnt* && \\\n  rm /elasticsearch/bin/*.exe\n\n# Define mountable directories.\nVOLUME [\"/data\"]\n\n# Mount elasticsearch.yml config\nADD config/elasticsearch.yml /elasticsearch/config/elasticsearch.yml\n\n# Define working directory.\nWORKDIR /data\n\n# Define default command.\nCMD [\"/elasticsearch/bin/elasticsearch\"]\n\n# Expose ports.\n#   - 9200: HTTP\n#   - 9300: transport\nEXPOSE 9200\nEXPOSE 9300\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "config/elasticsearch.yml",
+        "dest": "/elasticsearch/config/elasticsearch.yml"
+      }
+    ],
+    "expose": [
+      9200,
+      9300
+    ],
+    "volume": [
+      "[\"/data\"]"
+    ],
+    "run": [
+      "  apt-get update &&   DEBIAN_FRONTEND=noninteractive apt-get install -qq --no-install-recommends curl &&   apt-get clean -qq &&   rm -rf /var/lib/{apt,dpkg,cache,log}/",
+      "  mkdir /elasticsearch &&   curl -L \"https://download.elasticsearch.org/elasticsearch/elasticsearch/$ES_PKG_NAME.tar.gz\" |   tar -xzC /elasticsearch --strip-components=1 &&   rm /elasticsearch/lib/sigar/*freebsd* &&   rm /elasticsearch/lib/sigar/*macosx* &&   rm /elasticsearch/lib/sigar/*solaris* &&   rm /elasticsearch/lib/sigar/*winnt* &&   rm /elasticsearch/bin/*.exe"
+    ],
+    "workdir": [
+      "/data"
+    ],
+    "from": "toxix/openjdk-jre",
+    "env": {
+      "ES_PKG_NAME": "elasticsearch-1.4.1"
+    },
+    "cmd": "[\"/elasticsearch/bin/elasticsearch\"]"
+  },
+  "source_repository_url": "https://github.com/toxix/docker-elasticsearch.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/toxix/docker-elasticsearch",
+  "docker_repository": "toxix/elasticsearch",
+  "docker_image": "toxix/elasticsearch",
+  "parameters_schema": {
+    "ES_PKG_NAME": {
+      "default": "elasticsearch-1.4.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        9200,
+        9300
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "toxix/elasticsearch",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/toxix/elasticsearch",
+    "https://hub.docker.com/v2/repositories/toxix/elasticsearch",
+    "https://github.com/toxix/docker-elasticsearch.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/Debian",
+    "Type/Middleware/Search/Elasticsearch"
+  ],
+  "info_url": "https://hub.docker.com/r/toxix/elasticsearch",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

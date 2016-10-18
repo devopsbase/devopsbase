@@ -1,0 +1,188 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/adaxet/php",
+    "repository_url": "https://hub.docker.com/v2/repositories/adaxet/php",
+    "tags_url": "https://hub.docker.com/v2/repositories/adaxet/php/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/adaxet/php/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/adaxet/php/autobuild",
+    "user": "adaxet",
+    "name": "php",
+    "namespace": "adaxet",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 315,
+    "last_updated": "2016-10-15T03:29:50.774843Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 330058795,
+        "id": 3339600,
+        "repository": 732308,
+        "creator": 449216,
+        "last_updater": 449216,
+        "last_updated": "2016-10-15T03:29:50.242674Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "7.0",
+        "full_size": 329639288,
+        "id": 3339732,
+        "repository": 732308,
+        "creator": 449216,
+        "last_updater": 449216,
+        "last_updated": "2016-10-10T09:43:16.502287Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "7.0-dev",
+        "full_size": 330029242,
+        "id": 3339869,
+        "repository": 732308,
+        "creator": 449216,
+        "last_updater": 449216,
+        "last_updated": "2016-10-10T09:30:54.616213Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "synopsisdevs/docker-php-adaxet"
+  },
+  "name": "adaxet/php Docker container",
+  "description": "Docker image with PHP",
+  "readme": "# docker-php-adaxet\nDocker images with PHP\n",
+  "dockerfile": "FROM php:7-apache\n\nMAINTAINER developers@synopsis.cz\n\nRUN a2enmod rewrite\nRUN a2enmod ssl\nRUN a2ensite 000-default\nRUN a2ensite default-ssl\n\nENV TZ Europe/Prague\n\nENV REDIS_VERSION 3.0\n\nENV DEPENDENCY_PACKAGES=\"libpq-dev libcurl4-openssl-dev libpng12-dev libjpeg-dev libfreetype6-dev libpng-dev libmcrypt-dev libxml2-dev\"\nENV BUILD_PACKAGES=\"sudo cron wkhtmltopdf supervisor ssl-cert\"\n\nRUN sed -i  \"s/http:\\/\\/httpredir\\.debian\\.org\\/debian/ftp:\\/\\/ftp\\.debian\\.org\\/debian/g\" /etc/apt/sources.list\n\nRUN apt-get clean \\\n    && apt-get update \\\n    && apt-get install -f -y $DEPENDENCY_PACKAGES $BUILD_PACKAGES \\\n    && apt-get autoremove -y \\\n    && apt-get clean \\\n    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \n\n# redis\nRUN pecl install -o -f redis-$REDIS_VERSION \\\n    && docker-php-ext-enable redis \\\n    && rm -rf /tmp/pear\n\nRUN docker-php-ext-configure pgsql -with-pgsql=/usr/include/postgresql \\\n    && docker-php-ext-configure gd --enable-gd-native-ttf --with-png-dir=/usr/include --with-jpeg-dir=/usr/include --with-freetype-dir=/usr/include/freetype2 \\\n    && docker-php-ext-configure bcmath \\\n    && docker-php-ext-install -j$(nproc) pdo pdo_pgsql pgsql curl gd mbstring json bcmath mcrypt soap calendar\n\n# wkhtmltopdf\nCOPY bin/wkhtmltopdf /usr/bin/wkhtmltopdf\nCOPY bin/wkhtmltoimage /usr/bin/wkhtmltoimage\n\n# php.ini\nCOPY conf/php.ini /usr/local/etc/php/\n\n# cron\nCOPY cron /etc/pam.d/cron\n\n# supervisor.conf\nRUN mkdir -p /var/log/supervisor\nCOPY supervisord.conf /etc/supervisor/conf.d/000-supervisord.conf\n\nEXPOSE 80 443 9001\n\nCMD [\"/usr/bin/supervisord\", \"-c\", \"/etc/supervisor/supervisord.conf\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "a2enmod rewrite",
+      "a2enmod ssl",
+      "a2ensite 000-default",
+      "a2ensite default-ssl",
+      "sed -i  \"s/http:\\/\\/httpredir\\.debian\\.org\\/debian/ftp:\\/\\/ftp\\.debian\\.org\\/debian/g\" /etc/apt/sources.list",
+      "apt-get clean     && apt-get update     && apt-get install -f -y $DEPENDENCY_PACKAGES $BUILD_PACKAGES     && apt-get autoremove -y     && apt-get clean     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* ",
+      "pecl install -o -f redis-$REDIS_VERSION     && docker-php-ext-enable redis     && rm -rf /tmp/pear",
+      "docker-php-ext-configure pgsql -with-pgsql=/usr/include/postgresql     && docker-php-ext-configure gd --enable-gd-native-ttf --with-png-dir=/usr/include --with-jpeg-dir=/usr/include --with-freetype-dir=/usr/include/freetype2     && docker-php-ext-configure bcmath     && docker-php-ext-install -j$(nproc) pdo pdo_pgsql pgsql curl gd mbstring json bcmath mcrypt soap calendar",
+      "mkdir -p /var/log/supervisor"
+    ],
+    "workdir": [],
+    "from": "php:7-apache",
+    "maintainer": "developers@synopsis.cz",
+    "env": {
+      "TZ": "Europe/Prague",
+      "REDIS_VERSION": "3.0",
+      "DEPENDENCY_PACKAGES": "\"libpq-dev",
+      "libcurl4-openssl-dev": "libpng12-dev",
+      "libjpeg-dev": "libfreetype6-dev",
+      "libpng-dev": "libmcrypt-dev",
+      "BUILD_PACKAGES": "\"sudo",
+      "cron": "wkhtmltopdf",
+      "supervisor": "ssl-cert\""
+    },
+    "copy": "supervisord.conf /etc/supervisor/conf.d/000-supervisord.conf",
+    "cmd": "[\"/usr/bin/supervisord\", \"-c\", \"/etc/supervisor/supervisord.conf\"]"
+  },
+  "source_repository_url": "https://github.com/synopsisdevs/docker-php-adaxet.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/synopsisdevs/docker-php-adaxet",
+  "docker_repository": "adaxet/php",
+  "docker_image": "adaxet/php",
+  "parameters_schema": {
+    "TZ": {
+      "default": "Europe/Prague",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REDIS_VERSION": {
+      "default": "3.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEPENDENCY_PACKAGES": {
+      "default": "\"libpq-dev",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "libcurl4-openssl-dev": {
+      "default": "libpng12-dev",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "libjpeg-dev": {
+      "default": "libfreetype6-dev",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "libpng-dev": {
+      "default": "libmcrypt-dev",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "BUILD_PACKAGES": {
+      "default": "\"sudo",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "cron": {
+      "default": "wkhtmltopdf",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "supervisor": {
+      "default": "ssl-cert\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "adaxet/php",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/adaxet/php",
+    "https://hub.docker.com/v2/repositories/adaxet/php",
+    "https://github.com/synopsisdevs/docker-php-adaxet.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Runtime/PHP"
+  ],
+  "info_url": "https://hub.docker.com/r/adaxet/php",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,150 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/cburki/wordpress",
+    "repository_url": "https://hub.docker.com/v2/repositories/cburki/wordpress",
+    "tags_url": "https://hub.docker.com/v2/repositories/cburki/wordpress/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/cburki/wordpress/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/cburki/wordpress/autobuild",
+    "user": "cburki",
+    "name": "wordpress",
+    "namespace": "cburki",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 725,
+    "last_updated": "2015-10-19T18:17:33.132214Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "v1.4",
+        "full_size": 226095446,
+        "id": 531514,
+        "repository": 238668,
+        "creator": 322994,
+        "last_updater": 322994,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "v1.3",
+        "full_size": 0,
+        "id": 459998,
+        "repository": 238668,
+        "creator": 322994,
+        "last_updater": 322994,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "v1.2",
+        "full_size": 0,
+        "id": 456097,
+        "repository": 238668,
+        "creator": 322994,
+        "last_updater": 322994,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 225925209,
+        "id": 454405,
+        "repository": 238668,
+        "creator": 322994,
+        "last_updater": 322994,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "v1.1",
+        "full_size": 0,
+        "id": 454404,
+        "repository": 238668,
+        "creator": 322994,
+        "last_updater": 322994,
+        "last_updated": null,
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "cburki/docker-wordpress"
+  },
+  "name": "cburki/wordpress Docker container",
+  "description": "Wordpress container",
+  "readme": "Summary\n-------\n\nWordpress web site image including an Apache HTTP server. The web site data are\nstored in the cburki/wordpress-data volume container and the MySQL database\nserver is running in the cburki/mysql container.\n\n\nBuild the image\n---------------\n\nTo create this image, execute the following command in the docker-wordpress\nfolder.\n\n    docker build -t cburki/wordpress .\n\n\nConfigure the image\n-------------------\n\nA database and a user are created when the image is run for the first time.\nThe database is named *wordpress* and the database user is named *wordpress*.\nThe password for the database user can be configured with an environment variable.\n\n - WORDPRESS_DB_PASSWORD : The Wordpress database password\n - MYSQL_PASSWORD : The MySQL server root password needed to create the Wordpress database and user.\n\nIf no wordpress password is given, a default one is generated. You can get this\npassword by viewing the file */data/var/state/wordpress-db-pwd.txt* using the\nfollowing command.\n\n    docker exec -it wordpress cat /data/var/state/mysql-wordpress-pwd.txt\n\n\nRun the image\n-------------\n\nWhen you run the image, you will bind the port 80 for the HTTP server. You will\nuse a volume data image to store the web site files which are located in the\n*/data/var/www/wordpress* folder.\n\n    docker run \\\n        --name wordpress \\\n        --volumes-from wordpress-data \\\n        -d \\\n        -e WORDPRESS_DB_PASSWORD=my_secret_password \\\n        -e MYSQL_PASSWORD=mysql_secret_password \\\n        -p 8080:80 \\\n        --link mysql:db \\\n        cburki/wordpress:latest\n\nIn the --link argument, mysql is the name of the MySQL server container and db\nis the alias to reach the MySQL server over the network.\n\nThe volume data container could be started using the following command.\n\n    docker run \\\n        --name wordpress-data \\\n        -d \\\n        cburki/volume-data:latest\n\nThe wordpress web site could be reached using the following URL.\n\n    http://<ip_address>:8080\n\nIt first ask you some questions to setup the Wordpress web site.\n\n",
+  "dockerfile": "FROM ubuntu:vivid\nMAINTAINER Christophe Burki, christophe.burki@gmail.com\n\n# Install system requirements\nENV DEBIAN_FRONTEND noninteractive\nRUN apt-get update && apt-get install -y \\\n    apache2-mpm-prefork \\\n    curl \\\n    libapache2-mod-php5 \\\n    mysql-client \\\n    php5-curl \\\n    php5-gd \\\n    php5-imagick \\\n    php5-intl \\\n    php5-mcrypt \\\n    php5-memcache \\\n    php5-mysql \\\n    php5-ps \\\n    php5-pspell \\\n    php5-xmlrpc \\\n    python-pip \\\n    pwgen\n\n# Configure locales and timezone\nRUN locale-gen en_US.UTF-8 en_GB.UTF-8 fr_CH.UTF-8\nRUN cp /usr/share/zoneinfo/Europe/Zurich /etc/localtime\nRUN echo \"Europe/Zurich\" > /etc/timezone\n\n# Apache config\nCOPY configs/virtualhost.conf /etc/apache2/sites-available/default.conf\nRUN ln -sf /etc/apache2/sites-available/default.conf /etc/apache2/sites-enabled/000-default.conf\n\n# Supervisor config\nRUN mkdir /var/log/supervisor\nRUN pip install supervisor\nCOPY configs/supervisord.conf /etc/supervisord.conf\n\n# Startup script\nCOPY scripts/start.sh /opt/start.sh\nRUN chmod 755 /opt/start.sh\n\nCMD [\"/bin/bash\", \"/opt/start.sh\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y     apache2-mpm-prefork     curl     libapache2-mod-php5     mysql-client     php5-curl     php5-gd     php5-imagick     php5-intl     php5-mcrypt     php5-memcache     php5-mysql     php5-ps     php5-pspell     php5-xmlrpc     python-pip     pwgen",
+      "locale-gen en_US.UTF-8 en_GB.UTF-8 fr_CH.UTF-8",
+      "cp /usr/share/zoneinfo/Europe/Zurich /etc/localtime",
+      "echo \"Europe/Zurich\" > /etc/timezone",
+      "ln -sf /etc/apache2/sites-available/default.conf /etc/apache2/sites-enabled/000-default.conf",
+      "mkdir /var/log/supervisor",
+      "pip install supervisor",
+      "chmod 755 /opt/start.sh"
+    ],
+    "workdir": [],
+    "from": "ubuntu:vivid",
+    "maintainer": "Christophe Burki, christophe.burki@gmail.com",
+    "env": {
+      "DEBIAN_FRONTEND": "noninteractive"
+    },
+    "copy": "scripts/start.sh /opt/start.sh",
+    "cmd": "[\"/bin/bash\", \"/opt/start.sh\"]"
+  },
+  "source_repository_url": "https://github.com/cburki/docker-wordpress.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/cburki/docker-wordpress",
+  "docker_repository": "cburki/wordpress",
+  "docker_image": "cburki/wordpress",
+  "parameters_schema": {
+    "DEBIAN_FRONTEND": {
+      "default": "noninteractive",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "cburki/wordpress",
+  "revision": "v1.4",
+  "uris": [
+    "https://hub.docker.com/r/cburki/wordpress",
+    "https://hub.docker.com/v2/repositories/cburki/wordpress",
+    "https://github.com/cburki/docker-wordpress.git"
+  ],
+  "labels": [
+    "Docker"
+  ],
+  "info_url": "https://hub.docker.com/r/cburki/wordpress",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

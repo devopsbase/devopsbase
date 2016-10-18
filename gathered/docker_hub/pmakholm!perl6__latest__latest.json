@@ -1,0 +1,126 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/pmakholm/perl6",
+    "repository_url": "https://hub.docker.com/v2/repositories/pmakholm/perl6",
+    "tags_url": "https://hub.docker.com/v2/repositories/pmakholm/perl6/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/pmakholm/perl6/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/pmakholm/perl6/autobuild",
+    "user": "pmakholm",
+    "name": "perl6",
+    "namespace": "pmakholm",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 5,
+    "pull_count": 153,
+    "last_updated": "2015-11-13T12:09:14.277553Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 505712313,
+        "id": 19890,
+        "repository": 50521,
+        "creator": 89528,
+        "last_updater": 89528,
+        "last_updated": "2015-11-13T12:09:17.227524Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "unstable",
+        "full_size": 505534866,
+        "id": 19883,
+        "repository": 50521,
+        "creator": 89528,
+        "last_updater": 89528,
+        "last_updated": "2015-11-13T12:07:41.211029Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "pmakholm/docker-perl6"
+  },
+  "name": "pmakholm/perl6 Docker container",
+  "description": "Image with a Perl6 installation with all Rakudo Star modules installed",
+  "readme": "# docker-perl6\n\nImage with a Perl6 installation with all Rakudo Star modules installed.\n\nThe following components are included:\n\n - Rakudo (the Perl6 compiler)\n - MoarVM (with JIT enabled)\n - The Rakudo Star module list\n - The Perl6 modules tools: panda and ufo\n - Additional modules not included in Rakudo Star\n   - Inline::Perl5\n   - v5\n\nThere are two versions of this image:\n\n - latest (git branch: master)\n - unstable (git branch: blead)\n\nThe 'latest' build is based on the last Rakudo release (presently\n2014.09) and the 'unstable' build is based on the HEAD of alle relevant\ngit repositories.\n\n## See also\n\n - The Docker Hub Repository: https://registry.hub.docker.com/u/pmakholm/perl6/\n - The GitHub repository: https://github.com/pmakholm/docker-perl6\n",
+  "dockerfile": "FROM buildpack-deps:jessie\nMAINTAINER Peter Makholm <peter@makholm.net>\n\nWORKDIR /usr/src\nRUN git clone https://github.com/MoarVM/MoarVM.git && \\\n    git clone https://github.com/perl6/nqp         && \\\n    git clone https://github.com/rakudo/rakudo.git && \\\n    git clone https://github.com/rakudo/star.git rakudo-star && (cd rakudo-star ; git submodule update --init )\n\nENV RAKUDO_GIT_TAG HEAD\nENV RAKUDO_STAR_GIT_TAG HEAD\n\nWORKDIR /usr/src/MoarVM\nRUN git checkout $RAKUDO_GIT_TAG && \\\n    perl Configure.pl --prefix=/usr/local --enable-jit && make install && make distclean\n\nWORKDIR /usr/src/nqp\nRUN git checkout $RAKUDO_GIT_TAG && \\\n    perl Configure.pl --prefix=/usr/local --backend=moar && make install && make clean\n\nWORKDIR /usr/src/rakudo\nRUN git checkout $RAKUDO_GIT_TAG && \\\n    perl Configure.pl --prefix=/usr/local --backend=moar && make install && make distclean\n\nWORKDIR /usr/src/rakudo-star\nRUN git checkout $RAKUDO_STAR_GIT_TAG && \\\n    git submodule foreach git checkout master && \\\n    /usr/bin/perl tools/build/module-install.pl /usr/local/bin/perl6-m /usr/local/languages/perl6/lib moarvm mbc modules/MODULES.txt && \\\n    /usr/bin/perl tools/build/bin-install.pl /usr/local/bin/perl6-m /usr/local/bin m modules/ufo/bin/ufo modules/panda/bin/panda modules/doc/bin/p6doc\n\nWORKDIR /root\nRUN apt-get update && apt-get install -y libperl-dev && \\\n    for module in /usr/src/rakudo-star/modules/zavolaj/ v5 Inline::Perl5 ; do panda install $module ; done\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "git clone https://github.com/MoarVM/MoarVM.git &&     git clone https://github.com/perl6/nqp         &&     git clone https://github.com/rakudo/rakudo.git &&     git clone https://github.com/rakudo/star.git rakudo-star && (cd rakudo-star ; git submodule update --init )",
+      "git checkout $RAKUDO_GIT_TAG &&     perl Configure.pl --prefix=/usr/local --enable-jit && make install && make distclean",
+      "git checkout $RAKUDO_GIT_TAG &&     perl Configure.pl --prefix=/usr/local --backend=moar && make install && make clean",
+      "git checkout $RAKUDO_GIT_TAG &&     perl Configure.pl --prefix=/usr/local --backend=moar && make install && make distclean",
+      "git checkout $RAKUDO_STAR_GIT_TAG &&     git submodule foreach git checkout master &&     /usr/bin/perl tools/build/module-install.pl /usr/local/bin/perl6-m /usr/local/languages/perl6/lib moarvm mbc modules/MODULES.txt &&     /usr/bin/perl tools/build/bin-install.pl /usr/local/bin/perl6-m /usr/local/bin m modules/ufo/bin/ufo modules/panda/bin/panda modules/doc/bin/p6doc",
+      "apt-get update && apt-get install -y libperl-dev &&     for module in /usr/src/rakudo-star/modules/zavolaj/ v5 Inline::Perl5 ; do panda install $module ; done"
+    ],
+    "workdir": [
+      "/usr/src",
+      "/usr/src/MoarVM",
+      "/usr/src/nqp",
+      "/usr/src/rakudo",
+      "/usr/src/rakudo-star",
+      "/root"
+    ],
+    "from": "buildpack-deps:jessie",
+    "maintainer": "Peter Makholm <peter@makholm.net>",
+    "env": {
+      "RAKUDO_GIT_TAG": "HEAD",
+      "RAKUDO_STAR_GIT_TAG": "HEAD"
+    }
+  },
+  "source_repository_url": "https://github.com/pmakholm/docker-perl6.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/pmakholm/docker-perl6",
+  "docker_repository": "pmakholm/perl6",
+  "docker_image": "pmakholm/perl6",
+  "parameters_schema": {
+    "RAKUDO_GIT_TAG": {
+      "default": "HEAD",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "RAKUDO_STAR_GIT_TAG": {
+      "default": "HEAD",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "pmakholm/perl6",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/pmakholm/perl6",
+    "https://hub.docker.com/v2/repositories/pmakholm/perl6",
+    "https://github.com/pmakholm/docker-perl6.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Runtime/Perl"
+  ],
+  "info_url": "https://hub.docker.com/r/pmakholm/perl6",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

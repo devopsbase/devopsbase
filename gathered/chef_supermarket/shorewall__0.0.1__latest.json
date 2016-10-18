@@ -1,0 +1,74 @@
+{
+  "name": "shorewall Chef cookbook",
+  "chef_cookbook_name": "shorewall",
+  "revision": "0.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/shorewall",
+    "https://supermarket.chef.io/cookbooks/shorewall/download",
+    "https://supermarket.chef.io/cookbooks/shorewall/versions/0.0.1",
+    "https://supermarket.chef.io/cookbooks/shorewall/versions/0.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/shorewall/versions/0.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/shorewall",
+    "https://supermarket.chef.io/api/v1/cookbooks/shorewall/versions/0.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Networking",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/shorewall",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/shorewall/versions/0.0.1/download",
+  "deprecated": false,
+  "created": "2011-04-05T20:00:30.000Z",
+  "updated": "2011-04-05T20:00:31.000Z",
+  "description": "Configures iptables with Shorewall",
+  "maintainer": {
+    "name": "charles-dyfis-net",
+    "email": "charles@poweredbytippr.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 1259467,
+  "downloads_count_revision": 1259467,
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Description\n===========\n\nShorewall is a rather comprehensive and easy-to-use abstraction layer on top of\niptables.\n\n\nRequirements\n============\n\nThis cookbook currently uses the `yumrepo` module to install the EPEL\nrepository, and is therefore CentOS-specific.\n\nThe library functions anticipate a network topology in which a cluster of\nservers have interconnects over a \"private\" network which is sufficiently\ninsecure that a firewall is appropriate to control connections from that\nsubnet. (This particularly applies to services such as memcached which expect\nsecurity to handled at a different layer). However, the module is expected to\nremain useful in other scenarios as well.\n\n\nCapabilities\n============\n\nCreates pretty Shorewall configuration files intended to be aesthetically\ncomparable to hand-written ones.\n\nThe following is a typical example of output (in this case, for a rules file):\n\n    #\n    # Shorewall version 4 - Rules File\n    #\n    # For information on the settings in this file, type \"man shorewall-rules\"\n    #\n    # The manpage is also online at\n    # http://www.shorewall.net/manpages/shorewall-rules.html\n    #\n    ############################################################################################################################\n    #ACTION         SOURCE          DEST            PROTO   DEST    SOURCE          ORIGINAL        RATE            USER/   MARK\n    #                                                       PORT    PORT(S)         DEST            LIMIT           GROUP\n    #SECTION ESTABLISHED\n    #SECTION RELATED\n    SECTION NEW\n\n    # Allow all from VM host\n    ACCEPT          net:10.0.2.2    fw              -       -       -               -               -               -       -\n\n    # Incoming SSH to firewall\n    ACCEPT          all             fw              tcp     22      -               -               -               -       -\n\n    # Allow database load-balancer db1.vguest access to repmgr monitor\n    ACCEPT          lan:192.168.123.10 \\\n                                    fw              tcp     5480    -               -               -               -       -\n\nNote how line continuations are added as necessary to keep column alignment in place.\n\n\nUsage\n=====\n\nTypical usage from another module is expected to look like the following:\n\n    add_shorewall_rules(\n      match_nodes=[\n        ['recipes:tippr_db\\:\\:haproxy', { :name => 'database load-balancer' }],\n        ['roles:monitoring', { :name => 'monitoring server' }]\n      ],\n      rules={\n        :description => proc { |data| \"Allow #{data[:match][:name]} #{data[:node].name} access to repmgr monitor\" },\n        :action => :ACCEPT,\n        :source => proc { |data| \"lan:#{data[:local_address]}\" },\n        :dest => :fw,\n        :proto => :tcp,\n        :dest_port => 5480\n      }\n    )\n\n...in the above case, we're using the `add_shorewall_rules` helper to add an\n`ACCEPT` rule for each host which matches either the `tippr_db::haproxy` recipe\nor the `monitoring` role (with different comments depending on which role\nmatched). If a single host matches twice, only a single rule (for each of its\ninternal IP addresses) is added.\n\nNotably, any of the values in the `rules` hash can be a block, in which case it\nis executed with an argument containing both the match metadata passed to the\n`match_nodes` argument and the matched node retrieved by the search operation.\n\nAlternately, an explicit rule (or policy) can be added as follows:\n\n    # Give ALL hosts in lan zone access to logstash\n    node.override[:shorewall][:rules] << {\n      :description => \"Access to logstash web server\",\n      :action => :ACCEPT,\n      :source => :lan,\n      :dest => :fw,\n      :proto => :tcp,\n      :dest_port => 9292\n    }\n\nAgain: Only address matching one of the networks defined in\n`shorewall/private_ranges` will be added by the `add_shorewall_rules` helper.\n\nAttributes\n==========\n\n*Important:* Many of these are defined at the `override` level rather than the\n`default` level. This is done such that `node[:shorewall][:zones] << { ... }`\nworks as you'd expect.\n\n* `shorewall/default_interface_settings` - Default settings to be used in\n  filling out the `interfaces` file. May be overwritten on a per-interface basis.\n* `shorewall/enabled` - Boolean (also accepts string versions of true/false);\n  whether we actually start the firewall after configuring it.\n* `shorewall/private_ranges` - IP address ranges considered eligible as private\n  interconnect addresses.\n* `shorewall/zone_hosts/ZONE` - if this starts with `search:`, the remainder is\n  used as a search expression to identify hosts which should be considered\n  members of this zone (when populating the shorewall `hosts` file). Otherwise,\n  it can be a CIDR address (as `192.168.0.0/16` or `0.0.0.0/0`) to refer to a\n  subnet.\n* `shorewall/zone_interfaces/ZONE` - maps from a shorewall zone name to the\n  Ethernet interface serving that zone. If multiple zones are mapped to the\n  same interface, then that interface will be distinguished via the shorewall\n  `hosts` file.\n* `shorewall/rules`, `shorewall/policy`, `shorewall/hosts`,\n  `shorewall/interfaces` all correspond directly to the relevant upstream\n  configuration files.\n\nFor more details, see the `attributes/default.rb` file.\n\nLimitations\n===========\n\nPatches to address any of these items would be gratefully accepted.\n\n* Includes a hardcoded, non-configurable versions of the `shorewall.conf` file.\n* Searches retrieve far more information (entire nodes) than is actually\n  needed.\n* Support for non-CentOS targets should be both worthwhile and straightforward.\n* Not all of shorewall's configuration is mapped.\n* No thought has been given to IPv6 support.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": [],
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yumrepo",
+      "revision": [],
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "shorewall": "Configures and activates Shorewall firewall"
+  },
+  "parameters": {
+    "shorewall/enabled": {
+      "required": "recommended",
+      "calculated": false,
+      "choice": [
+        "true",
+        "false"
+      ],
+      "default": "false",
+      "type": "string",
+      "recipes": [],
+      "description": "Whether to activate the applied firewall configuration",
+      "display_name": "Shorewall enabled?",
+      "mapping": "cookbook_attribute"
+    }
+  }
+}

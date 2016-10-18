@@ -1,0 +1,168 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/actency/docker-mysql",
+    "repository_url": "https://hub.docker.com/v2/repositories/actency/docker-mysql",
+    "tags_url": "https://hub.docker.com/v2/repositories/actency/docker-mysql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/actency/docker-mysql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/actency/docker-mysql/autobuild",
+    "user": "actency",
+    "name": "docker-mysql",
+    "namespace": "actency",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 305,
+    "last_updated": "2016-09-13T15:46:29.618424Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "5.7",
+        "full_size": 131664356,
+        "id": 2554014,
+        "repository": 621019,
+        "creator": 41665,
+        "last_updater": 41665,
+        "last_updated": "2016-09-13T15:46:04.486797Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 131664471,
+        "id": 2554013,
+        "repository": 621019,
+        "creator": 41665,
+        "last_updater": 41665,
+        "last_updated": "2016-09-13T15:45:49.797366Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5.6",
+        "full_size": 111420721,
+        "id": 2554086,
+        "repository": 621019,
+        "creator": 41665,
+        "last_updater": 41665,
+        "last_updated": "2016-06-02T12:52:44.225357Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5.5",
+        "full_size": 88250518,
+        "id": 2554141,
+        "repository": 621019,
+        "creator": 41665,
+        "last_updater": 41665,
+        "last_updated": "2016-06-02T12:49:35.394257Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Actency/docker-mysql"
+  },
+  "name": "actency/docker-mysql Docker container",
+  "description": "Actency MySQL image. Check our other images.",
+  "readme": "# About this repo\n\nThis is the Actency Docker **Drupal** optimized images for mysql.\n\nAvailable tags are:\n- 5.7, latest ([5.7/Dockerfile](https://github.com/Actency/docker-mysql/tree/master/5.7/Dockerfile))\n- 5.6 ([5.6/Dockerfile](https://github.com/Actency/docker-mysql/tree/master/5.6/Dockerfile))\n- 5.5 ([5.5/Dockerfile](https://github.com/Actency/docker-mysql/tree/master/5.5/Dockerfile))\n\n# Docker-compose\n\nPlease check our complete docker-compose.yml example at: https://github.com/Actency/docker-apache-php\n\n[Docker Hub page](https://hub.docker.com/r/actency/docker-mysql/)\n",
+  "dockerfile": "FROM debian:jessie\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\nRUN groupadd -r mysql && useradd -r -g mysql mysql\n\n# add gosu for easy step-down from root\nENV GOSU_VERSION 1.7\nRUN set -x \\\n\t&& apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/* \\\n\t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \\\n\t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \\\n\t&& export GNUPGHOME=\"$(mktemp -d)\" \\\n\t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \\\n\t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \\\n\t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu \\\n\t&& gosu nobody true \\\n\t&& apt-get purge -y --auto-remove ca-certificates wget\n\nRUN mkdir /docker-entrypoint-initdb.d\n\n# FATAL ERROR: please install the following Perl modules before executing /usr/local/mysql/scripts/mysql_install_db:\n# File::Basename\n# File::Copy\n# Sys::Hostname\n# Data::Dumper\nRUN apt-get update && apt-get install -y perl pwgen --no-install-recommends && rm -rf /var/lib/apt/lists/*\n\n# gpg: key 5072E1F5: public key \"MySQL Release Engineering <mysql-build@oss.oracle.com>\" imported\nRUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys A4A9406876FCBD3C456770C88C718D3B5072E1F5\n\nENV MYSQL_MAJOR 5.7\nENV MYSQL_VERSION 5.7.15-1debian8\n\nRUN echo \"deb http://repo.mysql.com/apt/debian/ jessie mysql-${MYSQL_MAJOR}\" > /etc/apt/sources.list.d/mysql.list\n\n# the \"/var/lib/mysql\" stuff here is because the mysql-server postinst doesn't have an explicit way to disable the mysql_install_db codepath besides having a database already \"configured\" (ie, stuff in /var/lib/mysql/mysql)\n# also, we set debconf keys to make APT a little quieter\nRUN { \\\n\t\techo mysql-community-server mysql-community-server/data-dir select ''; \\\n\t\techo mysql-community-server mysql-community-server/root-pass password ''; \\\n\t\techo mysql-community-server mysql-community-server/re-root-pass password ''; \\\n\t\techo mysql-community-server mysql-community-server/remove-test-db select false; \\\n\t} | debconf-set-selections \\\n\t&& apt-get update && apt-get install -y mysql-server=\"${MYSQL_VERSION}\" && rm -rf /var/lib/apt/lists/* \\\n\t&& rm -rf /var/lib/mysql && mkdir -p /var/lib/mysql /var/run/mysqld \\\n\t&& chown -R mysql:mysql /var/lib/mysql /var/run/mysqld \\\n# ensure that /var/run/mysqld (used for socket and lock files) is writable regardless of the UID our mysqld instance ends up having at runtime\n\t&& chmod 777 /var/run/mysqld\n\n# comment out a few problematic configuration values\n# don't reverse lookup hostnames, they are usually another container\nRUN sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/mysql.conf.d/mysqld.cnf \\\n\t&& echo 'skip-host-cache\\nskip-name-resolve' | awk '{ print } $1 == \"[mysqld]\" && c == 0 { c = 1; system(\"cat\") }' /etc/mysql/mysql.conf.d/mysqld.cnf > /tmp/mysqld.cnf \\\n\t&& mv /tmp/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf\n\nVOLUME /var/lib/mysql\n\nCOPY act_overrides.cnf /etc/mysql/conf.d/\n\nCOPY docker-entrypoint.sh /usr/local/bin/\nRUN chmod +x /usr/local/bin/docker-entrypoint.sh\nRUN ln -s usr/local/bin/docker-entrypoint.sh /entrypoint.sh # backwards compat\nENTRYPOINT [\"docker-entrypoint.sh\"]\n\nEXPOSE 3306\nCMD [\"mysqld\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3306
+    ],
+    "volume": [
+      "/var/lib/mysql"
+    ],
+    "run": [
+      "groupadd -r mysql && useradd -r -g mysql mysql",
+      "set -x \t&& apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/* \t&& wget -O /usr/local/bin/gosu \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)\" \t&& wget -O /usr/local/bin/gosu.asc \"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc\" \t&& export GNUPGHOME=\"$(mktemp -d)\" \t&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \t&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \t&& rm -r \"$GNUPGHOME\" /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu \t&& gosu nobody true \t&& apt-get purge -y --auto-remove ca-certificates wget",
+      "mkdir /docker-entrypoint-initdb.d",
+      "apt-get update && apt-get install -y perl pwgen --no-install-recommends && rm -rf /var/lib/apt/lists/*",
+      "apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys A4A9406876FCBD3C456770C88C718D3B5072E1F5",
+      "echo \"deb http://repo.mysql.com/apt/debian/ jessie mysql-${MYSQL_MAJOR}\" > /etc/apt/sources.list.d/mysql.list",
+      "{ \t\techo mysql-community-server mysql-community-server/data-dir select ''; \t\techo mysql-community-server mysql-community-server/root-pass password ''; \t\techo mysql-community-server mysql-community-server/re-root-pass password ''; \t\techo mysql-community-server mysql-community-server/remove-test-db select false; \t} | debconf-set-selections \t&& apt-get update && apt-get install -y mysql-server=\"${MYSQL_VERSION}\" && rm -rf /var/lib/apt/lists/* \t&& rm -rf /var/lib/mysql && mkdir -p /var/lib/mysql /var/run/mysqld \t&& chown -R mysql:mysql /var/lib/mysql /var/run/mysqld # ensure that /var/run/mysqld (used for socket and lock files) is writable regardless of the UID our mysqld instance ends up having at runtime",
+      "sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/mysql.conf.d/mysqld.cnf \t&& echo 'skip-host-cache\\nskip-name-resolve' | awk '{ print } $1 == \"[mysqld]\" && c == 0 { c = 1; system(\"cat\") }' /etc/mysql/mysql.conf.d/mysqld.cnf > /tmp/mysqld.cnf \t&& mv /tmp/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf",
+      "chmod +x /usr/local/bin/docker-entrypoint.sh",
+      "ln -s usr/local/bin/docker-entrypoint.sh /entrypoint.sh # backwards compat"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "env": {
+      "GOSU_VERSION": "1.7",
+      "MYSQL_MAJOR": "5.7",
+      "MYSQL_VERSION": "5.7.15-1debian8"
+    },
+    "copy": "docker-entrypoint.sh /usr/local/bin/",
+    "entrypoint": "[\"docker-entrypoint.sh\"]",
+    "cmd": "[\"mysqld\"]"
+  },
+  "source_repository_url": "https://github.com/Actency/docker-mysql.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Actency/docker-mysql",
+  "docker_repository": "actency/docker-mysql",
+  "docker_image": "actency/docker-mysql",
+  "parameters_schema": {
+    "GOSU_VERSION": {
+      "default": "1.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_MAJOR": {
+      "default": "5.7",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MYSQL_VERSION": {
+      "default": "5.7.15-1debian8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "actency/docker-mysql",
+  "revision": "5.7",
+  "uris": [
+    "https://hub.docker.com/r/actency/docker-mysql",
+    "https://hub.docker.com/v2/repositories/actency/docker-mysql",
+    "https://github.com/Actency/docker-mysql.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Middleware/Data Store/Relational/MySQL"
+  ],
+  "info_url": "https://hub.docker.com/r/actency/docker-mysql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

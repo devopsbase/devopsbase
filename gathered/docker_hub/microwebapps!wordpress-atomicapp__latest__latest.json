@@ -1,0 +1,97 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/microwebapps/wordpress-atomicapp",
+    "repository_url": "https://hub.docker.com/v2/repositories/microwebapps/wordpress-atomicapp",
+    "tags_url": "https://hub.docker.com/v2/repositories/microwebapps/wordpress-atomicapp/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/microwebapps/wordpress-atomicapp/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/microwebapps/wordpress-atomicapp/autobuild",
+    "user": "microwebapps",
+    "name": "wordpress-atomicapp",
+    "namespace": "microwebapps",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 513,
+    "last_updated": "2016-10-06T23:36:38.413789Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 87667665,
+        "id": 1060321,
+        "repository": 348037,
+        "creator": 253146,
+        "last_updater": 338695,
+        "last_updated": "2016-10-06T23:36:37.591086Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "micro-webapps/micro-webapps"
+  },
+  "name": "microwebapps/wordpress-atomicapp Docker container",
+  "description": "Wordpress Atomic App based on Nulecule, official Wordpress Docker image and MariaDB.",
+  "readme": "Table of Contents\n=================\n\n  * [What is micro-webapps?](#what-is-micro-webapps)\n  * [Micro-webapps architecture](#micro-webapps-architecture)\n  * [Micro-webapps frontends](#micro-webapps-frontends)\n  * [Micro-webapps with Nulecule](#micro-webapps-with-nulecule)\n    * [Nulecule examples](#nulecule-examples)\n  * [Microwebapps without Nulecule](#microwebapps-without-nulecule)\n  * [Documentation](#documentation)\n\n# What is micro-webapps?\nThe goal of the micro-webapps project is to allow simple deployment of web applications in the cloud (multi container) environment. Admin is able to choose the frontend which will serve the web applications and then install the web applications as separate containers. For each web application, he is able to configure the URI on which the web application will be served.\n\nIt is therefore possible to setup webserver with, for example, following structure:\n\n- `http://domain.tld/` running static content.\n- `http://domain.tld/blog` running wordpress in separate container.\n- `http://bugs.domain.tld` running Bugzilla in separate container.\n- `http://another-domain.tld` running completely different domain.\n\n# Micro-webapps architecture\n\nThe basic architecture of micro-webapps is ilustrated by this image:\n\n![Micro-webapps architecture](graphics/architecture.png)\n\nWeb applications are running in separate containers using the Kubernetes, Openshift, Docker or another container environment. When started, the web application publishes its webserver related configuration into some shared storage. This can be Kubernetes or Openshift API-server or for example the Docker shared volume.\n\nThe webserver configuration published by the web application is in the webserver-independent [webconf-spec](https://github.com/micro-webapps/webconf-spec) JSON format. This has multiple benefits:\n\n- The developer of the web application writes single webserver configuration file and can be sure it will work with all the frontend webservers.\n- The deployer of the web application can use whatever frontend webserver he wants.\n- When the new webserver is created, the web applications do not have to be changed. There only have to exist the webconf-spec loader plugin for the webserver.\n\nWhen the webserver configuration is published in the shared storage, the frontend webserver detects it and reloads its configuration to reflect the configuration of newly added web application. This allows transparent changes in the served applications and virtualhosts.\n\nLater, when the client sends a request for the particular web application, the frontend webserver forwards it to the right container according to the frontend webserver configuration.\n\n# Micro-webapps frontends\n\nCurrently, there are following micro-webapps frontends:\n\n- [httpd-frontend](https://registry.hub.docker.com/u/microwebapps/httpd-frontend/) - Apache httpd frontend.\n- [haproxy-frontend](https://registry.hub.docker.com/u/microwebapps/haproxy-frontend/) - HAProxy frontend.\n- [nginx-frontend](https://registry.hub.docker.com/u/microwebapps/nginx-frontend/) - nginx frontend.\n\nFor the `httpd-frontend`, there exists extra `httpd-config-*` Docker images. These Docker images are used to inject extra configuration into the httpd-frontend container, so it is for example possible to serve static data on the particular virtualhost.\n\n# Micro-webapps with Nulecule and Atomicapp\n\nUsing the [Nulecule](https://github.com/projectatomic/nulecule/) specification and its reference implementation - [The atomicapp project](https://github.com/projectatomic/atomicapp). It is possible to use micro-webapps for development, packaging and deployment of fully modular and self-contained web applications.\n\nThe developer of the web application can create single Docker image, which will deploy the application on all container environments and let the deployer to easily decide on which URI the web application should be running. In the end of deployment, the deployer has fully working web application without the need to touch the web application's or the frontend's configuration file.\n\n## Nulecule examples\n\n- [Owncloud](https://github.com/micro-webapps/micro-webapps/tree/master/nulecules/owncloud) - Example of the Owncloud web application using the micro-webapps and Nulecule.\n- [Wordpress](https://github.com/micro-webapps/micro-webapps/tree/master/nulecules/wordpress) - Example of the Wordpress web application using the micro-webapps and Nulecule.\n\nAlso check Documentation, which describes how to create new micro-webapp nulecule.\n\n# Micro-webapps without Nulecule and Atomicapp\n\nIt is also possible to use micro-webapps without the Nulecule project. Our GitHub repository contains the Kubernetes/Openshift pod/service files which can be deployed without the Nulecule or Atomicapp as described in Documentation.\n\n# Documentation\n\nThis chapter contains useful documentation and examples how to use micro-webapps.\n\n  * Creating micro-webapps with Nulecule\n    * [Simple Owncloud example](docs/create-simple-owncloud-webapp.md)\n    * [Multi-container Wordpress with MariaDB example](docs/create-multi-container-wordpress-webapp.md)\n    * [Wordpress example with replication and load balancing](docs/create-wordpress-webapp-replication.md)\n    * [Micro-webapp from existing Nulecule](docs/create-micro-webapp-from-nulecule.md)\n  * Deploying micro-webapps\n    * [Deploying using Atomic App (Nulecule)](docs/deploy-webapp-atomicapp.md)\n    * Deploying on Kubernetes or Openshift (Not written yet, for now check Deploying using Atomic App (Nulecule))\n  * Webconf-spec cookbook\n    * [Changing webconf-spec configuration](docs/webconf-spec-changing.md)\n    * [Setting up SSL certificate for microweb-apps application](docs/webconf-spec-ssl.md)\n  * [Frequently asked questions](docs/faq.md)\n    * [What is the difference between micro-webapps and Kubernetes service](docs/faq.md#what-is-the-difference-between-micro-webapps-and-kubernetes-service)\n    * [What is the difference between micro-webapps and Openshift3 routing layer](docs/faq.md#what-is-the-difference-between-micro-webapps-and-openshift3-routing-layer)\n",
+  "dockerfile": "FROM projectatomic/atomicapp:0.1.12\n\nMAINTAINER Jan Kaluza <jkaluza@redhat.com>\n\nLABEL io.projectatomic.nulecule.specversion 0.0.2\n\nLABEL Build docker build --rm --tag testing/webapp-wordpress-atomicapp .\n\n\nADD Nulecule /application-entity/\nADD artifacts/ /application-entity/artifacts/\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "Nulecule",
+        "dest": "/application-entity/"
+      },
+      {
+        "source": "artifacts/",
+        "dest": "/application-entity/artifacts/"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [],
+    "workdir": [],
+    "from": "projectatomic/atomicapp:0.1.12",
+    "maintainer": "Jan Kaluza <jkaluza@redhat.com>",
+    "label": "Build docker build --rm --tag testing/webapp-wordpress-atomicapp ."
+  },
+  "source_repository_url": "https://github.com/micro-webapps/micro-webapps.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/micro-webapps/micro-webapps",
+  "docker_repository": "microwebapps/wordpress-atomicapp",
+  "docker_image": "microwebapps/wordpress-atomicapp",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "microwebapps/wordpress-atomicapp",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/microwebapps/wordpress-atomicapp",
+    "https://hub.docker.com/v2/repositories/microwebapps/wordpress-atomicapp",
+    "https://github.com/micro-webapps/micro-webapps.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image/Docker Image",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/microwebapps/wordpress-atomicapp",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,61 @@
+{
+  "name": "hbase Chef cookbook",
+  "chef_cookbook_name": "hbase",
+  "revision": "0.1.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/hbase",
+    "https://supermarket.chef.io/cookbooks/hbase/download",
+    "https://supermarket.chef.io/cookbooks/hbase/versions/0.1.0",
+    "https://supermarket.chef.io/cookbooks/hbase/versions/0.1.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/hbase/versions/0.1.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/hbase",
+    "https://supermarket.chef.io/api/v1/cookbooks/hbase/versions/0.1.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Databases",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Data Store/Document-oriented/HBase",
+    "Type/Middleware/Data Processing/Hadoop"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/hbase",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/hbase/versions/0.1.0/download",
+  "deprecated": false,
+  "created": "2010-06-06T05:39:07.000Z",
+  "updated": "2010-06-06T05:39:08.000Z",
+  "description": "Installs/Configures hbase using a Databag for configuration. Expects Hadoop to be set up with the hadoop_for_hbase recipe",
+  "maintainer": {
+    "name": "rberger",
+    "email": "ops@runa.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": null,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 8,
+  "downloads_count": 1263785,
+  "downloads_count_revision": 1263786,
+  "repository_url": "http://blog.ibd.com",
+  "issues_url": "http://blog.ibd.com",
+  "chef_source_url": "http://blog.ibd.com",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme": "= DESCRIPTION:\nAlong with the Hadoop Cookbook, builds a HBase / Hadoop Cluster suitable for using with Map/Reduce and HBase. \nIt is a literal translation of the ec2scripts in the HBase contrib of HBase 0.20.x.\n\nThis HBase Cookbook assumes its part of an HBase / Hadoop Cluster and has many databag or attribute elements based on HBase.\nIt assumes that the HBase Master and the Hadoop Primary, Secondary Nameservers are the same machine and that HBase Regionservers and Hadoop slaves are also together.\n(TODO: Make at least the secondary Nameserver on another machine). \nHaving multiple Zookeepers on other machines than the HBase Master has not been tested.\n\nThis should be refactored to be independent and support more flexible layouts of the cluster, but not by me for now. Or more likely into a single HBase recipe similar to the single Database cookbook that goes with the new Opscode Application / Database meta cookbooks.\n\nIt is driven by Databags more than Attributes and is designed to be tied to an Application via databag item[s] in the apps databag.\n\n\n= REQUIREMENTS:\n\n* hadoop\n* java\n\n= ATTRIBUTES: \n\n* app_environment - Should be set to the runtime environment, such as testing, staging or production.\nThese can be set in a role named for the environment and included as a role in the run_list.\n\n= USAGE:\n\n== ROLES:\nCreate an hbase_master role with the following recipes:\n\"ulimits\", \"hadoop\", \"hadoop::master\", \"hbase\", \"hbase::master\"\n\nCreate an hbase_regionserver role with the following recipes:\n\"ulimits\", \"hadoop\", \"hadoop::slave\", \"hbase\", \"hbase::regionserver\"\n\nBoth roles should have the ulimits_list along the lines:\noverride_attributes({\n  \"ulimits_list\" =>  [\n    {\n    :domain => \"hadoop\",\n    :type => \"soft\",\n    :item => \"nofile\",\n    :value => 32768\n    },\n    {\n    :domain => \"hadoop\",\n    :type => \"hard\",\n    :item => \"nofile\",\n    :value => 32768\n    } \n  ]\n})\n\n== DATABAG\n\nThere should be one or more databag items in the apps databag that links the HBase cluster to an application.\n\nThe HBase/Hadoop cookbooks expect the following attributes in one or more items in the apps databag:\n\n* zookeeper_role - Set it to the role[s] that will be the zookeepers[s]. It can be the same as hbase masters and hbase regionservers or separate server[s]\n* hbase_master_role - Set it to the role[s] that will be the hbase master[s]\n* hbase_regionserver_role - Set it to the role[s] that will be the hbase regionservers\n* hadoop_master_role - Set it to the role that will be the hadoo master (Usually the same as the hbase maste)\n* hadoop_slave_role - Set it to the role[s] that will be the hadoop slaves (Usually the same as the hbase regionservers)\n\nExample Where there are only two instance roles being assigned to all meta roles:\n\"zookeeper_role\": [\n \"hbase_master\"\n ],\n \"hbase_regionserver_role\": [\n \"hbase_regionserver\"\n ],\n \"hbase_master_role\": [\n \"hbase_master\"\n ],\n \"hadoop_slave_role\": [\n \"hbase_regionserver\"\n ],\n \"hadoop_master_role\": [\n \"hbase_master\"\n ]\n\nThere are also json objects for the following to configure templates and things:\n\n* hadoop\n** home\n** top\n** user_home\n** user\n** group\n** revision\n*** production\n*** staging\n*** testing\n\nAn example:\n\"hadoop\": {\n  \"home\": \"/mnt/hadoop\",\n  \"top\": \"/mnt\",\n  \"user_home\": \"/home/hadoop\",\n  \"user\": \"hadoop\",\n  \"group\": \"hadoop\",\n  \"revision\": {\n    \"production\": \"0.20.1\",\n    \"staging\": \"0.20.1\",\n    \"testing\": \"0.20.1\"\n  }\n}\n\n* hbase\n** home\n** top\n** revision\n*** production\n*** staging\n*** testing\n\nAn example:\n\"hbase\": {\n  \"home\": \"/mnt/hbase\",\n  \"top\": \"/mnt\",\n  \"revision\": {\n    \"production\": \"0.20.3\",\n    \"staging\": \"0.20.3\",\n    \"testing\": \"0.20.3\"\n  }\n}\n\n* zookeeper\n** home\n** top\n** revision\n*** production\n*** staging\n*** testing\n\nAn example:\n\"zookeeper\": {\n  \"revision\": {\n    \"production\": \"3.2.1\",\n    \"staging\": \"3.2.1\",\n    \"testing\": \"3.2.1\"\n  }\n}\n\n== RUNTIME\n\nThe recipe creates startup files in /etc/init.d\n\n* hadoop_master\n* hadoop_datanode\n* hadoop_tasktracker\n* hbase_master\n* hbase_regionserver\n\n/etc/init.d/hadoop start or stop on the master, it will start or stop all the hadoop daemons for all the nodes in the cluster.\nSame with /etc/init.d/hbase start or stop on the master.\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/java",
+      "revision": [],
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/hadoop",
+      "revision": [],
+      "self_resolve": true
+    }
+  ]
+}

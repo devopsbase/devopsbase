@@ -1,0 +1,49 @@
+{
+  "name": "minitest-handler Chef cookbook",
+  "chef_cookbook_name": "minitest-handler",
+  "revision": "1.0.1",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/minitest-handler",
+    "https://supermarket.chef.io/cookbooks/minitest-handler/download",
+    "https://supermarket.chef.io/cookbooks/minitest-handler/versions/1.0.1",
+    "https://supermarket.chef.io/cookbooks/minitest-handler/versions/1.0.1/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/minitest-handler/versions/1.0.1",
+    "https://supermarket.chef.io/api/v1/cookbooks/minitest-handler",
+    "https://supermarket.chef.io/api/v1/cookbooks/minitest-handler/versions/1.0.1/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Devopsware/Test"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/minitest-handler",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/minitest-handler/versions/1.0.1/download",
+  "deprecated": false,
+  "created": "2012-03-01T08:49:53.000Z",
+  "updated": "2015-10-26T00:02:23.887Z",
+  "description": "Installs and configures minitest-chef-handler",
+  "maintainer": {
+    "name": "btm",
+    "email": "davidpetzel@gmail.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 11,
+  "downloads_count": 33272004,
+  "downloads_count_revision": 1254438,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "Cookbook: minitest-handler<br/>\nAuthor: David Petzel <davidpetzel@gmail.com><br/>\nAuthor: Bryan W. Berry <bryan.berry@gmail.com><br/>\nAuthor: Bryan McLellan <btm@loftninjas.org><br/>\nCopyright: 2012 Opscode, Inc.<br/>\nLicense: Apache 2.0<br/>\n\nDescription\n===========\n\n# <a name=\"title\"></a> minitest-handler [![Build Status](https://secure.travis-ci.org/btm/minitest-handler-cookbook.png?branch=master)](http://travis-ci.org/btm/minitest-handler-cookbook)\n\nThis cookbook utilizes the minitest-chef-handler project to facilitate\ncookbook testing. By default, minitest-handler will collect all the\ntests in your cookbook_path and run them. \n\nminitest-chef-handler project: https://github.com/calavera/minitest-chef-handler<br/>\nstable minitest-handler cookbook: http://community.opscode.com/cookbooks/minitest-handler<br/>\nminitest-handler cookbook development: https://github.com/btm/minitest-handler-cookbook<br/>\n\n**Note**: Version 0.1.8 deprecated use of\n``files/default/tests/minitest/*_test.rb`` and the location of support\nfiles. Test files should now be located in\n``files/default/test/*_test.rb``\n\n**Note**: Version 0.1.0 added a change that breaks backward compatibility. The minitest-handler now only loads<br/>\ntest files named \"<recipe-name>_test.rb\" rather than all test files in the path `files/default/test/*_test.rb`\n\nIf you have any helper libraries, they should match `files/default/test/*helper*.rb`\n\nAttributes\n==========\n* `node[:minitest][:gem_version]` - The version of the [minitest](http://rubygems.org/gems/minitest)\r\n  gem to install and use. \n  * Default: 3.0.1\n* `node[:minitest][:chef_handler_gem_version]` - The version of the [minitest-chef-handler](http://rubygems.org/gems/minitest-chef-handler)\r\n  gem to install and use. \n  * Default: 1.0.1\n* `node[:minitest][:path]` - Location to store and find test files. \r\n  * Default: `/var/chef/minitest`\n* `node[:minitest][:recipes]` - The names of all recipes included during the \r\n  chef run, whether by insertion to the run_list, inclusion through a role, or \n  added with `include_recipe`. If you only want tests for select recipes to run,\n  override this value with the names of the recipes that you want tested.\n  * Default: []\n* `node[:minitest][:filter]` - Filter test names on a pattern (regex)\r\n  * Default: `nil`\r\n  * Example: `/apache2/` could be used to *only* run tests for recipes with\r\n    starting with *apache2*\n* `node[:minitest][:seed]` - Set random seed\r\n  * Default: `nil`\n* `node[:minitest][:ci_reports]` - Path to write out the result of each\n  test in a JUnit-compatible XML file, parseable by many CI platforms\n  * Default: `nil`\n* `node[:minitest][:tests]` - Test files to run.\r\n  * Default to `**/*_test.rb`\r\n* `node[:minitest][:verbose]` - Display verbose output\r\n  * Default: true\n\nUsage\n=====\n\n* Add ``recipe[minitest-handler]`` somewhere on your run_list, preferably last\n* Place tests in ``files/default/test/`` with the name **your-recipe-name\\_test.rb**\r\n  (default recipe is named **default_test.rb**)\n* Put any helper functions you have in ``files/default/test/spec_helper.rb`` but\n  minitest-handler will ensure that you have access to any file that\n  matches the glob ``files/test/*helper.rb``\n\n[Minitest](https://github.com/seattlerb/minitest)\n\nExamples\n========\n\n### Traditional minitest\n\n    class TestApache2 < MiniTest::Chef::TestCase\n      def test_that_the_package_installed\n        case node[:platform]\n        when \"ubuntu\",\"debian\"\n          assert system('apt-cache policy apache2 | grep Installed | grep -v none')\n        end\n      end\n\n      def test_that_the_service_is_running\n        assert system('/etc/init.d/apache2 status')\n      end\n\n      def test_that_the_service_is_enabled\n        assert File.exists?(Dir.glob(\"/etc/rc5.d/S*apache2\").first)\n      end\n    end\n\n\n\n### Using minitest/spec\n\n    require 'minitest/spec'\n\n    describe_recipe 'ark::test' do\n\n      it \"installed the unzip package\" do\n        package(\"unzip\").must_be_installed\n      end\n\n      it \"dumps the correct files into place with correct owner and group\" do\n        file(\"/usr/local/foo_dump/foo1.txt\").must_have(:owner, \"foobarbaz\").and(:group, \"foobarbaz\")\n      end\n\n     end\n\nFor more detailed examples, see [here](https://github.com/calavera/minitest-chef-handler/blob/v0.4.0/examples/spec_examples/files/default/tests/minitest/example_test.rb)\n\n\n### Testing this cookbook\n\nThis cookbook currently uses [test-kitchen](https://github.com/opscode/test-kitchen)\nalong with the [kitchen-vagrant](https://github.com/opscode/kitchen-vagrant).\n\nAll test are currently written using [BATS](https://github.com/sstephenson/bats), \nwhich is essentially bash. Using BATS was done so that minitest-handler nor\nminitest-chef-handler were used to test itself. For more examples of bats than \nare in this cookbook, see the [chef-rvm](https://github.com/fnichol/chef-rvm), \n[chef-ruby_build](https://github.com/fnichol/chef-ruby_build), and \n[chef-rbenv](https://github.com/fnichol/chef-rbenv) cookbooks.\n\n**NOTE** A known limitation of using BATS is that the cookbook is not currently\ntested on Windows machines. See https://github.com/btm/minitest-handler-cookbook/issues/45\nfor more of the background on this.\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/chef_handler",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

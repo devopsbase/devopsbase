@@ -1,0 +1,130 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/onmodulus/run-python",
+    "repository_url": "https://hub.docker.com/v2/repositories/onmodulus/run-python",
+    "tags_url": "https://hub.docker.com/v2/repositories/onmodulus/run-python/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/onmodulus/run-python/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/onmodulus/run-python/autobuild",
+    "user": "onmodulus",
+    "name": "run-python",
+    "namespace": "onmodulus",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 295,
+    "last_updated": "2016-09-16T20:42:52.698877Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 470419743,
+        "id": 1141907,
+        "repository": 364339,
+        "creator": 180621,
+        "last_updater": 129898,
+        "last_updated": "2016-09-16T20:42:52.340851Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "nginx",
+        "full_size": 476550211,
+        "id": 2986741,
+        "repository": 364339,
+        "creator": 129898,
+        "last_updater": 129898,
+        "last_updated": "2016-06-08T15:55:43.463125Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "onmodulus/docker-run-python"
+  },
+  "name": "onmodulus/run-python Docker container",
+  "description": "The Docker run image for Modulus Python applications.",
+  "readme": "# Modulus Python Docker Run Image\n\nThe Modulus images are a set of Docker images designed to run arbitrary\napplications with a standardized external interface. The Modulus image\nconvention enforces a high degree of security and control required by PaaS\nenvironments and might not be suitable for small, more focused, deployments.\n\nRefer to the [base run image](https://github.com/onmodulus/docker-run-base) for\ndetails on how all Modulus Run Images work.\n\n## Image Details\n\nThe Modulus Python image supports versions 2.5.6, 2.6.9, 2.7.10, 3.2.6, 3.3.6,\nand 3.4.3 and handles initializing the correct version as part of its start\nprocess. The Python version can be defined in the app bundle's\n[app.json](http://help.modulus.io/customer/portal/articles/1967537-app-json-specification)\nfile. If no version is specified Python version 2.7.10 is used. Applications\nare run using pyenv and fronted with Nginx 1.8.\n\n## How to use this image\n\nAll Modulus images enforce a strict data convention for security and ease of\norchestration. Application source should be mounted in externally and\nassumptions are made based on these directories.\n\n``` text\n/host-folder/\n  |- app/\n  |- home/\n  |- log/\n  |- tmp/\n  |- supervisor.conf\n```\n\nThe only requirement for a basic running container is to put the Python source\ncode in the app folder. Then mount this directory to /mnt inside the container.\n\n``` text\n$ docker pull onmodulus/run-python\n$ docker run -v /host-folder:/mnt -p 80:8080 onmodulus/run-python start\n```\n\nAll Modulus run images have a binary available in the PATH named \"start\" that\nis a script designed to run the inner application. The start script is the most\nimportant part of each image type and is what's responsible for properly\nrunning the underlying application.\n\nThe start script in the Python run image handles initializing the proper version\nof Python.\n\nEven though you can run the start script directly, Modulus has adopted\nsupervisord as the underlying process monitor for all application types. The\nsupervisor daemon is preconfigured in all run images to load\n/mnt/supervisor.conf. The high-level Modulus tools generate this configuration\nfile to support passing environment variables into the application and redirect\nall log output to /mnt/log/app.log. The supervisor daemon is already baked into\nthe underlying run image init process, so you can run the image directly once a\nsupervisor.conf file is provided.\n\n```text\n[program:app]\ncommand=start\nenvironment=\n  PORT=8080,\n  NODE_ENV=production\nstdout_logfile=/mnt/log/app.log\n```\n\nSave this to /host-folder/supervisor.conf and run the container.\n\n``` text\n$ docker run -v /host-folder:/mnt -p 80:8080 onmodulus/run-python\n```\n\n# License\n\nLicensed under the Apache License, Version 2.0 (the \"License\"); you may not use\nthis file except in compliance with the License. You may obtain a copy of the\nLicense at\n\nhttp://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software distributed\nunder the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR\nCONDITIONS OF ANY KIND, either express or implied. See the License for the\nspecific language governing permissions and limitations under the License.\n",
+  "dockerfile": "FROM onmodulus/run-base\n\nENV \\\n  PYENV_ROOT=/mnt/home/pyenv \\\n  PATH=/opt/modulus/bin:/mnt/home/pyenv/bin:$PATH\n\nADD . /opt/modulus\nRUN /opt/modulus/bootstrap.sh\n\n# Use baseimage-docker's init system.\nCMD [\"/sbin/my_init\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": ".",
+        "dest": "/opt/modulus"
+      }
+    ],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "/opt/modulus/bootstrap.sh"
+    ],
+    "workdir": [],
+    "from": "onmodulus/run-base",
+    "env": {
+      "": "",
+      "PYENV_ROOT": "/mnt/home/pyenv",
+      "PATH": "/opt/modulus/bin:/mnt/home/pyenv/bin:$PATH"
+    },
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/onmodulus/docker-run-python.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/onmodulus/docker-run-python",
+  "docker_repository": "onmodulus/run-python",
+  "docker_image": "onmodulus/run-python",
+  "parameters_schema": {
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PYENV_ROOT": {
+      "default": "/mnt/home/pyenv",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "/opt/modulus/bin:/mnt/home/pyenv/bin:$PATH",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "onmodulus/run-python",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/onmodulus/run-python",
+    "https://hub.docker.com/v2/repositories/onmodulus/run-python",
+    "https://github.com/onmodulus/docker-run-python.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Python",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Image",
+    "Style/Virtualization Level/Application"
+  ],
+  "info_url": "https://hub.docker.com/r/onmodulus/run-python",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

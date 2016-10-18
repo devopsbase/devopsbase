@@ -1,0 +1,83 @@
+{
+  "name": "percona-tools Chef cookbook",
+  "chef_cookbook_name": "percona-tools",
+  "revision": "0.5.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/percona-tools",
+    "https://supermarket.chef.io/cookbooks/percona-tools/download",
+    "https://supermarket.chef.io/cookbooks/percona-tools/versions/0.5.0",
+    "https://supermarket.chef.io/cookbooks/percona-tools/versions/0.5.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/percona-tools/versions/0.5.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/percona-tools",
+    "https://supermarket.chef.io/api/v1/cookbooks/percona-tools/versions/0.5.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Databases",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/percona-tools",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/percona-tools/versions/0.5.0/download",
+  "deprecated": false,
+  "created": "2015-01-08T22:15:24.010Z",
+  "updated": "2015-01-09T22:52:51.357Z",
+  "description": "Installs/Configures percona-tools",
+  "maintainer": {
+    "name": "ovaistariq",
+    "email": "me@ovaistariq.net"
+  },
+  "license": "All rights reserved",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 1003665,
+  "downloads_count_revision": 503426,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "percona-tools Cookbook\n=====================\nThe percona-tools cookbook does the following:\n- Installs Percona yum repository\n- Installs and configures percona-toolkit package\n- Installs and configures percona-xtrabackup package\n\nRequirements\n------------\n- Chef 11 or higher\n- Ruby 1.9 or higher (preferably from the Chef full-stack installer)\n- Network accessible package repositories\n\nPlatform Support\n----------------\nThe following platforms are supported:\n* CentOS\n* Red Hat\n\nThe following 64-bit platforms have been tested:\n* CentOS 6.4\n* CentOS 6.5\n* CentOS 7.0\n\nCookbook Dependencies\n---------------------\n- yum\n- mysql-chef_gem\n- database\n- openssl\n\nUsage\n-----\nJust include `mysql-sys` in your node's `run_list`:\n\n```json\n{\n  \"name\":\"my_node\",\n  \"run_list\": [\n    \"recipe[mysql-sys]\"\n  ]\n}\n```\n\nOr, place a dependency on the percona-tools cookbook in your cookbook's  metadata.rb\n\n```ruby\ndepends \"percona-tools\", \"~> 0.5\"\n```\n\nThen, in a recipe:\n\n```ruby\ninclude_recipe \"percona-tools\"\n```\n\n#### MySQL versions supported\nMySQL versions 5.1, 5.5 and 5.6 are supported\n\n#### MySQL users used by the cookbook\nThe cookbook requires the MySQL root user password and the password for two separate users that are setup for use by percona-toolkit. By default the usernames used are \"ptro\" for user with read-only privileges and \"ptrw\" for user with read-write privileges. You can change the usernames used by setting the below attributes:\n```ruby\nnode.set[\"percona_tools\"][\"read_only_user\"][\"username\"] = \"some_other_read_only_username\"\nnode.set[\"percona_tools\"][\"read_write_user\"][\"username\"] = \"some_other_read_write_username\"\n```\n\nIf data bags are not being used to store the passwords for the users then the following attribute must store the \"root\" user password:\n```ruby\nnode.set[\"mysql\"][\"root_password\"] = \"changeme\"\n```\n\nAnd the following attribute must store the passwords for the two additional users used by percona-toolkit:\n```ruby\nnode.set[\"percona_tools\"][\"read_only_user\"][\"password\"] = \"changeme\"\nnode.set[\"percona_tools\"][\"read_write_user\"][\"password\"] = \"changeme\"\n```\n\nIf you do not set the password then they are randomly generated using OpenSSL and stored in the attributes mentioned above.\n\n\n#### Using encrypted data bag for storing MySQL credentials\nIt is recommended though to store the user passwords in encrypted data bag.\nIf encrypted data bag is being used then the following attribute must be set:\n```ruby\nnode.set[\"percona_tools\"][\"use_encrypted_databag\"] = true\nnode.set[\"percona_tools\"][\"databag_name\"] = \"passwords\"\nnode.set[\"percona_tools\"][\"databag_item\"] = \"mysql_users\"\n```\n\nThe above assumes that a data bag was created as follows:\n```\nknife data bag create passwords mysql_users --secret-file /path/to/databag_encryption_key\n```\n\nAn example data bag item json is shown below:\n```json\n{\n    \"id\": \"mysql_users\",\n    \"root\": \"some_secure_password\",\n    \"ptro\": \"another_secure_password\",\n    \"ptrw\": \"yet_another_secure_password\"\n}\n```\n\nThe above example assumes that the default users \"ptro\" and \"ptrw\" are being used.\n\n\nAttributes\n----------\nThe following attributes are set by default:\n```ruby\ndefault[\"percona_tools\"][\"yum\"][\"description\"] = \"CentOS $releasever - Percona\"\ndefault[\"percona_tools\"][\"yum\"][\"baseurl\"] = \"http://repo.percona.com/centos/$releasever/os/$basearch/\"\ndefault[\"percona_tools\"][\"yum\"][\"gpgkey\"] = \"http://www.percona.com/downloads/RPM-GPG-KEY-percona\"\ndefault[\"percona_tools\"][\"yum\"][\"gpgcheck\"] = true\ndefault[\"percona_tools\"][\"xtrabackup\"][\"version\"] = \"2.2.5-5027\"\ndefault[\"percona_tools\"][\"toolkit\"][\"version\"] = \"2.2.11-1\"\ndefault[\"percona_tools\"][\"read_only_user\"] = {\n    \"username\" => \"ptro\",\n    \"allowed_hosts\" => [\"%\", \"#{node['fqdn']}\", \"localhost\"]\n}\ndefault[\"percona_tools\"][\"read_write_user\"] = {\n    \"username\" => \"ptrw\",\n    \"allowed_hosts\" => [\"%\", \"#{node['fqdn']}\", \"localhost\"]\n}\ndefault[\"percona_tools\"][\"use_encrypted_databag\"] = false\ndefault[\"percona_tools\"][\"databag_name\"] = \"passwords\"\ndefault[\"percona_tools\"][\"databag_item\"] = \"mysql_users\"\n```\n\nThe other attribute that is needed and not set by default is:\n```ruby\nnode[\"mysql\"][\"socket\"]\n```\n\nContributing\n------------\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n\nLicense & Authors\n-----------------\n- Author: Ovais Tariq (<me@ovaistariq.net>)\n\n```text\n(c) 2014, Ovais Tariq <me@ovaistariq.net>\n\nThis program is free software: you can redistribute it and/or modify\nit under the terms of the GNU General Public License as published by\nthe Free Software Foundation, either version 3 of the License, or\n(at your option) any later version.\n\nThis program is distributed in the hope that it will be useful,\nbut WITHOUT ANY WARRANTY; without even the implied warranty of\nMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\nGNU General Public License for more details.\n\nYou should have received a copy of the GNU General Public License\nalong with this program.  If not, see <http://www.gnu.org/licenses/>.\n```\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 6.4",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 6.4",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/yum",
+      "revision": "~> 3.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/mysql-chef_gem",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/database",
+      "revision": "~> 2.1",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/openssl",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "percona-tools": "Includes the percona_repo and percona_tools recipes",
+    "percona-tools::percona_repo": "Sets up the Percona package repository",
+    "percona-tools::percona_tools": "Installs the Percona Toolkit and Percona XtraBackup softwares"
+  }
+}

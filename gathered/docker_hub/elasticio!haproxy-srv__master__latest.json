@@ -1,0 +1,104 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/elasticio/haproxy-srv",
+    "repository_url": "https://hub.docker.com/v2/repositories/elasticio/haproxy-srv",
+    "tags_url": "https://hub.docker.com/v2/repositories/elasticio/haproxy-srv/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/elasticio/haproxy-srv/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/elasticio/haproxy-srv/autobuild",
+    "user": "elasticio",
+    "name": "haproxy-srv",
+    "namespace": "elasticio",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 317231,
+    "last_updated": "2016-03-07T16:30:52.195817Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "master",
+        "full_size": 16823081,
+        "id": 1379892,
+        "repository": 410344,
+        "creator": 128199,
+        "last_updater": 125310,
+        "last_updated": "2016-03-07T16:30:51.542949Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      },
+      {
+        "name": "latest",
+        "full_size": 16333065,
+        "id": 1391541,
+        "repository": 410344,
+        "creator": 128199,
+        "last_updater": 128199,
+        "last_updated": "2015-11-23T13:00:26.271758Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "elasticio/haproxy-srv"
+  },
+  "name": "elasticio/haproxy-srv Docker container",
+  "description": "Flexible HAProxy auto configuration and auto service discovery for SkyDNS or Mesos-DNS ",
+  "readme": "# HAProxy SRV\n\nHAProxy-SRV is a templating solution that can flexibly reconfigure HAProxy based on the regular polling of the\nservice data from DNS (e.g. SkyDNS or Mesos-DNS) using SRV records.\n\nIt has a very simple logic - HA Proxy is configured based on the Handlebars template that is re-evaluated every time changes in DNS are detecting. Script is polling DNS and trigger a HA Proxy configuration refresh after changes.\n\nMade by [elastic.io](http://www.elastic.io) in Germany.\n\n# Quick start\n\nSimplest way to start it with Docker:\n\n```\ndocker run -d -p 8080:8080 -p 80:80 -v $PWD/haproxy.cfg.template:/src/haproxy.cfg.template elasticio/haproxy-srv:latest\n```\n\nif you want to see more DEBUG output then just add ``-e \"DEBUG=*\"``\n\n# How it works\n\nScript works very simple - after docker container started script parse and validates template, create a HAProxy configuration file in ``/src/haproxy.cfg`` and start HAProxy as a daemon. Every second (by default, can be configured via ``REFRESH_TIMEOUT`` env variable, default 1000) scirpt will execute a DNS lookup and re-evaluate the template, if result of evaluation is different from original configuration, original config will be overwritten and HAProxy reload will be triggered. HAProxy reload will not affect existing connections.\n\n# How to use it\n\nRecommended way to deploy is is to use [a Docker image](https://hub.docker.com/r/elasticio/haproxy-srv/). You would need to place your configuration file template, the simples way to do it is to build an image based on ``haproxy-srv`` image. \n\nCreate a new ``Dockerfile`` content like this:\n\n```\nFROM elasticio/haproxy-srv:latest\n\nCOPY haproxy.cfg.template /src/\n\nEXPOSE 80 8880\n```\n\nNote the ``EXPOSE`` part here, don't forget to specify exposed ports if your HAProxy configuration listens on any port different from ``80``.\n\nAs a next step create a template file, it should be placed under ``/src/haproxy.cfg.template`` in resulting Docker container and should have a [Handlebars](http://handlebarsjs.com/) syntax with one little extension (see below). Here is the sample:\n\n```hbs\nglobal\n    user root\n    group root\n\n    # Stats required for this module to work\n    # https://github.com/observing/haproxy#haproxycfg\n    stats socket /tmp/haproxy.sock level admin\n\ndefaults\n    mode    http\n    timeout connect 5000\n    timeout client  50000\n    timeout server  50000\n\n{{#dns-srv \"_frontend._tcp.marathon.mesos\"}}\n    frontend sample\n        bind 0.0.0.0:80\n        balance roundrobin\n        option http-server-close\n        option forwardfor\n        {{#each this}}\n            server frontend-{{@index}} {{ip}}:{{port}} check weight {{weight}}\n        {{/each}}\n{{/dns-srv}}\n```\n\nIt could be any valid HAProxy configuration with one mandatory addition:\n\n```\nstats socket /tmp/haproxy.sock level admin\n```\n\nto trigger HAProxy restart the script inside the file will communicate with HAProxy daemon via socket ```/tmp/haproxy.sock```.\n\n# Template\n\nConfiguration template is a normal [Handlebars](http://handlebarsjs.com/) so that you could use any of the feature of this template language. There is however one additional helper ``dns-srv`` implemented. This helper takes one string parameter and will execute a [DNS SRV lookup](https://nodejs.org/api/dns.html#dns_dns_resolvesrv_hostname_callback) to fetch an SRV record(s). After SRV Record lookup, for each SRV record a [DNS resolution](https://nodejs.org/api/dns.html#dns_dns_resolve_hostname_rrtype_callback) to find the IP will be made.\n\nThis template will give you an idea how to use it:\n\n```hbs\n# Your usual configuration is here\n{{#dns-srv \"_frontend._tcp.marathon.mesos\"}}\n    # This block will only be rendered when _frontend._tcp.marathon.mesos was found in DNS\n    {{#each this}}\n        # This piece will be rendered for each SRV entry from DNS\n        SRV Name is {{name}}\n        SRV Weight is {{weight}}\n        SRV Port is {{port}}\n        IP for SRV Name is {{ip}}\n    {{/each}}\n{{/dns-srv}}\n# rest of your configuration\n```\n\nTypical use-case for Msos-DNS you can see above.\n\n# Debugging\n\nJust set the ``DEBUG`` environment variable into ``*`` to see detailed logging.\n\n# TODOs\n\nPRs are welcome for\n * Bug fixes\n * Unit tests\n * Gulp or Grunt-based builds\n * CircleCI config for continous integration\n",
+  "dockerfile": "FROM mhart/alpine-node:5\n\nRUN apk add --update haproxy\n\nCOPY package.json /src/\n\nRUN cd /src; npm install\n\nCOPY start.js haproxy.cfg.template /src/\n\nCMD [\"node\", \"/src/start.js\"]",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "apk add --update haproxy",
+      "cd /src; npm install"
+    ],
+    "workdir": [],
+    "from": "mhart/alpine-node:5",
+    "copy": "start.js haproxy.cfg.template /src/",
+    "cmd": "[\"node\", \"/src/start.js\"]"
+  },
+  "source_repository_url": "https://github.com/elasticio/haproxy-srv.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/elasticio/haproxy-srv",
+  "docker_repository": "elasticio/haproxy-srv",
+  "docker_image": "elasticio/haproxy-srv",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "elasticio/haproxy-srv",
+  "revision": "master",
+  "uris": [
+    "https://hub.docker.com/r/elasticio/haproxy-srv",
+    "https://hub.docker.com/v2/repositories/elasticio/haproxy-srv",
+    "https://github.com/elasticio/haproxy-srv.git"
+  ],
+  "labels": [
+    "Docker",
+    "Style/Virtualization Level/Hardware/Network/SDN",
+    "Type/Devopsware/Orchestration/Cluster-based/Mesos",
+    "Type/Infrastructure/Operating System",
+    "Type/Infrastructure/Network/DNS",
+    "Type/Middleware/Proxy/HAProxy"
+  ],
+  "info_url": "https://hub.docker.com/r/elasticio/haproxy-srv",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

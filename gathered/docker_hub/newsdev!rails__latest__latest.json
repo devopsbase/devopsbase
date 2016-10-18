@@ -1,0 +1,145 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/newsdev/rails",
+    "repository_url": "https://hub.docker.com/v2/repositories/newsdev/rails",
+    "tags_url": "https://hub.docker.com/v2/repositories/newsdev/rails/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/newsdev/rails/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/newsdev/rails/autobuild",
+    "user": "newsdev",
+    "name": "rails",
+    "namespace": "newsdev",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 2,
+    "pull_count": 3212,
+    "last_updated": "2016-07-14T19:21:22.491039Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 293623066,
+        "id": 821097,
+        "repository": 306317,
+        "creator": 2487,
+        "last_updater": 13898,
+        "last_updated": "2016-07-14T19:21:21.875500Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "newsdev/docker-rails"
+  },
+  "name": "newsdev/rails Docker container",
+  "description": "The base Ruby image with additions to support Rails.",
+  "readme": "# docker-rails\n\nThe [base Ruby image](https://hub.docker.com/_/ruby/) with additions to support Rails.\n\npackage|version\n:---|:---\n[ruby](https://www.ruby-lang.org/)|2.3.0\n[cmake](https://cmake.org/)|3.4.3\n[libssh](http://www.libssh2.org/)|1.6.0\n[node](https://nodejs.org/)|5.5.0\n[kubernetes-secret-env](https://github.com/newsdev/kubernetes-secret-env)|0.0.2\n",
+  "dockerfile": "FROM ruby:2.3.0\n\n# Define locale\nENV LANG C.UTF-8\n\n# Configure bundler\nRUN \\\n  bundle config --global frozen 1 && \\\n  bundle config --global build.nokogiri --use-system-libraries \n\n# Install cmake\nENV CMAKE_MAJOR=3.4\nENV CMAKE_VERSION=3.4.3\nENV CMAKE_SHASUM256=66b8d315c852908be9f79e1a18b8778714659fce4ddb2d041af8680a239202fc\nRUN \\\n  cd /usr/local && \\\n  curl -sfLO https://cmake.org/files/v$CMAKE_MAJOR/cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz && \\\n  echo \"${CMAKE_SHASUM256}  cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz\" | sha256sum -c - &&\\\n  tar --strip-components 1 -xzf cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz cmake-$CMAKE_VERSION-Linux-x86_64/bin/cmake cmake-$CMAKE_VERSION-Linux-x86_64/share/cmake-$CMAKE_MAJOR/Modules cmake-$CMAKE_VERSION-Linux-x86_64/share/cmake-$CMAKE_MAJOR/Templates && \\\n  rm cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz\n\n# Install libssh2 from source\nENV LIBSSH2_VERSION=1.6.0\nRUN gpg --keyserver pgp.mit.edu --recv-keys 279D5C91 \nRUN \\\n  cd /usr/local && \\\n  curl -sfLO http://www.libssh2.org/download/libssh2-$LIBSSH2_VERSION.tar.gz && \\\n  curl -sfLO http://www.libssh2.org/download/libssh2-$LIBSSH2_VERSION.tar.gz.asc && \\\n  gpg --verify libssh2-$LIBSSH2_VERSION.tar.gz.asc && \\\n  tar -xzf libssh2-$LIBSSH2_VERSION.tar.gz && \\\n  cd libssh2-$LIBSSH2_VERSION && \\\n  ./configure --with-openssl --without-libgcrypt --with-libz && \\\n  make install && \\\n  cd .. && \\\n  rm -r libssh2-$LIBSSH2_VERSION libssh2-$LIBSSH2_VERSION.* share/man/man3/libssh2_*\n\n# Install node.js\nENV NODE_VERSION=5.5.0\nENV NODE_SHASUM256=3e593d91b6d2ad871efaaf8e9a17b3608ca98904959bcfb7c42e6acce89e80f4\nRUN \\\n  cd /usr/local && \\\n  curl -sfLO https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz && \\\n  echo \"${NODE_SHASUM256}  node-v$NODE_VERSION-linux-x64.tar.gz\" | sha256sum -c - &&\\\n  tar --strip-components 1 -xzf node-v$NODE_VERSION-linux-x64.tar.gz node-v$NODE_VERSION-linux-x64/bin node-v$NODE_VERSION-linux-x64/include node-v$NODE_VERSION-linux-x64/lib && \\\n  rm node-v$NODE_VERSION-linux-x64.tar.gz\n\n# Install kubernetes-secret-env\nENV KUBERNETES_SECRET_ENV_VERSION=0.0.2\nRUN \\\n  mkdir -p /etc/secret-volume && \\\n  cd /usr/local/bin && \\\n  curl -sfLO https://github.com/newsdev/kubernetes-secret-env/releases/download/$KUBERNETES_SECRET_ENV_VERSION/kubernetes-secret-env && \\\n  chmod +x kubernetes-secret-env\n\n# Set the working directory\nONBUILD RUN mkdir -p /usr/src/app\nONBUILD WORKDIR /usr/src/app\n\n# Install gems\nONBUILD COPY Gemfile Gemfile.lock /usr/src/app/\nONBUILD COPY vendor /usr/src/app/vendor\nONBUILD RUN bundle install --local --jobs `nproc`\n\n# Copy the rest of the application source\nONBUILD COPY . /usr/src/app\n\n# Run the requirejs optimizer if the badcom gem is included and precompile assets.\nONBUILD RUN \\\n  ! gem list -i badcom > /dev/null || RAILS_ENV=production rake badcom:requirejs:optimize_all && \\\n  RAILS_ENV=production rake assets:precompile\n\n# Run the server\nONBUILD EXPOSE 3000\nONBUILD ENTRYPOINT [\"kubernetes-secret-env\"]\nONBUILD CMD [\"puma\", \"-t\", \"8:8\", \"-p\", \"3000\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [],
+    "run": [
+      "  bundle config --global frozen 1 &&   bundle config --global build.nokogiri --use-system-libraries ",
+      "  cd /usr/local &&   curl -sfLO https://cmake.org/files/v$CMAKE_MAJOR/cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz &&   echo \"${CMAKE_SHASUM256}  cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz\" | sha256sum -c - &&  tar --strip-components 1 -xzf cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz cmake-$CMAKE_VERSION-Linux-x86_64/bin/cmake cmake-$CMAKE_VERSION-Linux-x86_64/share/cmake-$CMAKE_MAJOR/Modules cmake-$CMAKE_VERSION-Linux-x86_64/share/cmake-$CMAKE_MAJOR/Templates &&   rm cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz",
+      "gpg --keyserver pgp.mit.edu --recv-keys 279D5C91 ",
+      "  cd /usr/local &&   curl -sfLO http://www.libssh2.org/download/libssh2-$LIBSSH2_VERSION.tar.gz &&   curl -sfLO http://www.libssh2.org/download/libssh2-$LIBSSH2_VERSION.tar.gz.asc &&   gpg --verify libssh2-$LIBSSH2_VERSION.tar.gz.asc &&   tar -xzf libssh2-$LIBSSH2_VERSION.tar.gz &&   cd libssh2-$LIBSSH2_VERSION &&   ./configure --with-openssl --without-libgcrypt --with-libz &&   make install &&   cd .. &&   rm -r libssh2-$LIBSSH2_VERSION libssh2-$LIBSSH2_VERSION.* share/man/man3/libssh2_*",
+      "  cd /usr/local &&   curl -sfLO https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz &&   echo \"${NODE_SHASUM256}  node-v$NODE_VERSION-linux-x64.tar.gz\" | sha256sum -c - &&  tar --strip-components 1 -xzf node-v$NODE_VERSION-linux-x64.tar.gz node-v$NODE_VERSION-linux-x64/bin node-v$NODE_VERSION-linux-x64/include node-v$NODE_VERSION-linux-x64/lib &&   rm node-v$NODE_VERSION-linux-x64.tar.gz",
+      "  mkdir -p /etc/secret-volume &&   cd /usr/local/bin &&   curl -sfLO https://github.com/newsdev/kubernetes-secret-env/releases/download/$KUBERNETES_SECRET_ENV_VERSION/kubernetes-secret-env &&   chmod +x kubernetes-secret-env"
+    ],
+    "workdir": [],
+    "from": "ruby:2.3.0",
+    "env": {
+      "LANG": "C.UTF-8",
+      "CMAKE_MAJOR": "3.4",
+      "CMAKE_VERSION": "3.4.3",
+      "CMAKE_SHASUM256": "66b8d315c852908be9f79e1a18b8778714659fce4ddb2d041af8680a239202fc",
+      "LIBSSH2_VERSION": "1.6.0",
+      "NODE_VERSION": "5.5.0",
+      "NODE_SHASUM256": "3e593d91b6d2ad871efaaf8e9a17b3608ca98904959bcfb7c42e6acce89e80f4",
+      "KUBERNETES_SECRET_ENV_VERSION": "0.0.2"
+    },
+    "onbuild": "CMD [\"puma\", \"-t\", \"8:8\", \"-p\", \"3000\"]"
+  },
+  "source_repository_url": "https://github.com/newsdev/docker-rails.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/newsdev/docker-rails",
+  "docker_repository": "newsdev/rails",
+  "docker_image": "newsdev/rails",
+  "parameters_schema": {
+    "LANG": {
+      "default": "C.UTF-8",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CMAKE_MAJOR": {
+      "default": "3.4",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CMAKE_VERSION": {
+      "default": "3.4.3",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CMAKE_SHASUM256": {
+      "default": "66b8d315c852908be9f79e1a18b8778714659fce4ddb2d041af8680a239202fc",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "LIBSSH2_VERSION": {
+      "default": "1.6.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NODE_VERSION": {
+      "default": "5.5.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "NODE_SHASUM256": {
+      "default": "3e593d91b6d2ad871efaaf8e9a17b3608ca98904959bcfb7c42e6acce89e80f4",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "KUBERNETES_SECRET_ENV_VERSION": {
+      "default": "0.0.2",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "newsdev/rails",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/newsdev/rails",
+    "https://hub.docker.com/v2/repositories/newsdev/rails",
+    "https://github.com/newsdev/docker-rails.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Runtime/Ruby",
+    "Mode/Executable/Image",
+    "Type/Infrastructure/Operating System"
+  ],
+  "info_url": "https://hub.docker.com/r/newsdev/rails",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

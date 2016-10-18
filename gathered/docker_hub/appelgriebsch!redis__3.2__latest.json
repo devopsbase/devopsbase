@@ -1,0 +1,148 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/appelgriebsch/redis",
+    "repository_url": "https://hub.docker.com/v2/repositories/appelgriebsch/redis",
+    "tags_url": "https://hub.docker.com/v2/repositories/appelgriebsch/redis/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/appelgriebsch/redis/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/appelgriebsch/redis/autobuild",
+    "user": "appelgriebsch",
+    "name": "redis",
+    "namespace": "appelgriebsch",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 663,
+    "last_updated": "2016-09-23T19:37:28.846010Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "3.2",
+        "full_size": 5025637,
+        "id": 4231740,
+        "repository": 415404,
+        "creator": 30548,
+        "last_updater": 30548,
+        "last_updated": "2016-09-23T19:34:54.339315Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "stable",
+        "full_size": 5025616,
+        "id": 1404373,
+        "repository": 415404,
+        "creator": 30548,
+        "last_updater": 30548,
+        "last_updated": "2016-09-23T19:27:12.148343Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 5025628,
+        "id": 1404375,
+        "repository": 415404,
+        "creator": 30548,
+        "last_updater": 30548,
+        "last_updated": "2016-09-23T19:26:28.532782Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "appelgriebsch/dockers"
+  },
+  "name": "appelgriebsch/redis Docker container",
+  "description": "Configurable redis container based on Alpine Linux",
+  "readme": "Overview\n--------\n\nRedis Server container that is completely configurable via environment variables:\n\n* **REDIS_BIND**: network interface to bind to (will expose a socket if set to localhost) \t\t- default: 127.0.0.1\n* **REDIS_PORT**: network port to listen to - default: 6379\n* **REDIS_DBCNT**: no. of databases available in server - default: 16\n* **REDIS_DBFILE**: name of the database dump file - default: redis_01.rdb\n* **REDIS_MASTER**: if set, this instance is a slave to this master (format: <ip:port>) - default: not set\n* **REDIS_DBPWD**: if set, authentication with this password is required - default: not set\n* **REDIS_LOGLVL**: log level of redis server (logs will be written to stdout & stderr) - default: notice\n\nStandalone Server\n----------------\n\nTo start a stand-alone instance just execute:\n\n`docker run --name=redis01 -d appelgriebsch/redis`\n\nThis will start a local redis instance with the default configuration (see values above), that only allows connection via shared unix socket.To connect to this instance you have to use the unix socket provided via the volume like this:\n\n`docker run --name=client01 --volumes-from=redis01 -i -t appelgriebsch/centos bash`\n\nand in this container you can than execute:\n\n`redis-cli -s /data/redis/<instance-hostname>/redis-<instance-hostname>.sock`\n\nMaster-Slave Replication\n----------\n\nTo build a cluster of redis instances you have to open the connection to the public interface. Therefore start the first instance (the MASTER instance) like this:\n\n`docker run --name=redis01 -e REDIS_BIND=0.0.0.0 -d appelgriebsch/redis`\n\nAdditional slave instances can be added like this:\n\n`docker run --name=redis<xy> --link=redis01:redis01 --volumes-from=redis01 -e REDIS_BIND=0.0.0.0 -e REDIS_MASTER=redis01 -d appelgriebsch/redis`\n\nNote: we are linking to the master (here: redis01) for easier IP address lookup within the slave container. Additionally we share the data volume from the master (here: redis01) into the slaves to have all data files on one mountable data directory, which allows easy backup later on.\n",
+  "dockerfile": "#\n# Redis Dockerfile\n# VERSION 3.2\n#\n\n# Pull Alpine Linux stable base image\nFROM appelgriebsch/alpine:stable\nMAINTAINER Andreas Gerlach <info@appelgriebsch.com>\nLABEL AUTHOR=\"Andreas Gerlach <info@appelgriebsch.com>\"\nLABEL NAME=\"redis\"\nLABEL VERSION=\"3.2\"\n\n# bind to localhost only (will expose a socket for connection)\nENV REDIS_BIND\t\t127.0.0.1\n# default tcp port for redis server\nENV REDIS_PORT \t\t6379\n# default no. of databases\nENV REDIS_DBCNT\t\t16\n# name of the database dump file\nENV REDIS_DBFILE \tredis_01.rdb\n# if master is set, this node is a slave to this master (ip:port)\n# ENV REDIS_MASTER\n# if dbpwd is set, security check is implied\n# ENV REDIS_DBPWD\n# log level of redis server\nENV REDIS_LOGLVL\tnotice\n\n# install and configure redis\nUSER root\n\nRUN \\\n  apk update && \\\n  apk add redis && \\\n  rm -rf /var/cache/apk/* && \\\n  mkdir -p /data/redis && \\\n  chown -R redis:redis /data/redis && \\\n  chmod -R 755 /data/redis && \\\n  sed -i \"s/^\\(daemonize .*\\)$/# \\1/\" /etc/redis.conf && \\\n  sed -i \"s/^\\(logfile .*\\)$/# \\1/\" /etc/redis.conf\n\n# add startup-script\nADD start_instance.sh /tmp/\nRUN \\\n  chmod 755 /tmp/start_instance.sh\n\n# Define mountable directories.\nVOLUME /data/redis\n\n# Define working directory.\nWORKDIR /data/redis\n\n# Expose ports.\nEXPOSE $REDIS_PORT\n\n# run service\nUSER redis\nENTRYPOINT [\"/tmp/start_instance.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "start_instance.sh",
+        "dest": "/tmp/"
+      }
+    ],
+    "expose": [
+      "$REDIS_PORT"
+    ],
+    "volume": [
+      "/data/redis"
+    ],
+    "run": [
+      "  apk update &&   apk add redis &&   rm -rf /var/cache/apk/* &&   mkdir -p /data/redis &&   chown -R redis:redis /data/redis &&   chmod -R 755 /data/redis &&   sed -i \"s/^\\(daemonize .*\\)$/# \\1/\" /etc/redis.conf &&   sed -i \"s/^\\(logfile .*\\)$/# \\1/\" /etc/redis.conf",
+      "  chmod 755 /tmp/start_instance.sh"
+    ],
+    "workdir": [
+      "/data/redis"
+    ],
+    "from": "appelgriebsch/alpine:stable",
+    "maintainer": "Andreas Gerlach <info@appelgriebsch.com>",
+    "label": "VERSION=\"3.2\"",
+    "env": {
+      "REDIS_PORT": "\t\t6379",
+      "REDIS_DBFILE": "\tredis_01.rdb"
+    },
+    "user": "redis",
+    "entrypoint": "[\"/tmp/start_instance.sh\"]"
+  },
+  "source_repository_url": "https://github.com/appelgriebsch/dockers.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/appelgriebsch/dockers",
+  "docker_repository": "appelgriebsch/redis",
+  "docker_image": "appelgriebsch/redis",
+  "parameters_schema": {
+    "REDIS_PORT": {
+      "default": "\t\t6379",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "REDIS_DBFILE": {
+      "default": "\tredis_01.rdb",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        "$REDIS_PORT"
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "appelgriebsch/redis",
+  "revision": "3.2",
+  "uris": [
+    "https://hub.docker.com/r/appelgriebsch/redis",
+    "https://hub.docker.com/v2/repositories/appelgriebsch/redis",
+    "https://github.com/appelgriebsch/dockers.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux",
+    "Type/Middleware/Data Store/Key-Value/Redis"
+  ],
+  "info_url": "https://hub.docker.com/r/appelgriebsch/redis",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

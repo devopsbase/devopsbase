@@ -1,0 +1,144 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/simonswine/cassandra-2.2",
+    "repository_url": "https://hub.docker.com/v2/repositories/simonswine/cassandra-2.2",
+    "tags_url": "https://hub.docker.com/v2/repositories/simonswine/cassandra-2.2/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/simonswine/cassandra-2.2/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/simonswine/cassandra-2.2/autobuild",
+    "user": "simonswine",
+    "name": "cassandra-2.2",
+    "namespace": "simonswine",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 76,
+    "last_updated": "2016-07-18T15:34:24.860784Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "0.1",
+        "full_size": 192422912,
+        "id": 3886643,
+        "repository": 804969,
+        "creator": 1885,
+        "last_updater": 1885,
+        "last_updated": "2016-07-18T15:34:24.163323Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 192422993,
+        "id": 3884399,
+        "repository": 804969,
+        "creator": 1885,
+        "last_updater": 1885,
+        "last_updated": "2016-07-18T15:30:17.860189Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "simonswine/docker-cassandra-2.2"
+  },
+  "name": "simonswine/cassandra-2.2 Docker container",
+  "description": "Cassandra 2.2 image",
+  "readme": "# Cassandra 2.2 docker image\n\n## Contributions\n\nBased on @chrislovecnm's [work](https://github.com/k8s-for-greeks/gpmr/tree/master/pet-race-devops/docker/cassandra-debian)\n",
+  "dockerfile": "# Copyright 2016 The Kubernetes Authors All rights reserved.\n#\n# Licensed under the Apache License, Version 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions and\n# limitations under the License.\n\nFROM debian:jessie\n\n\nADD files/java.list /etc/apt/sources.list.d/java.list\n\nRUN  apt-get update \\\n  && apt-get -qq -y install --no-install-recommends procps openjdk-8-jre-headless libjemalloc1 curl \\\n    localepurge \\\n  && curl -L https://github.com/Yelp/dumb-init/releases/download/v1.0.3/dumb-init_1.0.3_amd64 > /dumb-init \\\n  && chmod a+rx /dumb-init \\\n  && apt-get -y purge localepurge curl \\\n  && apt-get clean \\\n  && rm -rf \\\n        doc \\\n        man \\\n        info \\\n        locale \\\n        /var/lib/apt/lists/* \\\n        /var/log/* \\\n        /var/cache/debconf/* \\\n        common-licenses \\\n        ~/.bashrc \\\n        /etc/systemd \\\n        /lib/lsb \\\n        /lib/udev \\\n        /usr/share/doc/ \\\n        /usr/share/doc-base/ \\\n        /usr/share/man/ \\\n        /tmp/*\n\nADD files/cassandra.list /etc/apt/sources.list.d/\nENV CASSANDRA_AUTO_BOOTSTRAP=false\n\nRUN  gpg --keyserver pgp.mit.edu --recv-keys F758CE318D77295D \\\n  && gpg --export --armor F758CE318D77295D | apt-key add - \\\n  && gpg --keyserver pgp.mit.edu --recv-keys 2B5C1B00 \\\n  && gpg --export --armor 2B5C1B00 | apt-key add - \\\n  && gpg --keyserver pgp.mit.edu --recv-keys 0353B12C \\\n  && gpg --export --armor 0353B12C | apt-key add - \\\n  && apt-get update \\\n  && apt-get -qq -y install --no-install-recommends curl cassandra localepurge \\\n  && mkdir -p /cassandra_data/data \\\n  && find /usr/share/cassandra/lib/sigar-bin -type f | grep -v libsigar-x86-linux.so | xargs rm \\\n\n  # Not able to run as cassandra until https://github.com/kubernetes/kubernetes/issues/2630 is resolved\n  # && chown -R cassandra: /etc/cassandra /cassandra_data /run.sh /kubernetes-cassandra.jar \\\n  # && chmod o+w -R /etc/cassandra /cassandra_data \\\n\n  && apt-get -y purge curl localepurge \\\n  && apt-get clean \\\n  && rm -rf \\\n        doc \\\n        man \\\n        info \\\n        locale \\\n        /var/lib/apt/lists/* \\\n        /var/log/* \\\n        /var/cache/debconf/* \\\n        common-licenses \\\n        ~/.bashrc \\\n        /etc/systemd \\\n        /lib/lsb \\\n        /lib/udev \\\n        /usr/share/doc/ \\\n        /usr/share/doc-base/ \\\n        /usr/share/man/ \\\n        /tmp/*\n\n\n# add metrics for influxdb\nADD http://central.maven.org/maven2/io/dropwizard/metrics/metrics-graphite/3.1.2/metrics-graphite-3.1.2.jar /usr/share/cassandra/lib/\nADD http://central.maven.org/maven2/io/dropwizard/metrics/metrics-core/3.1.2/metrics-core-3.1.2.jar /usr/share/cassandra/lib\n\nADD files/logback.xml files/cassandra.yaml /etc/cassandra/\nADD files/run.sh files/ready-probe.sh /\nRUN chmod a+rx /run.sh /dumb-init /ready-probe.sh\n\nVOLUME [\"/cassandra_data/data\"]\n\n# 7000: intra-node communication\n# 7001: TLS intra-node communication\n# 7199: JMX\n# 9042: CQL\n# 9160: thrift service not included cause it is going away\nEXPOSE 7000 7001 7199 9042\n\n# Not able to do this until https://github.com/kubernetes/kubernetes/issues/2630 is resolved\n# if you are using attached storage\n# USER cassandra\n\nCMD [\"/dumb-init\", \"/bin/bash\", \"/run.sh\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "files/java.list",
+        "dest": "/etc/apt/sources.list.d/java.list"
+      },
+      {
+        "source": "files/cassandra.list",
+        "dest": "/etc/apt/sources.list.d/"
+      },
+      {
+        "source": "http://central.maven.org/maven2/io/dropwizard/metrics/metrics-graphite/3.1.2/metrics-graphite-3.1.2.jar",
+        "dest": "/usr/share/cassandra/lib/"
+      },
+      {
+        "source": "http://central.maven.org/maven2/io/dropwizard/metrics/metrics-core/3.1.2/metrics-core-3.1.2.jar",
+        "dest": "/usr/share/cassandra/lib"
+      },
+      {
+        "source": "files/logback.xml",
+        "dest": "files/cassandra.yaml"
+      },
+      {
+        "source": "files/run.sh",
+        "dest": "files/ready-probe.sh"
+      }
+    ],
+    "expose": [
+      7000
+    ],
+    "volume": [
+      "[\"/cassandra_data/data\"]"
+    ],
+    "run": [
+      " apt-get update   && apt-get -qq -y install --no-install-recommends procps openjdk-8-jre-headless libjemalloc1 curl     localepurge   && curl -L https://github.com/Yelp/dumb-init/releases/download/v1.0.3/dumb-init_1.0.3_amd64 > /dumb-init   && chmod a+rx /dumb-init   && apt-get -y purge localepurge curl   && apt-get clean   && rm -rf         doc         man         info         locale         /var/lib/apt/lists/*         /var/log/*         /var/cache/debconf/*         common-licenses         ~/.bashrc         /etc/systemd         /lib/lsb         /lib/udev         /usr/share/doc/         /usr/share/doc-base/         /usr/share/man/         /tmp/*",
+      " gpg --keyserver pgp.mit.edu --recv-keys F758CE318D77295D   && gpg --export --armor F758CE318D77295D | apt-key add -   && gpg --keyserver pgp.mit.edu --recv-keys 2B5C1B00   && gpg --export --armor 2B5C1B00 | apt-key add -   && gpg --keyserver pgp.mit.edu --recv-keys 0353B12C   && gpg --export --armor 0353B12C | apt-key add -   && apt-get update   && apt-get -qq -y install --no-install-recommends curl cassandra localepurge   && mkdir -p /cassandra_data/data   && find /usr/share/cassandra/lib/sigar-bin -type f | grep -v libsigar-x86-linux.so | xargs rm ",
+      "chmod a+rx /run.sh /dumb-init /ready-probe.sh"
+    ],
+    "workdir": [],
+    "from": "debian:jessie",
+    "env": {
+      "CASSANDRA_AUTO_BOOTSTRAP": "false"
+    },
+    "cmd": "[\"/dumb-init\", \"/bin/bash\", \"/run.sh\"]"
+  },
+  "source_repository_url": "https://github.com/simonswine/docker-cassandra-2.2.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/simonswine/docker-cassandra-2.2",
+  "docker_repository": "simonswine/cassandra-2.2",
+  "docker_image": "simonswine/cassandra-2.2",
+  "parameters_schema": {
+    "CASSANDRA_AUTO_BOOTSTRAP": {
+      "default": "false",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        7000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "simonswine/cassandra-2.2",
+  "revision": "0.1",
+  "uris": [
+    "https://hub.docker.com/r/simonswine/cassandra-2.2",
+    "https://hub.docker.com/v2/repositories/simonswine/cassandra-2.2",
+    "https://github.com/simonswine/docker-cassandra-2.2.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Middleware/Data Store/Key-Value/Cassandra"
+  ],
+  "info_url": "https://hub.docker.com/r/simonswine/cassandra-2.2",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

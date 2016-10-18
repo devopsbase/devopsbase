@@ -1,0 +1,59 @@
+{
+  "name": "rippled Chef cookbook",
+  "chef_cookbook_name": "rippled",
+  "revision": "0.5.0",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/rippled",
+    "https://supermarket.chef.io/cookbooks/rippled/download",
+    "https://supermarket.chef.io/cookbooks/rippled/versions/0.5.0",
+    "https://supermarket.chef.io/cookbooks/rippled/versions/0.5.0/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/rippled/versions/0.5.0",
+    "https://supermarket.chef.io/api/v1/cookbooks/rippled",
+    "https://supermarket.chef.io/api/v1/cookbooks/rippled/versions/0.5.0/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Style/Virtualization Level/Hardware/Network"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/rippled",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/rippled/versions/0.5.0/download",
+  "deprecated": false,
+  "created": "2015-08-18T07:23:43.018Z",
+  "updated": "2016-03-01T01:10:01.191Z",
+  "description": "Compiles, installs and configures rippled, a ripple network daemon",
+  "maintainer": {
+    "name": "compositor",
+    "email": "grigorenko.d@gmail.com"
+  },
+  "license": "Apache v2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 1637,
+  "downloads_count_revision": 226,
+  "repository_url": "https://github.com/compositor/rippled-cookbook",
+  "issues_url": "https://github.com/compositor/rippled-cookbook/issues",
+  "chef_source_url": "https://github.com/compositor/rippled-cookbook",
+  "latest": true,
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Rippled Cookbook\n\n## Overview\n\nThis cookbook compiles and installs a [Ripple](https://ripple.com) node (version 0.30.1-hf2). At the time of writing Ripple Labs does not provide a precompiled package for the most recent release, therefore the only installation method available is via sources.\n\nThe cookbook generally follows instructions published at [here](https://wiki.ripple.com/Ubuntu_build_instructions) with the following improvements:\n- allow to bind on privileged ports\n- customized `init.d` script based on one from Ripple Labs provided ubuntu package\n\n## Attributes\n\nPlease refer to rippled example configuration in sources for the full list of settings [souces](https://github.com/ripple/rippled/blob/master/doc/rippled-example.cfg).\n\nAll attributes within `node[\"rippled\"][\"config\"]` will be converted to the content of `rippled.cfg`. A `key` from `node[\"rippled\"][\"config\"][key]` becomes a section. A corresponding value might be a string (converts to a single string in the section), an array (each element goes as a string in the section), a map (converts to a list of key=value strings), `nil` (to suppress default attributes, the section is not created then). It is clear from examples:\n\nAn array\n\n    node[\"rippled\"][\"config\"][\"server\"] = [\"port_rpc_admin_local\", \"port_peer\", \"port_ws_admin_local\"]\n\nbecomes a section (mind `server` -> `[server]` transformation done by the recipe)\n\n    [server]\n    port_rpc_admin_local\n    port_peer\n    port_ws_admin_local\n\nA single value\n\n    node[\"rippled\"][\"config\"][\"node_size\"] = \"medium\"\n\nbecomes a section\n\n    [node_size]\n    medium\n\nA map\n\n    node[\"rippled\"][\"config\"][\"port_peer\"] = {\n        \"port\" => \"51235\",\n            \"ip\" => \"0.0.0.0\",\n            \"protocol\" => \"peer\"\n    }\n\nbecomes a section\n\n    [port_peer]\n    port=51235\n    ip=0.0.0.0\n    protocol=peer\n\nA `nil`\n\n    node[\"rippled\"][\"config\"][\"port_ws_admin_local\"] = nil\n\nremoves `port_ws_admin_local` section\n\nGenerally speaking, sections of `rippled.cfg` contain lines with either values or key-value pairs. The only mix is `[server]` and putting a key-value there is syntax sugar and thus can be easily avoided. If you still need a mix, you can use the following construction\n\n    default[\"rippled\"][\"config\"][\"server\"] = [\"port_rpc_admin_local\", \"#port_ws_public\", \"ssl_key = /etc/ssl/private/server.key\", \"ssl_cert = /etc/ssl/certs/server.crt\"]\n\nThe default attributes merely repeat default rippled configuration from [souces](https://github.com/ripple/rippled/blob/master/doc/rippled-example.cfg). For better version tracking a copy of this example used to derive the attributes is saved in this cookbook at materials/rippled-example.cfg\n\nIf the following paths are specified (explicitly or with default values), the recipe will create corresponding folders for under `node['rippled']['user']` ownership:\n\n* `[\"rippled\"][\"config\"][\"node_db\"][\"path\"]`\n* `[\"rippled\"][\"config\"][\"database_path\"]`\n* `[\"rippled\"][\"rippled\"][\"config\"][\"debug_logfile\"]`\n\nAll other attributes are listed below.\n\n\n| **Attribute**                       | **Description**                                         | **Default**                                    |\n|:------------------------------------|:--------------------------------------------------------|:-----------------------------------------------|\n| `node['rippled']['git_repository']` | Git repository of rippled sources                       | `https://github.com/ripple/rippled.git`        |\n| `node['rippled']['git_revision']`   | Git revision to check out                               | `0.30.1-hf2` |\n| `node['rippled']['run_tests']`      | Run internal tests, `true` or `false`                   | `true`                                         |\n| `node['rippled']['cmd_params']`     | Additional command line parameters to the daemon (\\*) | `--net`                                        |\n| `node['rippled']['config']`         | Content of rippled.cfg (described above)                | _identical to rippled-example.cfg_             |\n| `node['rippled']['user']`           | User to run the daemon                                  | `rippled`                                      |\n| `node['rippled']['group']`          | Group to create for the User                            | `rippled`                                      |\n| `node['rippled']['pid_path']`       | Path to pid-file                                        | `/var/run/rippled.pid`                         |\n| `node['rippled']['binary_path']`    | Where to install the executable                         | `/usr/bin/rippled`                             |\n| `node['rippled']['config_path']`    | Where to install the config pid-file                    | `/etc/rippled/rippled.cfg`                     |\n\n(\\*) Do not add `--conf` or `--fg` here, neither add parameters that will cause the daemon to exit (like `--help`)\n\n## Supported Platforms\n- Ubuntu 14.04\n\n\n## Known issues\n- You need at least 16G memory to compile rippled. If memory is insufficient, g++ fails with an internal error. See `.kitchen.yml`\n- `service status rippled` fails from non-privileged user because cannot read the config file. The file might have validation keys and thus restricted on purpose. If this issue bothers anybody, permissions shall be made configurable via chef attributes.\n\n## rippled versions, cookbook versioning\n\nThis cookbook follows [semantic versioning](http://semver.org/).\n\nHere is how to update the cookbook for a newer rippled version.\n- Copy `rippled/doc/rippled-example.cfg` to `materials/rippled.cfg`\n- If any any default configs are changed, added or removed, reflect it in  `[\"rippled\"][\"config\"]` attributes\n- Bump rippled version in `[\"rippled\"][\"git_revision\"]` attribute and in this README\n- Bump cookbook version (since we alter the default value for `git_revision`, it is a breaking change)\n- Update changelog\n- Build locally `kitchen converge` (clean `kitchen destroy`)\n- Publish `knife cookbook site share rippled Other -VV`\n- Commit and tag in github\n\n## Recipes\n\n* `rippled::default`\nBuilds the rippled from source, configures, installs and runs.\n\n\n## License and Author\n\n|                      |                                              |\n|:---------------------|:---------------------------------------------|\n| **Author:**          | Dmitry Grigorenko (<grigorenko.d@gmail.com>) |\n| **License:**         | Apache License, Version 2.0                  |\n\n```text\n  Licensed under the Apache License, Version 2.0 (the \"License\");\n  you may not use this file except in compliance with the License.\n  You may obtain a copy of the License at\n\n      http://www.apache.org/licenses/LICENSE-2.0\n\n  Unless required by applicable law or agreed to in writing, software\n  distributed under the License is distributed on an \"AS IS\" BASIS,\n  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n  See the License for the specific language governing permissions and\n  limitations under the License.\n```\n\n## Changelog\n\n### v0.5.0, February 29, 2016\n\n* Bump rippled version to 0.30.1-hf2\n\n### v0.4.0, February 14, 2016\n\n* Bump rippled version to 0.30.1-hf1\n* Move to g++-5\n* Fix documentation\n\n### v0.3.0, November 27, 2015\n\n* Bump rippled version to 0.30.0-hf1\n* Fix documentation\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 14.04",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

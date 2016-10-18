@@ -1,0 +1,166 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/lephare/php",
+    "repository_url": "https://hub.docker.com/v2/repositories/lephare/php",
+    "tags_url": "https://hub.docker.com/v2/repositories/lephare/php/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/lephare/php/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/lephare/php/autobuild",
+    "user": "lephare",
+    "name": "php",
+    "namespace": "lephare",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 3,
+    "pull_count": 2055,
+    "last_updated": "2016-10-15T03:43:20.979989Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 268794458,
+        "id": 805155,
+        "repository": 301974,
+        "creator": 329723,
+        "last_updater": 329724,
+        "last_updated": "2016-10-15T03:43:20.346721Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5.4",
+        "full_size": 125884014,
+        "id": 805144,
+        "repository": 301974,
+        "creator": 329723,
+        "last_updater": 329724,
+        "last_updated": "2016-10-15T03:26:49.840010Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "7.0",
+        "full_size": 272605927,
+        "id": 2247392,
+        "repository": 301974,
+        "creator": 329724,
+        "last_updater": 329724,
+        "last_updated": "2016-10-15T03:23:38.553779Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "5.6",
+        "full_size": 268794427,
+        "id": 805258,
+        "repository": 301974,
+        "creator": 329723,
+        "last_updater": 329724,
+        "last_updated": "2016-10-15T02:48:42.428598Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "lephare/docker-hub"
+  },
+  "name": "lephare/php Docker container",
+  "description": "PHP container",
+  "readme": "# Docker environment\n\n## Installation\n\nFirst you need to [install Docker and docker-compose](https://docs.docker.com/compose/install/).\n\nCopy the `docker-composer.yml.dist` to `docker-composer.yml` and modify to your need.\n\n## Global environment\n\nThe global environment contains generics containers used by our projects. You have :\n\n    - jwilder/nginx-proxy A nginx proxy that redirect http requests  to the good container based on the domain name.\n    - mariadb A MariaDb container.\n    - postgres A PostgreSQL container.\n    - blackfire A blackfire container for PHP profiling.\n\n\nYou can start theses containers by running :\n\n    $ docker-compose up\n\n### ProTips : dc alias\n\nYou can alias `docker-compose` to `dc` in your bash configuration :\n\n    alias dc=\"docker-compose\"\n\n",
+  "dockerfile": "FROM php:5.6-fpm\n\nRUN apt-get update \\\n  && apt-get install -y --no-install-recommends \\\n    locales \\\n    git \\\n    ssh \\\n    libfreetype6-dev \\\n    libjpeg62-turbo-dev \\\n    libmcrypt-dev \\\n    libpng12-dev \\\n    libmemcached-dev \\\n    zlib1g-dev \\\n    libicu-dev \\\n    libpq-dev \\\n    libssh2-1-dev \\\n    libxml2-dev \\\n    libmagickwand-dev  \\\n  && dpkg-reconfigure -f noninteractive  locales \\\n  && echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen \\\n  && echo 'fr_FR.UTF-8 UTF-8' >> /etc/locale.gen \\\n  && locale-gen \\\n  && rm -rf /var/lib/apt/lists/* \\\n  && pecl install memcached imagick ssh2-0.12 \\\n  && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \\\n  && docker-php-ext-install -j$(nproc) intl mcrypt gd opcache mbstring zip pdo_pgsql pdo_mysql soap pgsql mysqli \\\n  && docker-php-ext-enable memcached imagick ssh2\n\n# Install Composer\nVOLUME /var/tmp/composer\nENV COMPOSER_VERSION master\nENV COMPOSER_HOME /var/tmp/composer\nRUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer\n\n# Install Blackfire\nRUN export VERSION=`php -r \"echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;\"` \\\n  && curl -A \"Docker\" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/${VERSION} \\\n  && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp \\\n  && mv /tmp/blackfire-*.so `php -r \"echo ini_get('extension_dir');\"`/blackfire.so \\\n  && echo \"extension=blackfire.so\\nblackfire.agent_socket=tcp://blackfire:8707\" > $PHP_INI_DIR/conf.d/blackfire.ini\n\n# Install Twig C extension.\nENV TWIG_VERSION 1.24.1\nENV TWIG_MD5 faa479d40fa09fc452a718700bf819ac\nRUN mkdir /tmp/twig && cd /tmp/twig \\\n  && curl -fSL \"https://github.com/twigphp/Twig/archive/v${TWIG_VERSION}.tar.gz\" -o twig.tar.gz \\\n  && echo \"${TWIG_MD5} *twig.tar.gz\" | md5sum -c - \\\n  && tar -xz --strip-components=1 -f twig.tar.gz \\\n  && rm twig.tar.gz \\\n  && cd ext/twig && phpize \\\n  && ./configure && make && make install \\\n  && cp /tmp/twig/ext/twig/modules/twig.so $(php-config --extension-dir) \\\n  && docker-php-ext-enable twig \\\n  && cd /tmp && rm -rf /tmp/twig\n\nRUN usermod -u 1000 www-data\nRUN usermod -G staff www-data\n\nWORKDIR /var/www/symfony\n\n# Config\nCOPY symfony.ini $PHP_INI_DIR/conf.d/\nCOPY symfony.pool.conf $PHP_INI_DIR/pool.d/\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [],
+    "volume": [
+      "/var/tmp/composer"
+    ],
+    "run": [
+      "apt-get update   && apt-get install -y --no-install-recommends     locales     git     ssh     libfreetype6-dev     libjpeg62-turbo-dev     libmcrypt-dev     libpng12-dev     libmemcached-dev     zlib1g-dev     libicu-dev     libpq-dev     libssh2-1-dev     libxml2-dev     libmagickwand-dev    && dpkg-reconfigure -f noninteractive  locales   && echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen   && echo 'fr_FR.UTF-8 UTF-8' >> /etc/locale.gen   && locale-gen   && rm -rf /var/lib/apt/lists/*   && pecl install memcached imagick ssh2-0.12   && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/   && docker-php-ext-install -j$(nproc) intl mcrypt gd opcache mbstring zip pdo_pgsql pdo_mysql soap pgsql mysqli   && docker-php-ext-enable memcached imagick ssh2",
+      "curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer",
+      "export VERSION=`php -r \"echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;\"`   && curl -A \"Docker\" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/${VERSION}   && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp   && mv /tmp/blackfire-*.so `php -r \"echo ini_get('extension_dir');\"`/blackfire.so   && echo \"extension=blackfire.so\\nblackfire.agent_socket=tcp://blackfire:8707\" > $PHP_INI_DIR/conf.d/blackfire.ini",
+      "mkdir /tmp/twig && cd /tmp/twig   && curl -fSL \"https://github.com/twigphp/Twig/archive/v${TWIG_VERSION}.tar.gz\" -o twig.tar.gz   && echo \"${TWIG_MD5} *twig.tar.gz\" | md5sum -c -   && tar -xz --strip-components=1 -f twig.tar.gz   && rm twig.tar.gz   && cd ext/twig && phpize   && ./configure && make && make install   && cp /tmp/twig/ext/twig/modules/twig.so $(php-config --extension-dir)   && docker-php-ext-enable twig   && cd /tmp && rm -rf /tmp/twig",
+      "usermod -u 1000 www-data",
+      "usermod -G staff www-data"
+    ],
+    "workdir": [
+      "/var/www/symfony"
+    ],
+    "from": "php:5.6-fpm",
+    "env": {
+      "COMPOSER_VERSION": "master",
+      "COMPOSER_HOME": "/var/tmp/composer",
+      "TWIG_VERSION": "1.24.1",
+      "TWIG_MD5": "faa479d40fa09fc452a718700bf819ac"
+    },
+    "copy": "symfony.pool.conf $PHP_INI_DIR/pool.d/"
+  },
+  "source_repository_url": "https://bitbucket.org/lephare/docker-hub.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/lephare/docker-hub",
+  "docker_repository": "lephare/php",
+  "docker_image": "lephare/php",
+  "parameters_schema": {
+    "COMPOSER_VERSION": {
+      "default": "master",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "COMPOSER_HOME": {
+      "default": "/var/tmp/composer",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TWIG_VERSION": {
+      "default": "1.24.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TWIG_MD5": {
+      "default": "faa479d40fa09fc452a718700bf819ac",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "lephare/php",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/lephare/php",
+    "https://hub.docker.com/v2/repositories/lephare/php",
+    "https://bitbucket.org/lephare/docker-hub.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Type/Middleware/Runtime/PHP"
+  ],
+  "info_url": "https://hub.docker.com/r/lephare/php",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

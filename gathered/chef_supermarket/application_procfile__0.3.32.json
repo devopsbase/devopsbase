@@ -1,0 +1,61 @@
+{
+  "name": "application_procfile Chef cookbook",
+  "chef_cookbook_name": "application_procfile",
+  "revision": "0.3.32",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/application_procfile",
+    "https://supermarket.chef.io/cookbooks/application_procfile/download",
+    "https://supermarket.chef.io/cookbooks/application_procfile/versions/0.3.32",
+    "https://supermarket.chef.io/cookbooks/application_procfile/versions/0.3.32/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/application_procfile/versions/0.3.32",
+    "https://supermarket.chef.io/api/v1/cookbooks/application_procfile",
+    "https://supermarket.chef.io/api/v1/cookbooks/application_procfile/versions/0.3.32/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Style/Virtualization Level/Application"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/application_procfile",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/application_procfile/versions/0.3.32/download",
+  "deprecated": false,
+  "created": "2014-04-15T00:42:16.000Z",
+  "updated": "2016-04-30T22:42:59.345Z",
+  "description": "Installs/Configures services from an application's Procfile",
+  "maintainer": {
+    "name": "mkasa",
+    "email": "Matt Kasa <mattk@granicus.com>"
+  },
+  "license": "Apache v2.0",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 1,
+  "downloads_count": 9587776,
+  "downloads_count_revision": 1146953,
+  "repository_url": "https://github.com/Granicus/chef-application_procfile",
+  "issues_url": "https://github.com/Granicus/chef-application_procfile",
+  "chef_source_url": "https://github.com/Granicus/chef-application_procfile",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "application_procfile Cookbook\n=============================\nThis cookbook installs initscripts and monitrc files for the different process types specified in your application's Procfile.\n\nRequirements\n------------\n#### cookbooks\n- `application` - application_procfile needs the application cookbook to discover a Procfile.\n- `monit` - application_procfile needs the monit cookbook to configure services under monit.\n\n#### gems\n- `foreman` - application_procfile uses the foreman gem's Procfile parser.\n\nUsage\n-----\n#### <cookbook>/metadata.rb:\n```ruby\ndepends 'application_procfile'\n```\n\n#### <cookbook>/recipes/default.rb:\n```ruby\ninclude_recipe 'application_procfile'\n\napplication 'someapp' do\n  ...\n  procfile do\n    web node[:someapp][:processes][:web] || 1, :reload => 'USR2', :health_check => { :path => '/system/status', :timeout => 10, :unhealthy => 10, :action => :alert }, :limit => { :totalmem => '512 MB', :unhealthy => 10 }\n    worker node[:someapp][:processes][:worker] || 2, :limit => { :totalmem => '192 MB' }\n  end\nend\n```\n\nThis will run a default of 1 web and 2 workers for a Procfile that looks like:\n\n```\nweb: bundle exec unicorn -c ./config/unicorn.rb\nworker: bundle exec rake resque:work\n```\n\nIf you provide a port number via a node attribute `node[:app][:port]` then it will be incremented automatically and made available to your Procfile commands:\n\n```\nweb: bundle exec thin start -p $PORT\n```\n\nAny output to stderr or stdout from your processes will be logged to files like:\n\n```\n/var/log/someapp/web.log\n/var/log/someapp/worker.log\n```\n\nTo restart your workers:\n\n```bash\ntouch /var/local/someapp/worker.restart\n```\n\nThe `reload` option specifies an optional signal that can be sent to processes to gracefully reload them by doing:\n\n```bash\ntouch /var/local/someapp/web.reload\n```\n\nIf the process is unicorn a HUP and USR2 combination will be used automatically, with no need for the `reload` option.\n\nTo properly support reloads for unicorn processes, a unicorn.rb with before_fork, correct paths and worker numbers will be installed in the shared directory and will include your `config/unicorn.rb` if you have one.\n\nYou can specify resource limits with the `:limit` option, such as `:mem`, `:totalmem`, `:cpu`, `:totalcpu`, or `:children`.\n\nFor `:mem` and `:totalmem` the value is the maximum allowable memory for the process or the process and all it's children, respectively, as B, KB, MB, GB, or %.  (eg. `:limit => { :totalmem => '512 MB' }`)\n\nFor `:cpu`, and `:totalcpu` the value is the maxmimum allowable CPU usage for the process or the process and all it's children, respectively, as %.  (eg. `:limit => { :totalcpu => '90%' }`)\n\nFor `:children` the value is the maximum number of child processes allowed for the process.  (eg. `:limit => { :children => 10 }`)\n\nWithin `:limit` you can specify the action to be taken `:alert`, `:restart`, or `:stop` when any of the limits are exceeded.  (eg. `:limit => { :cpu => '25%', :action => :alert }`)\n\nYou can also specify the number of times the limits must exceed their values before taking action using `:unhealthy`.  (eg. `:limit => { :mem => '10%', :unhealthy => 10 }`)\n\nYou can specify a health check with the `:health_check` option as long as the port your service is listening on is accessible via node attribute as `node[:app][:port]` or you specify a `:port` in your health check.  (eg. `:health_check => { :port => 8080, :path => '/system/status', :timeout => 10, :unhealthy => 10, :action => :alert }`)\n\nContributing\n------------\n1. Fork the repository on Github\n2. Create a named feature branch (like `add_component_x`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request using Github\n\nLicense and Authors\n-------------------\nAuthor:: Javier Muniz <javier@granicus.com>\nAuthor:: Matt Kasa <mattk@granicus.com>\n\nCopyright 2013, Granicus Inc.\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/application",
+      "revision": ">= 3.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/monit",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ],
+  "chef_recipes": {
+    "procfile": "Installs foreman gem to use for parsing Procfiles"
+  }
+}

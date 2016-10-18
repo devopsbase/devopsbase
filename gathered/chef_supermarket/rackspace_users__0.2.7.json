@@ -1,0 +1,77 @@
+{
+  "name": "rackspace_users Chef cookbook",
+  "chef_cookbook_name": "rackspace_users",
+  "revision": "0.2.7",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/rackspace_users",
+    "https://supermarket.chef.io/cookbooks/rackspace_users/download",
+    "https://supermarket.chef.io/cookbooks/rackspace_users/versions/0.2.7",
+    "https://supermarket.chef.io/cookbooks/rackspace_users/versions/0.2.7/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/rackspace_users/versions/0.2.7",
+    "https://supermarket.chef.io/api/v1/cookbooks/rackspace_users",
+    "https://supermarket.chef.io/api/v1/cookbooks/rackspace_users/versions/0.2.7/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Script/Chef Cookbook"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/rackspace_users",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/rackspace_users/versions/0.2.7/download",
+  "deprecated": false,
+  "created": "2015-09-16T07:20:48.035Z",
+  "updated": "2016-02-12T08:56:55.054Z",
+  "description": "A cookbook to manage users from a data bag",
+  "maintainer": {
+    "name": "rackops",
+    "email": "rackspace-cookbooks@rackspace.com"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 2977,
+  "downloads_count_revision": 581,
+  "repository_url": "https://github.com/rackspace-cookbooks/rackspace_users",
+  "issues_url": "https://github.com/rackspace-cookbooks/rackspace_users/issues",
+  "chef_source_url": "https://github.com/rackspace-cookbooks/rackspace_users",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "[![Circle CI](https://circleci.com/gh/rackspace-cookbooks/rackspace_users.svg?style=svg)](https://circleci.com/gh/rackspace-cookbooks/rackspace_users)\n\n# rackspace_users\n\nA cookbook to manage users from an encrypted data bag.\n\n## Supported Platforms\n\n* Centos 6.7\n* Ubuntu 12.04\n* Ubuntu 14.04\n\n## Dependencies\n\n* https://supermarket.chef.io/cookbooks/user\n* https://supermarket.chef.io/cookbooks/user_shadow\n* https://supermarket.chef.io/cookbooks/sudo\n\nUpstream dependencies are pinned to good known versions.\n\n## Attributes\n\n* `node['rackspace_users']['data_bag']` : Which data bag contains the item with user records. Defaults to `common`\n* `node['rackspace_users']['data_bag_item']` : The item that holds the user records. Defaults to `users`\n* `node['rackspace_users']['node_groups']` : An array of strings representing membership groups declared by the node calling the recipe. These are used to create users and grant sudo to them only on specific nodes. Defaults to `[]` (empty array).\n\n## Usage\nThe recipe reads the users from an *encrypted* data bag item. By default, looks for a data bag named `common` and an item called `users`. This can be overwritten in the consuming cookbook.\nAfter you define the users in the data bag, place a dependency on the rackspace_users cookbook in your cookbook's metadata.rb:\n```\ndepends 'rackspace_users'\n```\nThen, in your recipe\n```\ninclude_recipe 'rackspace_users'\n```\nif you have unit tests in your consuming cookbook then you will also likely need to add the `ruby-shadow` gem to your `Gemfile`, something like this:\n\n```\nsource 'https://rubygems.org'\n\ngroup :unit do\n  gem 'berkshelf'\n  gem 'chefspec'\n  gem 'ruby-shadow'\nend\n```\n\n### In scope\n * Handles user creation, removal, modification and ssh keys. Leverages the `user_account` resource https://supermarket.chef.io/cookbooks/user\n * Handles account/password expiry information. Leverages the `user_shadow` resource https://supermarket.chef.io/cookbooks/user_shadow\n * Handles a basic sudo entry for each user. Leverages the `sudo` resource https://supermarket.chef.io/cookbooks/sudo\n * Handles Linux group membership for users\n * Provides a membership method for adding users and grant sudo only on specific nodes\n\n### Overview\nThe recipe logic is driven by user records in the data bag. Data bag name defaults to `common` and the item name to `users` but they can be overwritten.\nAn example of a `users` data bag item:\n\n```\n{\n  \"id\": \"users\",\n  \"testuser\": {\n  },\n  \"newuser1\": {\n    \"sudo\": {\n\n    }\n  },\n  \"newuser2\": {\n    \"comment\": \"another new user\",\n    \"uid\": 2000,\n    \"gid\": 2000,\n    \"shell\": \"/bin/dash\",\n    \"home\": \"/home/custom_home_directory\",\n    \"password\": \"$6$bLZbaeySMzRx7P29$cmmF4SbtnXe2Gc1cBc0fpnBUEPxrr8inn6SNq9xpcT7M/vM0FpZmGF105LWrGCValjJMqEtBALZOYayppwJAj/\",\n    \"ssh_keygen\": true,\n    \"ssh_keys\": [\n      \"key1\",\n      \"key2\"\n    ],\n    \"groups\": [\n      \"newgroup2\"\n    ],\n    \"sp_lstchg\": \"2015-07-30\",\n    \"sp_expire\": \"2035-09-30\",\n    \"sp_min\": 30,\n    \"sp_max\": 60,\n    \"sp_inact\": 5,\n    \"sp_warn\": 5,\n    \"sudo\": {\n      \"nopasswd\": true,\n      \"commands\": [\n        \"/etc/init.d/httpd restart\",\n        \"/sbin/iptables\"\n      ],\n      \"defaults\": [\n        \"!requiretty\",\n        \"env_reset\"\n      ]\n    }\n  },\n  \"olduser\": {\n    \"action\": \"remove\"\n  }\n}\n```\n\n#### Adding users with basic configuration (no password expiry info, no sudo)\nThe basic attribues of a user are named exactly as the parameters used by the `user_account` resource and can be added or omitted completely in which case default values are used. In fact users can be added by simply adding records like:\n\n```\n{\n  \"id\": \"users\",\n  \"user1\": {},\n  \"user2\": {},\n  \"user3\": {}\n}\n```\n\nHere is an example with some basic attributes:\n\n```\n{\n  \"id\": \"users\",\n  \"newuser\": {\n    \"comment\": \"another new user\",\n    \"uid\": 2000,\n    \"gid\": 2000,\n    \"shell\": \"/bin/dash\",\n    \"home\": \"/home/custom_home_directory\",\n    \"password\": \"$6$bLZbaeySMzRx7P29$cmmF4SbtnXe2Gc1cBc0fpnBUEPxrr8inn6SNq9xpcT7M/vM0FpZmGF105LWrGCValjJMqEtBALZOYayppwJAj/\",\n    \"ssh_keygen\": true,\n    \"ssh_keys\": [\n      \"key1\",\n      \"key2\"\n    ],\n    \"groups\": [\n      \"newgroup2\"\n    ],\n  }\n}\n```\n\nThe above example also shows the usage of the `groups` array which is a list of Linux groups that the user will be granted membership. The group will be created if doesn't exist.\n\n#### Adding a user with password/account expiry information\nPassword/account expiry information is set by adding attributes in the data bag named exactly as the parameters used by the `user_shadow` resource. Example:\n\n```\n{\n  \"id\": \"users\",\n  \"newuser\": {\n    \"sp_lstchg\": \"2015-07-30\",\n    \"sp_expire\": \"2035-09-30\",\n    \"sp_min\": 30,\n    \"sp_max\": 60,\n    \"sp_inact\": 5,\n    \"sp_warn\": 5\n  }\n}\n```\n\n#### Creating users only on specific servers\nUser creation on nodes can be controlled by declaring a list of groups on the node consuming the recipe and then subscribing the user to at least one of those groups in the data bag. The user will be created on the node if the user subscribes to at least one of the groups the node declares or if the user doesn't define them at all. Groups declaration on the node can be done in the consuming recipe, for example:\n\n\n```\nnode.default['rackspace_users']['node_groups'] = ['web', 'admin', 'test']\n\ninclude_recipe 'rackspace_users'\n```\n\n\nAnd then on the data bag the user can subscribe to one of the groups like:\n\n\n```\n{\n  \"id\": \"users\",\n  \"newuser\": {\n    \"node_groups\": [\"admin\"]\n  }\n}\n```\n\nThe recipe also creates Linux groups named after the `node_groups` that the user subscribes to *and* are also found in the node_groups list that the node declares. In the case above, the `admin` group will be created and the `newuser` will be granted membership on it. These Linux groups can be used in the future to grant privileges only to members of that groups if desired.\n\nIt is worth emphasizing that this membership mechanism is an optional feature: if the node and user don't use it then the user will simply be created on all nodes consuming the recipe.\n\nMore complex membership requirements can be handled by approprieatly naming the `node_groups` items. Here are some scenarios and how they can be implemented using this mechanism:\n\n##### User must be on all servers regardless of role or environment:\n\n```\nnode_groups should not be defined for the user\n```\n\n##### User must be on all servers on environment `X`:\nOn any node consuming `rackspace_users`:\n\n```\nnode.default['rackspace_users']['node_groups'] = [ node.chef_environment ]\n```\n\nOn the `users` data bag item:\n\n```\n\"user\": {\n  \"node_groups\": [ \"X\" ]\n}\n```\n\n##### User must be on all servers running role `X` on *any* environment:\nOn the node with role `X`:\n\n```\nnode.default['rackspace_users']['node_groups'] = [ 'X' ]\n```\n\nOn the `users` data bag item:\n\n```\n\"user\": {\n  \"node_groups\": [ \"X\" ]\n}\n```\n\n##### User must be on all servers running role `X` *or* role `Y` on *any* environment:\nOn the node with role `X`:\n\n```\nnode.default['rackspace_users']['node_groups'] = [ 'X' ]\n```\n\nOn the node with role `Y`:\n\n```\nnode.default['rackspace_users']['node_groups'] = [ 'Y' ]\n```\n\nOn the `users` data bag item:\n\n```\n\"user\": {\n  \"node_groups\": [ \"X\" , \"Y\" ]\n}\n```\n\n##### User must be on all servers running role `X` *only* on environment `Y`:\nOn the node with role `X`:\n\n```\nnode.default['rackspace_users'] = [ \"X_#{node.chef_environment}\" ]\n```\n\nOn the `users` data bag item:\n\n```\n\"user\": {\n  \"node_groups\": [ \"X_Y\" ]\n}\n```\n\n##### User must be on all servers running role `X` *or* role `Y` *only* on environment `Z`:\nOn the node with role `X`:\n\n```\nnode.default['rackspace_users']['node_groups'] = [ \"X_#{node.chef_environment}\" ]\n```\n\nOn the node with role `Y`:\n\n```\nnode.default['rackspace_users']['node_groups'] = [ \"Y_#{node.chef_environment}\" ]\n```\n\nOn the `users` data bag item:\n\n```\n\"user\": {\n  \"node_groups\": [ \"X_Z\" , \"Y_Z\" ]\n}\n```\n\n##### User must be on all servers running role `X` *only* on environment `Y` and servers running role `Z` but *only* on environment `K`:\nOn the node with role `X`:\n\n```\nnode.default['rackspace_users']['node_groups'] = [ \"X_#{node.chef_environment}\" ]\n```\n\nOn the node with role `Z`:\n\n```\nnode.default['rackspace_users']['node_groups'] = [ \"Z_#{node.chef_environment}\" ]\n```\n\nOn the `users` data bag item:\n\n```\n\"user\": {\n  \"node_groups\": [ \"X_Y\" , \"Z_K\" ]\n}\n```\n\nOther scenarios can be potentially handled by having some logic in the recipe that creates/defines the string to be used in the `node['rackspace_users']['node_groups']` attribute. For instance if one wanted to create a user only on nodes with more than 2 CPU cores (because of some strange requirement) then they could potentially do something like this:\n\nOn any node consuming `rackspace_users`:\n\n```\nif node['cpu']['total'] > 2\n  membership_based_on_number_of_cores = 'cores_greater_than_2'\nend\n\nnode.default['rackspace_users']['node_groups'] = [ membership_based_on_number_of_cores ]\n```\n\nOn the `users` data bag item:\n\n```\n\"user\": {\n  \"node_groups\": [ \"cores_greater_than_2\" ]\n}\n```\n\n#### Sudo\n\nA basic sudo entry can be created by adding an empty `sudo` section:\n\n```\n{\n  \"id\": \"users\",\n  \"newuser\": {\n    \"sudo\": {}\n  }\n}\n```\n\nThis will add a `/etc/sudoers.d/newuser` file with privileges allowing the user to execute any command as `ALL` by entering their password (the default of the sudo resource). The user will have to enter their password. The recipe uses the `sudo` resource and some features of that can be overwritten, namely `nopasswd`, `commands`, `runas` and `defaults`. For example:\n\n```\n{\n  \"id\": \"users\",\n  \"newuser\": {\n    \"sudo\": {\n      \"nopasswd\": true,\n      \"commands\": [\n        \"/etc/init.d/httpd restart\",\n        \"/sbin/iptables\"\n      ],\n      \"defaults\": [\n        \"!requiretty\",\n        \"env_reset\"\n      ]\n    }\n  }\n}\n```\n\nIf there is no `sudo` section, a sudo entry will not be added for that user. Sudo creation can be controlled even further by again using the `node_groups` mechanism. If the `sudo` section has a `node_groups` sub section then that will be compared against the `node_groups` the node declares. If no common items are found then a sudo entry will not be added. For example:\n\n```\n{\n  \"id\": \"users\",\n  \"newuser\": {\n    \"sudo\": {\n      \"node_groups\": [\"web\",\"admin\"]\n    }\n  }\n}\n```\n\nAlso note that if the user doesn't declare `node_groups` under the sudo section then it is assumed that it has sudo on all nodes.\n\n#### Using a different data bag\nYou can point to a different data bag and item by overwriting the corresponding attributes in the consuming cookbook, for example:\n\n```\n# override default data bag and item\nnode.default['rackspace_users']['data_bag'] = 'my_data_bag'\nnode.default['rackspace_users']['data_bag_item'] = 'my_users'\n\ninclude_recipe 'rackspace_users'\n```\n\n## Contributing\n\n1. Fork the repository on Github\n2. Create a named feature branch (i.e. `add-my-feature`)\n3. Write your change\n4. Write tests for your change (if applicable)\n5. Run the tests, ensuring they all pass\n6. Submit a Pull Request\n\n## License and Authors\n\nAuthors:: Kostas Georgakopoulos (kostas.georgakopoulos@rackspace.co.uk), Martin Smith (martin.smith@rackspace.com)\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/user",
+      "revision": "~> 0.4.2",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/user_shadow",
+      "revision": "~> 0.1.2",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/sudo",
+      "revision": "~> 2.7.2",
+      "self_resolve": true
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/kobotoolbox/mongo",
+    "repository_url": "https://hub.docker.com/v2/repositories/kobotoolbox/mongo",
+    "tags_url": "https://hub.docker.com/v2/repositories/kobotoolbox/mongo/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/kobotoolbox/mongo/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/kobotoolbox/mongo/autobuild",
+    "user": "kobotoolbox",
+    "name": "mongo",
+    "namespace": "kobotoolbox",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 2307,
+    "last_updated": "2016-10-15T20:19:24.692619Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 307344062,
+        "id": 1836233,
+        "repository": 490504,
+        "creator": 459776,
+        "last_updater": 427162,
+        "last_updated": "2016-10-15T20:19:24.419103Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "docker_local",
+        "full_size": 312092654,
+        "id": 1986989,
+        "repository": 490504,
+        "creator": 427162,
+        "last_updater": 427162,
+        "last_updated": "2016-03-01T19:39:41.584992Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": []
+      }
+    ],
+    "build_name": "kobotoolbox/kobo-docker"
+  },
+  "name": "kobotoolbox/mongo Docker container",
+  "description": "https://github.com/kobotoolbox/kobo-docker/tree/master/base_images/mongo",
+  "readme": "# Setup procedure:\n1. [Install Docker Compose on 64-bit Linux](https://docs.docker.com/compose/install/). OS X and Windows power users can try [the new Docker beta for those platforms](https://blog.docker.com/2016/03/docker-for-mac-windows-beta/).\n2. Determine whether you want to create an HTTP-only **local** instance of KoBo Toolbox, or a HTTPS publicly-accessible **server** instance. Local instances will use [`docker-compose.local.yml`](./docker-compose.local.yml) and [`envfile.local.txt`](./envfile.local.txt), whereas server instances will use [`docker-compose.server.yml`](./docker-compose.server.yml) and [`envfile.server.txt`](./envfile.server.txt) instead.  \n**Note:** For server instances, you are expected to meet the usual basic requirements of serving over HTTPS. That is, DNS records for your domain and subdomains, a CA-signed wildcard (or SAN) SSL certificate valid for those subdomains, and some basic knowledge of Nginx server administration and the use of SSL.\n3. Based on your desired instance type, create a symlink named `docker-compose.yml` to either [`docker-compose.local.yml`](./docker-compose.local.yml) or [`docker-compose.server.yml`](./docker-compose.server.yml) (e.g. `ln -s docker-compose.local.yml docker-compose.yml`). Alternatively, you can skip this step and explicitly prefix all Docker Compose commands like `docker-compose -f docker-compose.local.yml`.\n4. Pull the latest images from Docker Hub: `docker-compose pull`. **Note:** Be careful when pulling updated images to delete the old using `docker rmi` so your drive doesn't fill up.\n5. Build any images you've chosen to manually override: `docker-compose build`.\n6. Edit the appropriate environment file for your instance type, [`envfile.local.txt`](./envfile.local.txt) or [`envfile.server.txt`](./envfile.server.txt), filling in **all** mandatory variables, and optional variables as needed.\n7. Optionally enable additional settings for your Google Analytics token, S3 bucket, e-mail settings, etc. by editing the files in [`envfiles/`](./envfiles).\n7. **Server-only steps:**\n  1. Make a `secrets` directory in the project root and copy the SSL certificate and key files to `secrets/ssl.crt` and `secrets/ssl.key` respectively. **The certificate and key are expected to use exactly these filenames and must comprise either a wildcard or SAN certificate+key pair which are valid for the domain and subdomains specified in [`envfile.server.txt`](./envfile.server.txt).**\n  2. If testing on a server that is not publicly accessible at the subdomains you've specified in [`envfile.server.txt`](./envfile.server.txt), put an entry in your host machine's `/etc/hosts` file for each of the three subdomains you entered to reroute such requests to your machine's address (e.g. `192.168.1.1 kf-local.kobotoolbox.org`). Also, uncomment and configure the `extra_hosts` directives in [`docker-compose.server.yml`](./docker-compose.server.yml).\n8. Optionally stop and clear previously built `kobo-docker` containers: `docker-compose stop; docker-compose rm`.\n9. Optionally clear persisted files (e.g. the Postgres database) from previous runs, **taking care that you are in the `kobo-docker` directory**: `sudo rm -rf .vols/ log/`.\n10. Start the server: `docker-compose up -d` (or without the `-d` option to run in the foreground).\n11. Container output can be followed with `docker-compose logs -f`. For an individual container, logs can be followed by using the container name from your `docker-compose.yml` with e.g. `docker-compose logs -f enketo_express`.\n\n\"Local\" setup users can now reach KoBo Toolbox at `http://${HOST_ADDRESS}:${KPI_PUBLIC_PORT}` (substituting in the values entered in [`envfile.local.txt`](./envfile.local.txt)), while \"server\" setups can be reached at `https://${KOBOFORM_PUBLIC_SUBDOMAIN}.${PUBLIC_DOMAIN_NAME}` (similarly substituting from [`envfile.server.txt`](./envfile.server.txt)). Be sure to periodically update your containers, especially `nginx`, for security updates by pulling new changes from this `kobo-docker` repo then running e.g. `docker-compose pull && docker-compose up -d`.\n",
+  "dockerfile": "FROM kobotoolbox/base-mongo:latest\n\nMAINTAINER Serban Teodorescu, teodorescu.serban@gmail.com\n\nCOPY run_mongo /etc/service/mongo/run\nCOPY add_index.sh /srv/\n\nRUN /etc/my_init.d/00_regen_ssh_host_keys.sh && \\\n    chmod +x /etc/service/mongo/run && \\\n    mkdir -p /srv/db\n\nVOLUME [\"/srv/db\"]\n\nEXPOSE 27017\n\nCMD [\"/sbin/my_init\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      27017
+    ],
+    "volume": [
+      "[\"/srv/db\"]"
+    ],
+    "run": [
+      "/etc/my_init.d/00_regen_ssh_host_keys.sh &&     chmod +x /etc/service/mongo/run &&     mkdir -p /srv/db"
+    ],
+    "workdir": [],
+    "from": "kobotoolbox/base-mongo:latest",
+    "maintainer": "Serban Teodorescu, teodorescu.serban@gmail.com",
+    "copy": "add_index.sh /srv/",
+    "cmd": "[\"/sbin/my_init\"]"
+  },
+  "source_repository_url": "https://github.com/kobotoolbox/kobo-docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/kobotoolbox/kobo-docker",
+  "docker_repository": "kobotoolbox/mongo",
+  "docker_image": "kobotoolbox/mongo",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        27017
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "kobotoolbox/mongo",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/kobotoolbox/mongo",
+    "https://hub.docker.com/v2/repositories/kobotoolbox/mongo",
+    "https://github.com/kobotoolbox/kobo-docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image",
+    "Type/Devopsware/Version Control/Git",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB"
+  ],
+  "info_url": "https://hub.docker.com/r/kobotoolbox/mongo",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

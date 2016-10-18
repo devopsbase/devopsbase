@@ -1,0 +1,108 @@
+{
+  "name": "etcd Juju charm",
+  "juju_charm_name": "etcd",
+  "revision": "cs:trusty/etcd-6",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/etcd",
+    "https://jujucharms.com/etcd/trusty",
+    "https://jujucharms.com/etcd/trusty/6",
+    "https://api.jujucharms.com/v5/etcd",
+    "https://api.jujucharms.com/v5/trusty/etcd",
+    "https://api.jujucharms.com/v5/trusty/etcd-6"
+  ],
+  "labels": [
+    "Juju charm",
+    "coordination",
+    "service discovery",
+    "ops",
+    "Binding/Region/Europe/EU",
+    "Binding/Region/North America/US",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Mode/CLI",
+    "Mode/API",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Devopsware/Monitoring/Sensu",
+    "Type/Devopsware/Logging",
+    "Type/Middleware/Runtime/Perl",
+    "Type/Middleware/Web Server/Apache HTTP Server",
+    "Type/Middleware/Data Store/Key-Value",
+    "Type/Middleware/User Management"
+  ],
+  "info_url": "https://jujucharms.com/etcd",
+  "package_url": "https://api.jujucharms.com/v5/trusty/etcd-6/archive",
+  "created": "2016-02-17T22:19:08.425Z",
+  "updated": "2016-02-17T22:19:08.425Z",
+  "description": "A distributed key value store for configuration and service discovery.\n\nA highly-available key value store for shared configuration and service\ndiscovery. etcd is inspired by Apache ZooKeeper and doozer, with a\nfocus on being:\n\n Simple: curl'able user facing API (HTTP+JSON)\n Secure: optional SSL client cert authentication\n Fast: benchmarked 1000s of writes/s per instance\n Reliable: properly distributed using Raft\n\netcd is written in Go and uses the Raft consensus algorithm to\nmanage a highly-available replicated log.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "trusty",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= trusty"
+    }
+  ],
+  "parameters": {
+    "bin-source": {
+      "type": "string",
+      "description": "Location of etcd binary release to fetch",
+      "default": "https://github.com/coreos/etcd/releases/download/v2.2.3/etcd-v2.2.3-linux-amd64.tar.gz",
+      "mapping": "charm_option"
+    },
+    "debug": {
+      "type": "boolean",
+      "description": "*DEPRECIATED* Enable debug logging\n",
+      "default": true,
+      "mapping": "charm_option"
+    },
+    "snapshot": {
+      "type": "boolean",
+      "description": "*DEPRECIATED* Enable log snapshots\n",
+      "default": true,
+      "mapping": "charm_option"
+    },
+    "source-sum": {
+      "type": "string",
+      "description": "SHA1 Sum of etcd binary release",
+      "default": "208d5f05f1ef2715198904f46c7fde3f9b7bdec6",
+      "mapping": "charm_option"
+    }
+  },
+  "provides": [
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/etcd",
+      "juju_interface": "etcd",
+      "juju_name": "client",
+      "juju_role": "provider",
+      "juju_limit": 0
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/provides/etcd-proxy",
+      "juju_interface": "etcd-proxy",
+      "juju_name": "proxy",
+      "juju_role": "provider",
+      "juju_limit": 0
+    }
+  ],
+  "juju_peers": {
+    "cluster": {
+      "Name": "cluster",
+      "Role": "peer",
+      "Interface": "etcd-raft",
+      "Optional": false,
+      "Limit": 1,
+      "Scope": "global"
+    }
+  },
+  "license": "# Etcd\n\nEtcd is a highly available distributed key value store that provides a reliable\nway to store data across a cluster of machines. Etcd gracefully handles master\nelections during network partitions and will tolerate machine failure, including\nthe master.\n\nYour applications can read and write data into etcd. A simple use-case is to\nstore database connection details or feature flags in etcd as key value pairs.\nThese values can be watched, allowing your app to reconfigure itself when they\nchange.\n\nAdvanced uses take advantage of the consistency guarantees to implement\ndatabase master elections or do distributed locking across a cluster of workers.\n\nEtcd allows storing data in a distributed hierarchical database with observation.\n\n## Usage\n\nWe can deploy a single node easily with\n\n    juju deploy cs:trusty/etcd\n\nAdd and capacity with:\n\n    juju add-unit -n 2 etcd\n\nIts recommended to run an odd number of machines as it has greater redundancy than\neven number (ie. 4, you can lose 1 before quorum is lost, where as 5, you can 2).\n\n\n### Advanced Usage\n\nThis charm also supports a `proxy` relation, when using the ETCD cluster as a\ndiscovery service for your own applications. Reference the\n[upstream documentation](https://github.com/coreos/etcd/blob/master/Documentation/proxy.md)\nto learn more about this feature of ETCD\n\n    juju add-relation <service>:<relation> etcd:proxy\n\n\nFor each node in the cluster, you will receive a cluster-string that you can\nuse to point your application into the cluster and join the gossip.\n\n## Health\n\nHealth of the cluster can be checked by verified via juju actions\n\n    juju action do etcd/0 health\n    <return response uuid>\n    juju action fetch <uuid>\n\n\n## Usage Caveats\n\nThis charm requires Leader Election, which is a feature of Juju >= 1.23.2. The\ncharm will panic and refuse to continue if the leader_election binary is not\nfound. Please take care when deploying this charm on older versions of Juju.\n\n## Credits\n\nThe etcd charm was originally written by Kapil Thangavelu ([@kapilt](https://github.com/kapilt)).\n\n#### Maintainers:\n\nThe kubernetes team maintains this charm:\n  - Whit Morriss &lt;whit.morriss@canonical.com&gt;\n  - Charles Butler &lt;charles.butler@canonical.com&gt;\n  - Matt Bruzek &lt;matthew.bruzek@canonical.com&gt;\n\n\n## Upstream Project Information\n\n- [Using ETCD](https://coreos.com/using-coreos/etcd/)\n- [ETCD Getting Started Guide](https://coreos.com/docs/distributed-configuration/getting-started-with-etcd/)\n- [ETCD Issue Tracker](https://github.com/coreos/etcd)\n",
+  "readme": "# Etcd\n\nEtcd is a highly available distributed key value store that provides a reliable\nway to store data across a cluster of machines. Etcd gracefully handles master\nelections during network partitions and will tolerate machine failure, including\nthe master.\n\nYour applications can read and write data into etcd. A simple use-case is to\nstore database connection details or feature flags in etcd as key value pairs.\nThese values can be watched, allowing your app to reconfigure itself when they\nchange.\n\nAdvanced uses take advantage of the consistency guarantees to implement\ndatabase master elections or do distributed locking across a cluster of workers.\n\nEtcd allows storing data in a distributed hierarchical database with observation.\n\n## Usage\n\nWe can deploy a single node easily with\n\n    juju deploy cs:trusty/etcd\n\nAdd and capacity with:\n\n    juju add-unit -n 2 etcd\n\nIts recommended to run an odd number of machines as it has greater redundancy than\neven number (ie. 4, you can lose 1 before quorum is lost, where as 5, you can 2).\n\n\n### Advanced Usage\n\nThis charm also supports a `proxy` relation, when using the ETCD cluster as a\ndiscovery service for your own applications. Reference the\n[upstream documentation](https://github.com/coreos/etcd/blob/master/Documentation/proxy.md)\nto learn more about this feature of ETCD\n\n    juju add-relation <service>:<relation> etcd:proxy\n\n\nFor each node in the cluster, you will receive a cluster-string that you can\nuse to point your application into the cluster and join the gossip.\n\n## Health\n\nHealth of the cluster can be checked by verified via juju actions\n\n    juju action do etcd/0 health\n    <return response uuid>\n    juju action fetch <uuid>\n\n\n## Usage Caveats\n\nThis charm requires Leader Election, which is a feature of Juju >= 1.23.2. The\ncharm will panic and refuse to continue if the leader_election binary is not\nfound. Please take care when deploying this charm on older versions of Juju.\n\n## Credits\n\nThe etcd charm was originally written by Kapil Thangavelu ([@kapilt](https://github.com/kapilt)).\n\n#### Maintainers:\n\nThe kubernetes team maintains this charm:\n  - Whit Morriss &lt;whit.morriss@canonical.com&gt;\n  - Charles Butler &lt;charles.butler@canonical.com&gt;\n  - Matt Bruzek &lt;matthew.bruzek@canonical.com&gt;\n\n\n## Upstream Project Information\n\n- [Using ETCD](https://coreos.com/using-coreos/etcd/)\n- [ETCD Getting Started Guide](https://coreos.com/docs/distributed-configuration/getting-started-with-etcd/)\n- [ETCD Issue Tracker](https://github.com/coreos/etcd)\n",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

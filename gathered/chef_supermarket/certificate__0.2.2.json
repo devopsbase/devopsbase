@@ -1,0 +1,100 @@
+{
+  "name": "certificate Chef cookbook",
+  "chef_cookbook_name": "certificate",
+  "revision": "0.2.2",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/certificate",
+    "https://supermarket.chef.io/cookbooks/certificate/download",
+    "https://supermarket.chef.io/cookbooks/certificate/versions/0.2.2",
+    "https://supermarket.chef.io/cookbooks/certificate/versions/0.2.2/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/certificate/versions/0.2.2",
+    "https://supermarket.chef.io/api/v1/cookbooks/certificate",
+    "https://supermarket.chef.io/api/v1/cookbooks/certificate/versions/0.2.2/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Other",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Mode/Executable/Bundle"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/certificate",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/certificate/versions/0.2.2/download",
+  "deprecated": false,
+  "created": "2012-03-15T18:22:02.000Z",
+  "updated": "2015-04-06T15:05:41.608Z",
+  "description": "Installs/Configures certificates, private keys, CA root bundles from encrypted data bags.",
+  "maintainer": {
+    "name": "atomic-penguin",
+    "email": "wolfe21@marshall.edu"
+  },
+  "license": "Apache 2.0",
+  "chef_foodcritic_failure": false,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 41,
+  "downloads_count": 24202598,
+  "downloads_count_revision": 1271172,
+  "repository_url": "http://github.com/atomic-penguin/cookbook-certificate",
+  "issues_url": "http://github.com/atomic-penguin/cookbook-certificate",
+  "chef_source_url": "http://github.com/atomic-penguin/cookbook-certificate",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "# Certificate [![Build Status](https://secure.travis-ci.org/atomic-penguin/cookbook-certificate.png?branch=master)](http://travis-ci.org/atomic-penguin/cookbook-certificate)\n\n## Description\n\nThis recipe automates the common task of managing x509 certificates and keys\nfrom encrypted Data Bags.  This cookbook provides a flexible and re-usable\nLWRP which can be plugged into other recipes, such as the postfix or apache2\ncookbooks.\n\n## Requirements\n\nYou do need to prepare an encrypted data bag, containing the certificates,\nprivate keys, and CA bundles you wish to deploy to servers with the LWRP.\nI used Joshua Timberman's [blog post](https://jtimberman.posterous.com/64227128),\nand the Opscode [Wiki documentation](http://wiki.opscode.com/display/chef/Encrypted+Data+Bags)\nas a reference in creating this cookbook.\n\nFirst, create a **data bag secret** as follows.  You need to manually copy\nthe *encrypted_data_bag_secret* to */etc/chef* on your servers, or place it\nthere as part of your bootstrap process.  For example, you may choose to\ndo deploy the secret file with kickstart or preseed as part of the OS\ninstall process. \n\n    openssl rand -base64 512 > ~/.chef/encrypted_data_bag_secret\n\nSecond, create a data bag, the default data bag within the LWRP is\nnamed *certificates*.  However, you may override this with the\n*data_bag* LWRP attribute.\n\n    knife data bag create certificates\n\nYou need to convert your certificate, private keys, and CA bundles into\nsingle-line blobs with literal \\n characters.  This is so it may be\ncopy/pasted into your data bag.  You can use a Perl or Ruby one-liner for\nthis conversion.\n\n    /usr/bin/env ruby -e 'p ARGF.read' <filename>\n    -OR-\n    perl -pe 's!(\\x0d)?\\x0a!\\\\n!g' <filename>\n\nWhat we're trying to accomplish is converting this:\n\n    -----BEGIN CERTIFICATE-----\n    MIIEEDCCA3mgAwIBAgIJAO4rOcmpIFmPMA0GCSqGSIb3DQEBBQUAMIG3MQswCQYD\n    -----END CERTIFICATE-----\n\nInto this:\n\n    -----BEGIN CERTIFICATE-----\\nMIIEEDCCA3mgAwIBAgIJAO4rOcmpIFmPMA0GCSqGSIb3DQEBBQUAMIG3MQswCQYD\\n-----END CERTIFICATE-----\n\nFinally, you'll want to create the data bag object to contain your certs,\nkeys, and optionally your CA root chain bundle.  The default recipe uses\nthe OHAI attribute *hostname* as a *search_id*, since the data bag id may not \ncontain dot characters used in the *fqdn* attribute.\n\nThe cookbook also contains an example *wildcard* recipe to use with wildcard\ncertificates (\\*.example.com) certificates.\n\nHostname mail as data bag search_id:\n\n    knife data bag create certificates mail --secret-file ~/.chef/encrypted_data_bag_secret\n\nThe resulting encrypted data bag for a hostname should be structured like so.\nThe *chain* id may be optional if your CA's root chain is already trusted by the\nserver.\n\n    {\n      \"id\": \"mail\",\n      \"cert\": \"-----BEGIN CERTIFICATE-----\\nMail Certificate Here...\",\n      \"key\": \"-----BEGIN PRIVATE KEY\\nMail Private Key Here...\",\n      \"chain\": \"-----BEGIN CERTIFICATE-----\\nCA Root Chain Here...\"\n    }\n\n\nWildcard certificate as data bag search_id:\n\n    knife data bag create certificates wildcard --secret-file ~/.chef/encrypted_data_bag_secret\n\nThe resulting encrypted data bag should be structured like so for a wildcard\ncertificate.  The *chain* id may be optional if your CA's root chain is already\ntrusted by the server.\n\n    {\n      \"id\": \"wildcard\",\n      \"cert\": \"-----BEGIN CERTIFICATE-----\\nWildcard Certificate Here...\",\n      \"key\": \"-----BEGIN PRIVATE KEY\\nWildcard Private Key Here...\",\n      \"chain\": \"-----BEGIN CERTIFICATE-----\\nCA Root Chain Here...\"\n    }\n\n\n## Recipes\n\nThis cookbook comes with two simple example recipes for using the *certificate_manage* LWRP.\n\n### default\n\nSearches the data bag, *certificates*, for an object with an *id* matching\n*node.hostname*.  Then the recipe places the decrypted certificates and keys\nin either */etc/pki/tls* (RHEL family), or */etc/ssl* (Debian family).  The\ndefault owner and group owner of the resulting files are *root*.\n\nThe resulting files will be named {node.fqdn}.pem (cert),\n{node.fqdn}.key (key), and {node.hostname}-bundle.crt (CA Root chain).\n\n### wildcard\n\nSame as the default recipe, except for the search *id* is *wildcard*.\nThe resulting files will be named wildcard.pem (cert), wildcard.key (key),\nand wildcard-bundle.crt (CA Root chain)\n\n### manage_by_attributes\n\nRetrieve search keys from attributes \"certificate\".  \nSet ID and LWRP attributes to node attribute following...\n\n    \"certificate\": [\n      {\"self\": null},\n      {\"mail\": {\n        \"cert_path\": \"/etc/postfix/ssl\",\n         \"owner\": \"postfix\",\n         \"group\": \"postfix\"\n        }\n      },\n    ]\n\n\n## Resources/Providers\n\n### resources\n\nThe LWRP resource attributes are as follows.\n\n  * data\\_bag - Data bag index to search, defaults to certificates\n  * data\\_bag\\_secret - Path to the file with the data bag secret\n  * search\\_id - Data bag id to search for, defaults to provider name\n  * cert\\_path - Top-level SSL directory, defaults to vendor specific location\n  * cert\\_file - The basename of the x509 certificate, defaults to {node.fqdn}.pem\n  * key\\_file - The basename of the private key file, defaults to {node.fqdn}.key\n  * chain\\_file - The basename of the x509 certificate, defaults to {node.hostname}-bundle.crt\n  * owner - The file owner, defaults to root\n  * group - The file group owner, defaults to root\n  * cookbook - The cookbook containing the erb template, defaults to certificate\n  * create\\_subfolders - Enable/disable auto-creation of private/certs subdirectories.  Defaults to true\n\n### providers\n\n  * certificate\\_manage - The reusable LWRP to manage certificates, keys, and CA bundles\n\n## Usage\n\nHere is a flushed out example using the LWRP to manage your certificate\nitems on a Postfix bridgehead.  The following example should select the\n*mail* data bag object, from the *certificates* data bag.\n\nIt should then place the managed certificate files in */etc/postfix/ssl*,\nand change the owner/group to *postfix*.\n\n```ruby\ncertificate_manage \"mail\" do\n  cert_path \"/etc/postfix/ssl\"\n  owner \"postfix\"\n  group \"postfix\"\nend\n```      \n\n## License and Author\n\nAuthor:: Eric G. Wolfe <wolfe21@marshall.edu> \n\nCopyright:: 2012, Eric G. Wolfe\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "amazon",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "centos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "debian",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "fedora",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "redhat",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "oracle",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "scientific",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "ubuntu",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    },
+    {
+      "kind": "host",
+      "label": "smartos",
+      "revision": ">= 0.0.0",
+      "one_of_group": "os"
+    }
+  ]
+}

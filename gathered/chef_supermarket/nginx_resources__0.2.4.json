@@ -1,0 +1,57 @@
+{
+  "name": "nginx_resources Chef cookbook",
+  "chef_cookbook_name": "nginx_resources",
+  "revision": "0.2.4",
+  "uris": [
+    "https://supermarket.chef.io/cookbooks/nginx_resources",
+    "https://supermarket.chef.io/cookbooks/nginx_resources/download",
+    "https://supermarket.chef.io/cookbooks/nginx_resources/versions/0.2.4",
+    "https://supermarket.chef.io/cookbooks/nginx_resources/versions/0.2.4/download",
+    "https://supermarket.chef.io/api/v1/cookbooks/nginx_resources/versions/0.2.4",
+    "https://supermarket.chef.io/api/v1/cookbooks/nginx_resources",
+    "https://supermarket.chef.io/api/v1/cookbooks/nginx_resources/versions/0.2.4/download"
+  ],
+  "labels": [
+    "Chef cookbook",
+    "Executable/Script/Chef Cookbook",
+    "Mode/Executable/Script/Chef Cookbook",
+    "Type/Middleware/Web Server/Nginx"
+  ],
+  "info_url": "https://supermarket.chef.io/cookbooks/nginx_resources",
+  "package_url": "https://supermarket.chef.io/api/v1/cookbooks/nginx_resources/versions/0.2.4/download",
+  "deprecated": false,
+  "created": "2016-07-05T13:21:59.956Z",
+  "updated": "2016-08-24T17:44:54.343Z",
+  "description": "Cookbook to install nginx with resources",
+  "maintainer": {
+    "name": "serafini",
+    "email": "jonathan@serafini.ca"
+  },
+  "license": "apachev2",
+  "chef_foodcritic_failure": true,
+  "chef_up_for_adoption": null,
+  "rating": null,
+  "followers_count": 0,
+  "downloads_count": 366,
+  "downloads_count_revision": 21,
+  "repository_url": "https://github.com/JonathanSerafini/chef-nginx_resources",
+  "issues_url": "https://github.com/JonathanSerafini/chef-nginx_resources/issues",
+  "chef_source_url": "https://github.com/JonathanSerafini/chef-nginx_resources",
+  "gatherbase_origin": "chef-supermarket",
+  "readme_name": "README.md",
+  "readme": "nginx_resources cookbook\n========================\n\nInstalls nginx and dependant modules from source in a modular fashion.\n\nStatus\n------\n\nThis is an initial release of the cookbook which has been through minor non-exhaustive testing. Additional work needs to be done to test more extensively as well as to flesh out the documentation. That being said, the interfaces ought to be fairly consistent moving forward.\n\nRequirements\n------------\n\n### Chef\n\nThis cookbook requires Chef 12.7 and above.\n\n### Platforms\n\nAt present, only Ubuntu < 16.04 is supported, however adding support for other distributions should be a simple matter.\n\nRecipes\n-------\n\nThe recipes are designed to create a default nginx installation called `default` and will utilize the resources listed below.\n\nCalling the standard `nginx_resources::default` recipe will cause the following events to occur: \n- `recipes/install_user` is called\n  - The www-data user account is optionally created\n- `recipes/install_common` is called\n  - The `nginx_resources_instance[default]` resource is created\n  - A few core and override configuration files are created\n  - The default site is created and optionally enabled\n  - The service files are created, but not the actual service due to timing\n- `recipes/install_modules` is called\n  - We iterate through `node['nginx_resources']['source']['include_recipes']`\n    and include recipes listed to install dependencies.\n- `recipes/install_source` is called\n  - Package dependencies are installed\n  - The `nginx_resources_build[default]` resources is created\n- `recipes/install_service` is called\n  - The service is created and optionally started\n\nCustom Resources\n----------------\n\nA deployment of nginx is comprised of a number of different resources. First, an nginx\\_resources\\_instance is created to define the basic folder structure. Then, any number of nginx\\_resources\\_module and nginx\\_resources\\_config are created to further customize the deployment. Lastly, a nginx\\_resources\\_build resource is created to compile and install nginx. \n\n### nginx\\_resources\\_instance\n\nThis resource builds out the folder structure for a specific deployment of nginx and it's dependant configuration files as well as creates the main configuration file. \n\nMost of the properties have default values which lazilly load node attributes and should not generally need to be modified. Should you need modify them, however, refer to the [source](resources/instance.rb) for more information. \n\nWith the default settings, the following structure will be created: \n```\n./var\n./var/1.10.1\n./var/1.10.1/logs\n./var/1.10.1/logs/error.log\n./var/1.10.1/html\n./var/1.10.1/html/50x.html\n./var/1.10.1/html/index.html\n./var/1.10.1/modules\n./var/1.10.1/modules/ndk_http_module.so\n./etc\n./etc/include.d\n./etc/include.d/stub_status.conf\n./etc/include.d/fastcgi.conf\n./etc/include.d/health.conf\n./etc/site.d\n./etc/site.d/20-default\n./etc/uwsgi_params\n./etc/koi-utf\n./etc/conf.d\n./etc/conf.d/50-ssl_map.conf\n./etc/conf.d/50-ssl.conf\n./etc/conf.d/50-realip.conf\n./etc/conf.d/50-gzip.conf\n./etc/conf.d/20-mime_types.conf\n./etc/conf.d/90-custom.conf\n./etc/conf.d/20-core.conf\n./etc/scgi_params\n./etc/fastcgi.conf\n./etc/nginx.conf\n./etc/module.d\n./etc/module.d/20-module_ndk.conf\n./etc/fastcgi_params\n./etc/mime.types\n./etc/koi-win\n./etc/win-utf\n./sbin\n./sbin/nginx\n```\n\n### nginx\\_resources\\_module\n\nThis resource downloads an external dependency (ex.: the [lua module](recipes/module_lua.rb)), unpacks it, creates a configuration file for it, and adds the module to the node attributes for the next compile phase. It does so by wrapping nginx\\_resources\\_source and nginx\\_resources\\_config.\n\nThe following properties are *required* and have no defaults:\n- instance: the nginx\\_resources\\_instance name this module belongs to\n- version: the version of this module\n- checksum: the checksum of the tarball to download\n- source: the url where the tarball is downloaded from\n\nOnce downloaded, the resource will inject the module in the global module configure argument attributes found in `node['nginx_resources']['source']['external_modules']`.\n\nFurther properties, with defaults, may be modified and are referenced in the [source](resources/module.rb) file.\n\n### nginx\\_resources\\_source\n\nThis resource downloads an external dependency (ex.: the [lua module](recipes/module_lua.rb)) and unpacks it.\n\nThe following properties are *required* and have no defaults:\n- version: the version of this module\n- checksum: the checksum of the tarball to download\n- source: the url where the tarball is downloaded from\n\nFurther properties, with defaults, may be modified and are referenced in the [source](resources/source.rb) file.\n\n### nginx\\_resources\\_config\n\nThis resource creates a configuration file for use with nginx. Examples of this in practice may be found [here](recipes/install_common.rb).\n\nThe following properties are *required* and have no defaults:\n- instance: the nginx\\_resources\\_instance name this module belongs to\n- category: the namespace both for source and destination files\n\nFurther properties, with defaults, may be modified and are referenced in the [source](resources/config.rb) file.\n\n### nginx\\_resources\\_build\n\nThis resource builds the nginx source code for a specific nginx\\_resources\\_instance and should be smart enough not to recompile needlessly on each chef run.\n\nThe following properties are *required* and have no defaults: \n- root_dir: The root directory containing nginx builds\n- sbin_path: The `--sbin-path` or path to the nginx binary\n- conf_path: The `--conf-path` or path to the main nginx configuration file\n- prefix: The `--prefix` or directory into which to install\n- service: The service resource name to notify\n\nFurther properties, with defaults, may be modified and are referenced in the [source](resources/build.rb) file.\n\n",
+  "requires": [
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/build-essential",
+      "revision": "~> 6.0.0",
+      "self_resolve": true
+    },
+    {
+      "kind": "env",
+      "uri": "https://supermarket.chef.io/cookbooks/apt",
+      "revision": ">= 0.0.0",
+      "self_resolve": true
+    }
+  ]
+}

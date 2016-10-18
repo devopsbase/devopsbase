@@ -1,0 +1,104 @@
+{
+  "name": "ceph-osd Juju charm",
+  "juju_charm_name": "ceph-osd",
+  "revision": "cs:precise/ceph-osd-9",
+  "latest": true,
+  "uris": [
+    "https://jujucharms.com/ceph-osd",
+    "https://jujucharms.com/ceph-osd/precise",
+    "https://jujucharms.com/ceph-osd/precise/9",
+    "https://api.jujucharms.com/v5/ceph-osd",
+    "https://api.jujucharms.com/v5/precise/ceph-osd",
+    "https://api.jujucharms.com/v5/precise/ceph-osd-9"
+  ],
+  "labels": [
+    "Juju charm",
+    "Type/Middleware/Runtime/Java",
+    "Mode/Executable/Bundle/Juju Charm",
+    "Style/Virtualization Level/Hardware/Network",
+    "Type/Devopsware/Deployment/Juju",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store"
+  ],
+  "info_url": "https://jujucharms.com/ceph-osd",
+  "package_url": "https://api.jujucharms.com/v5/precise/ceph-osd-9/archive",
+  "created": "2015-06-17T09:36:33.452Z",
+  "updated": "2015-06-17T09:36:33.452Z",
+  "description": "Highly scalable distributed storage - Ceph OSD storage\n\nCeph is a distributed storage and network file system designed to provide\nexcellent performance, reliability, and scalability.\n.\nThis charm provides the Ceph OSD personality for expanding storage capacity\nwithin a ceph deployment.\n",
+  "maintainer": {
+    "name": "charmers"
+  },
+  "juju_charm_subordinate": false,
+  "juju_charm_series": "precise",
+  "juju_charm_owner": "charmers",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Infrastructure/Operating System/Linux/Ubuntu",
+      "version": "= precise"
+    },
+    {
+      "kind": "peer",
+      "uri": "https://jujucharms.com/requires/ceph-osd",
+      "self_resolve": true,
+      "juju_interface": "ceph-osd",
+      "juju_name": "mon",
+      "juju_role": "requirer",
+      "juju_limit": 1
+    }
+  ],
+  "parameters": {
+    "ephemeral-unmount": {
+      "type": "string",
+      "description": "Cloud instances provider ephermeral storage which is normally mounted\non /mnt.\n.\nProviding this option will force an unmount of the ephemeral device\nso that it can be used as a OSD storage device.  This is useful for\ntesting purposes (cloud deployment is not a typical use case).\n",
+      "default": null,
+      "mapping": "charm_option"
+    },
+    "key": {
+      "type": "string",
+      "description": "Key ID to import to the apt keyring to support use with arbitary source\nconfiguration from outside of Launchpad archives or PPA's.\n",
+      "default": null,
+      "mapping": "charm_option"
+    },
+    "osd-devices": {
+      "type": "string",
+      "description": "The devices to format and set up as osd volumes.\n.\nThese devices are the range of devices that will be checked for and\nused across all service units.\n.\nFor ceph >= 0.56.6 these can also be directories instead of devices - the\ncharm assumes anything not starting with /dev is a directory instead.\n",
+      "default": "/dev/vdb",
+      "mapping": "charm_option"
+    },
+    "osd-format": {
+      "type": "string",
+      "description": "Format of filesystem to use for OSD devices; supported formats include:\n.\n  xfs (Default >= 0.48.3)\n  ext4 (Only option < 0.48.3)\n  btrfs (experimental and not recommended)\n.\nOnly supported with ceph >= 0.48.3.\n",
+      "default": "xfs",
+      "mapping": "charm_option"
+    },
+    "osd-journal": {
+      "type": "string",
+      "description": "The device to use as a shared journal drive for all OSD's.  By default\nno journal device will be used.\n.\nOnly supported with ceph >= 0.48.3.\n",
+      "default": null,
+      "mapping": "charm_option"
+    },
+    "osd-journal-size": {
+      "type": "int",
+      "description": "Ceph osd journal size. The journal size should be at least twice the\nproduct of the expected drive speed multiplied by filestore max sync\ninterval. However, the most common practice is to partition the journal\ndrive (often an SSD), and mount it such that Ceph uses the entire\npartition for the journal.\n.\nOnly supported with ceph >= 0.48.3.\n",
+      "default": 1024,
+      "mapping": "charm_option"
+    },
+    "osd-reformat": {
+      "type": "string",
+      "description": "By default, the charm will not re-format a device that already looks\nas if it might be an OSD device.  This is a safeguard to try to\nprevent data loss.\n.\nSpecifying this option (any value) forces a reformat of any OSD devices\nfound which are not already mounted.\n",
+      "default": null,
+      "mapping": "charm_option"
+    },
+    "source": {
+      "type": "string",
+      "description": "Optional configuration to support use of additional sources such as:\n.\n  - ppa:myteam/ppa\n  - cloud:precise-proposed/folsom\n  - http://my.archive.com/ubuntu main\n.\nThe last option should be used in conjunction with the key configuration\noption.\n.\nNote that a minimum ceph version of 0.48.2 is required for use with this\ncharm which is NOT provided by the packages in the main Ubuntu archive\nfor precise but is provided in the Ubuntu cloud archive.\n",
+      "default": "cloud:precise-updates/folsom",
+      "mapping": "charm_option"
+    }
+  },
+  "license": "Overview\n========\n\nCeph is a distributed storage and network file system designed to provide\nexcellent performance, reliability, and scalability.\n\nThis charm deploys additional Ceph OSD storage service units and should be\nused in conjunction with the 'ceph' charm to scale out the amount of storage\navailable in a Ceph cluster.\n\nUsage\n=====\n       \nThe charm also supports specification of the storage devices to use in the ceph\ncluster::\n\n    osd-devices:\n        A list of devices that the charm will attempt to detect, initialise and\n        activate as ceph storage.\n        \n        This this can be a superset of the actual storage devices presented to\n        each service unit and can be changed post ceph-osd deployment using\n        `juju set`.\n\nFor example::        \n\n    ceph-osd:\n        osd-devices: /dev/vdb /dev/vdc /dev/vdd /dev/vde\n        \nBoot things up by using::\n\n    juju deploy -n 3 --config ceph.yaml ceph\n    \nYou can then deploy this charm by simple doing::\n\n    juju deploy -n 10 --config ceph.yaml ceph-osd\n    juju add-relation ceph-osd ceph\n    \nOnce the ceph charm has bootstrapped the cluster, it will notify the ceph-osd\ncharm which will scan for the configured storage devices and add them to the\npool of available storage.\n\nContact Information\n===================\n\nAuthor: James Page <james.page@ubuntu.com>\nReport bugs at: http://bugs.launchpad.net/charms/+source/ceph-osd/+filebug\nLocation: http://jujucharms.com/charms/ceph-osd",
+  "readme": "Overview\n========\n\nCeph is a distributed storage and network file system designed to provide\nexcellent performance, reliability, and scalability.\n\nThis charm deploys additional Ceph OSD storage service units and should be\nused in conjunction with the 'ceph' charm to scale out the amount of storage\navailable in a Ceph cluster.\n\nUsage\n=====\n       \nThe charm also supports specification of the storage devices to use in the ceph\ncluster::\n\n    osd-devices:\n        A list of devices that the charm will attempt to detect, initialise and\n        activate as ceph storage.\n        \n        This this can be a superset of the actual storage devices presented to\n        each service unit and can be changed post ceph-osd deployment using\n        `juju set`.\n\nFor example::        \n\n    ceph-osd:\n        osd-devices: /dev/vdb /dev/vdc /dev/vdd /dev/vde\n        \nBoot things up by using::\n\n    juju deploy -n 3 --config ceph.yaml ceph\n    \nYou can then deploy this charm by simple doing::\n\n    juju deploy -n 10 --config ceph.yaml ceph-osd\n    juju add-relation ceph-osd ceph\n    \nOnce the ceph charm has bootstrapped the cluster, it will notify the ceph-osd\ncharm which will scan for the configured storage devices and add them to the\npool of available storage.\n\nContact Information\n===================\n\nAuthor: James Page <james.page@ubuntu.com>\nReport bugs at: http://bugs.launchpad.net/charms/+source/ceph-osd/+filebug\nLocation: http://jujucharms.com/charms/ceph-osd",
+  "readme_name": "README.md",
+  "gatherbase_origin": "juju-charmstore"
+}

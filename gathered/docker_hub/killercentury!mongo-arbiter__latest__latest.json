@@ -1,0 +1,117 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/killercentury/mongo-arbiter",
+    "repository_url": "https://hub.docker.com/v2/repositories/killercentury/mongo-arbiter",
+    "tags_url": "https://hub.docker.com/v2/repositories/killercentury/mongo-arbiter/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/killercentury/mongo-arbiter/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/killercentury/mongo-arbiter/autobuild",
+    "user": "killercentury",
+    "name": "mongo-arbiter",
+    "namespace": "killercentury",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 457,
+    "last_updated": "2016-09-23T20:53:44.649143Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 101132626,
+        "id": 191658,
+        "repository": 163856,
+        "creator": 152201,
+        "last_updater": 152201,
+        "last_updated": "2016-09-23T20:51:31.133407Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "killercentury/docker-mongo-arbiter"
+  },
+  "name": "killercentury/mongo-arbiter Docker container",
+  "description": "",
+  "readme": "# MongoDB Arbiter Docker Image\n\nThis image is mainly based on the offical [MongoDB Docker image](https://registry.hub.docker.com/_/mongo/) with only a few changes required to run an arbiter in the replica set.\n\nHowever it doesn't directly use the offical image as the base image, it uses the original Dockerfile and docker-entrypoint.sh as base for changes instead.\n\nChanges:\n* Change all \"/data/db\" to \"/data/arb\" in Dockerfile and docker-entrypoint.sh\n* Change the port from 27017 to 30000\n\n## Usage\n\n### Create a data volume container\n\n```\ndocker create --name mongo-arbiter-data -v /data/arb busybox\n```\n\n### Launch a MongoDB arbiter\n\n(Following command assumes that you use a replica set called \"rs0\".)\n\n```\ndocker run --name mongo-arbiter --volumes-from=mongo-arbiter-data -p 30000:30000 -d killercentury/mongo-arbiter mongod --port 30000 --dbpath /data/arb --replSet \"rs0\" --smallfiles --nojournal --quiet\n```\n\nThe \"--quiet\" parameter above mainly helps you to reduce the amount of logs being generated, otherwise they will grow dramatically over a few days and the instance running this container will run out of disk space at the end.\n\nFor other parameters, please refer to the offical MongoDB documentation.\n",
+  "dockerfile": "FROM debian:wheezy\n\n# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added\nRUN groupadd -r mongodb && useradd -r -g mongodb mongodb\n\nRUN apt-get update \\\n\t&& apt-get install -y --no-install-recommends \\\n\t\tca-certificates curl \\\n\t\tnumactl \\\n\t&& rm -rf /var/lib/apt/lists/*\n\n# grab gosu for easy step-down from root\nRUN gpg --keyserver pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4\nRUN curl -o /usr/local/bin/gosu -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture)\" \\\n\t&& curl -o /usr/local/bin/gosu.asc -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture).asc\" \\\n\t&& gpg --verify /usr/local/bin/gosu.asc \\\n\t&& rm /usr/local/bin/gosu.asc \\\n\t&& chmod +x /usr/local/bin/gosu\n\n# gpg: key 7F0CEB10: public key \"Richard Kreuter <richard@10gen.com>\" imported\nRUN apt-key adv --keyserver pool.sks-keyservers.net --recv-keys 492EAFE8CD016A07919F1D2B9ECBEC467F0CEB10\n\nENV MONGO_MAJOR 3.0\nENV MONGO_VERSION 3.0.1\n\nRUN echo \"deb http://repo.mongodb.org/apt/debian wheezy/mongodb-org/$MONGO_MAJOR main\" > /etc/apt/sources.list.d/mongodb-org.list\n\nRUN set -x \\\n\t&& apt-get update \\\n\t&& apt-get install -y mongodb-org=$MONGO_VERSION \\\n\t&& rm -rf /var/lib/apt/lists/* \\\n\t&& rm -rf /var/lib/mongodb \\\n\t&& mv /etc/mongod.conf /etc/mongod.conf.orig\n\nRUN mkdir -p /data/arb && chown -R mongodb:mongodb /data/arb\nVOLUME /data/arb\n\nCOPY docker-entrypoint.sh /entrypoint.sh\nENTRYPOINT [\"/entrypoint.sh\"]\n\nEXPOSE 30000\nCMD [\"mongod\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      30000
+    ],
+    "volume": [
+      "/data/arb"
+    ],
+    "run": [
+      "groupadd -r mongodb && useradd -r -g mongodb mongodb",
+      "apt-get update \t&& apt-get install -y --no-install-recommends \t\tca-certificates curl \t\tnumactl \t&& rm -rf /var/lib/apt/lists/*",
+      "gpg --keyserver pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4",
+      "curl -o /usr/local/bin/gosu -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture)\" \t&& curl -o /usr/local/bin/gosu.asc -SL \"https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture).asc\" \t&& gpg --verify /usr/local/bin/gosu.asc \t&& rm /usr/local/bin/gosu.asc \t&& chmod +x /usr/local/bin/gosu",
+      "apt-key adv --keyserver pool.sks-keyservers.net --recv-keys 492EAFE8CD016A07919F1D2B9ECBEC467F0CEB10",
+      "echo \"deb http://repo.mongodb.org/apt/debian wheezy/mongodb-org/$MONGO_MAJOR main\" > /etc/apt/sources.list.d/mongodb-org.list",
+      "set -x \t&& apt-get update \t&& apt-get install -y mongodb-org=$MONGO_VERSION \t&& rm -rf /var/lib/apt/lists/* \t&& rm -rf /var/lib/mongodb \t&& mv /etc/mongod.conf /etc/mongod.conf.orig",
+      "mkdir -p /data/arb && chown -R mongodb:mongodb /data/arb"
+    ],
+    "workdir": [],
+    "from": "debian:wheezy",
+    "env": {
+      "MONGO_MAJOR": "3.0",
+      "MONGO_VERSION": "3.0.1"
+    },
+    "copy": "docker-entrypoint.sh /entrypoint.sh",
+    "entrypoint": "[\"/entrypoint.sh\"]",
+    "cmd": "[\"mongod\"]"
+  },
+  "source_repository_url": "https://github.com/killercentury/docker-mongo-arbiter.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/killercentury/docker-mongo-arbiter",
+  "docker_repository": "killercentury/mongo-arbiter",
+  "docker_image": "killercentury/mongo-arbiter",
+  "parameters_schema": {
+    "MONGO_MAJOR": {
+      "default": "3.0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "MONGO_VERSION": {
+      "default": "3.0.1",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        30000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "killercentury/mongo-arbiter",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/killercentury/mongo-arbiter",
+    "https://hub.docker.com/v2/repositories/killercentury/mongo-arbiter",
+    "https://github.com/killercentury/docker-mongo-arbiter.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Document-oriented/MongoDB"
+  ],
+  "info_url": "https://hub.docker.com/r/killercentury/mongo-arbiter",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

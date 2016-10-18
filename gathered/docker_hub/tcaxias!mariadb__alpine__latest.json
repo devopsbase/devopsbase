@@ -1,0 +1,252 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/tcaxias/mariadb",
+    "repository_url": "https://hub.docker.com/v2/repositories/tcaxias/mariadb",
+    "tags_url": "https://hub.docker.com/v2/repositories/tcaxias/mariadb/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/tcaxias/mariadb/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/tcaxias/mariadb/autobuild",
+    "user": "tcaxias",
+    "name": "mariadb",
+    "namespace": "tcaxias",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 106,
+    "last_updated": "2016-10-06T00:36:17.965220Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "alpine",
+        "full_size": 70447421,
+        "id": 3959765,
+        "repository": 813395,
+        "creator": 986334,
+        "last_updater": 986334,
+        "last_updated": "2016-10-06T00:36:17.582728Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "light",
+        "full_size": 70447402,
+        "id": 3985081,
+        "repository": 813395,
+        "creator": 986334,
+        "last_updater": 986334,
+        "last_updated": "2016-10-06T00:33:52.984610Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 161164424,
+        "id": 3960623,
+        "repository": 813395,
+        "creator": 986334,
+        "last_updater": 986334,
+        "last_updated": "2016-10-06T00:31:14.187853Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "debian",
+        "full_size": 161164449,
+        "id": 3960564,
+        "repository": 813395,
+        "creator": 986334,
+        "last_updater": 986334,
+        "last_updated": "2016-10-06T00:26:31.517747Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "galera",
+        "full_size": 161164239,
+        "id": 3985190,
+        "repository": 813395,
+        "creator": 986334,
+        "last_updater": 986334,
+        "last_updated": "2016-10-06T00:22:07.530660Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "tcaxias/docker"
+  },
+  "name": "tcaxias/mariadb Docker container",
+  "description": "MariaDB containers",
+  "readme": "# Example\n\nTo try it for the example.cnf provided a simple way would be\n\n    docker build -t tcaxias/mariadb .\n    docker run -d --name mariadb3 --expose 3111-3114 --net host -v $PWD/:/etc/mysql/conf.d tcaxias/mariadb\n",
+  "dockerfile": "FROM alpine:edge\nMAINTAINER Tiago Caxias http://github.com/tcaxias\n\nWORKDIR /app\n\nENV \\\n    APK=\"apk --update --no-cache\" \\\n    PKGS=\"mariadb mariadb-client supervisor dropbear openssh-client\" \\\n    DEPS=\"git go build-base\" \\\n    GIT_SSL_NO_VERIFY=true \\\n    GOPATH=\"/tmp/go\" \\\n    SSH=\"ssh -oStrictHostKeyChecking=no\" \\\n    CHECK_TZ=0 \\\n    METRICS_PORT=\":9104\"\n\nADD my.cnf /root/.my.cnf\n\nRUN \\\n    $APK add $PKGS && \\\n    touch /root/.my.cnf && \\\n    mkdir -p \\\n        /etc/mysql/conf.d \\\n        /run/mysqld \\\n        /var/run/mysqld/tmp \\\n        /root/.ssh\n\nADD \\\n    https://raw.githubusercontent.com/tcaxias/utils/master/dropbear/dropbear.sh \\\n    https://raw.githubusercontent.com/tcaxias/utils/master/get_mysql_port/get_mysql_port.sh \\\n    https://raw.githubusercontent.com/tcaxias/utils/master/mysql_monitor/mysql_monitor.sh \\\n    https://raw.githubusercontent.com/tcaxias/utils/master/mysql_supervisord/supervisord.conf \\\n    https://raw.githubusercontent.com/tcaxias/utils/master/start_mysql/start_mysql.sh \\\n    /app/\n\nRUN \\\n    $APK add $DEPS && \\\n    go get github.com/prometheus/mysqld_exporter && \\\n    apk del $DEPS && \\\n    mv $GOPATH/bin/mysqld_exporter /app && \\\n    rm -rf $GOPATH && \\\n    chmod +x /app/*.sh\n\nRUN echo '!includedir /etc/mysql/conf.d/' >> /etc/mysql/my.cnf\nVOLUME [ \"/var/lib/mysql\", \"/var/log/mysql\", \"/etc/mysql/conf.d\", \"/var/run/mysqld\" ]\nCMD [ \"supervisord\", \"-c\", \"/app/supervisord.conf\", \"-j\", \"/dev/shm/supervisor.pid\", \"-l\", \"/dev/null\" ]\n\nENV TERM=xterm\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "my.cnf",
+        "dest": "/root/.my.cnf"
+      },
+      {
+        "source": "",
+        "dest": ""
+      }
+    ],
+    "expose": [],
+    "volume": [
+      "[ \"/var/lib/mysql\", \"/var/log/mysql\", \"/etc/mysql/conf.d\", \"/var/run/mysqld\" ]"
+    ],
+    "run": [
+      "    $APK add $PKGS &&     touch /root/.my.cnf &&     mkdir -p         /etc/mysql/conf.d         /run/mysqld         /var/run/mysqld/tmp         /root/.ssh",
+      "    $APK add $DEPS &&     go get github.com/prometheus/mysqld_exporter &&     apk del $DEPS &&     mv $GOPATH/bin/mysqld_exporter /app &&     rm -rf $GOPATH &&     chmod +x /app/*.sh",
+      "echo '!includedir /etc/mysql/conf.d/' >> /etc/mysql/my.cnf"
+    ],
+    "workdir": [
+      "/app"
+    ],
+    "from": "alpine:edge",
+    "maintainer": "Tiago Caxias http://github.com/tcaxias",
+    "env": {
+      "": "",
+      "APK": "\"apk",
+      "--update": "--no-cache\"",
+      "PKGS": "\"mariadb",
+      "mariadb-client": "supervisor",
+      "dropbear": "openssh-client\"",
+      "DEPS": "\"git",
+      "go": "build-base\"",
+      "GIT_SSL_NO_VERIFY": "true",
+      "GOPATH": "\"/tmp/go\"",
+      "SSH": "\"ssh",
+      "-oStrictHostKeyChecking": "no\"",
+      "CHECK_TZ": "0",
+      "METRICS_PORT": "\":9104\"",
+      "TERM": "xterm"
+    },
+    "cmd": "[ \"supervisord\", \"-c\", \"/app/supervisord.conf\", \"-j\", \"/dev/shm/supervisor.pid\", \"-l\", \"/dev/null\" ]"
+  },
+  "source_repository_url": "https://github.com/tcaxias/docker.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/tcaxias/docker",
+  "docker_repository": "tcaxias/mariadb",
+  "docker_image": "tcaxias/mariadb",
+  "parameters_schema": {
+    "": {
+      "default": "",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "APK": {
+      "default": "\"apk",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "--update": {
+      "default": "--no-cache\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PKGS": {
+      "default": "\"mariadb",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "mariadb-client": {
+      "default": "supervisor",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "dropbear": {
+      "default": "openssh-client\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "DEPS": {
+      "default": "\"git",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "go": {
+      "default": "build-base\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GIT_SSL_NO_VERIFY": {
+      "default": "true",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "GOPATH": {
+      "default": "\"/tmp/go\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "SSH": {
+      "default": "\"ssh",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "-oStrictHostKeyChecking": {
+      "default": "no\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "CHECK_TZ": {
+      "default": "0",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "METRICS_PORT": {
+      "default": "\":9104\"",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "TERM": {
+      "default": "xterm",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "tcaxias/mariadb",
+  "revision": "alpine",
+  "uris": [
+    "https://hub.docker.com/r/tcaxias/mariadb",
+    "https://hub.docker.com/v2/repositories/tcaxias/mariadb",
+    "https://github.com/tcaxias/docker.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/tcaxias/mariadb",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

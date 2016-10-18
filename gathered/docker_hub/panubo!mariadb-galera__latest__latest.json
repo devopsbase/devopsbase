@@ -1,0 +1,96 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/panubo/mariadb-galera",
+    "repository_url": "https://hub.docker.com/v2/repositories/panubo/mariadb-galera",
+    "tags_url": "https://hub.docker.com/v2/repositories/panubo/mariadb-galera/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/panubo/mariadb-galera/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/panubo/mariadb-galera/autobuild",
+    "user": "panubo",
+    "name": "mariadb-galera",
+    "namespace": "panubo",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 4,
+    "pull_count": 2420,
+    "last_updated": "2016-10-15T02:38:04.956040Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 137897887,
+        "id": 3240577,
+        "repository": 718731,
+        "creator": 318420,
+        "last_updater": 318420,
+        "last_updated": "2016-10-15T02:38:03.201510Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "panubo/docker-mariadb-galera"
+  },
+  "name": "panubo/mariadb-galera Docker container",
+  "description": "MariaDB Galera Cluster\n",
+  "readme": "# Docker Container for MariaDB Galera Cluster\n\nWe hope that this container will not be required in the future pending the integration better Galera support in the official container.\neg [PR 24](https://github.com/docker-library/mariadb/pull/24/files).\n\nThis container uses the entrypoint modifications similar to the ones by [Kristian Klausen](https://github.com/klausenbusk/mariadb/blob/78df6f06732897bee0a69ee6332884f9cb1f5fbd/10.1/docker-entrypoint.sh) to provide (better) Galera support for the offcial `mariadb:10.1` container.\n\nAlso included is [Galera Arbitrator](http://galeracluster.com/documentation-webpages/arbitrator.html) (aka `garbd`) which allows you to maintain quorum with a two node cluster.\n\n## Usage\n\n### Environment Arguments\n\n- `WSREP_NODE_ADDRESS` - IP or domain of host interface eg `WSREP_NODE_ADDRESS=10.0.0.1`\n- `WSREP_CLUSTER_ADDRESS` - List of cluster nodes and ports eg `WSREP_CLUSTER_ADDRESS=gcomm://10.0.0.1:4567,10.0.0.2:4567,10.0.0.3:4567`\n- `WSREP_CLUSTER_NAME` - Default `my_wsrep_cluster`\n\n### Running Garbd\n\nGarbd is available. Just specify `garbd` as the command.\n\n```\ndocker run -d --net host --name galera-garbd \\\n  -e WSREP_CLUSTER_ADDRESS=$WSREP_CLUSTER_ADDRESS \\\n  panubo/mariadb-galera \\\n    garbd\n```\n\n### Bootstrapping the cluster\n\nNode 1:\n\n```\ndocker run -d --net host --name galera \\\n  -e WSREP_NODE_ADDRESS=$WSREP_NODE_ADDRESS \\\n  -e WSREP_CLUSTER_ADDRESS=$WSREP_CLUSTER_ADDRESS \\\n  -e MYSQL_ROOT_PASSWORD={{ mysql_root_password }} \\\n  -p 3306:3306 \\\n  -p 4567:4567/udp \\\n  -p 4567-4568:4567-4568 \\\n  -p 4444:4444 \\\n  -v /mnt/data/galera.service/mysql:/var/lib/mysql:Z \\\n  panubo/mariadb-galera \\\n    --wsrep-new-cluster\n```\n \nNode 2-N:\n\nCreate empty mysql dir to [skip database initialisation](https://github.com/docker-library/mariadb/pull/57). (Kludge!)\n\n```\nmkdir -p /mnt/data/galera.service/mysql/mysql\n```\n\nStart the container normally (without `--wsrep-new-cluster`).\n\n```\ndocker run -d --net host --name galera \\\n  -e WSREP_NODE_ADDRESS=$WSREP_NODE_ADDRESS \\\n  -e WSREP_CLUSTER_ADDRESS=$WSREP_CLUSTER_ADDRESS \\\n  -p 3306:3306 \\\n  -p 4567:4567/udp \\\n  -p 4567-4568:4567-4568 \\\n  -p 4444:4444 \\\n  -v /mnt/data/galera.service/mysql:/var/lib/mysql:Z \\\n  panubo/mariadb-galera\n```\n\n## Recovery\n\nRecovery when quorum is lost can often be simply recovered:\n\nStop on all nodes. EG:\n\n```\nsystemctl stop galera.service\n```\n\nStart node with most complete / recent data set with `--wsrep-new-cluster` argument. EG:\n\n```\ndocker run -d --net host --name galera-init \\\n  -e WSREP_NODE_ADDRESS=$WSREP_NODE_ADDRESS \\\n  -e WSREP_CLUSTER_ADDRESS=$WSREP_CLUSTER_ADDRESS \\\n  -e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \\\n  -p 3307:3306 \\\n  -p 4567:4567/udp \\\n  -p 4567-4568:4567-4568 \\\n  -p 4444:4444 \\\n  -v /mnt/data/galera.service/mysql:/var/lib/mysql:Z \\\n  panubo/mariadb-galera \\\n    --wsrep-new-cluster\n```\n\nBring up other nodes normally. Eg\n\n```\nsystemctl start galera.service\n```\n# Gotchas\n\n1. Whilst it isn't strictly necessary to use the host network (`--net host`), there seems to be an issue (bug?) whereby Galera gets both the host and the (duplicated) Docker network IP assigned to the node. This causes issues when multiple nodes fail and attempt to rejoin the cluster.\n\n2. Garbd requires an explicit port if it blows up with `\"Exception in creating receive loop.\"` See [issue 312](https://github.com/codership/galera/issues/312).",
+  "dockerfile": "FROM mariadb:10.1\n\nRUN apt-get update && apt-get install -y galera-arbitrator-3 && \\\n    rm -rf /var/lib/apt/lists/*\n\nCOPY galera-entrypoint.sh /\n\nEXPOSE 3306 4444 4567 4567/udp 4568\n\nENTRYPOINT [\"/galera-entrypoint.sh\"]\nCMD [\"mysqld\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      3306
+    ],
+    "volume": [],
+    "run": [
+      "apt-get update && apt-get install -y galera-arbitrator-3 &&     rm -rf /var/lib/apt/lists/*"
+    ],
+    "workdir": [],
+    "from": "mariadb:10.1",
+    "copy": "galera-entrypoint.sh /",
+    "entrypoint": "[\"/galera-entrypoint.sh\"]",
+    "cmd": "[\"mysqld\"]"
+  },
+  "source_repository_url": "https://github.com/panubo/docker-mariadb-galera.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/panubo/docker-mariadb-galera",
+  "docker_repository": "panubo/mariadb-galera",
+  "docker_image": "panubo/mariadb-galera",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        3306
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "panubo/mariadb-galera",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/panubo/mariadb-galera",
+    "https://hub.docker.com/v2/repositories/panubo/mariadb-galera",
+    "https://github.com/panubo/docker-mariadb-galera.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Region/North America/US",
+    "Type/Devopsware/Orchestration/Cluster-based",
+    "Type/Middleware/Data Store/Relational/MariaDB"
+  ],
+  "info_url": "https://hub.docker.com/r/panubo/mariadb-galera",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

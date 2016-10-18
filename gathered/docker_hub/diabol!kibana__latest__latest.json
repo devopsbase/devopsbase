@@ -1,0 +1,113 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/diabol/kibana",
+    "repository_url": "https://hub.docker.com/v2/repositories/diabol/kibana",
+    "tags_url": "https://hub.docker.com/v2/repositories/diabol/kibana/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/diabol/kibana/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/diabol/kibana/autobuild",
+    "user": "diabol",
+    "name": "kibana",
+    "namespace": "diabol",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 22,
+    "last_updated": "2016-09-26T18:36:48.831643Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 554124441,
+        "id": 5046725,
+        "repository": 937343,
+        "creator": 35108,
+        "last_updater": 35108,
+        "last_updated": "2016-09-26T18:36:47.198096Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "Diabol/docker-elk"
+  },
+  "name": "diabol/kibana Docker container",
+  "description": "Image for Kibana",
+  "readme": "# docker-elk\n## A one button setup of ELK-stack\n\n### How you do it:\n\n```bash\n    ./run.sh\n```\n### This will happen\n - The latest images of ELK-components (elasticsearch, logstash and kibana) will be downloaded from diabol docker-hub repo using the `docker pull` command\n - One instance of each component will be started according to the `docker-compose.yml` file\n - The logstash component will parse the demolog entrys found in the log file in `logstash/demologs`\n  - This behaviour can be overridden by editing the `command:`-clause of the logstash service in the `docker-compose.yml` file.\n  - The `/opt/logstash/config/demo.conf` part of the `command` indicates that the _demo config file_ found in the `logstash/config` directory is used - **A file of your choosing can be used instead**\n  - You will most likely want to add a `volume` for your log files \n - The components can also be started with the `docker-compose up` command (which is executed at the end of `run.sh`)\n  - **This will make the startup faster** because no `docker pull` will be issued\n   - Make sure to run the `run.sh` command if changes have been made to images\n\n### Further customisation\n - Creating your own elk-stack images is totally possible by editing the `Dockerfile` files and then build them with the `docker build` command, e.g. `docker build -t local/myelastic .` in the directory containing the `Dockerfile`\n  - There are number of reasons to create a your own images, these may include:\n    - To be able to always use the latest versions of elk-stack components released by elastic\n    - To be able to use another linux distribution of your liking\n - You can also add other services in the `docker-compose.yml` file\n  - It can be useful to use a caching mechanism before parsing your log files with logstash\n  - Multiple logstash instances for different kinds of log files can be useful to keep the logstash config readable\n",
+  "dockerfile": "FROM diabol/elkbase\nMAINTAINER Diabol.se\nRUN set -ex \\\n        && curl -L -o /opt/kibana.tar.gz https://download.elastic.co/kibana/kibana/kibana-4.6.1-linux-x86_64.tar.gz \\\n        && tar -xzf /opt/kibana.tar.gz -C /opt \\\n        && yum update -y \\\n        && groupadd kibana \\\n        && useradd -g kibana kibana \\\n        && mv /opt/kibana-[0-9].* /opt/kibana \\\n        && chmod 777 /opt/kibana\nWORKDIR /opt/kibana\nRUN set -ex \\\n\t&& for path in \\\n\t\t./data \\\n\t\t./logs \\\n\t\t./config \\\n\t\t./config/scripts \\\n\t; do \\\n\t\tmkdir -p \"$path\"; \\\n\t\tchown -R kibana:kibana \"$path\"; \\\n\tdone\nVOLUME \\ \n    /opt/kibana/data \\\n    /opt/kibana/logs \\\n    /opt/kibana/config\nEXPOSE 5601\nUSER kibana\nENV JAVA_HOME=/opt/java/jdk\nENV PATH=$PATH:JAVA_HOME/bin\nCMD [\"/opt/kibana/bin/kibana\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      5601
+    ],
+    "volume": [
+      "\\ "
+    ],
+    "run": [
+      "set -ex         && curl -L -o /opt/kibana.tar.gz https://download.elastic.co/kibana/kibana/kibana-4.6.1-linux-x86_64.tar.gz         && tar -xzf /opt/kibana.tar.gz -C /opt         && yum update -y         && groupadd kibana         && useradd -g kibana kibana         && mv /opt/kibana-[0-9].* /opt/kibana         && chmod 777 /opt/kibana",
+      "set -ex \t&& for path in \t\t./data \t\t./logs \t\t./config \t\t./config/scripts \t; do \t\tmkdir -p \"$path\"; \t\tchown -R kibana:kibana \"$path\"; \tdone"
+    ],
+    "workdir": [
+      "/opt/kibana"
+    ],
+    "from": "diabol/elkbase",
+    "maintainer": "Diabol.se",
+    "user": "kibana",
+    "env": {
+      "JAVA_HOME": "/opt/java/jdk",
+      "PATH": "$PATH:JAVA_HOME/bin"
+    },
+    "cmd": "[\"/opt/kibana/bin/kibana\"]"
+  },
+  "source_repository_url": "https://github.com/Diabol/docker-elk.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/Diabol/docker-elk",
+  "docker_repository": "diabol/kibana",
+  "docker_image": "diabol/kibana",
+  "parameters_schema": {
+    "JAVA_HOME": {
+      "default": "/opt/java/jdk",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "PATH": {
+      "default": "$PATH:JAVA_HOME/bin",
+      "type": "string",
+      "mapping": "environment_variable"
+    },
+    "exposed_ports": {
+      "default": [
+        5601
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "diabol/kibana",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/diabol/kibana",
+    "https://hub.docker.com/v2/repositories/diabol/kibana",
+    "https://github.com/Diabol/docker-elk.git"
+  ],
+  "labels": [
+    "Docker",
+    "Mode/Executable/Image/Container Image"
+  ],
+  "info_url": "https://hub.docker.com/r/diabol/kibana",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

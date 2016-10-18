@@ -1,0 +1,172 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/yusufhm/apache-phpfpm",
+    "repository_url": "https://hub.docker.com/v2/repositories/yusufhm/apache-phpfpm",
+    "tags_url": "https://hub.docker.com/v2/repositories/yusufhm/apache-phpfpm/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/yusufhm/apache-phpfpm/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/yusufhm/apache-phpfpm/autobuild",
+    "user": "yusufhm",
+    "name": "apache-phpfpm",
+    "namespace": "yusufhm",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 413,
+    "last_updated": "2016-10-06T10:26:36.613231Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "au-drupal",
+        "full_size": 142997985,
+        "id": 1620970,
+        "repository": 457678,
+        "creator": 563953,
+        "last_updater": 563953,
+        "last_updated": "2016-10-06T10:26:36.071898Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 121937105,
+        "id": 1620952,
+        "repository": 457678,
+        "creator": 563953,
+        "last_updater": 563953,
+        "last_updated": "2016-09-19T00:35:31.285030Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "drupal",
+        "full_size": 121937425,
+        "id": 1620954,
+        "repository": 457678,
+        "creator": 563953,
+        "last_updater": 563953,
+        "last_updated": "2016-09-19T00:33:04.012933Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "au",
+        "full_size": 121937831,
+        "id": 1960294,
+        "repository": 457678,
+        "creator": 563953,
+        "last_updater": 563953,
+        "last_updated": "2016-09-19T00:30:33.836424Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "yusufhm/dockerfiles"
+  },
+  "name": "yusufhm/apache-phpfpm Docker container",
+  "description": "Ubuntu 14.04 based Apache 2.4 with php-fpm",
+  "readme": "# dockerfiles\n\nAdapted from https://github.com/iwebhosting/dockerfiles",
+  "dockerfile": "FROM ubuntu:14.04\nMAINTAINER Yusuf HASAN MIYAN <yusuf.hasanmiyan@gmail.com>\n\n# Run with --build-arg au=1 to get AU apt sources\n#ARG au=0\n# Run with --build-arg drupal=1 to add the apache vhost config for Drupal\n#ARG drupal\n\n# Replace sources for AUS\nRUN sed -i 's/archive.ubuntu.com/au.archive.ubuntu.com/g' /etc/apt/sources.list\nRUN echo 'Australia/Sydney' > /etc/timezone\nRUN cp /usr/share/zoneinfo/Australia/Sydney /etc/localtime\n\n# Add php56 repo\nRUN apt-get update\nRUN apt-get install -qy software-properties-common python-software-properties\nRUN LC_ALL=C.UTF-8 add-apt-repository ppa:ondrej/php\n\nRUN apt-get update\nRUN apt-get install -qy python-software-properties apache2 php5.6-fpm supervisor libapache2-mod-rpaf mariadb-client\n# Common PHP modules\nRUN apt-get install -qy php5.6-cgi php5.6-mysql php5.6-gd php5.6-curl php5.6-cli php5.6-memcache php5.6-mcrypt php5.6-xml\n\nRUN a2enmod expires rewrite headers proxy_fcgi\nRUN rm -r /var/www/html/*\n\nRUN mkdir -p /var/log/supervisor\nRUN mkdir /run/php\n# Set default timezone.\nRUN sed -i 's/;date\\.timezone.*/date.timezone = Australia\\/Sydney/g' /etc/php/5.6/fpm/php.ini\n# Increase upload & post limits.\nRUN sed -i 's/;upload_max_filesize.*/upload_max_filesize = 15M/g' /etc/php/5.6/fpm/php.ini\nRUN sed -i 's/;post_max_size.*/post_max_size = 15M/g' /etc/php/5.6/fpm/php.ini\n# Set up tcp/ip instead of socket.\nRUN sed -i s'/listen = \\/run\\/php\\/php5.6-fpm.sock/listen = 127.0.0.1:9000/' /etc/php/5.6/fpm/pool.d/www.conf\nRUN phpenmod mcrypt\n\nADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf\nADD apache_phpfpm.conf /etc/apache2/conf-enabled/apache_phpfpm.conf\nADD apache_drupal.conf /etc/apache2/conf-enabled/apache_drupal.conf\n\n# Install Drush\nRUN php -r \"readfile('http://files.drush.org/drush.phar');\" > /usr/local/bin/drush\nRUN chmod +x /usr/local/bin/drush\nRUN drush init -y\n\nEXPOSE 80\nCMD [\"/usr/bin/supervisord\"]\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "supervisord.conf",
+        "dest": "/etc/supervisor/conf.d/supervisord.conf"
+      },
+      {
+        "source": "apache_phpfpm.conf",
+        "dest": "/etc/apache2/conf-enabled/apache_phpfpm.conf"
+      },
+      {
+        "source": "apache_drupal.conf",
+        "dest": "/etc/apache2/conf-enabled/apache_drupal.conf"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "sed -i 's/archive.ubuntu.com/au.archive.ubuntu.com/g' /etc/apt/sources.list",
+      "echo 'Australia/Sydney' > /etc/timezone",
+      "cp /usr/share/zoneinfo/Australia/Sydney /etc/localtime",
+      "apt-get update",
+      "apt-get install -qy software-properties-common python-software-properties",
+      "LC_ALL=C.UTF-8 add-apt-repository ppa:ondrej/php",
+      "apt-get update",
+      "apt-get install -qy python-software-properties apache2 php5.6-fpm supervisor libapache2-mod-rpaf mariadb-client",
+      "apt-get install -qy php5.6-cgi php5.6-mysql php5.6-gd php5.6-curl php5.6-cli php5.6-memcache php5.6-mcrypt php5.6-xml",
+      "a2enmod expires rewrite headers proxy_fcgi",
+      "rm -r /var/www/html/*",
+      "mkdir -p /var/log/supervisor",
+      "mkdir /run/php",
+      "sed -i 's/;date\\.timezone.*/date.timezone = Australia\\/Sydney/g' /etc/php/5.6/fpm/php.ini",
+      "sed -i 's/;upload_max_filesize.*/upload_max_filesize = 15M/g' /etc/php/5.6/fpm/php.ini",
+      "sed -i 's/;post_max_size.*/post_max_size = 15M/g' /etc/php/5.6/fpm/php.ini",
+      "sed -i s'/listen = \\/run\\/php\\/php5.6-fpm.sock/listen = 127.0.0.1:9000/' /etc/php/5.6/fpm/pool.d/www.conf",
+      "phpenmod mcrypt",
+      "php -r \"readfile('http://files.drush.org/drush.phar');\" > /usr/local/bin/drush",
+      "chmod +x /usr/local/bin/drush",
+      "drush init -y"
+    ],
+    "workdir": [],
+    "from": "ubuntu:14.04",
+    "maintainer": "Yusuf HASAN MIYAN <yusuf.hasanmiyan@gmail.com>",
+    "cmd": "[\"/usr/bin/supervisord\"]"
+  },
+  "source_repository_url": "https://github.com/yusufhm/dockerfiles.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/yusufhm/dockerfiles",
+  "docker_repository": "yusufhm/apache-phpfpm",
+  "docker_image": "yusufhm/apache-phpfpm",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "yusufhm/apache-phpfpm",
+  "revision": "au-drupal",
+  "uris": [
+    "https://hub.docker.com/r/yusufhm/apache-phpfpm",
+    "https://hub.docker.com/v2/repositories/yusufhm/apache-phpfpm",
+    "https://github.com/yusufhm/dockerfiles.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/HP",
+    "Binding/Region/North America/US",
+    "Type/Infrastructure/Operating System/Linux/Ubuntu",
+    "Type/Middleware/Runtime/PHP",
+    "Type/Middleware/Web Server/Apache HTTP Server"
+  ],
+  "info_url": "https://hub.docker.com/r/yusufhm/apache-phpfpm",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

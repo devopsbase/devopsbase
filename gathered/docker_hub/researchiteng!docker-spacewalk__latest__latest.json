@@ -1,0 +1,114 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/researchiteng/docker-spacewalk",
+    "repository_url": "https://hub.docker.com/v2/repositories/researchiteng/docker-spacewalk",
+    "tags_url": "https://hub.docker.com/v2/repositories/researchiteng/docker-spacewalk/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/researchiteng/docker-spacewalk/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/researchiteng/docker-spacewalk/autobuild",
+    "user": "researchiteng",
+    "name": "docker-spacewalk",
+    "namespace": "researchiteng",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 0,
+    "pull_count": 26,
+    "last_updated": "2016-06-23T14:36:35.602404Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 464611246,
+        "id": 3556633,
+        "repository": 762297,
+        "creator": 626099,
+        "last_updater": 626099,
+        "last_updated": "2016-06-23T14:36:35.163361Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "ReSearchITEng/docker-spacewalk"
+  },
+  "name": "researchiteng/docker-spacewalk Docker container",
+  "description": "spacewalk is the open source version of Redhat satellite.\n",
+  "readme": "Dockerfile - Spacewalk\n======================\n### Run ###\n```\nroot@ruo91:~# docker run --privileged=true -d --name=\"spacewalk\" ruo91/spacewalk\n```\nor\n\n### Build ###\n```\nroot@ruo91:~# git clone https://github.com/ruo91/docker-spacewalk /opt/docker-spacewalk\nroot@ruo91:~# docker build --rm -t spacewalk /opt/docker-spacewalk\n```\n\n### Run ###\n```\nroot@ruo91:~# docker run --privileged=true -d --name=\"spacewalk\" spacewalk\n```\n```\nroot@ruo91:~# docker inspect -f '{{ .NetworkSettings.IPAddress }}' spacewalk\n172.17.0.126\n```\n\n## Nginx - Reverse proxy ###\nGenerating Self-signed Certificate\n```\nroot@ruo91:~# mkdir /etc/nginx/ssl\nroot@ruo91:~# cd /etc/nginx/ssl\n```\n\n```\nroot@ruo91:~# openssl genrsa -des3 -out spacewalk.key 1024\nGenerating RSA private key, 1024 bit long modulus\n..........................................................++++++\n......................................................++++++\ne is 65537 (0x10001)\nEnter pass phrase for spacewalk.key:\nVerifying - Enter pass phrase for spacewalk.key:\nroot@ruo91:~# openssl req -new -key spacewalk.key -out spacewalk.csr\nEnter pass phrase for spacewalk.key:\nYou are about to be asked to enter information that will be incorporated\ninto your certificate request.\nWhat you are about to enter is what is called a Distinguished Name or a DN.\nThere are quite a few fields but you can leave some blank\nFor some fields there will be a default value,\nIf you enter '.', the field will be left blank.\n-----\nCountry Name (2 letter code) [AU]:KR\nState or Province Name (full name) [Some-State]:Seoul\nLocality Name (eg, city) []:Yeongdeungpo-gu\nOrganization Name (eg, company) [Internet Widgits Pty Ltd]:Yongbok.net\nOrganizational Unit Name (eg, section) []:System Team\nCommon Name (e.g. server FQDN or YOUR name) []:spacewalk.example.com\nEmail Address []:ruo91@yongbok.net\n\nPlease enter the following 'extra' attributes\nto be sent with your certificate request\nA challenge password []:\nAn optional company name []:\n```\n\n```\nroot@ruo91:~# cp spacewalk.key spacewalk.key.bak\nroot@ruo91:~# openssl rsa -in spacewalk.key.bak -out spacewalk.key\nEnter pass phrase for spacewalk.key.bak:\nwriting RSA key\n```\n\n```\nroot@ruo91:~# openssl x509 -req -days 365 -in spacewalk.csr -signkey spacewalk.key -out spacewalk.crt\nSignature ok\nsubject=/C=KR/ST=Seoul/L=Yeongdeungpo-gu/O=Yongbok.net/OU=System Team/CN=spacewalk.example.com/emailAddress=ruo91@yongbok.net\nGetting Private key\n```\n\n```\nroot@ruo91:~# cat /etc/nginx/nginx.conf\n## Nginx ##\nuser nginx;\npid logs/nginx.pid;\nerror_log logs/error.log;\naccess_log off;\n \nworker_processes 2;\nevents {\n    worker_connections 1024;\n    use epoll;\n}\n\nhttp {\n    include mime.types;\n    default_type application/octet-stream;\n    types_hash_max_size 2048;\n    server_names_hash_bucket_size 64;\n    log_format main '$remote_addr - $remote_user [$time_local] \"$request\" '\n    '$status $body_bytes_sent \"$http_referer\" '\n    '\"$http_user_agent\" \"$http_x_forwarded_for\"';\n \n    ## TCP options\n    tcp_nodelay on;\n    tcp_nopush on;\n\n    # Virtualhost\n    server {\n        listen  80;\n        listen  443;\n        server_name spacewalk.example.com;\n\n\t# SSL\n\tssl on;\n\tssl_certificate\t\t\tssl/spacewalk.crt;\n\tssl_certificate_key\t\tssl/spacewalk.key;\n\tssl_protocols\t\t\tSSLv3 TLSv1;\n\tssl_prefer_server_ciphers\ton;\n\tssl_ciphers\t\t\tALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv3:+EXP:HIGH:!aNULL:!MD5;\n\n        location / {\n            proxy_set_header Host $host;\n            proxy_set_header X-Forwarded-Host $host;\n            proxy_set_header X-Forwarded-Server $host;\n            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n            proxy_pass https://localhost:443;\n            client_max_body_size 10M;\n        }\n    }\n}\n```\n```\nroot@ruo91:~# service nginx restart \n```\n\n### Web UI ###\nCreate Spacewalk Administrator\n![Create Spacewalk Administrator][1]\n\nSpacewalk Overview\n![Spacewalk Overview][2]\n\n[1]: http://cdn.yongbok.net/ruo91/img/spacewalk/01_create_spacewalk_administrator.png\n[2]: http://cdn.yongbok.net/ruo91/img/spacewalk/02_spacewalk_overview.png\n",
+  "dockerfile": "#\n# Dockerfile - Spacewalk\n#\n# - Build\n# git clone https://github.com/ruo91/docker-spacewalk /opt/docker-spacewalk\n# docker build --rm -t spacewalk /opt/docker-spacewalk\n#\n# - Run\n# docker run --privileged=true -d --name=\"spacewalk\" -h \"spackewalk\" spacewalk\n\n# 1. Base images\nFROM     centos:latest\nMAINTAINER Yongbok Kim <ruo91@yongbok.net>\n\n# 2. Set the environment variable\nWORKDIR /opt\n\n# 3. Add the epel, spacewalk, jpackage repository\nADD conf/jpackage.repo /etc/yum.repos.d/jpackage.repo\nRUN rpm -Uvh http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-7.noarch.rpm \\\n && rpm -Uvh http://yum.spacewalkproject.org/latest/RHEL/7/x86_64/spacewalk-repo-2.4-3.el7.noarch.rpm\n\n# 4. Installation a spacewalk\nADD conf/answer.txt\t/opt/answer.txt\nADD conf/spacewalk.sh\t/opt/spacewalk.sh\nRUN chmod a+x /opt/spacewalk.sh\nRUN yum install -y spacewalk-setup-postgresql spacewalk-postgresql\n\n# 5. Supervisor\nRUN yum install -y python-setuptools && easy_install pip && pip install supervisor && pip install 'meld3 == 1.0.1' && mkdir /etc/supervisord.d\nADD conf/supervisord.conf /etc/supervisord.d/supervisord.conf\n\n# 6. Start supervisord\nCMD [\"/usr/bin/supervisord\", \"-c\", \"/etc/supervisord.d/supervisord.conf\"]\n\n# Port\nEXPOSE 80 443\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "conf/jpackage.repo",
+        "dest": "/etc/yum.repos.d/jpackage.repo"
+      },
+      {
+        "source": "conf/answer.txt\t/opt/answer.txt"
+      },
+      {
+        "source": "conf/spacewalk.sh\t/opt/spacewalk.sh"
+      },
+      {
+        "source": "conf/supervisord.conf",
+        "dest": "/etc/supervisord.d/supervisord.conf"
+      }
+    ],
+    "expose": [
+      80
+    ],
+    "volume": [],
+    "run": [
+      "rpm -Uvh http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-7.noarch.rpm  && rpm -Uvh http://yum.spacewalkproject.org/latest/RHEL/7/x86_64/spacewalk-repo-2.4-3.el7.noarch.rpm",
+      "chmod a+x /opt/spacewalk.sh",
+      "yum install -y spacewalk-setup-postgresql spacewalk-postgresql",
+      "yum install -y python-setuptools && easy_install pip && pip install supervisor && pip install 'meld3 == 1.0.1' && mkdir /etc/supervisord.d"
+    ],
+    "workdir": [
+      "/opt"
+    ],
+    "from": "    centos:latest",
+    "maintainer": "Yongbok Kim <ruo91@yongbok.net>",
+    "cmd": "[\"/usr/bin/supervisord\", \"-c\", \"/etc/supervisord.d/supervisord.conf\"]"
+  },
+  "source_repository_url": "https://github.com/ReSearchITEng/docker-spacewalk.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/ReSearchITEng/docker-spacewalk",
+  "docker_repository": "researchiteng/docker-spacewalk",
+  "docker_image": "researchiteng/docker-spacewalk",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        80
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "researchiteng/docker-spacewalk",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/researchiteng/docker-spacewalk",
+    "https://hub.docker.com/v2/repositories/researchiteng/docker-spacewalk",
+    "https://github.com/ReSearchITEng/docker-spacewalk.git"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System/Linux/RedHat",
+    "Type/Middleware/Search"
+  ],
+  "info_url": "https://hub.docker.com/r/researchiteng/docker-spacewalk",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

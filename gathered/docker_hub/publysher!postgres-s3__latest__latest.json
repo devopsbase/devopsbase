@@ -1,0 +1,116 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/publysher/postgres-s3",
+    "repository_url": "https://hub.docker.com/v2/repositories/publysher/postgres-s3",
+    "tags_url": "https://hub.docker.com/v2/repositories/publysher/postgres-s3/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/publysher/postgres-s3/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/publysher/postgres-s3/autobuild",
+    "user": "publysher",
+    "name": "postgres-s3",
+    "namespace": "publysher",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 1,
+    "pull_count": 87,
+    "last_updated": "2016-10-14T17:57:36.772815Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "latest",
+        "full_size": 47351948,
+        "id": 5060572,
+        "repository": 939722,
+        "creator": 83312,
+        "last_updater": 83312,
+        "last_updated": "2016-10-14T17:55:37.943814Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "postgres-9.5",
+        "full_size": 47351391,
+        "id": 5060551,
+        "repository": 939722,
+        "creator": 83312,
+        "last_updater": 83312,
+        "last_updated": "2016-10-14T17:54:11.957023Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "publysher/docker-postgres-s3"
+  },
+  "name": "publysher/postgres-s3 Docker container",
+  "description": "A Docker-based solution for Postgres backups/restores on Amazon S3",
+  "readme": "[![Docker Automated build](https://img.shields.io/docker/automated/publysher/postgres-s3.svg)](https://hub.docker.com/r/publysher/postgres-s3/) \n[![](https://images.microbadger.com/badges/image/publysher/postgres-s3.svg)](http://microbadger.com/images/publysher/postgres-s3 \"Get your own image badge on microbadger.com\")\n\n# docker-postgres-s3\n\nA Docker-based solution for Postgres backups/restores on Amazon S3.\n\n## Goals\n\nThis project solves the following problems:\n\n* I need a Postgres backup/restore solution which uses S3\n* I want this solution to run in a container\n* I want this container to be separate from the actual Postgres database\n* I want to trigger the backups by HTTP, so I can use any scheduling mechanism I want\n* I want to easily trigger restores as part of my development cycle\n\n## Usage\n\nInstantiate the image with a target postgres database and an existing S3 bucket. The container will have a service \nrunning on port 8000, with the following endpoints:\n \n* `GET` http://service:8000/status/health/ - a simple health check\n* `POST` http://service:8000/backup/ - create a new backup and copy this to S3\n* `POST` http://service:8000/restore/ - obtain the backup from S3 and restore it into the target database\n\n\n## Environment variables\n\n| Name | Required | Description |\n| --- | --- | --- |\n| `POSTGRES_DB` | No, defaults to `postgres` | Name of the Postgres database to back-up from/restore into. |\n| `POSTGRES_USER` | No, defaults to the value of `POSTGRES_DB` | Name of the Postgres user to connect as. |\n| `POSTGRES_PASSWORD` | Yes | Password to use when connecting to the database. |\n| `S3_ENDPOINT` | Yes | S3 endpoint to use when connecting. See http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region for a list of valid endpoints. |\n| `S3_REGION` | Yes | S3 region containing the bucket |\n| `S3_BUCKET` | Yes | Name of the S3 bucket to store the database dump | \n| `S3_FILE` | No | Name of the S3 file. Defaults to `${POSTGRES_DB}.pgdump` |\n| `AWS_ACCESS_KEY_ID` | Yes | AWS Access key. For uploads, requires write permissions on the bucket. |\n| `AWS_SECRET_ACCESS_KEY` | Yes | AWS Secret key. | \n| `PG_RESTORE_ARGS` | No | Extra arguments to pass to `pg_restore`. | \n\n\n## Examples\n\nThe following examples are all shown as docker-compose files. \n\n### 100% Docker, minimal example\n\nHere the target database is also managed by docker. \n\n```\nversion: \"2\"\nservices:\n  db:\n    image: postgres:9.5\n    environment:\n      POSTGRES_PASSWORD: password\n      \n  postgres-s3:\n    image: publysher/postgres-s3\n    links:\n        - \"db:database\"     # target database should always be linked as `database`\n    ports:\n        - \"8000:8000\"       # you should not expose this to a public network\n    environment:\n      POSTGRES_PASSWORD: password\n      S3_ENDPOINT: \"https://s3.amazonaws.com\"\n      S3_REGION: \"us-east-1\"\n      S3_BUCKET: \"s3://my-bucket\"\n      AWS_ACCESS_KEY_ID: \"access-key\"\n      AWS_SECRET_ACCESS_KEY: \"secret\"\n```\n\n### Using an external database\n\nIn this example, the external database is not managed by docker. We use the `extra_hosts` option to connect \nto the database.\n\n```\nversion: \"2\"\nservices:\n  postgres-s3:\n    image: publysher/postgres-s3\n    environment:\n      POSTGRES_DB: my_database\n      POSTGRES_USER: my_user\n      POSTGRES_PASSWORD: password\n      S3_ENDPOINT: \"https://s3.amazonaws.com\"\n      S3_REGION: \"us-east-1\"\n      S3_BUCKET: \"s3://my-bucket\"\n      AWS_ACCESS_KEY_ID: \"access-key\"\n      AWS_SECRET_ACCESS_KEY: \"secret\"\n    extra_hosts:\n        - \"database\":192.168.99.101\n```\n\n\n## Testing\n\nUse `docker-compose build && docker-compose run --rm tests` to run the integration tests. \n\n\n",
+  "dockerfile": "FROM python:3.5-alpine\nMAINTAINER \"Yigal Duppen\" <yigal@publysher.nl>\n\nWORKDIR /app/\nEXPOSE 8000\nSTOPSIGNAL SIGINT\nHEALTHCHECK CMD [\"/app/check-health.sh\"]\n\nLABEL   org.label-schema.schema-version=\"1.0\" \\\n        org.label-schema.name=\"Postgres/S3\" \\\n        org.label-schema.description=\"A service to backup and restore postgres databases to S3\" \\\n        org.label-schema.url=\"https://github.com/publysher/docker-postgres-s3/\" \\\n        org.label-schema.vcs-url=\"https://github.com/publysher/docker-postgres-s3\" \\\n        org.label-schema.vendor=\"Publysher BV\" \\\n        org.label-schema.docker.dockerfile=\"./postgres-s3/Dockerfile\"\n\nRUN apk update \\\n    && apk add \\\n        'postgresql<9.6' \\\n    && rm -rf /var/cache/apk/* \\\n    && pip3 install awscli \\\n    && adduser -S service \\\n    && mkdir -p /app/ /data/  \\\n    && chown service /data/\nUSER service\nCOPY * /app/\n\nENTRYPOINT [\"python\", \"app.py\"]\n",
+  "dockerfile_json": {
+    "add": [],
+    "expose": [
+      8000
+    ],
+    "volume": [],
+    "run": [
+      "apk update     && apk add         'postgresql<9.6'     && rm -rf /var/cache/apk/*     && pip3 install awscli     && adduser -S service     && mkdir -p /app/ /data/      && chown service /data/"
+    ],
+    "workdir": [
+      "/app/"
+    ],
+    "from": "python:3.5-alpine",
+    "maintainer": "\"Yigal Duppen\" <yigal@publysher.nl>",
+    "stopsignal": "SIGINT",
+    "healthcheck": "CMD [\"/app/check-health.sh\"]",
+    "label": "  org.label-schema.schema-version=\"1.0\"         org.label-schema.name=\"Postgres/S3\"         org.label-schema.description=\"A service to backup and restore postgres databases to S3\"         org.label-schema.url=\"https://github.com/publysher/docker-postgres-s3/\"         org.label-schema.vcs-url=\"https://github.com/publysher/docker-postgres-s3\"         org.label-schema.vendor=\"Publysher BV\"         org.label-schema.docker.dockerfile=\"./postgres-s3/Dockerfile\"",
+    "user": "service",
+    "copy": "* /app/",
+    "entrypoint": "[\"python\", \"app.py\"]"
+  },
+  "source_repository_url": "https://github.com/publysher/docker-postgres-s3.git",
+  "source_repository_type": "git",
+  "source_repository_provider": "github",
+  "source_repository_web_url": "https://github.com/publysher/docker-postgres-s3",
+  "docker_repository": "publysher/postgres-s3",
+  "docker_image": "publysher/postgres-s3",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        8000
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "publysher/postgres-s3",
+  "revision": "latest",
+  "uris": [
+    "https://hub.docker.com/r/publysher/postgres-s3",
+    "https://hub.docker.com/v2/repositories/publysher/postgres-s3",
+    "https://github.com/publysher/docker-postgres-s3.git"
+  ],
+  "labels": [
+    "Docker",
+    "Binding/Provider/Amazon",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/publysher/postgres-s3",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}

@@ -1,0 +1,155 @@
+{
+  "dockerhub": {
+    "web_url": "https://hub.docker.com/r/xcgd/postgresql",
+    "repository_url": "https://hub.docker.com/v2/repositories/xcgd/postgresql",
+    "tags_url": "https://hub.docker.com/v2/repositories/xcgd/postgresql/tags",
+    "dockerfile_url": "https://hub.docker.com/v2/repositories/xcgd/postgresql/dockerfile",
+    "autobuild_url": "https://hub.docker.com/v2/repositories/xcgd/postgresql/autobuild",
+    "user": "xcgd",
+    "name": "postgresql",
+    "namespace": "xcgd",
+    "status": 1,
+    "is_private": false,
+    "is_automated": true,
+    "star_count": 12,
+    "pull_count": 5403,
+    "last_updated": "2016-10-13T22:37:18.452958Z",
+    "permissions": {
+      "read": true,
+      "write": false,
+      "admin": false
+    },
+    "tags": [
+      {
+        "name": "9.4",
+        "full_size": 121385674,
+        "id": 29404,
+        "repository": 23515,
+        "creator": 30651,
+        "last_updater": 30651,
+        "last_updated": "2016-10-13T22:37:18.111274Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "latest",
+        "full_size": 122009005,
+        "id": 29406,
+        "repository": 23515,
+        "creator": 30651,
+        "last_updater": 30651,
+        "last_updated": "2016-10-13T22:34:10.723465Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9.3",
+        "full_size": 121051953,
+        "id": 3635865,
+        "repository": 23515,
+        "creator": 30651,
+        "last_updater": 30651,
+        "last_updated": "2016-10-13T22:09:52.884677Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      },
+      {
+        "name": "9.5",
+        "full_size": 122008944,
+        "id": 3635803,
+        "repository": 23515,
+        "creator": 30651,
+        "last_updater": 30651,
+        "last_updated": "2016-10-13T21:54:42.112266Z",
+        "image_id": null,
+        "v2": true,
+        "platforms": [
+          5
+        ]
+      }
+    ],
+    "build_name": "xcgd/postgresql"
+  },
+  "name": "xcgd/postgresql Docker container",
+  "description": "The PostgreSQL object-relational database system provides reliability and data integrity.",
+  "readme": "# Supported tags\n\n-       `9.5`, `latest`\n-       `9.4` \n-       `9.3` \n\n# About this image\n\nThis docker uses a custom ubuntu:trusty image as a base.\n\n# How to use this image\n\n## Start PostgreSQL\n\nRun your docker, assuming you named your postgresql docker pg93 as we did above:\n\n    $ docker run --rm --name=\"pg\" xcgd/postgresql\n\nTo run a specific version:\n\n    $ docker run --rm --name=\"pg94\" xcgd/postgresql:9.4\n\n## Persistence\n\nThis image ships data volumes for persistence. By default, they will be bound to docker vfs and thus removed along with the container.\n\nYou'd rather want to bind volumes to your local file system. This image comes with a facility where initdb is executed only if an empty data volume is found. Otherwise it is just mounted and used.\n\nLet's pretend your persistent data is located under `/opt/instance1/dbdata/` on your host machine, you can use it with:\n\n    $ docker run --name=\"pg\" -v /opt/instance1/dbdata:/var/lib/postgresql -d xcgd/postgresql\n\n## Security Notes\n\nYou'll note that we did not open ports to the outside world on the PostgreSQL container. This is for security reasons, NEVER RUN your PostgreSQL container with ports open to the outside world... Just link other containers (single host) or use an ambassador pattern (cluster).\n\nThis is really important to understand. PostgreSQL is configured to trust everyone so better keep it firewalled. And before yelling madness please consider this: If someone gains access to your host and is able to launch a container and open a port for himself he's got your data anyway... he’s on your machine. So keep that port closed and secure your host. Your database is as safe as your host is, no more.\n\n",
+  "dockerfile": "FROM xcgd/ubuntu4base\nMAINTAINER florent.aide@xcg-consulting.fr \n\n# Add the PostgreSQL PGP key to verify their Debian packages.\n# It should be the same key as https://www.postgresql.org/media/keys/ACCC4CF8.asc \nRUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8\n\n# Add PostgreSQL's repository. It contains the most recent stable release\n#     of PostgreSQL, ``9.4``.\nRUN echo \"deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main\" > /etc/apt/sources.list.d/pgdg.list\n\n# Update the Ubuntu and PostgreSQL repository indexes\nRUN locale-gen en_US.UTF-8 && update-locale\nRUN echo 'LANG=\"en_US.UTF-8\"' > /etc/default/locale\n\nRUN apt-get update && apt-get -yq install postgresql-9.4 postgresql-contrib-9.4\n\nRUN chown postgres:postgres /var/lib/postgresql/9.4/main/base\n# stop and clear the database as it is init or mounted on container runtime\nRUN /etc/init.d/postgresql stop && \\\n    rm -rf /var/lib/postgresql/9.4\n\n# Execution environment\n\nADD source/ /etc/postgresql/9.4/main/\nWORKDIR /app\nVOLUME [\"/var/log/postgresql\", \"/var/lib/postgresql\", \"/etc/postgresql\"]\n# Set the default entrypoint (non overridable) to run when starting the container\nENTRYPOINT [\"/app/bin/boot\"]\n# Expose the PostgreSQL port (this is only so you can run backups,\n# not to be exposed to the outside world)\nEXPOSE 5432\nADD bin /app/bin/\n",
+  "dockerfile_json": {
+    "add": [
+      {
+        "source": "source/",
+        "dest": "/etc/postgresql/9.4/main/"
+      },
+      {
+        "source": "bin",
+        "dest": "/app/bin/"
+      }
+    ],
+    "expose": [
+      5432
+    ],
+    "volume": [
+      "[\"/var/log/postgresql\", \"/var/lib/postgresql\", \"/etc/postgresql\"]"
+    ],
+    "run": [
+      "apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8",
+      "echo \"deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main\" > /etc/apt/sources.list.d/pgdg.list",
+      "locale-gen en_US.UTF-8 && update-locale",
+      "echo 'LANG=\"en_US.UTF-8\"' > /etc/default/locale",
+      "apt-get update && apt-get -yq install postgresql-9.4 postgresql-contrib-9.4",
+      "chown postgres:postgres /var/lib/postgresql/9.4/main/base",
+      "/etc/init.d/postgresql stop &&     rm -rf /var/lib/postgresql/9.4"
+    ],
+    "workdir": [
+      "/app"
+    ],
+    "from": "xcgd/ubuntu4base",
+    "maintainer": "florent.aide@xcg-consulting.fr ",
+    "entrypoint": "[\"/app/bin/boot\"]"
+  },
+  "source_repository_url": "https://bitbucket.org/xcgd/postgresql",
+  "source_repository_type": "hg",
+  "source_repository_provider": "bitbucket",
+  "source_repository_web_url": "https://bitbucket.org/xcgd/postgresql",
+  "docker_repository": "xcgd/postgresql",
+  "docker_image": "xcgd/postgresql",
+  "parameters_schema": {
+    "exposed_ports": {
+      "default": [
+        5432
+      ],
+      "type": "json_array"
+    }
+  },
+  "type": "docker",
+  "docker_name": "xcgd/postgresql",
+  "revision": "9.4",
+  "uris": [
+    "https://hub.docker.com/r/xcgd/postgresql",
+    "https://hub.docker.com/v2/repositories/xcgd/postgresql",
+    "https://bitbucket.org/xcgd/postgresql"
+  ],
+  "labels": [
+    "Docker",
+    "Type/Infrastructure/Operating System",
+    "Type/Middleware/Data Store/Relational/PostgreSQL"
+  ],
+  "info_url": "https://hub.docker.com/r/xcgd/postgresql",
+  "requires": [
+    {
+      "kind": "host",
+      "label": "Docker Engine"
+    }
+  ],
+  "latest": true,
+  "gatherbase_origin": "docker-hub"
+}
