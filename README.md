@@ -3,7 +3,7 @@
 This repository contains the raw data of *DevOpsBase* (DevOps knowledge base or metadatabase) as structured content in different formats: JSON (`.json` files), XML (`.xml` files) and YAML (`.yaml` or `.yml` files).
 These files are organized using a nested directory structure:
 
-* `/gathered` contains data, crawled and automatically gathered using *GatherBase* from existing repositories such as Chef Supermarket, Juju Charm Store and Docker Hub.
+* `/gathered` contains data, crawled and automatically gathered using [GatherBase](https://github.com/gatherbase/gatherbase) from existing repositories such as Chef Supermarket, Juju Charm Store and Docker Hub.
 * `/gathered-refined` includes JavaScript functions, which are used to refine specific parts of automatically gathered data.
 * `/added` consists of data, manually added by experts to complement automatically gathered data.
 * `/schema` holds definitions to be used to classify and specify the structure of implementations represented by both gathered and manually added data.
